@@ -9,7 +9,7 @@ namespace Syfuhs.Security.Kerberos.Entities
         {
             Asn1Value = sequence.Value;
 
-            for (int i = 0; i < sequence.Count; i++)
+            for (var i = 0; i < sequence.Count; i++)
             {
                 var element = sequence[i];
 

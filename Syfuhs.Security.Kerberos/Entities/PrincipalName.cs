@@ -8,11 +8,11 @@ namespace Syfuhs.Security.Kerberos.Entities
     {
         public PrincipalName(Asn1Element element)
         {
-            Asn1Element childNode = element[0];
+            var childNode = element[0];
 
             Asn1Value = childNode.Value;
 
-            for (int i = 0; i < childNode.Count; i++)
+            for (var i = 0; i < childNode.Count; i++)
             {
                 var node = childNode[i];
 
@@ -43,7 +43,7 @@ namespace Syfuhs.Security.Kerberos.Entities
 
         public override bool Equals(object obj)
         {
-            PrincipalName other = obj as PrincipalName;
+            var other = obj as PrincipalName;
 
             if (other == null)
             {

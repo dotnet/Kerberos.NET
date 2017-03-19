@@ -6,18 +6,18 @@ namespace Syfuhs.Security.Kerberos.Entities
     {
         public Ticket(Asn1Element element)
         {
-            Asn1Element childNode = element[0][0];
+            var childNode = element[0][0];
 
             Asn1Value = childNode.Value;
 
-            for (int i = 0; i < childNode.Count; i++)
+            for (var i = 0; i < childNode.Count; i++)
             {
                 var node = childNode[i];
 
                 switch (node.ContextSpecificTag)
                 {
                     case 0:
-                        TicketVersionNumber = (int)node[0].AsLong();
+                        TicketVersionNumber = node[0].AsInt();
                         break;
 
                     case 1:

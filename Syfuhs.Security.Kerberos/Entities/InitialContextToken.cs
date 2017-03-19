@@ -10,7 +10,7 @@ namespace Syfuhs.Security.Kerberos.Entities
 
             Asn1Value = childNode.Value;
 
-            for (int i = 0; i < childNode.Count; i++)
+            for (var i = 0; i < childNode.Count; i++)
             {
                 var node = childNode[i];
 
@@ -24,8 +24,6 @@ namespace Syfuhs.Security.Kerberos.Entities
                 }
             }
         }
-
-        public int Length { get { return Asn1Value.Length; } }
 
         public MechType ThisMech { get; private set; }
 

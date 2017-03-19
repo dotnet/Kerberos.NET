@@ -10,14 +10,14 @@ namespace Syfuhs.Security.Kerberos.Entities
 
             Asn1Value = childNode.Value;
 
-            for (int i = 0; i < childNode.Count; i++)
+            for (var i = 0; i < childNode.Count; i++)
             {
-                Asn1Element node = childNode[i];
+                var node = childNode[i];
 
                 switch (node.ContextSpecificTag)
                 {
                     case 0:
-                        ProtocolVersionNumber = (int)node[0].AsLong();
+                        ProtocolVersionNumber = node[0].AsInt();
                         break;
 
                     case 1:

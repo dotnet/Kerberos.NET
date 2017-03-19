@@ -88,7 +88,7 @@ namespace Syfuhs.Security.Kerberos.Entities
 
             if (calculatedHmac.Length >= HashSize)
             {
-                for (int i = 0; i < HashSize; i++)
+                for (var i = 0; i < HashSize; i++)
                 {
                     if (calculatedHmac[i] != ciphertext[i])
                     {

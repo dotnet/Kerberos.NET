@@ -1,9 +1,6 @@
 ﻿using Syfuhs.Security.Kerberos.Crypto;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
@@ -11,7 +8,7 @@ namespace Syfuhs.Security.Kerberos.Entities
     {
         public EncTicketPart(Asn1Element asn1Element)
         {
-            Asn1Element childNode = asn1Element[0];
+            var childNode = asn1Element[0];
 
             for (var i = 0; i < childNode.Count; i++)
             {

@@ -103,6 +103,20 @@ namespace Syfuhs.Security.Kerberos.Crypto
             return Hexify(Value, lineLength: 16, spaces: true);
         }
 
+        public int AsInt()
+        {
+            var bytes = Value;
+
+            int num = 0;
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                num = (num << 8) | bytes[i];
+            }
+
+            return num;
+        }
+
         public long AsLong()
         {
             var bytes = Value;
@@ -119,6 +133,10 @@ namespace Syfuhs.Security.Kerberos.Crypto
 
         private static string ConvertToOid(byte[] oid)
         {
+            // this is deceptively complex
+            // most implementations of this are wrong
+            // this looks like a correct solution https://www.codeproject.com/Articles/16468/OID-Conversion?msg=2900857#xx2900857xx
+
             var sb = new StringBuilder();
 
             byte x = (byte)(oid[0] / 40);
@@ -183,7 +201,7 @@ namespace Syfuhs.Security.Kerberos.Crypto
             }
         }
 
-        public bool IsConstructed { get { return (RawData[position] & 0x20) == 0x20; } }
+        protected bool IsConstructed { get { return (RawData[position] & 0x20) == 0x20; } }
 
         public int Count { get { return children?.Count ?? 0; } }
 
@@ -199,9 +217,7 @@ namespace Syfuhs.Security.Kerberos.Crypto
                 return children[index];
             }
         }
-
-        public int Position { get { return position; } }
-
+        
         internal int TotalLength { get { return valuePosition - position + valueLength; } }
 
         private static List<Asn1Element> DecodeChildren(byte[] rawData, int position, int length)
@@ -287,6 +303,8 @@ namespace Syfuhs.Security.Kerberos.Crypto
 
         public DateTimeOffset AsDateTimeOffset()
         {
+            // TODO: this is probably wrong 
+
             var generalized = Tag == 24;
 
             var s = AsString();
@@ -400,7 +418,7 @@ namespace Syfuhs.Security.Kerberos.Crypto
             return dto;
         }
 
-        static int ParseInt(string s, int off)
+        private static int ParseInt(string s, int off)
         {
             char c1 = s[off];
             char c2 = s[off + 1];

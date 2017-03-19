@@ -9,20 +9,20 @@ namespace Syfuhs.Security.Kerberos.Entities
         {
             Asn1Value = asn1Element.Value;
 
-            Asn1Element childNode = asn1Element[0];
+            var childNode = asn1Element[0];
 
-            for (int i = 0; i < childNode.Count; i++)
+            for (var i = 0; i < childNode.Count; i++)
             {
                 var node = childNode[i];
 
                 switch (node.ContextSpecificTag)
                 {
                     case 0:
-                        EType = (EncryptionType)((int)node[0].AsLong());
+                        EType = (EncryptionType)(node[0].AsInt());
                         break;
 
                     case 1:
-                        KeyVersionNumber = (uint)node[0].AsLong();
+                        KeyVersionNumber = node[0].AsInt();
                         break;
 
                     case 2:
@@ -38,7 +38,7 @@ namespace Syfuhs.Security.Kerberos.Entities
 
         public EncryptionType EType { get; private set; }
 
-        public uint? KeyVersionNumber { get; private set; }
+        public int? KeyVersionNumber { get; private set; }
 
         public byte[] Cipher { get; private set; }
     }
