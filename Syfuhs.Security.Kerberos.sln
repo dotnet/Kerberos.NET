@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Syfuhs.Security.Kerberos", "Syfuhs.Security.Kerberos\Syfuhs.Security.Kerberos.csproj", "{D9CFB745-D5C9-4711-8E3F-781991230FC1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbTester", "KerbTester\KerbTester.csproj", "{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D9CFB745-D5C9-4711-8E3F-781991230FC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9CFB745-D5C9-4711-8E3F-781991230FC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9CFB745-D5C9-4711-8E3F-781991230FC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9CFB745-D5C9-4711-8E3F-781991230FC1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
