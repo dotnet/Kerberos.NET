@@ -87,6 +87,7 @@ namespace Syfuhs.Security.Kerberos.Entities
 
         public override string ToString()
         {
+            var cname = string.Join(",", CName.Names);
 
             return $"Flags: {TicketFlags} | CName: {CName.NameType}, {cname} | CRealm: {CRealm};";
         }
