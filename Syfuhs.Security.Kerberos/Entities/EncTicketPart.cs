@@ -84,5 +84,11 @@ namespace Syfuhs.Security.Kerberos.Entities
         public long HostAddress { get; private set; }
 
         public AuthorizationData AuthorizationData { get; private set; }
+
+        public override string ToString()
+        {
+
+            return $"Flags: {TicketFlags} | CName: {CName.NameType}, {cname} | CRealm: {CRealm};";
+        }
     }
 }

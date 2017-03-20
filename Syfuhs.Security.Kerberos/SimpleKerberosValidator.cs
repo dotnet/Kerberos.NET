@@ -49,6 +49,7 @@ namespace Syfuhs.Security.Kerberos
         {
             var kerberosRequest = KerberosRequest.Parse(requestBytes);
 
+            Logger("Request: ");
             Logger(kerberosRequest.ToString());
 
             var decryptedToken = kerberosRequest.Decrypt(key);
@@ -58,6 +59,8 @@ namespace Syfuhs.Security.Kerberos
                 return null;
             }
 
+            Logger("\r\n");
+            Logger("Ticket: ");
             Logger(decryptedToken.ToString());
 
             if (ValidateAfterDecrypt)

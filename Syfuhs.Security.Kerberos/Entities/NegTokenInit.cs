@@ -1,5 +1,7 @@
 ﻿using Syfuhs.Security.Kerberos.Crypto;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
@@ -41,6 +43,11 @@ namespace Syfuhs.Security.Kerberos.Entities
                         MechTypes.Add(new MechType(childNode.AsString()));
                     }
                 }
+            }
+
+            if (MechTypes.Any(m => m.Oid == MechType.NTLM))
+            {
+                throw new NotSupportedException("NTLM is not supported");
             }
         }
 

@@ -73,6 +73,10 @@ namespace Syfuhs.Security.Kerberos.Entities
         private List<AuthorizationData> authorizations;
 
         public List<AuthorizationData> Authorizations { get { return authorizations ?? (authorizations = new List<AuthorizationData>()); } }
-    }
 
+        public override string ToString()
+        {
+            return $"Version: {VersionNumber} | Realm: {Realm} | Sequence: {SequenceNumber}";
+        }
+    }
 }

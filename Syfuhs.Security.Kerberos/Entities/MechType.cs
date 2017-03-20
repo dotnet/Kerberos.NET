@@ -1,7 +1,15 @@
-﻿namespace Syfuhs.Security.Kerberos.Entities
+﻿using System.Diagnostics;
+
+namespace Syfuhs.Security.Kerberos.Entities
 {
+    [DebuggerDisplay("{Mechanism} {Oid}")]
     public class MechType
     {
+        public const string SPNEGO = "1.3.6.1.5.5.2";
+        public const string KerberosV5Legacy = "1.2.840.48018.1.2.2";
+        public const string KerberosV5 = "1.2.840.113554.1.2.2";
+        public const string NTLM = "1.3.6.1.4.1.311.2.2.10";
+
         public const int ContextTag = 6;
 
         public string Mechanism { get; private set; }
@@ -18,16 +26,16 @@
         {
             switch (oid)
             {
-                case "1.3.6.1.5.5.2":
+                case SPNEGO:
                     return "SPNEGO";
 
-                case "1.2.840.48018.1.2.2":
+                case KerberosV5Legacy:
                     return "Kerberos V5 Legacy";
 
-                case "1.2.840.113554.1.2.2":
+                case KerberosV5:
                     return "Kerberos V5";
 
-                case "1.3.6.1.4.1.311.2.2.10":
+                case NTLM:
                     return "NTLM";
             }
 

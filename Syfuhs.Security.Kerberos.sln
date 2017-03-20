@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assembly.Shared", "Assembly
 		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerberosMiddlewareEndToEndSample", "KerberosMiddlewareEndToEndSample\KerberosMiddlewareEndToEndSample.csproj", "{7D82FBAB-2A77-46D9-BB2D-5E5723C63B27}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,10 @@ Global
 		{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D82FBAB-2A77-46D9-BB2D-5E5723C63B27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D82FBAB-2A77-46D9-BB2D-5E5723C63B27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D82FBAB-2A77-46D9-BB2D-5E5723C63B27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D82FBAB-2A77-46D9-BB2D-5E5723C63B27}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -44,5 +50,6 @@ Global
 		{D9CFB745-D5C9-4711-8E3F-781991230FC1} = {3D5572F2-BD08-408B-B670-A7AC2F5784CC}
 		{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA} = {1DDDDD38-ED6B-407F-B811-5EB571EB016E}
 		{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D} = {1DDDDD38-ED6B-407F-B811-5EB571EB016E}
+		{7D82FBAB-2A77-46D9-BB2D-5E5723C63B27} = {1DDDDD38-ED6B-407F-B811-5EB571EB016E}
 	EndGlobalSection
 EndGlobal

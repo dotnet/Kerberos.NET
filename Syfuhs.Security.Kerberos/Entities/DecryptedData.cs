@@ -63,5 +63,10 @@ namespace Syfuhs.Security.Kerberos.Entities
                 throw new SecurityException($"Token has expired. End: {Ticket.EndTime}; Now: {now}; Skew: {skew}");
             }
         }
+
+        public override string ToString()
+        {
+            return $"{Ticket} | {Authenticator}";
+        }
     }
 }
