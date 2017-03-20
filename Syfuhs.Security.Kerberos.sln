@@ -7,6 +7,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Syfuhs.Security.Kerberos", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerbTester", "KerbTester\KerbTester.csproj", "{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{1DDDDD38-ED6B-407F-B811-5EB571EB016E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{3D5572F2-BD08-408B-B670-A7AC2F5784CC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerberosMiddlewareSample", "KerberosMiddlewareSample\KerberosMiddlewareSample.csproj", "{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assembly.Shared", "Assembly.Shared", "{0583A847-58AB-4667-98A0-A74C7A29DC4A}"
+	ProjectSection(SolutionItems) = preProject
+		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,8 +32,17 @@ Global
 		{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D9CFB745-D5C9-4711-8E3F-781991230FC1} = {3D5572F2-BD08-408B-B670-A7AC2F5784CC}
+		{7715F4FC-FAD8-4E50-92AB-EF98CF55DFAA} = {1DDDDD38-ED6B-407F-B811-5EB571EB016E}
+		{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D} = {1DDDDD38-ED6B-407F-B811-5EB571EB016E}
 	EndGlobalSection
 EndGlobal

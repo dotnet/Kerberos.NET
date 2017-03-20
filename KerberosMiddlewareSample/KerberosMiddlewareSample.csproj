@@ -4,15 +4,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D9CFB745-D5C9-4711-8E3F-781991230FC1}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{DFDE9D6E-4BD4-443F-9C56-1CCB628DCF1D}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Syfuhs.Security.Kerberos</RootNamespace>
-    <AssemblyName>Syfuhs.Security.Kerberos</AssemblyName>
+    <RootNamespace>KerberosMiddlewareSample</RootNamespace>
+    <AssemblyName>KerberosMiddlewareSample</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,6 +24,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -72,34 +75,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\SharedAssemblyInfo.cs">
-      <Link>SharedAssemblyInfo.cs</Link>
-    </Compile>
-    <Compile Include="Crypto\Asn1Element.cs" />
-    <Compile Include="Crypto\MD4.cs" />
-    <Compile Include="Crypto\RC4.cs" />
-    <Compile Include="Entities\Asn1ValueType.cs" />
-    <Compile Include="Entities\Authenticator.cs" />
-    <Compile Include="Entities\AuthorizationData.cs" />
-    <Compile Include="Entities\DecryptedData.cs" />
-    <Compile Include="Entities\EncryptedData.cs" />
-    <Compile Include="Entities\EncTicketPart.cs" />
-    <Compile Include="Entities\Enums.cs" />
-    <Compile Include="Entities\InitialContextToken.cs" />
-    <Compile Include="Entities\KrbApReq.cs" />
-    <Compile Include="Entities\MechType.cs" />
-    <Compile Include="Entities\NegTokenInit.cs" />
-    <Compile Include="Entities\PrincipalName.cs" />
-    <Compile Include="Entities\PrivilegedAttributeCertificate.cs" />
-    <Compile Include="Entities\RC4DeryptedData.cs" />
-    <Compile Include="Entities\Ticket.cs" />
-    <Compile Include="Entities\TransitedEncoding.cs" />
-    <Compile Include="KerberosRequest.cs" />
+    <Compile Include="KerberosController.cs" />
+    <Compile Include="KerberosMiddleware.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SimpleKerberosValidator.cs" />
+    <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Syfuhs.Security.Kerberos\Syfuhs.Security.Kerberos.csproj">
+      <Project>{d9cfb745-d5c9-4711-8e3f-781991230fc1}</Project>
+      <Name>Syfuhs.Security.Kerberos</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

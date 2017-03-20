@@ -74,7 +74,7 @@ namespace Syfuhs.Security.Kerberos
 
             // TODO: parse authorization data if present and expand PAC data
 
-            return new ClaimsIdentity(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)), "password");
+            return new ClaimsIdentity(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)), "password", ClaimTypes.NameIdentifier, ClaimTypes.Role);
         }
 
         protected virtual void Validate(DecryptedData decryptedToken)
