@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Kerberos.NET</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Steve Syfuhs</authors>
+    <owners>Steve Syfuhs</owners>
+    <licenseUrl>https://github.com/SteveSyfuhs/Kerberos.NET</licenseUrl>
+    <projectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A Managed Code validator for Kerberos tickets</description>
+    <releaseNotes>It's the first release.</releaseNotes>
+    <copyright>Copyright 2017</copyright>
+    <tags>security kerberos</tags>
+  </metadata>
+</package>
