@@ -1,4 +1,4 @@
-﻿using Syfuhs.Security.Kerberos.Crypto;
+using Syfuhs.Security.Kerberos.Crypto;
 using System;
 using System.Security;
 using System.Security.Cryptography;
@@ -17,6 +17,14 @@ namespace Syfuhs.Security.Kerberos.Entities
             this.decryptingKey = decryptingKey;
         }
 
+        private readonly byte[] baseKey;
+        public RC4DecryptedData(KrbApReq token, byte[] decryptingKey, byte[] baseKey)
+        {
+            this.token = token;
+            this.decryptingKey = decryptingKey;
+            this.baseKey = baseKey;
+        }
+        
         private static byte[] GetSalt(int usage)
         {
             switch (usage)
@@ -45,7 +53,11 @@ namespace Syfuhs.Security.Kerberos.Entities
 
         public override void Decrypt()
         {
-            var baseKey = MD4(decryptingKey);
+            var baseKey = this.baseKey;
+            if (this.decryptingKey != null && this.decryptingKey.Length > 0)
+            {
+                baseKey = MD4(decryptingKey);
+            }
 
             var ciphertext = token.Ticket.EncPart.Cipher;
 
