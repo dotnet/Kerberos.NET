@@ -1,4 +1,4 @@
-﻿using Syfuhs.Security.Kerberos.Crypto;
+using Syfuhs.Security.Kerberos.Crypto;
 using Syfuhs.Security.Kerberos.Entities;
 
 namespace Syfuhs.Security.Kerberos
@@ -33,6 +33,29 @@ namespace Syfuhs.Security.Kerberos
                 case EncryptionType.RC4_HMAC_NT:
                 case EncryptionType.RC4_HMAC_NT_EXP:
                     decryptor = new RC4DecryptedData(NegotiationToken.MechToken.InnerContextToken, key);
+                    break;
+                case EncryptionType.AES128_CTS_HMAC_SHA1_96:
+                case EncryptionType.AES256_CTS_HMAC_SHA1_96:
+                    break;
+            }
+
+            if (decryptor != null)
+            {
+                decryptor.Decrypt();
+            }
+
+            return decryptor;
+        }
+
+        public DecryptedData DecryptWithBaseKey(byte[] basekey)
+        {
+            DecryptedData decryptor = null;
+
+            switch (NegotiationToken.MechToken.InnerContextToken.Ticket.EncPart.EType)
+            {
+                case EncryptionType.RC4_HMAC_NT:
+                case EncryptionType.RC4_HMAC_NT_EXP:
+                    decryptor = new RC4DecryptedData(NegotiationToken.MechToken.InnerContextToken, null, basekey);
                     break;
                 case EncryptionType.AES128_CTS_HMAC_SHA1_96:
                 case EncryptionType.AES256_CTS_HMAC_SHA1_96:
