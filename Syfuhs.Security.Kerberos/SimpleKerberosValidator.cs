@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -10,16 +10,24 @@ namespace Syfuhs.Security.Kerberos
 {
     public class SimpleKerberosValidator
     {
+        public enum KeyType
+        {
+            Plan,
+            Base
+        }
+
         private static readonly HashSet<string> TokenCache = new HashSet<string>();
 
         private readonly byte[] key;
+        private readonly KeyType keyType;
 
         public SimpleKerberosValidator(string key)
-            : this(Encoding.Unicode.GetBytes(key))
+            : this(KeyType.Plan, Encoding.Unicode.GetBytes(key))
         { }
 
-        public SimpleKerberosValidator(byte[] key)
+        public SimpleKerberosValidator(KeyType keyType, byte[] key)
         {
+            this.keyType = keyType;
             this.key = key;
 
             ValidateAfterDecrypt = true;
@@ -52,7 +60,7 @@ namespace Syfuhs.Security.Kerberos
             Logger("Request: ");
             Logger(kerberosRequest.ToString());
 
-            var decryptedToken = kerberosRequest.Decrypt(key);
+            var decryptedToken = this.keyType == KeyType.Plan ? kerberosRequest.Decrypt(key) : kerberosRequest.DecryptWithBaseKey(key);
 
             if (decryptedToken == null)
             {
