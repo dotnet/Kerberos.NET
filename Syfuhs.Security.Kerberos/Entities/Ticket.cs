@@ -25,7 +25,7 @@ namespace Syfuhs.Security.Kerberos.Entities
                         break;
 
                     case 2:
-                        SName = new PrincipalName(node);
+                        SName = new PrincipalName(node, Realm);
                         break;
 
                     case 3:

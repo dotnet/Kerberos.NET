@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Syfuhs.Security.Kerberos.Crypto
 {
+    [DebuggerDisplay("CST {ContextSpecificTag}; T: {Tag}; Count: {Count}")]
     public class Asn1Element : AsnEncodedData
     {
         private readonly int position;
@@ -15,6 +17,7 @@ namespace Syfuhs.Security.Kerberos.Crypto
 
         public Asn1Element(byte[] rawData) : this(rawData, 0)
         {
+            
         }
 
         public Asn1Element(byte[] rawData, int start)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Owin;
 using Syfuhs.Security.Kerberos;
+using Syfuhs.Security.Kerberos.Crypto;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -21,7 +22,7 @@ namespace KerberosMiddlewareSample
 
             // NOTE: ValidateAfterDecrypt is a dangerous flag. It should only be used for samples
 
-            validator = new SimpleKerberosValidator("P@ssw0rd!") { ValidateAfterDecrypt = false };
+            validator = new SimpleKerberosValidator(new KerberosKey("P@ssw0rd!")) { ValidateAfterDecrypt = false };
         }
 
         public async Task Invoke(IDictionary<string, object> environment)

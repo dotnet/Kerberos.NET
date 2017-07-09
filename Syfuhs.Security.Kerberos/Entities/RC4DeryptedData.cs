@@ -1,30 +1,20 @@
 using Syfuhs.Security.Kerberos.Crypto;
 using System;
 using System.Security;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
     public class RC4DecryptedData : DecryptedData
     {
         private readonly KrbApReq token;
-        private readonly byte[] decryptingKey;
+        private readonly KerberosKey decryptingKey;
 
-        public RC4DecryptedData(KrbApReq token, byte[] decryptingKey)
+        public RC4DecryptedData(KrbApReq token, KerberosKey decryptingKey)
         {
             this.token = token;
             this.decryptingKey = decryptingKey;
         }
 
-        private readonly byte[] baseKey;
-        public RC4DecryptedData(KrbApReq token, byte[] decryptingKey, byte[] baseKey)
-        {
-            this.token = token;
-            this.decryptingKey = decryptingKey;
-            this.baseKey = baseKey;
-        }
-        
         private static byte[] GetSalt(int usage)
         {
             switch (usage)
@@ -40,28 +30,29 @@ namespace Syfuhs.Security.Kerberos.Entities
                     break;
             }
 
-            byte[] salt = new byte[4];
-            salt[0] = (byte)(usage & 0xff);
-            salt[1] = (byte)((usage >> 8) & 0xff);
-            salt[2] = (byte)((usage >> 16) & 0xff);
-            salt[3] = (byte)((usage >> 24) & 0xff);
+            var salt = new byte[4]
+            {
+                (byte)(usage & 0xff),
+                (byte)((usage >> 8) & 0xff),
+                (byte)((usage >> 16) & 0xff),
+                (byte)((usage >> 24) & 0xff)
+            };
+
             return salt;
         }
 
         private const int HashSize = 16;
         private const int ConfounderSize = 8;
 
+        private static readonly IEncryptor MD4Encryptor = new MD4Encryptor();
+
         public override void Decrypt()
         {
-            var baseKey = this.baseKey;
-            if (this.decryptingKey != null && this.decryptingKey.Length > 0)
-            {
-                baseKey = MD4(decryptingKey);
-            }
-
             var ciphertext = token.Ticket.EncPart.Cipher;
 
-            byte[] output = Decrypt(baseKey, ciphertext, KeyUsage.KU_TICKET);
+            var key = decryptingKey.GetKey(MD4Encryptor);
+
+            var output = Decrypt(key, ciphertext, KeyUsage.KU_TICKET);
 
             Ticket = new EncTicketPart(new Asn1Element(output));
 
@@ -76,27 +67,25 @@ namespace Syfuhs.Security.Kerberos.Entities
 
         private static byte[] Decrypt(byte[] k1, byte[] ciphertext, KeyUsage keyType)
         {
-            // get the salt using key usage
-            byte[] salt = GetSalt((int)keyType);
+            var salt = GetSalt((int)keyType);
 
-            // compute K2 using K1
-            byte[] k2 = HMAC(k1, salt);
+            var k2 = KerberosHash.HMACMD5(k1, salt);
 
-            byte[] checksum = new byte[HashSize];
+            var checksum = new byte[HashSize];
+
             Buffer.BlockCopy(ciphertext, 0, checksum, 0, HashSize);
 
-            byte[] k3 = HMAC(k2, checksum);
+            var k3 = KerberosHash.HMACMD5(k2, checksum);
 
-            byte[] ciphertextOffset = new byte[ciphertext.Length - HashSize];
+            var ciphertextOffset = new byte[ciphertext.Length - HashSize];
 
             Buffer.BlockCopy(ciphertext, HashSize, ciphertextOffset, 0, ciphertextOffset.Length);
 
-            //0 + HashSize, ciphertext.Length - HashSize
-            byte[] plaintext = RC4.Decrypt(k3, ciphertextOffset);
+            var plaintext = RC4.Decrypt(k3, ciphertextOffset);
 
-            byte[] calculatedHmac = HMAC(k2, plaintext);
+            var calculatedHmac = KerberosHash.HMACMD5(k2, plaintext);
 
-            bool invalidChecksum = false;
+            var invalidChecksum = false;
 
             if (calculatedHmac.Length >= HashSize)
             {
@@ -114,34 +103,40 @@ namespace Syfuhs.Security.Kerberos.Entities
                 throw new SecurityException("Invalid Checksum");
             }
 
-            byte[] output = new byte[plaintext.Length - ConfounderSize];
+            var output = new byte[plaintext.Length - ConfounderSize];
+
             Buffer.BlockCopy(plaintext, ConfounderSize, output, 0, output.Length);
+
             return output;
         }
+    }
 
-        internal static byte[] HMAC(string password, byte[] data)
+    internal class MD4Encryptor : IEncryptor
+    {
+        public int BlockSize { get { throw new NotSupportedException(); } }
+
+        public int KeyInputSize { get { throw new NotSupportedException(); } }
+
+        public int KeySize { get { throw new NotSupportedException(); } }
+
+        public void Decrypt(byte[] ke, byte[] iv, byte[] tmpEnc)
         {
-            var key = MD4(password);
-
-            return HMAC(key, data);
+            throw new NotSupportedException();
         }
 
-        private static byte[] HMAC(byte[] key, byte[] data)
+        public void Encrypt(byte[] key, byte[] ki)
         {
-            using (HMACMD5 hmac = new HMACMD5(key))
-            {
-                return hmac.ComputeHash(data);
-            }
+            throw new NotSupportedException();
         }
 
-        private static byte[] MD4(byte[] key)
+        public void Encrypt(byte[] ke, byte[] iv, byte[] tmpEnc)
         {
-            return new MD4().ComputeHash(key);
+            throw new NotSupportedException();
         }
 
-        private static byte[] MD4(string password)
+        public byte[] String2Key(KerberosKey key)
         {
-            return new MD4().ComputeHash(Encoding.Unicode.GetBytes(password));
+            return KerberosHash.MD4(key.Password);
         }
     }
 }

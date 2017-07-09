@@ -9,6 +9,7 @@ namespace Syfuhs.Security.Kerberos.Entities
         public const string KerberosV5Legacy = "1.2.840.48018.1.2.2";
         public const string KerberosV5 = "1.2.840.113554.1.2.2";
         public const string NTLM = "1.3.6.1.4.1.311.2.2.10";
+        public const string NEGOEX = "1.3.6.1.4.1.311.2.2.30";
 
         public const int ContextTag = 6;
 
@@ -37,6 +38,9 @@ namespace Syfuhs.Security.Kerberos.Entities
 
                 case NTLM:
                     return "NTLM";
+
+                case NEGOEX:
+                    return "NegoEx";
             }
 
             return "";

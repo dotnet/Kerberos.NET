@@ -1,12 +1,13 @@
 ﻿using Syfuhs.Security.Kerberos.Crypto;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
     public class PrincipalName : Asn1ValueType
     {
-        public PrincipalName(Asn1Element element)
+        public PrincipalName(Asn1Element element, string realm)
         {
             var childNode = element[0];
 
@@ -25,15 +26,28 @@ namespace Syfuhs.Security.Kerberos.Entities
                         break;
 
                     case 1:
+                        var sb = new StringBuilder();
+
                         for (int l = 0; l < listNode.Count; l++)
                         {
-                            Names.Add(listNode[l].AsString());
+                            sb.Append(listNode[l].AsString());
+
+                            if (l < listNode.Count - 1)
+                            {
+                                sb.Append("/");
+                            }
                         }
+
+                        Names.Add(sb.ToString());
 
                         break;
                 }
             }
+
+            Realm = realm;
         }
+
+        public string Realm { get; private set; }
 
         private List<string> names;
 

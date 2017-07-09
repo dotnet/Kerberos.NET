@@ -1,34 +1,29 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using Syfuhs.Security.Kerberos.Entities;
 using System.Security;
+using Syfuhs.Security.Kerberos.Crypto;
+using System.Collections.Generic;
 
 namespace Syfuhs.Security.Kerberos
 {
     public class SimpleKerberosValidator
     {
-        public enum KeyType
-        {
-            Plan,
-            Base
-        }
+        private readonly ITicketCacheValidator TokenCache;
 
-        private static readonly HashSet<string> TokenCache = new HashSet<string>();
+        private readonly KerberosKey key;
 
-        private readonly byte[] key;
-        private readonly KeyType keyType;
-
-        public SimpleKerberosValidator(string key)
-            : this(KeyType.Plan, Encoding.Unicode.GetBytes(key))
+        public SimpleKerberosValidator(byte[] key, ITicketCacheValidator ticketCache = null)
+            : this(new KerberosKey(key), ticketCache)
         { }
 
-        public SimpleKerberosValidator(KeyType keyType, byte[] key)
+
+        public SimpleKerberosValidator(KerberosKey key, ITicketCacheValidator ticketCache = null)
         {
-            this.keyType = keyType;
             this.key = key;
+
+            TokenCache = ticketCache ?? new SimpleTicketCacheValidator();
 
             ValidateAfterDecrypt = true;
         }
@@ -53,14 +48,14 @@ namespace Syfuhs.Security.Kerberos
             return Validate(requestBytes);
         }
 
-        private ClaimsIdentity Validate(byte[] requestBytes)
+        public ClaimsIdentity Validate(byte[] requestBytes)
         {
             var kerberosRequest = KerberosRequest.Parse(requestBytes);
 
             Logger("Request: ");
             Logger(kerberosRequest.ToString());
 
-            var decryptedToken = this.keyType == KeyType.Plan ? kerberosRequest.Decrypt(key) : kerberosRequest.DecryptWithBaseKey(key);
+            var decryptedToken = kerberosRequest.Decrypt(key);
 
             if (decryptedToken == null)
             {
@@ -81,11 +76,31 @@ namespace Syfuhs.Security.Kerberos
 
         private static ClaimsIdentity ConvertTicket(EncTicketPart ticket)
         {
+            var claims = new List<Claim>();
+
+            foreach (var authz in ticket.AuthorizationData.Authorizations)
+            {
+                if (authz.PrivilegedAttributeCertificate != null)
+                {
+                    MergeAttributes(ticket, authz.PrivilegedAttributeCertificate, claims);
+                }
+            }
+
+            return new ClaimsIdentity(claims, "password", ClaimTypes.NameIdentifier, ClaimTypes.Role);
+        }
+
+        private static void MergeAttributes(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
+        {
+            claims.Add(new Claim(ClaimTypes.Sid, pac.LogonInfo.UserSid.Value));
+            claims.Add(new Claim(ClaimTypes.GivenName, pac.LogonInfo.UserDisplayName));
+
             var names = ticket.CName.Names.Select(n => $"{n}@{ticket.CRealm.ToLowerInvariant()}");
+            claims.AddRange(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)));
 
-            // TODO: parse authorization data if present and expand PAC data
-
-            return new ClaimsIdentity(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)), "password", ClaimTypes.NameIdentifier, ClaimTypes.Role);
+            foreach (var g in pac.LogonInfo.GroupSids)
+            {
+                claims.Add(new Claim(ClaimTypes.GroupSid, g.Value));
+            }
         }
 
         protected virtual void Validate(DecryptedData decryptedToken)

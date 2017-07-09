@@ -23,7 +23,7 @@ namespace Syfuhs.Security.Kerberos.Entities
                         Realm = node[0].AsString();
                         break;
                     case 2:
-                        CName = new PrincipalName(node);
+                        CName = new PrincipalName(node, Realm);
                         break;
                     case 3:
                         Checksum = node[0].Value;
@@ -40,16 +40,16 @@ namespace Syfuhs.Security.Kerberos.Entities
                     case 7:
                         SequenceNumber = node[0].AsLong();
                         break;
-                    case 8: // this is not right. its ASN.1 plus vendor-specific data
-                        var parent = node[0];
+                    //case 8: // this is not right. its ASN.1 plus vendor-specific data
+                    //    var parent = node[0];
 
-                        for (var p = 0; p < parent.Count; p++)
-                        {
-                            var child = parent[p];
+                    //    for (var p = 0; p < parent.Count; p++)
+                    //    {
+                    //        var child = parent[p];
 
-                            Authorizations.Add(new AuthorizationData(parent));
-                        }
-                        break;
+                    //        Authorizations.Add(new AuthorizationData(parent));
+                    //    }
+                    //    break;
                 }
             }
         }
@@ -70,9 +70,9 @@ namespace Syfuhs.Security.Kerberos.Entities
 
         public long SequenceNumber { get; private set; }
 
-        private List<AuthorizationData> authorizations;
+        //private List<AuthorizationData> authorizations;
 
-        public List<AuthorizationData> Authorizations { get { return authorizations ?? (authorizations = new List<AuthorizationData>()); } }
+        //public List<AuthorizationData> Authorizations { get { return authorizations ?? (authorizations = new List<AuthorizationData>()); } }
 
         public override string ToString()
         {

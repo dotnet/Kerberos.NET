@@ -22,7 +22,7 @@ namespace Syfuhs.Security.Kerberos.Entities
                         break;
 
                     case 2:
-                        MechToken = new InitialContextToken(element);
+                        MechToken = new InitialContextToken(element[0], MechTypes);
                         break;
                 }
             }
@@ -36,7 +36,7 @@ namespace Syfuhs.Security.Kerberos.Entities
 
                 for (var j = 0; j < element.Count; j++)
                 {
-                    var childNode = element[i];
+                    var childNode = element[j];
 
                     if (childNode.ContextSpecificTag == MechType.ContextTag)
                     {
@@ -45,7 +45,7 @@ namespace Syfuhs.Security.Kerberos.Entities
                 }
             }
 
-            if (MechTypes.Any(m => m.Oid == MechType.NTLM))
+            if (MechTypes.Count == 1 && MechTypes.Any(m => m.Oid == MechType.NTLM))
             {
                 throw new NotSupportedException("NTLM is not supported");
             }

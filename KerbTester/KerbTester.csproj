@@ -50,6 +50,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Syfuhs.Security.Kerberos.Aes\Syfuhs.Security.Kerberos.Aes.csproj">
+      <Project>{218511d9-4c8c-4805-b16f-bae0aeb25b23}</Project>
+      <Name>Syfuhs.Security.Kerberos.Aes</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Syfuhs.Security.Kerberos\Syfuhs.Security.Kerberos.csproj">
       <Project>{d9cfb745-d5c9-4711-8e3f-781991230fc1}</Project>
       <Name>Syfuhs.Security.Kerberos</Name>

@@ -1,14 +1,41 @@
 ﻿using Syfuhs.Security.Kerberos.Crypto;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
+    [Flags]
+    public enum TicketFlags : long
+    {
+        None = -1,
+        Forwardable = 0x40000000,
+        Forwarded = 0x20000000,
+        Proxiable = 0x10000000,
+        Proxy = 0x08000000,
+        MayPostDate = 0x04000000,
+        PostDated = 0x02000000,
+        Invalid = 0x01000000,
+        Renewable = 0x00800000,
+        Initial = 0x00400000,
+        PreAuthenticated = 0x00200000,
+        HardwareAuthentication = 0x00100000,
+        TransitPolicyChecked = 0x00080000,
+        OkAsDelegate = 0x00040000,
+        EncryptedPreAuthentication = 0x00010000,
+        Anonymous = 0x00008000
+    }
+
     public class EncTicketPart : Asn1ValueType
     {
         public EncTicketPart(Asn1Element asn1Element)
         {
             var childNode = asn1Element[0];
+
+            if (childNode == null)
+            {
+                return;
+            }
 
             for (var i = 0; i < childNode.Count; i++)
             {
@@ -17,7 +44,7 @@ namespace Syfuhs.Security.Kerberos.Entities
                 switch (node.ContextSpecificTag)
                 {
                     case 0:
-                        TicketFlags = node[0].AsLong();
+                        TicketFlags = (TicketFlags)node[0].AsLong();
                         break;
                     case 1:
                         EncryptionKey = node[0][1][0].Value;
@@ -26,12 +53,12 @@ namespace Syfuhs.Security.Kerberos.Entities
                         CRealm = node[0].AsString();
                         break;
                     case 3:
-                        CName = new PrincipalName(node);
+                        CName = new PrincipalName(node, CRealm);
                         break;
                     case 4:
                         for (int l = 0; l < node.Count; l++)
                         {
-                            var t = node[l];
+                            var t = new Asn1Element(node.Value);
                             Transited.Add(new TransitedEncoding(t));
                         }
                         break;
@@ -48,7 +75,7 @@ namespace Syfuhs.Security.Kerberos.Entities
                         RenewTill = node[0].AsDateTimeOffset();
                         break;
                     case 9:
-                        HostAddress = node[0].AsLong();
+                        HostAddresses = node[0].AsLong();
                         break;
                     case 10:
 
@@ -61,7 +88,7 @@ namespace Syfuhs.Security.Kerberos.Entities
             }
         }
 
-        public long TicketFlags { get; private set; }
+        public TicketFlags TicketFlags { get; private set; }
 
         public byte[] EncryptionKey { get; private set; }
 
@@ -81,7 +108,7 @@ namespace Syfuhs.Security.Kerberos.Entities
 
         public DateTimeOffset RenewTill { get; private set; }
 
-        public long HostAddress { get; private set; }
+        public long HostAddresses { get; private set; }
 
         public AuthorizationData AuthorizationData { get; private set; }
 
