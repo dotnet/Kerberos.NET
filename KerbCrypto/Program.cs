@@ -3,6 +3,7 @@ using Syfuhs.Security.Kerberos.Aes;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace KerbCrypto
 {
@@ -45,10 +46,22 @@ namespace KerbCrypto
                 {
                     throw new InvalidDataException("Could not decrypt token");
                 }
+
+                foreach (var c in result.Claims.OrderBy(c => c.Type))
+                {
+                    W($"{c.Type}: {c.Value}");
+                }
+
+                W("");
+
+                ;
             }
+
+            ;
         }
 
-        private static void W(string w, ConsoleColor color) {
+        private static void W(string w, ConsoleColor color)
+        {
             Console.ForegroundColor = color;
 
             W(w);
@@ -59,7 +72,6 @@ namespace KerbCrypto
         private static void W(string w)
         {
             Console.WriteLine(w);
-            Console.WriteLine();
         }
     }
 }

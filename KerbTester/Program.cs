@@ -64,19 +64,20 @@ namespace KerbTester
 
                 foreach (var c in identity.Claims)
                 {
-                    W($"{c.Value}: {c.Type}");
+                    W($"{c.Type}: {c.Value}");
                 }
             }
             catch (Exception ex)
             {
                 W(ex.Message);
             }
+
+            ;
         }
 
         private static void W(string w)
         {
             Console.WriteLine(w);
-            Console.WriteLine();
         }
 
         private static void ShowHelp()

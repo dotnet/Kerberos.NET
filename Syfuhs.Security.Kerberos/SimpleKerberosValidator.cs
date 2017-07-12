@@ -5,6 +5,7 @@ using Syfuhs.Security.Kerberos.Entities;
 using System.Security;
 using Syfuhs.Security.Kerberos.Crypto;
 using System.Collections.Generic;
+using Syfuhs.Security.Kerberos.Entities.Authorization;
 
 namespace Syfuhs.Security.Kerberos
 {
@@ -62,7 +63,6 @@ namespace Syfuhs.Security.Kerberos
                 return null;
             }
 
-            Logger("\r\n");
             Logger("Ticket: ");
             Logger(decryptedToken.ToString());
 
@@ -92,14 +92,29 @@ namespace Syfuhs.Security.Kerberos
         private static void MergeAttributes(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
         {
             claims.Add(new Claim(ClaimTypes.Sid, pac.LogonInfo.UserSid.Value));
-            claims.Add(new Claim(ClaimTypes.GivenName, pac.LogonInfo.UserDisplayName));
+
+            if (!string.IsNullOrWhiteSpace(pac.LogonInfo.UserDisplayName))
+            {
+                claims.Add(new Claim(ClaimTypes.GivenName, pac.LogonInfo.UserDisplayName));
+            }
 
             var names = ticket.CName.Names.Select(n => $"{n}@{ticket.CRealm.ToLowerInvariant()}");
+
             claims.AddRange(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)));
 
             foreach (var g in pac.LogonInfo.GroupSids)
             {
                 claims.Add(new Claim(ClaimTypes.GroupSid, g.Value));
+
+                if (g.IsEqualDomainSid(pac.LogonInfo.DomainSid))
+                {
+                    var friendly = g.GetFriendlyName();
+
+                    if (friendly != g.Value)
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, friendly));
+                    }
+                }
             }
         }
 

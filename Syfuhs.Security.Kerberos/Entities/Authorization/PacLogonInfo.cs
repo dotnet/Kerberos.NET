@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Principal;
 
 namespace Syfuhs.Security.Kerberos.Entities.Authorization
@@ -79,8 +80,8 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             LogonCount = pacStream.ReadShort();
             BadPasswordCount = pacStream.ReadShort();
 
-            UserSid = pacStream.ReadId();
-            GroupSid = pacStream.ReadId();
+            var userSid = pacStream.ReadId();
+            var groupSid = pacStream.ReadId();
 
             // Groups information
             var groupCount = pacStream.ReadInt();
@@ -124,42 +125,97 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             HomeDrive = homeDrive.ReadString(pacStream);
 
             // Groups data
-            GroupSids = ParseAttributes(pacStream, groupCount, groupPointer);
+            var groupSids = ParseAttributes(pacStream, groupCount, groupPointer);
 
             // Server related strings
             ServerName = serverNameString.ReadString(pacStream);
             DomainName = domainNameString.ReadString(pacStream);
 
-            SecurityIdentifier domainId = null;
-
             if (domainIdPointer != 0)
             {
-                domainId = pacStream.readSid();
+                DomainSid = pacStream.ReadSid();
             }
 
-            var extraSidAtts = new PacAttribute[0];
+            UserSid = Merge(userSid, DomainSid);
+            GroupSid = Merge(groupSid, DomainSid);
+
+            GroupSids = groupSids.Select(g => Merge(g, DomainSid)).ToList();
 
             if (UserFlags.HasFlag(UserFlags.LOGON_EXTRA_SIDS))
             {
-                extraSidAtts = ParseExtraSids(pacStream, extraSidCount, extraSidPointer);
+                ExtraSids = ParseExtraSids(pacStream, extraSidCount, extraSidPointer).Select(e => Merge(e.Id, DomainSid)).ToList();
             }
 
             if (resourceDomainIdPointer != 0)
             {
-                ResourceDomainSid = pacStream.readSid();
+                ResourceDomainSid = pacStream.ReadSid();
             }
 
             if (UserFlags.HasFlag(UserFlags.LOGON_RESOURCE_GROUPS))
             {
-                ResourceGroups = ParseAttributes(pacStream, resourceGroupCount, resourceGroupPointer, attrFirst: false);
+                ResourceGroups = ParseAttributes(
+                    pacStream,
+                    resourceGroupCount,
+                    resourceGroupPointer
+                ).Select(g => Merge(g, DomainSid)).ToList();
             }
         }
 
-        private static PacAttribute[] ParseExtraSids(PacBinaryReader pacStream, int extraSidCount, int extraSidPointer)
+        private class SidParts
+        {
+            public int Revision { get; set; }
+
+            public int Count { get; set; }
+
+            public byte[] Authority { get; set; }
+
+            public byte[] Subs { get; set; }
+
+            public SidParts() { }
+
+            public SidParts(SecurityIdentifier sid)
+            {
+                var bytes = new byte[sid.BinaryLength];
+                sid.GetBinaryForm(bytes, 0);
+
+                Revision = bytes[0];
+                Count = bytes[1];
+                Authority = new byte[6];
+
+                Buffer.BlockCopy(bytes, 2, Authority, 0, 6);
+                Subs = new byte[bytes.Length - 8];
+
+                Buffer.BlockCopy(bytes, 8, Subs, 0, bytes.Length - 8);
+            }
+        }
+
+        private SecurityIdentifier Merge(SecurityIdentifier ridId, SecurityIdentifier sidId)
+        {
+            var rid = new SidParts(ridId);
+            var sid = new SidParts(sidId);
+
+            var count = sid.Count + rid.Count;
+            var subs = new byte[count * 4];
+
+            Buffer.BlockCopy(sid.Subs, 0, subs, 0, sid.Subs.Length);
+            Buffer.BlockCopy(rid.Subs, 0, subs, sid.Subs.Length, rid.Subs.Length);
+
+            var bytes = new byte[8 + count * 4];
+
+            bytes[0] = (byte)sid.Revision;
+            bytes[1] = (byte)count;
+
+            Buffer.BlockCopy(sid.Authority, 0, bytes, 2, 6);
+            Buffer.BlockCopy(subs, 0, bytes, 8, subs.Length);
+
+            return new SecurityIdentifier(bytes, 0);
+        }
+
+        private static PacSid[] ParseExtraSids(PacBinaryReader pacStream, int extraSidCount, int extraSidPointer)
         {
             if (extraSidPointer == 0)
             {
-                return new PacAttribute[0];
+                return new PacSid[0];
             }
 
             int realExtraSidCount = pacStream.ReadInt();
@@ -169,15 +225,15 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
                 throw new InvalidDataException($"Expected Sid count {extraSidCount} doesn't match actual sid count {realExtraSidCount}");
             }
 
-            var extraSidAtts = new PacAttribute[extraSidCount];
+            var extraSidAtts = new PacSid[extraSidCount];
 
-            int[] pointers = new int[extraSidCount];
-            int[] attributes = new int[extraSidCount];
+            var pointers = new int[extraSidCount];
+            var attributes = new SidAttributes[extraSidCount];
 
             for (int i = 0; i < extraSidCount; i++)
             {
                 pointers[i] = pacStream.ReadInt();
-                attributes[i] = pacStream.ReadInt();
+                attributes[i] = (SidAttributes)pacStream.ReadUnsignedInt();
             }
 
             for (int i = 0; i < extraSidCount; i++)
@@ -186,16 +242,16 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
 
                 if (pointers[i] != 0)
                 {
-                    sid = pacStream.readSid();
+                    sid = pacStream.ReadSid();
                 }
 
-                extraSidAtts[i] = new PacAttribute(sid, attributes[i]);
+                extraSidAtts[i] = new PacSid(sid, attributes[i]);
             }
 
             return extraSidAtts;
         }
 
-        private static IEnumerable<SecurityIdentifier> ParseAttributes(PacBinaryReader pacStream, int count, int pointer, bool attrFirst = true)
+        private static IEnumerable<SecurityIdentifier> ParseAttributes(PacBinaryReader pacStream, int count, int pointer)
         {
             var attributes = new List<SecurityIdentifier>();
 
@@ -215,16 +271,8 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             {
                 pacStream.Align(4);
 
-                if (attrFirst)
-                {
-                    pacStream.ReadInt();
-                    attributes.Add(pacStream.ReadId());
-                }
-                else
-                {
-                    attributes.Add(pacStream.ReadId());
-                    pacStream.ReadInt();
-                }
+                attributes.Add(pacStream.ReadId());
+                var attr = (SidAttributes)pacStream.ReadInt();
             }
 
             return attributes;
@@ -268,8 +316,6 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
 
         public IEnumerable<SecurityIdentifier> GroupSids { get; private set; }
 
-        public IEnumerable<SecurityIdentifier> ResourceGroupSids { get; private set; }
-
         public IEnumerable<SecurityIdentifier> ExtraSids { get; private set; }
 
         public UserAccountControlFlags UserAccountControl { get; private set; }
@@ -287,5 +333,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
         public SecurityIdentifier ResourceDomainSid { get; private set; }
 
         public IEnumerable<SecurityIdentifier> ResourceGroups { get; private set; }
+
+        public SecurityIdentifier DomainSid { get; private set; }
     }
 }

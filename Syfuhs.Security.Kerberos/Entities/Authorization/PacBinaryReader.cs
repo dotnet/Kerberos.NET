@@ -134,7 +134,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             return new SecurityIdentifier(sidBytes, 0);
         }
 
-        public SecurityIdentifier readSid()
+        public SecurityIdentifier ReadSid()
         {
             var sidSize = ReadInt();
 

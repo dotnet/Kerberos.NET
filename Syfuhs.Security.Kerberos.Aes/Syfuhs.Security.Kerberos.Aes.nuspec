@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>Kerberos.NET</id>
+    <id>Kerberos.NET-AES</id>
     <version>$version$</version>
     <title>$title$</title>
     <authors>Steve Syfuhs</authors>
@@ -9,9 +9,13 @@
     <licenseUrl>https://github.com/SteveSyfuhs/Kerberos.NET</licenseUrl>
     <projectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>A Managed Code validator for Kerberos tickets</description>
-    <releaseNotes>Fixed PAC decoder to properly handle SIDs that are actually RIDs.</releaseNotes>
+    <description>This package is used to add support for the AES algorithm to Kerberos.NET</description>
+    <releaseNotes>Added support for the AES algorithm and added a PAC decoder.</releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>security kerberos</tags>
+    <dependencies>
+        <dependency id="Syfuhs.Security.Kerberos" version="1.1" />
+        <dependency id="BouncyCastle" version="1.8.1" />
+    </dependencies>
   </metadata>
 </package>
