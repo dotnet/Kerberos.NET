@@ -67,6 +67,7 @@ There are samples!
 # The TODO List
 Just a list of things that should be done, but aren't yet.
 
+ - Support [keytab](https://web.mit.edu/kerberos/krb5-latest/doc/basic/keytab_def.html) files
  - Replay detection is weak. The default `ITicketCacheValidator` needs to be a proper LMU cache so older entries are automatically cleaned up. The detection should also probably happen after a partial decoding so we can use the ticket's own expiry to remove itself from the cache. The validator should be simple enough that it can be backed by shared storage for clustered environments.
  - Validation and transformation isn't extensible. It just dumps a ClaimsIdentity with a fairly arbitrary list of claims from the ticket. You should be able to easily get whatever information you want out of the token. Validation also shouldn't be disabled so easily (it's currently just a bool flag on the validator class).
  - The validation process should be vetted by someone other than the developer.
