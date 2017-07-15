@@ -8,18 +8,18 @@ namespace Syfuhs.Security.Kerberos
 {
     public class KerberosRequest
     {
-        private static readonly Dictionary<EncryptionType, Func<KrbApReq, KerberosKey, DecryptedData>> Decryptors
-            = new Dictionary<EncryptionType, Func<KrbApReq, KerberosKey, DecryptedData>>();
+        private static readonly Dictionary<EncryptionType, Func<KrbApReq, DecryptedData>> Decryptors
+            = new Dictionary<EncryptionType, Func<KrbApReq, DecryptedData>>();
 
-        public static void RegisterDecryptor(EncryptionType type, Func<KrbApReq, KerberosKey, DecryptedData> func)
+        public static void RegisterDecryptor(EncryptionType type, Func<KrbApReq, DecryptedData> func)
         {
             Decryptors[type] = func;
         }
 
         static KerberosRequest()
         {
-            RegisterDecryptor(EncryptionType.RC4_HMAC_NT, (token, key) => new RC4DecryptedData(token, key));
-            RegisterDecryptor(EncryptionType.RC4_HMAC_NT_EXP, (token, key) => new RC4DecryptedData(token, key));
+            RegisterDecryptor(EncryptionType.RC4_HMAC_NT, (token) => new RC4DecryptedData(token));
+            RegisterDecryptor(EncryptionType.RC4_HMAC_NT_EXP, (token) => new RC4DecryptedData(token));
         }
 
         public KerberosRequest(byte[] data)
@@ -58,34 +58,34 @@ namespace Syfuhs.Security.Kerberos
             return ticket;
         }
 
-        public DecryptedData Decrypt(KerberosKey key)
+        public DecryptedData Decrypt(KeyTable keytab)
         {
             if (NegotiationToken != null)
             {
-                return DecryptNegotiate(NegotiationToken, key);
+                return DecryptNegotiate(NegotiationToken, keytab);
             }
 
             if (Request != null)
             {
-                return DecryptKerberos(Request, key);
+                return DecryptKerberos(Request, keytab);
             }
 
             return null;
         }
 
-        private DecryptedData DecryptKerberos(KrbApReq request, KerberosKey key)
+        private DecryptedData DecryptKerberos(KrbApReq request, KeyTable keytab)
         {
-            return Decrypt(key, request);
+            return Decrypt(request, keytab);
         }
 
-        private static DecryptedData DecryptNegotiate(NegTokenInit negotiationToken, KerberosKey key)
+        private static DecryptedData DecryptNegotiate(NegTokenInit negotiationToken, KeyTable keytab)
         {
             var token = negotiationToken?.MechToken?.InnerContextToken;
 
-            return Decrypt(key, token);
+            return Decrypt(token, keytab);
         }
 
-        private static DecryptedData Decrypt(KerberosKey key, KrbApReq token)
+        private static DecryptedData Decrypt(KrbApReq token, KeyTable keytab)
         {
             if (token?.Ticket?.EncPart == null)
             {
@@ -94,16 +94,16 @@ namespace Syfuhs.Security.Kerberos
 
             DecryptedData decryptor = null;
 
-            Func<KrbApReq, KerberosKey, DecryptedData> func = null;
+            Func<KrbApReq, DecryptedData> func = null;
 
             if (Decryptors.TryGetValue(token.Ticket.EncPart.EType, out func) && func != null)
             {
-                decryptor = func(token, key);
+                decryptor = func(token);
             }
 
             if (decryptor != null)
             {
-                decryptor.Decrypt();
+                decryptor.Decrypt(keytab);
             }
 
             return decryptor;

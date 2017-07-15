@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using AES = System.Security.Cryptography.Aes;
 
@@ -48,37 +47,59 @@ namespace Syfuhs.Security.Kerberos.Crypto
                 SwapLastTwoBlocks(encrypted);
             }
 
-            return encrypted.Take(plainText.Length).ToArray();
+            var result = new byte[plainText.Length];
+
+            Buffer.BlockCopy(encrypted, 0, result, 0, plainText.Length);
+
+            return result;
+        }
+
+        private static AES algorithm;
+        private static readonly object _lockAlgorithm = new object();
+
+        private static AES Algorithm
+        {
+            get
+            {
+                if (algorithm == null)
+                {
+                    lock (_lockAlgorithm)
+                    {
+                        if (algorithm == null)
+                        {
+                            algorithm = new AesManaged();
+                            algorithm.Padding = PaddingMode.None;
+                            algorithm.Mode = CipherMode.CBC;
+                        }
+                    }
+                }
+
+                return algorithm;
+            }
         }
 
         private static byte[] Transform(byte[] data, byte[] key, byte[] iv, bool encrypt)
         {
-            using (var algorithm = AES.Create())
+            ICryptoTransform transform;
+
+            if (encrypt)
             {
-                algorithm.Padding = PaddingMode.None;
-                algorithm.Mode = CipherMode.CBC;
+                transform = Algorithm.CreateEncryptor(key, iv);
+            }
+            else
+            {
+                transform = Algorithm.CreateDecryptor(key, iv);
+            }
 
-                ICryptoTransform transform;
-
-                if (encrypt)
+            using (transform)
+            using (var stream = new MemoryStream())
+            {
+                using (var cryptoStream = new CryptoStream(stream, transform, CryptoStreamMode.Write))
                 {
-                    transform = algorithm.CreateEncryptor(key, iv);
-                }
-                else
-                {
-                    transform = algorithm.CreateDecryptor(key, iv);
+                    cryptoStream.Write(data, 0, data.Length);
                 }
 
-                using (transform)
-                using (var stream = new MemoryStream())
-                {
-                    using (var cryptoStream = new CryptoStream(stream, transform, CryptoStreamMode.Write))
-                    {
-                        cryptoStream.Write(data, 0, data.Length);
-                    }
-
-                    return stream.ToArray();
-                }
+                return stream.ToArray();
             }
         }
 
@@ -129,13 +150,25 @@ namespace Syfuhs.Security.Kerberos.Crypto
 
                 SwapLastTwoBlocks(data);
 
-                return Transform(data, key, iv, false).Take(cipherText.Length).ToArray();
+                var transformed = Transform(data, key, iv, false);
+
+                var result = new byte[cipherText.Length];
+
+                Buffer.BlockCopy(transformed, 0, result, 0, cipherText.Length);
+
+                return result;
             }
         }
 
         private static byte[] Depad(byte[] cipherText, int padSize)
         {
-            return cipherText.Skip(cipherText.Length - 32 + padSize).Take(16).ToArray();
+            var result = new byte[16];
+
+            var offset = cipherText.Length - 32 + padSize;
+
+            Buffer.BlockCopy(cipherText, offset, result, 0, 16);
+
+            return result;
         }
 
         private static void SwapLastTwoBlocks(byte[] data)

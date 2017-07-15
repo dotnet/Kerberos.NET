@@ -5,13 +5,11 @@ using System.Text;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
-    public class PrincipalName : Asn1ValueType
+    public class PrincipalName
     {
         public PrincipalName(Asn1Element element, string realm)
         {
             var childNode = element[0];
-
-            Asn1Value = childNode.Value;
 
             for (var i = 0; i < childNode.Count; i++)
             {
@@ -45,6 +43,13 @@ namespace Syfuhs.Security.Kerberos.Entities
             }
 
             Realm = realm;
+        }
+
+        public PrincipalName(PrincipalNameType nameType, string realm, IEnumerable<string> names)
+        {
+            NameType = nameType;
+            Realm = realm;
+            this.names = new List<string>(names);
         }
 
         public string Realm { get; private set; }

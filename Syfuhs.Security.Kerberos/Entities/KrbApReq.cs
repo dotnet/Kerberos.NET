@@ -2,12 +2,10 @@
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
-    public class KrbApReq : Asn1ValueType
+    public class KrbApReq
     {
         public KrbApReq(Asn1Element childNode)
         {
-            Asn1Value = childNode.Value;
-
             for (var i = 0; i < childNode.Count; i++)
             {
                 var node = childNode[i];

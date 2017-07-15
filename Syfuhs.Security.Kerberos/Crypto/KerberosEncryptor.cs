@@ -29,7 +29,7 @@ namespace Syfuhs.Security.Kerberos.Crypto
 
         protected virtual byte[] MakeChecksum(byte[] key, byte[] data, int hashSize)
         {
-            var hash = KerberosHash.HMAC(hasher, key, data);
+            var hash = KerberosHash.KerberosHMAC(hasher, key, data);
 
             var output = new byte[hashSize];
 

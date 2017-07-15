@@ -3,13 +3,11 @@ using System;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
-    public class EncryptedData : Asn1ValueType
+    public class EncryptedData
     {
-        public EncryptedData(Asn1Element asn1Element)
+        public EncryptedData(Asn1Element element)
         {
-            Asn1Value = asn1Element.Value;
-
-            var childNode = asn1Element[0];
+            var childNode = element[0];
 
             for (var i = 0; i < childNode.Count; i++)
             {

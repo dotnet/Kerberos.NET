@@ -7,12 +7,10 @@ namespace Syfuhs.Security.Kerberos.Entities
     public class RC4DecryptedData : DecryptedData
     {
         private readonly KrbApReq token;
-        private readonly KerberosKey decryptingKey;
-
-        public RC4DecryptedData(KrbApReq token, KerberosKey decryptingKey)
+        
+        public RC4DecryptedData(KrbApReq token)
         {
             this.token = token;
-            this.decryptingKey = decryptingKey;
         }
 
         private static byte[] GetSalt(int usage)
@@ -46,13 +44,13 @@ namespace Syfuhs.Security.Kerberos.Entities
 
         private static readonly IEncryptor MD4Encryptor = new MD4Encryptor();
 
-        public override void Decrypt()
+        public override void Decrypt(KeyTable keytab)
         {
             var ciphertext = token.Ticket.EncPart.Cipher;
 
-            var key = decryptingKey.GetKey(MD4Encryptor);
+            KerberosKey key = keytab.GetKey(token);
 
-            var output = Decrypt(key, ciphertext, KeyUsage.KU_TICKET);
+            var output = Decrypt(key.Key, ciphertext, KeyUsage.KU_TICKET);
 
             Ticket = new EncTicketPart(new Asn1Element(output));
 

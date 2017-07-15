@@ -1,10 +1,9 @@
 ﻿using Syfuhs.Security.Kerberos.Crypto;
 using System;
-using System.Collections.Generic;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
-    public class Authenticator : Asn1ValueType
+    public class Authenticator
     {
         public Authenticator(Asn1Element asn1Element)
         {

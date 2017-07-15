@@ -32,6 +32,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -49,18 +50,18 @@
     <Compile Include="Crypto\Hash.cs" />
     <Compile Include="Crypto\IEncryptor.cs" />
     <Compile Include="Crypto\IHasher.cs" />
+    <Compile Include="Crypto\KeyTable.cs" />
     <Compile Include="Crypto\MD4.cs" />
     <Compile Include="Crypto\RC4.cs" />
-    <Compile Include="Entities\Asn1ValueType.cs" />
     <Compile Include="Entities\Authenticator.cs" />
     <Compile Include="Entities\AuthorizationData.cs" />
-    <Compile Include="Entities\Authorization\ExtensionMethods.cs" />
-    <Compile Include="Entities\Authorization\PacAttribute.cs" />
+    <Compile Include="Entities\Authorization\SecurityIdentifierNames.cs" />
     <Compile Include="Entities\Authorization\PacBinaryReader.cs" />
     <Compile Include="Entities\Authorization\PacLogonInfo.cs" />
     <Compile Include="Entities\Authorization\PacSid.cs" />
     <Compile Include="Entities\Authorization\PacSignature.cs" />
     <Compile Include="Entities\Authorization\PacString.cs" />
+    <Compile Include="Entities\BinaryReaderExtensions.cs" />
     <Compile Include="Entities\DecryptedData.cs" />
     <Compile Include="Entities\EncryptedData.cs" />
     <Compile Include="Entities\EncTicketPart.cs" />
@@ -75,11 +76,16 @@
     <Compile Include="Entities\RC4DeryptedData.cs" />
     <Compile Include="Entities\Ticket.cs" />
     <Compile Include="Entities\TransitedEncoding.cs" />
-    <Compile Include="ITicketCacheValidator.cs" />
+    <Compile Include="IKerberosValidator.cs" />
+    <Compile Include="ITicketReplayValidator.cs" />
+    <Compile Include="KerberosAuthenticator.cs" />
     <Compile Include="KerberosRequest.cs" />
+    <Compile Include="KerberosValidationException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SimpleKerberosValidator.cs" />
-    <Compile Include="SimpleTicketCacheValidator.cs" />
+    <Compile Include="ReplayException.cs" />
+    <Compile Include="KerberosValidator.cs" />
+    <Compile Include="TicketReplayValidator.cs" />
+    <Compile Include="ValidationAction.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Syfuhs.Security.Kerberos.nuspec" />

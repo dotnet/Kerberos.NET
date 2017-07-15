@@ -5,6 +5,19 @@ namespace Syfuhs.Security.Kerberos.Crypto
 {
     public class KerberosHash
     {
+        public static byte[] SHA256(string value)
+        {
+            return SHA256(Encoding.UTF8.GetBytes(value));
+        }
+
+        public static byte[] SHA256(byte[] bytes)
+        {
+            using (var sha = new SHA256Managed())
+            {
+                return sha.ComputeHash(bytes);
+            }
+        }
+
         public static byte[] HMACMD5(byte[] key, byte[] data)
         {
             using (HMACMD5 hmac = new HMACMD5(key))
@@ -23,12 +36,12 @@ namespace Syfuhs.Security.Kerberos.Crypto
             return MD4(Encoding.Unicode.GetBytes(password));
         }
 
-        public static byte[] HMAC(IHasher hashProvider, byte[] key, byte[] data)
+        public static byte[] KerberosHMAC(IHasher hashProvider, byte[] key, byte[] data)
         {
-            return HMAC(hashProvider, key, data, 0, data.Length);
+            return KerberosHMAC(hashProvider, key, data, 0, data.Length);
         }
 
-        private static byte[] HMAC(IHasher hashProvider, byte[] key, byte[] data, int start, int len)
+        private static byte[] KerberosHMAC(IHasher hashProvider, byte[] key, byte[] data, int start, int len)
         {
             var blockSize = hashProvider.BlockSize;
 

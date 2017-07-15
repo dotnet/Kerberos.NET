@@ -21,13 +21,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
     {
         private readonly SecurityIdentifier id;
         private readonly SidAttributes attributes;
-
-
-        private byte revision;
-        private byte subCount;
-        private byte[] authority;
-        private byte[] subs;
-
+        
         public PacSid(SecurityIdentifier id, SidAttributes attributes)
         {
             this.id = id;

@@ -1,5 +1,6 @@
 ﻿using Syfuhs.Security.Kerberos;
 using Syfuhs.Security.Kerberos.Aes;
+using Syfuhs.Security.Kerberos.Crypto;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,13 +33,15 @@ namespace KerbCrypto
 
                 W($"Decrypting {f.Key} with key {f.Value}", ConsoleColor.Green);
 
-                var validator = new SimpleKerberosValidator(key)
+                var validator = new KerberosValidator(key)
                 {
                     Logger = W,
-                    ValidateAfterDecrypt = false
+                    ValidateAfterDecrypt = ValidationAction.Replay
                 };
 
-                var result = validator.Validate(data);
+                var authenticator = new KerberosAuthenticator(validator);
+
+                var result = authenticator.Authenticate(data);
 
                 ;
 

@@ -7,12 +7,10 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
     public class PacBinaryReader
     {
         private readonly BinaryReader reader;
-        private readonly long size;
-
+        
         public PacBinaryReader(Stream stream)
         {
             reader = new BinaryReader(stream);
-            size = reader.BaseStream.Length;
         }
 
         public PacBinaryReader(byte[] bufferData)
@@ -41,6 +39,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
         public char ReadChar()
         {
             Align(2);
+
             return reader.ReadChar();
         }
 
@@ -55,12 +54,13 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
         {
             Align(4);
 
-            return (int)reader.ReadUInt32();
+            return reader.ReadInt32();
         }
 
         public long ReadLong()
         {
             Align(8);
+
             return reader.ReadInt64();
         }
 
@@ -69,16 +69,23 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             return reader.ReadUInt32();
         }
 
+        private const long TicksPerDay = 864000000000L;
+        private const long DaysTo1601 = 584388;
+        private const long FileTimeOffset = DaysTo1601 * TicksPerDay;
+
         public DateTimeOffset ReadFiletime()
         {
             var low = ReadUnsignedInt();
             var high = ReadUnsignedInt();
 
-            if (high != 0x7fffffffL && low != 0xffffffffL)
+            if (low != 0xffffffffL && high != 0x7fffffffL)
             {
                 var fileTime = (high << 32) + low;
 
-                return DateTimeOffset.FromFileTime((long)fileTime);
+                var universalTicks = fileTime + FileTimeOffset;
+
+
+                return new DateTimeOffset((long)universalTicks, TimeSpan.Zero);
             }
 
             return DateTimeOffset.MinValue;
@@ -118,7 +125,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             return new string(chars);
         }
 
-        public SecurityIdentifier ReadId()
+        public SecurityIdentifier ReadRid()
         {
             var bytes = new byte[4];
             Read(bytes);
@@ -151,7 +158,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
 
         internal byte[] ReadToEnd()
         {
-            var left = reader.BaseStream.Length - reader.BaseStream.Position;
+            var left = reader.BytesAvailable();
 
             return reader.ReadBytes((int)left);
         }

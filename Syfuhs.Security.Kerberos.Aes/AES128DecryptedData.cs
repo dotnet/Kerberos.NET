@@ -5,8 +5,8 @@ namespace Syfuhs.Security.Kerberos.Aes
 {
     public class AES128DecryptedData : AESDecryptedData
     {
-        public AES128DecryptedData(KrbApReq token, KerberosKey decryptingKey)
-            : base(token, decryptingKey)
+        public AES128DecryptedData(KrbApReq token)
+            : base(token)
         {
             decryptor = new AES128Decryptor();
         }
@@ -14,16 +14,5 @@ namespace Syfuhs.Security.Kerberos.Aes
         private readonly AES128Decryptor decryptor;
 
         protected override KerberosEncryptor Decryptor { get { return decryptor; } }
-
-        public override void Decrypt()
-        {
-            var decrypted = Decryptor.Decrypt(
-                Token,
-                DecryptingKey,
-                KeyUsage.KU_TICKET
-            );
-
-            DecodeTicket(decrypted);
-        }
     }
 }

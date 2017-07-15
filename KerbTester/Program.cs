@@ -2,6 +2,7 @@
 using Syfuhs.Security.Kerberos.Aes;
 using Syfuhs.Security.Kerberos.Crypto;
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -43,17 +44,30 @@ namespace KerbTester
                         break;
                 }
 
-                var validator = new SimpleKerberosValidator(new KerberosKey(args[0], host: args[1]))
+                KeyTable keytab;
+
+                if (args[0] == "keytab")
+                {
+                    keytab = new KeyTable(File.ReadAllBytes("sample.keytab"));
+                }
+                else
+                {
+                    keytab = new KeyTable(new KerberosKey(args[0], host: args[1]));
+                }
+
+                var validator = new KerberosValidator(keytab)
                 {
                     Logger = W
                 };
 
+                var authenticator = new KerberosAuthenticator(validator);
+
                 if (args.Contains("novalidate"))
                 {
-                    validator.ValidateAfterDecrypt = false;
+                    validator.ValidateAfterDecrypt = ValidationAction.Replay;
                 }
 
-                var identity = validator.Validate(raw);
+                var identity = authenticator.Authenticate(raw);
 
                 if (identity == null)
                 {

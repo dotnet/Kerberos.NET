@@ -50,6 +50,7 @@ namespace Syfuhs.Security.Kerberos.Entities
         {
             AuthSchemeArrayOffset = reader.ReadUInt32();
             AuthSchemeCount = reader.ReadUInt16();
+
             Schemes = new Guid[AuthSchemeCount];
 
             var offset = reader.BaseStream.Position;

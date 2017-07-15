@@ -5,12 +5,10 @@ using System.Linq;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
-    public class NegTokenInit : Asn1ValueType
+    public class NegTokenInit
     {
         public NegTokenInit(Asn1Element sequence)
         {
-            Asn1Value = sequence.Value;
-
             for (var i = 0; i < sequence.Count; i++)
             {
                 var element = sequence[i];

@@ -8,7 +8,7 @@ using System.Text;
 namespace Syfuhs.Security.Kerberos.Crypto
 {
     [DebuggerDisplay("CST {ContextSpecificTag}; T: {Tag}; Count: {Count}")]
-    public class Asn1Element : AsnEncodedData
+    public class Asn1Element
     {
         private readonly int position;
         private readonly int valueLength;
@@ -17,12 +17,15 @@ namespace Syfuhs.Security.Kerberos.Crypto
 
         public Asn1Element(byte[] rawData) : this(rawData, 0)
         {
-            
+
         }
 
+        public byte[] RawData { get; private set; }
+
         public Asn1Element(byte[] rawData, int start)
-            : base(rawData)
         {
+            RawData = rawData;
+
             position = start;
             valuePosition = start + 1;
 
@@ -187,6 +190,8 @@ namespace Syfuhs.Security.Kerberos.Crypto
 
         public int Length { get { return valueLength; } }
 
+        private byte[] value;
+
         public byte[] Value
         {
             get
@@ -196,9 +201,12 @@ namespace Syfuhs.Security.Kerberos.Crypto
                     return null;
                 }
 
-                byte[] value = new byte[valueLength];
+                if (value == null)
+                {
+                    value = new byte[valueLength];
 
-                Buffer.BlockCopy(RawData, valuePosition, value, 0, value.Length);
+                    Buffer.BlockCopy(RawData, valuePosition, value, 0, value.Length);
+                }
 
                 return value;
             }
@@ -220,7 +228,7 @@ namespace Syfuhs.Security.Kerberos.Crypto
                 return children[index];
             }
         }
-        
+
         internal int TotalLength { get { return valuePosition - position + valueLength; } }
 
         private static List<Asn1Element> DecodeChildren(byte[] rawData, int position, int length)

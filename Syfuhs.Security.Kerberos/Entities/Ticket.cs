@@ -2,13 +2,11 @@
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
-    public class Ticket : Asn1ValueType
+    public class Ticket
     {
         public Ticket(Asn1Element element)
         {
             var childNode = element[0][0];
-
-            Asn1Value = childNode.Value;
 
             for (var i = 0; i < childNode.Count; i++)
             {

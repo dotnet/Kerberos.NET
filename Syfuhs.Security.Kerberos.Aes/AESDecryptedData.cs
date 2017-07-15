@@ -5,21 +5,30 @@ namespace Syfuhs.Security.Kerberos.Crypto
     public abstract class AESDecryptedData : DecryptedData
     {
         private readonly KrbApReq token;
-        private readonly KerberosKey decryptingKey;
 
-        protected AESDecryptedData(KrbApReq token, KerberosKey decryptingKey)
+        protected AESDecryptedData(KrbApReq token)
         {
             this.token = token;
-            this.decryptingKey = decryptingKey;
         }
 
         protected abstract KerberosEncryptor Decryptor { get; }
 
         protected KrbApReq Token { get { return token; } }
 
-        protected KerberosKey DecryptingKey { get { return decryptingKey; } }
+        public override void Decrypt(KeyTable keytab)
+        {
+            KerberosKey key = keytab.GetKey(Token);
 
-        protected void DecodeTicket(byte[] output)
+            var decrypted = Decryptor.Decrypt(
+                Token,
+                key,
+                KeyUsage.KU_TICKET
+            );
+
+            DecodeTicket(decrypted);
+        }
+        
+        private void DecodeTicket(byte[] output)
         {
             Ticket = new EncTicketPart(new Asn1Element(output));
 

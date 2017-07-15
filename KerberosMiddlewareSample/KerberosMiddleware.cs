@@ -12,7 +12,7 @@ namespace KerberosMiddlewareSample
 {
     public class KerberosMiddleware
     {
-        private readonly SimpleKerberosValidator validator;
+        private readonly KerberosValidator validator;
 
         private readonly NextFunc next;
 
@@ -22,7 +22,7 @@ namespace KerberosMiddlewareSample
 
             // NOTE: ValidateAfterDecrypt is a dangerous flag. It should only be used for samples
 
-            validator = new SimpleKerberosValidator(new KerberosKey("P@ssw0rd!")) { ValidateAfterDecrypt = false };
+            validator = new KerberosValidator(new KerberosKey("P@ssw0rd!")) { ValidateAfterDecrypt = ValidationAction.None };
         }
 
         public async Task Invoke(IDictionary<string, object> environment)
@@ -47,7 +47,9 @@ namespace KerberosMiddlewareSample
 
             var header = authzHeader.First();
 
-            var identity = validator.Validate(header);
+            var authenticator = new KerberosAuthenticator(validator);
+
+            var identity = authenticator.Authenticate(header);
 
             context.Request.User = new ClaimsPrincipal(identity);
         }

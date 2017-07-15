@@ -80,8 +80,8 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             LogonCount = pacStream.ReadShort();
             BadPasswordCount = pacStream.ReadShort();
 
-            var userSid = pacStream.ReadId();
-            var groupSid = pacStream.ReadId();
+            var userSid = pacStream.ReadRid();
+            var groupSid = pacStream.ReadRid();
 
             // Groups information
             var groupCount = pacStream.ReadInt();
@@ -271,7 +271,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             {
                 pacStream.Align(4);
 
-                attributes.Add(pacStream.ReadId());
+                attributes.Add(pacStream.ReadRid());
                 var attr = (SidAttributes)pacStream.ReadInt();
             }
 

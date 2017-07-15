@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
-    public class InitialContextToken : Asn1ValueType
+    public class InitialContextToken
     {
         public InitialContextToken(Asn1Element sequence, IEnumerable<MechType> mechTypes)
         {
@@ -14,8 +14,6 @@ namespace Syfuhs.Security.Kerberos.Entities
             {
                 NegotiateExtension = new NegotiateExtension(sequence.Value);
             }
-
-            Asn1Value = childNode.Value;
 
             for (var i = 0; i < childNode.Count; i++)
             {

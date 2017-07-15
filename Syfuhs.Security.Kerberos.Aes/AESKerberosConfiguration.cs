@@ -8,12 +8,12 @@ namespace Syfuhs.Security.Kerberos.Aes
         {
             KerberosRequest.RegisterDecryptor(
                EncryptionType.AES128_CTS_HMAC_SHA1_96,
-               (token, key) => new AES128DecryptedData(token, key)
+               (token) => new AES128DecryptedData(token)
            );
 
             KerberosRequest.RegisterDecryptor(
                 EncryptionType.AES256_CTS_HMAC_SHA1_96,
-                (token, key) => new AES256DecryptedData(token, key)
+                (token) => new AES256DecryptedData(token)
             );
         }
     }

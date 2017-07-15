@@ -1,7 +1,6 @@
 ﻿using Syfuhs.Security.Kerberos.Crypto;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
@@ -26,7 +25,7 @@ namespace Syfuhs.Security.Kerberos.Entities
         Anonymous = 0x00008000
     }
 
-    public class EncTicketPart : Asn1ValueType
+    public class EncTicketPart
     {
         public EncTicketPart(Asn1Element asn1Element)
         {

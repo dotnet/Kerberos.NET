@@ -48,6 +48,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="sample.keytab">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Syfuhs.Security.Kerberos.Aes\Syfuhs.Security.Kerberos.Aes.csproj">
