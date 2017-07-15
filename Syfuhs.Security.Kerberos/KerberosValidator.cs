@@ -74,6 +74,7 @@ namespace Syfuhs.Security.Kerberos
             if (!detectReplay)
             {
                 decryptedToken.Validate(ValidateAfterDecrypt);
+                replay = false;
             }
             else if (!TokenCache.Contains(entry))
             {

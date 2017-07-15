@@ -52,7 +52,13 @@ KerberosRequest.RegisterDecryptor(
 );
 ```
 
-Note that the existing replay detection used internally is just a HashSet<string> detecting whether the incoming token has been seen before. There's a TODO item to make this more useful as this doesn't remove the strings after a period of time. If you'd like touse your own replay detection just implement the `ITicketCacheValidator` interface and pass it in the `SimpleKerberosValidator` constructor.
+# Replay Detection
+
+The built-in replay detection uses a `MemoryCache` to temporarily store references to hashes of the ticket nonces. These references are removed when the ticket expires. The detection process occurs right after decryption as soon as the authenticator sequence number is available.
+
+Note that the built-in detection logic does not work effectively when the application is clustered because the cache is not shared across machines. You will need to create a cache that is shared across machines for this to work correctly in a clustered environment.
+
+If you'd like to use your own replay detection just implement the `ITicketReplayValidator` interface and pass it in the `KerberosValidator` constructor.
 
 # Samples!
 There are samples!
