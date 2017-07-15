@@ -10,7 +10,13 @@
     <projectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A Managed Code validator for Kerberos tickets</description>
-    <releaseNotes>Fixed PAC decoder to properly handle SIDs that are actually RIDs.</releaseNotes>
+    <releaseNotes>
+      Switched to a proper extensible validation model
+      Added keytab file support
+      Created KerberosAuthenticator and KerberosValidator for separation of tasks
+      Created a proper ticket cache validator that cleans up after itself
+      Minor changes for major performance improvements
+    </releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>security kerberos</tags>
   </metadata>

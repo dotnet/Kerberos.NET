@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using System.Resources;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyDescription("Kerberos.NET library")]
@@ -17,4 +16,4 @@ using System.Runtime.InteropServices;
 
 [assembly: ComVisible(false)]
 
-[assembly: AssemblyInformationalVersion("1.1.2.1")]
+[assembly: AssemblyInformationalVersion("1.2.2.1")]
