@@ -48,7 +48,7 @@ This registration is also a good example for how you can add your own support fo
 ```C#
 KerberosRequest.RegisterDecryptor(
    EncryptionType.DES_CBC_MD5,
-   (token, key) => new DESMD5DecryptedData(token, key)
+   (token) => new DESMD5DecryptedData(token)
 );
 ```
 
