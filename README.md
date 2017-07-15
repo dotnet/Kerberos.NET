@@ -18,12 +18,14 @@ The AES package is separated from the main package because it has dependencies o
 
 ## Using the Library
 
-The library has a number of classes available to you to get deep in to the Kerberos-isms, but I suspect most people only care about validation so all you really need to do is create a validator and Validate the incoming token:
+Ticket authentication occurs in two stages. The first stage validates the ticket for correctness via an `IKerberosValidator` with a default implementation of `KerberosValidator`. The second stage involves converting the ticket in to a usable `ClaimsIdentity`, which occurs in the `KerberosAuthenticator`. 
+
+The easiest way to get started is to create a new `KerberosAuthenticator` and calling `Authenticate`. If you need to tweak the behavior of the conversion, you can do so by overriding the `ConvertTicket(DecryptedData data)` method. 
 
 ```C#
-var validator = new SimpleKerberosValidator(new KerberosKey("P@ssw0rd!", host: "server01"));
+var authenticator = new KerberosAuthenticator(new KeyTable(File.ReadAllBytes("sample.keytab")));
 
-var identity = validator.Validate("YIIHCAYGKwYBBQUCoIIG...");
+var identity = authenticator.Authenticate("YIIHCAYGKwYBBQUCoIIG...");
 
 Assert.IsNotNull(identity);
 
@@ -32,7 +34,10 @@ var name = identity.Name;
 Assert.IsFalse(string.IsNullOrWhitespace(name));
 ```
 
-Including AES support is easy. Just register the decryptors during app startup.
+Note that the constructor parameter for the authenticator is a `KeyTable`. The `KeyTable` is a common format used to store keys on other platforms. You can either use a file created by a tool like `ktpass`, or you can just pass a `KerberosKey` during instantiation and it'll have the same effect.
+
+# AES Support
+AES support is available. Just register the decryptors during app startup.
 
 ```C#
 AESKerberosConfiguration.Register();
@@ -67,10 +72,11 @@ There are samples!
 # The TODO List
 Just a list of things that should be done, but aren't yet.
 
- - Support [keytab](https://web.mit.edu/kerberos/krb5-latest/doc/basic/keytab_def.html) files
- - Replay detection is weak. The default `ITicketCacheValidator` needs to be a proper LMU cache so older entries are automatically cleaned up. The detection should also probably happen after a partial decoding so we can use the ticket's own expiry to remove itself from the cache. The validator should be simple enough that it can be backed by shared storage for clustered environments.
- - Validation and transformation isn't extensible. It just dumps a ClaimsIdentity with a fairly arbitrary list of claims from the ticket. You should be able to easily get whatever information you want out of the token. Validation also shouldn't be disabled so easily (it's currently just a bool flag on the validator class).
+ - ~~Support [keytab](https://web.mit.edu/kerberos/krb5-latest/doc/basic/keytab_def.html) files~~ DONE!
+ - ~~Replay detection is weak. The default `ITicketCacheValidator` needs to be a proper LMU cache so older entries are automatically cleaned up. The detection should also probably happen after a partial decoding so we can use the ticket's own expiry to remove itself from the cache. The validator should be simple enough that it can be backed by shared storage for clustered environments.~~ DONE!
+ - ~~Validation and transformation isn't extensible. It just dumps a ClaimsIdentity with a fairly arbitrary list of claims from the ticket. You should be able to easily get whatever information you want out of the token. Validation also shouldn't be disabled so easily (it's currently just a bool flag on the validator class).~~ DONE!
  - The validation process should be vetted by someone other than the developer.
+ - Samples for clustered environments should be created.
 
 # License
 This project has an MIT License, but both the RC4 and MD4 implementations are externally sourced and have their own license.
