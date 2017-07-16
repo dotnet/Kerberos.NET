@@ -7,6 +7,8 @@ Kerberos is a black box in the .NET world. It's services are exposed by Windows 
 
 The Point of Kerberos.NET is to make Kerberos much easier to work with in such scenarios. This is done by removing any hard dependencies on Windows and moving all ticket processing to the application itself. This of course means you don't need the application to be on a domain-joined machine, and in probably doesn't need to be on Windows either -- though a .NET Core port is still forthcoming.
 
+Take a look at the [Kerberos.NET](https://syfuhs.net/tag/kerberos-net/) tag for more information while the documentation here is updated.
+
 # Getting Started
 There are two ways you can go about using this library. The first is to download the code and build it locally. The second, better, option is to just use nuget.
 
