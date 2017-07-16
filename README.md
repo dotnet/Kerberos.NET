@@ -24,6 +24,10 @@ PM> Install-Package Kerberos.NET-AES
 
 The AES package is separated from the main package because it has dependencies on BouncyCastle.
 
+## On Updates to the Nuget Packages
+
+The nuget packages will be kept up to date with any changes to the core library. Check the package release notes for specific changes.
+
 ## Using the Library
 
 Ticket authentication occurs in two stages. The first stage validates the ticket for correctness via an `IKerberosValidator` with a default implementation of `KerberosValidator`. The second stage involves converting the ticket in to a usable `ClaimsIdentity`, which occurs in the `KerberosAuthenticator`. 
@@ -44,11 +48,27 @@ Assert.IsFalse(string.IsNullOrWhitespace(name));
 
 Note that the constructor parameter for the authenticator is a `KeyTable`. The `KeyTable` is a common format used to store keys on other platforms. You can either use a file created by a tool like `ktpass`, or you can just pass a `KerberosKey` during instantiation and it'll have the same effect.
 
-# Creating a Kerberos SPN in Active Directory
+## Creating a Kerberos SPN in Active Directory
 
 Active Directory requires an identity to be present that matches the domain where the token is being sent. This identity can be any user or computer object in Active Directory, but it needs to be configured correctly. This means it needs a Service Principal Name (SPN). You can find instructions on setting up a test user [here](https://syfuhs.net/2017/03/20/configuring-an-spn-in-active-directory-for-kerberos-net/).
 
-# AES Support
+## KeyTable (keytab) File Generation
+
+Kerberos.NET supports the KeyTable (keytab) file format for passing in the keys used to decrypt and validate Kerberos tickets. The keytab file format is a common format used by many platforms for storing keys. You can generate these files on Windows by using the `ktpass` command line utility, which is part of the Remote Server Administration Tools (RSAT) pack. You can install it on a *server* via PowerShell (or through the add Windows components dialog):
+
+```powershell
+Add-WindowsFeature RSAT
+```
+
+From there you can generate the keytab file by running the following command:
+
+```bat
+ktpass /princ HTTP/test.identityintervention.com@IDENTITIYINTERVENTION.COM /mapuser IDENTITYINTER\server01$ /pass P@ssw0rd! /out sample.keytab /crypto all /PTYPE KRB5_NT_SRV_INST /mapop set
+```
+
+The parameter `princ` is used to specify the generated PrincipalName, and `mapuser` which is used to map it to the user in Active Directory. The `crypto` parameter specifies which algorithms should generate entries.
+
+## AES Support
 AES support is available. Just register the decryptors during app startup.
 
 ```C#
@@ -71,22 +91,6 @@ The built-in replay detection uses a `MemoryCache` to temporarily store referenc
 Note that the built-in detection logic does not work effectively when the application is clustered because the cache is not shared across machines. You will need to create a cache that is shared across machines for this to work correctly in a clustered environment.
 
 If you'd like to use your own replay detection just implement the `ITicketReplayValidator` interface and pass it in the `KerberosValidator` constructor.
-
-# KeyTable (keytab) File Generation
-
-Kerberos.NET supports the KeyTable (keytab) file format for passing in the keys used to decrypt and validate Kerberos tickets. The keytab file format is a common format used by many platforms for storing keys. You can generate these files on Windows by using the `ktpass` command line utility, which is part of the Remote Server Administration Tools (RSAT) pack. You can install it on a *server* via PowerShell (or through the add Windows components dialog):
-
-```powershell
-Add-WindowsFeature RSAT
-```
-
-From there you can generate the keytab file by running the following command:
-
-```bat
-ktpass /princ HTTP/test.identityintervention.com@IDENTITIYINTERVENTION.COM /mapuser IDENTITYINTER\server01$ /pass P@ssw0rd! /out sample.keytab /crypto all /PTYPE KRB5_NT_SRV_INST /mapop set
-```
-
-The parameter `princ` is used to specify the generated PrincipalName, and `mapuser` which is used to map it to the user in Active Directory. The `crypto` parameter specifies which algorithms should generate entries.
 
 # Samples!
 There are samples!
