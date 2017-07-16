@@ -1,5 +1,11 @@
 # Kerberos.NET
-A Managed Code validator for Kerberos tickets
+A Managed Code validator for Kerberos tickets.
+
+# What is it?
+
+Kerberos is a black box in the .NET world. It's services are exposed by Windows in a domain environment and most of the Kerberos-isms are hidden by Windows to simplify usage. .NET then tries to simplify further by treating Kerberos as just a Windows authentication method. This has the side effect that working with Kerberos at a protocol level in .NET is severely limited. That means doing anything out of the ordinary with Kerberos is either painful to do, or simply impossible.
+
+The Point of Kerberos.NET is to make Kerberos much easier to work with in such scenarios. This is done by removing any hard dependencies on Windows and moving all ticket processing to the application itself. This of course means you don't need the application to be on a domain-joined machine, and in probably doesn't need to be on Windows either -- though a .NET Core port is still forthcoming.
 
 # Getting Started
 There are two ways you can go about using this library. The first is to download the code and build it locally. The second, better, option is to just use nuget.
@@ -35,6 +41,10 @@ Assert.IsFalse(string.IsNullOrWhitespace(name));
 ```
 
 Note that the constructor parameter for the authenticator is a `KeyTable`. The `KeyTable` is a common format used to store keys on other platforms. You can either use a file created by a tool like `ktpass`, or you can just pass a `KerberosKey` during instantiation and it'll have the same effect.
+
+# Creating a Kerberos SPN in Active Directory
+
+Active Directory requires an identity to be present that matches the domain where the token is being sent. This identity can be any user or computer object in Active Directory, but it needs to be configured correctly. This means it needs a Service Principal Name (SPN). You can find instructions on setting up a test user [here](https://syfuhs.net/2017/03/20/configuring-an-spn-in-active-directory-for-kerberos-net/).
 
 # AES Support
 AES support is available. Just register the decryptors during app startup.
