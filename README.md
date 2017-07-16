@@ -63,17 +63,17 @@ If you'd like to use your own replay detection just implement the `ITicketReplay
 # Samples!
 There are samples!
 
- - [KerbCrypto](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/KerbCrypto) Runs through the 6 supported token formats.
+ - [KerbCrypto](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/Samples/KerbCrypto) Runs through the 6 supported token formats.
     - rc4-kerberos-data
     - rc4-spnego-data
     - aes128-kerberos-data
     - aes128-spnego-data
     - aes256-kerberos-data
     - aes256-spnego-data
- - [KerbTester](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/KerbTester) A command line tool used to test real tickets and dump the parsed results.
- - [KerberosMiddlewareEndToEndSample](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/KerberosMiddlewareEndToEndSample) An end-to-end sample that shows how the server prompts for negotiation and the emulated browser's response.
- - [KerberosMiddlewareSample](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/KerberosMiddlewareEndToEndSample) A simple pass/fail middleware sample that decodes a ticket if present, but otherwise never prompts to negotiate.
- - [KerberosWebSample](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/KerberosWebSample) A sample web project intended to be hosted in IIS that prompts to negotiate and validates any incoming tickets from the browser.
+ - [KerbTester](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/Samples/KerbTester) A command line tool used to test real tickets and dump the parsed results.
+ - [KerberosMiddlewareEndToEndSample](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/Samples/KerberosMiddlewareEndToEndSample) An end-to-end sample that shows how the server prompts for negotiation and the emulated browser's response.
+ - [KerberosMiddlewareSample](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/Samples/KerberosMiddlewareEndToEndSample) A simple pass/fail middleware sample that decodes a ticket if present, but otherwise never prompts to negotiate.
+ - [KerberosWebSample](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/Samples/KerberosWebSample) A sample web project intended to be hosted in IIS that prompts to negotiate and validates any incoming tickets from the browser.
 
 # The TODO List
 Just a list of things that should be done, but aren't yet.
