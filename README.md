@@ -1,3 +1,11 @@
+# The Bug
+
+1. Stick a breakpoint here in [ClaimsSetMetadata.cs](https://github.com/SteveSyfuhs/Kerberos.NET/blob/dev/adding-claims/Syfuhs.Security.Kerberos/Entities/Authorization/ClaimsSetMetadata.cs#L24-L26)
+2. Build the solution
+3. Debug the `KerbTester` project with the following command line: `KerbTester.exe keytab server01 rc4 novalidate` (rc4 is just what was recorded)
+4. Observe the Compression format = 4 (COMPRESSION_FORMAT_XPRESS_HUFF)
+5. Observe decompressing the `ClaimsSet` fails
+
 # Kerberos.NET
 A Managed Code validator for Kerberos tickets.
 
