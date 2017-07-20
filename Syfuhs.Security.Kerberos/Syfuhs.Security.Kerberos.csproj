@@ -55,6 +55,9 @@
     <Compile Include="Crypto\RC4.cs" />
     <Compile Include="Entities\Authenticator.cs" />
     <Compile Include="Entities\AuthorizationData.cs" />
+    <Compile Include="Entities\Authorization\ClaimsSetMetadata.cs" />
+    <Compile Include="Entities\Authorization\Compressions.cs" />
+    <Compile Include="Entities\Authorization\RpcHeader.cs" />
     <Compile Include="Entities\Authorization\SecurityIdentifierNames.cs" />
     <Compile Include="Entities\Authorization\PacBinaryReader.cs" />
     <Compile Include="Entities\Authorization\PacLogonInfo.cs" />

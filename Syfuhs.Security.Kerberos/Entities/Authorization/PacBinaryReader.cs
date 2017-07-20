@@ -7,7 +7,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
     public class PacBinaryReader
     {
         private readonly BinaryReader reader;
-        
+
         public PacBinaryReader(Stream stream)
         {
             reader = new BinaryReader(stream);
@@ -29,6 +29,11 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
 
                 Seek((int)seek);
             }
+        }
+
+        public byte[] Read(int length)
+        {
+            return reader.ReadBytes(length);
         }
 
         public void Read(byte[] b)
@@ -64,7 +69,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             return reader.ReadInt64();
         }
 
-        public ulong ReadUnsignedInt()
+        public uint ReadUnsignedInt()
         {
             return reader.ReadUInt32();
         }
@@ -154,6 +159,11 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
         public long Seek(int n)
         {
             return reader.BaseStream.Seek(n, SeekOrigin.Current);
+        }
+
+        public long JumpToAddress(int n)
+        {
+            return reader.BaseStream.Seek(n, SeekOrigin.Begin);
         }
 
         internal byte[] ReadToEnd()

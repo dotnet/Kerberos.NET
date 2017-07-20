@@ -61,7 +61,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
         {
             var pacStream = new PacBinaryReader(node);
 
-            pacStream.Seek(20);
+            new RpcHeader(pacStream);
 
             LogonTime = pacStream.ReadFiletime();
             LogoffTime = pacStream.ReadFiletime();
