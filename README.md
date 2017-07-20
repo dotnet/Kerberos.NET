@@ -1,5 +1,13 @@
 # Kerberos.NET
-A Managed Code validator for Kerberos tickets
+A Managed Code validator for Kerberos tickets.
+
+# What is it?
+
+Kerberos is a black box in the .NET world. It's services are exposed by Windows in a domain environment and most of the Kerberos-isms are hidden by Windows to simplify usage. .NET then tries to simplify further by treating Kerberos as just a Windows authentication method. This has the side effect that working with Kerberos at a protocol level in .NET is severely limited. That means doing anything out of the ordinary with Kerberos is either painful to do, or simply impossible.
+
+The Point of Kerberos.NET is to make Kerberos much easier to work with in such scenarios. This is done by removing any hard dependencies on Windows and moving all ticket processing to the application itself. This of course means you don't need the application to be on a domain-joined machine, and in probably doesn't need to be on Windows either -- though a .NET Core port is still forthcoming.
+
+Take a look at the [Kerberos.NET](https://syfuhs.net/tag/kerberos-net/) tag for more information while the documentation here is updated.
 
 # Getting Started
 There are two ways you can go about using this library. The first is to download the code and build it locally. The second, better, option is to just use nuget.
@@ -15,6 +23,10 @@ PM> Install-Package Kerberos.NET-AES
 ```
 
 The AES package is separated from the main package because it has dependencies on BouncyCastle.
+
+## On Updates to the Nuget Packages
+
+The nuget packages will be kept up to date with any changes to the core library. Check the package release notes for specific changes.
 
 ## Using the Library
 
@@ -36,7 +48,27 @@ Assert.IsFalse(string.IsNullOrWhitespace(name));
 
 Note that the constructor parameter for the authenticator is a `KeyTable`. The `KeyTable` is a common format used to store keys on other platforms. You can either use a file created by a tool like `ktpass`, or you can just pass a `KerberosKey` during instantiation and it'll have the same effect.
 
-# AES Support
+## Creating a Kerberos SPN in Active Directory
+
+Active Directory requires an identity to be present that matches the domain where the token is being sent. This identity can be any user or computer object in Active Directory, but it needs to be configured correctly. This means it needs a Service Principal Name (SPN). You can find instructions on setting up a test user [here](https://syfuhs.net/2017/03/20/configuring-an-spn-in-active-directory-for-kerberos-net/).
+
+## KeyTable (keytab) File Generation
+
+Kerberos.NET supports the KeyTable (keytab) file format for passing in the keys used to decrypt and validate Kerberos tickets. The keytab file format is a common format used by many platforms for storing keys. You can generate these files on Windows by using the `ktpass` command line utility, which is part of the Remote Server Administration Tools (RSAT) pack. You can install it on a *server* via PowerShell (or through the add Windows components dialog):
+
+```powershell
+Add-WindowsFeature RSAT
+```
+
+From there you can generate the keytab file by running the following command:
+
+```bat
+ktpass /princ HTTP/test.identityintervention.com@IDENTITIYINTERVENTION.COM /mapuser IDENTITYINTER\server01$ /pass P@ssw0rd! /out sample.keytab /crypto all /PTYPE KRB5_NT_SRV_INST /mapop set
+```
+
+The parameter `princ` is used to specify the generated PrincipalName, and `mapuser` which is used to map it to the user in Active Directory. The `crypto` parameter specifies which algorithms should generate entries.
+
+## AES Support
 AES support is available. Just register the decryptors during app startup.
 
 ```C#
