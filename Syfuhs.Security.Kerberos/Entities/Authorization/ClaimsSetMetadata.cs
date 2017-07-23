@@ -1,5 +1,6 @@
 ﻿using Syfuhs.Security.Kerberos.Entities.Authorization;
 using System.Collections.Generic;
+using System;
 
 namespace Syfuhs.Security.Kerberos.Entities
 {
@@ -20,6 +21,7 @@ namespace Syfuhs.Security.Kerberos.Entities
             ReservedFieldSize = pacStream.ReadInt();
 
             pacStream.Align(8);
+            var size = pacStream.ReadInt();
 
             var claimSet = pacStream.Read(ClaimSetSize);
 
@@ -49,12 +51,8 @@ namespace Syfuhs.Security.Kerberos.Entities
         {
             if (compression != CompressionFormat.COMPRESSION_FORMAT_NONE)
             {
-                // IT GOES BOOM HERE
-
                 claims = Compressions.Decompress(claims, uncompressedLength, compression);
             }
-
-            // TODO... nothing below here works... yet.
 
             var pacStream = new PacBinaryReader(claims);
 
@@ -66,18 +64,22 @@ namespace Syfuhs.Security.Kerberos.Entities
             ReservedType = pacStream.ReadShort();
             ReservedFieldSize = pacStream.ReadInt();
 
+            ReservedField = pacStream.Read(ReservedFieldSize);
+
             pacStream.Align(8);
 
             ClaimsArray = ReadClaimsArray(pacStream, ArrayCount);
-
-            ReservedField = pacStream.Read(ReservedFieldSize);
         }
 
         private IEnumerable<ClaimsArray> ReadClaimsArray(PacBinaryReader pacStream, int arrayCount)
         {
+            //var bytes = pacStream.ReadToEnd();
+
+            var count = pacStream.ReadInt();
+
             var claims = new List<ClaimsArray>();
 
-            for (var i = 0; i < ArrayCount; i++)
+            for (var i = 0; i < arrayCount; i++)
             {
                 claims.Add(new ClaimsArray(pacStream));
             }
@@ -112,6 +114,11 @@ namespace Syfuhs.Security.Kerberos.Entities
                 claims.Add(new ClaimEntry(pacStream));
             }
 
+            foreach (var entry in claims)
+            {
+                entry.ReadValue(pacStream);
+            }
+
             ClaimEntries = claims;
         }
 
@@ -140,7 +147,41 @@ namespace Syfuhs.Security.Kerberos.Entities
     {
         public ClaimEntry(PacBinaryReader pacStream)
         {
+            Id = pacStream.ReadString();
 
+            //var bytes = pacStream.ReadToEnd();
+            ;
+
+            pacStream.Align(4);
+
+            ValueCount = pacStream.ReadUnsignedInt();
+
+            var sdf = pacStream.ReadInt();
+
+            var values = new object[ValueCount];
+
+            Type = ClaimType.CLAIM_TYPE_STRING;
+
+            for (var i = 0; i < ValueCount; i++)
+            {
+                switch (Type)
+                {
+                    case ClaimType.CLAIM_TYPE_BOOLEAN:
+                        values[i] = Convert.ToBoolean(pacStream.ReadInt());
+                        break;
+                    case ClaimType.CLAIM_TYPE_INT64:
+                        values[i] = pacStream.ReadLong();
+                        break;
+                    case ClaimType.CLAIM_TYPE_UINT64:
+                        values[i] = (ulong)pacStream.ReadLong();
+                        break;
+                    case ClaimType.CLAIM_TYPE_STRING:
+                        values[i] = pacStream.ReadString();
+                        break;
+                }
+
+                //values[i] = pacStream.ReadString();
+            }
         }
 
         public string Id { get; private set; }
@@ -156,5 +197,26 @@ namespace Syfuhs.Security.Kerberos.Entities
         public string[] StringValues { get; private set; }
 
         public ulong BooleanValues { get; private set; }
+
+        internal void ReadValue(PacBinaryReader pacStream)
+        {
+            Id = pacStream.ReadString();
+
+            ValueCount = pacStream.ReadUnsignedInt();
+
+            var valueStrs = new PacString[ValueCount];
+
+            for (var i = 0; i < ValueCount; i++)
+            {
+                valueStrs[i] = pacStream.ReadRPCUnicodeString();
+            }
+
+            var valueStrings = new string[ValueCount];
+
+            for (var i = 0; i < ValueCount; i++)
+            {
+                valueStrings[i] = valueStrs[i].ReadString(pacStream);
+            }
+        }
     }
 }
