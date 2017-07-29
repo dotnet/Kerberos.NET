@@ -1,22 +1,28 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Principal;
 
 namespace Syfuhs.Security.Kerberos.Entities.Authorization
 {
-    public class PacBinaryReader
+    [DebuggerDisplay("{Position} / {Length}")]
+    public class NdrBinaryReader
     {
         private readonly BinaryReader reader;
 
-        public PacBinaryReader(Stream stream)
+        public NdrBinaryReader(Stream stream)
         {
             reader = new BinaryReader(stream);
         }
 
-        public PacBinaryReader(byte[] bufferData)
+        public NdrBinaryReader(byte[] bufferData)
             : this(new MemoryStream(bufferData))
         {
         }
+
+        public long Position { get { return reader.BaseStream.Position; } }
+
+        public long Length { get { return reader.BaseStream.Length; } }
 
         public void Align(int mask)
         {
@@ -90,7 +96,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
                 var universalTicks = fileTime + FileTimeOffset;
 
 
-                return new DateTimeOffset((long)universalTicks, TimeSpan.Zero);
+                return new DateTimeOffset(universalTicks, TimeSpan.Zero);
             }
 
             return DateTimeOffset.MinValue;
@@ -127,7 +133,14 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
                 chars[l] = ReadChar();
             }
 
-            return new string(chars);
+            var readTo = chars.Length;
+
+            if (readTo > 0 && chars[chars.Length - 1] == '\0')
+            {
+                readTo--;
+            }
+
+            return new string(chars, 0 , readTo);
         }
 
         public SecurityIdentifier ReadRid()

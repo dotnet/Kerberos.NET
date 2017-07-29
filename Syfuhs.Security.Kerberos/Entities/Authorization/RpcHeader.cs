@@ -11,7 +11,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             public const int COMMON_HEADER_BYTES = 8;
         }
 
-        public RpcHeader(PacBinaryReader pacStream)
+        public RpcHeader(NdrBinaryReader pacStream)
         {
             ReadCommonHeader(pacStream);
 
@@ -21,15 +21,15 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             bytes = pacStream.Read(4);
         }
 
-        public byte Version { get; set; }
+        public byte Version { get; private set; }
 
-        public bool Endian { get; set; }
+        public bool Endian { get; private set; }
 
-        public byte Encoding { get; set; }
+        public byte Encoding { get; private set; }
 
-        public int Length { get; set; }
+        public int Length { get; private set; }
 
-        private void ReadCommonHeader(PacBinaryReader pacStream)
+        private void ReadCommonHeader(NdrBinaryReader pacStream)
         {
             Version = pacStream.Read(1)[0];
 

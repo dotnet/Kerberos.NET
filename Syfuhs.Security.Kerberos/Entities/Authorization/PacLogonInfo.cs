@@ -55,13 +55,13 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
         ADS_UF_PARTIAL_SECRETS_ACCOUNT = 67108864
     }
 
-    public class PacLogonInfo
+    public class PacLogonInfo : NdrMessage
     {
         public PacLogonInfo(byte[] node)
         {
-            var pacStream = new PacBinaryReader(node);
+            var pacStream = new NdrBinaryReader(node);
 
-            new RpcHeader(pacStream);
+            Header = new RpcHeader(pacStream);
 
             LogonTime = pacStream.ReadFiletime();
             LogoffTime = pacStream.ReadFiletime();
@@ -211,7 +211,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             return new SecurityIdentifier(bytes, 0);
         }
 
-        private static PacSid[] ParseExtraSids(PacBinaryReader pacStream, int extraSidCount, int extraSidPointer)
+        private static PacSid[] ParseExtraSids(NdrBinaryReader pacStream, int extraSidCount, int extraSidPointer)
         {
             if (extraSidPointer == 0)
             {
@@ -251,7 +251,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             return extraSidAtts;
         }
 
-        private static IEnumerable<SecurityIdentifier> ParseAttributes(PacBinaryReader pacStream, int count, int pointer)
+        private static IEnumerable<SecurityIdentifier> ParseAttributes(NdrBinaryReader pacStream, int count, int pointer)
         {
             var attributes = new List<SecurityIdentifier>();
 

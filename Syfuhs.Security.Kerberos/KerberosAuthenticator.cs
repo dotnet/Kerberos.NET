@@ -60,10 +60,78 @@ namespace Syfuhs.Security.Kerberos
                 }
             }
 
-            return new ClaimsIdentity(claims, "password", ClaimTypes.NameIdentifier, ClaimTypes.Role);
+            return new ClaimsIdentity(claims, "Kerberos", ClaimTypes.NameIdentifier, ClaimTypes.Role);
         }
 
-        private static void MergeAttributes(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
+        private void MergeAttributes(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
+        {
+            AddUser(ticket, pac, claims);
+
+            AddGroups(pac, claims);
+            
+            if (pac?.ClientClaims?.ClaimsSet?.ClaimsArray != null)
+            {
+                AddClaims(pac.ClientClaims.ClaimsSet.ClaimsArray, claims);
+            }
+
+            if (pac?.DeviceClaims?.ClaimsSet?.ClaimsArray != null)
+            {
+                AddClaims(pac.DeviceClaims.ClaimsSet.ClaimsArray, claims);
+            }
+        }
+
+        protected virtual void AddClaims(IEnumerable<ClaimsArray> claimsArray, List<Claim> claims)
+        {
+            foreach (var array in claimsArray)
+            {
+                var issuer = GetSourceIssuer(array.ClaimSource);
+
+                foreach (var entry in array.ClaimEntries)
+                {
+                    AddClaim(entry, issuer, claims);
+                }
+            }
+        }
+
+        private void AddClaim(ClaimEntry entry, string issuer, List<Claim> claims)
+        {
+            foreach (var value in entry.GetValues<string>())
+            {
+                var claim = new Claim(entry.Id, value, GetTypeId(entry.Type), issuer);
+
+                claims.Add(claim);
+            }
+        }
+
+        private string GetTypeId(ClaimType type)
+        {
+            switch (type)
+            {
+                case ClaimType.CLAIM_TYPE_BOOLEAN:
+                    return ClaimValueTypes.Boolean;
+                case ClaimType.CLAIM_TYPE_INT64:
+                    return ClaimValueTypes.Integer64;
+                case ClaimType.CLAIM_TYPE_UINT64:
+                    return ClaimValueTypes.UInteger64;
+                case ClaimType.CLAIM_TYPE_STRING:
+                default:
+                    return ClaimValueTypes.String;
+            }
+        }
+
+        private static string GetSourceIssuer(ClaimSourceType source)
+        {
+            switch (source)
+            {
+                case ClaimSourceType.CLAIMS_SOURCE_TYPE_CERTIFICATE:
+                    return "CERTIFICATE AUTHORITY";
+                case ClaimSourceType.CLAIMS_SOURCE_TYPE_AD:
+                default:
+                    return "AD AUTHORITY";
+            }
+        }
+
+        protected virtual void AddUser(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
         {
             claims.Add(new Claim(ClaimTypes.Sid, pac.LogonInfo.UserSid.Value));
 
@@ -75,7 +143,10 @@ namespace Syfuhs.Security.Kerberos
             var names = ticket.CName.Names.Select(n => $"{n}@{ticket.CRealm.ToLowerInvariant()}");
 
             claims.AddRange(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)));
+        }
 
+        protected virtual void AddGroups(PrivilegedAttributeCertificate pac, List<Claim> claims)
+        {
             var domainSddl = pac.LogonInfo.DomainSid.Value;
 
             foreach (var g in pac.LogonInfo.GroupSids)

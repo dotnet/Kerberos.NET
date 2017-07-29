@@ -27,7 +27,7 @@ namespace Syfuhs.Security.Kerberos.Entities
     {
         public PrivilegedAttributeCertificate(byte[] pacData)
         {
-            var pacStream = new PacBinaryReader(pacData);
+            var pacStream = new NdrBinaryReader(pacData);
 
             var count = pacStream.ReadInt();
             var version = pacStream.ReadInt();
@@ -46,7 +46,7 @@ namespace Syfuhs.Security.Kerberos.Entities
                 var data = new byte[size];
 
                 Buffer.BlockCopy(pacData, (int)offset, data, 0, size);
-                
+
                 switch (type)
                 {
                     case PacTypes.LOGON_INFO:
@@ -62,10 +62,12 @@ namespace Syfuhs.Security.Kerberos.Entities
                         KdcSignature = new PacSignature(data);
                         break;
                     case PacTypes.CLIENT_NAME_TICKET_INFO:
+                        ClientInformation = new PacClientInfo(data);
                         break;
                     case PacTypes.CONSTRAINED_DELEGATION_INFO:
                         break;
                     case PacTypes.UPN_DOMAIN_INFO:
+                        UpnDomainInformation = new UpnDomainInfo(data);
                         break;
                     case PacTypes.CLIENT_CLAIMS:
                         ClientClaims = new ClaimsSetMetadata(data);
@@ -92,5 +94,9 @@ namespace Syfuhs.Security.Kerberos.Entities
         public ClaimsSetMetadata ClientClaims { get; private set; }
 
         public ClaimsSetMetadata DeviceClaims { get; private set; }
+
+        public PacClientInfo ClientInformation { get; private set; }
+
+        public UpnDomainInfo UpnDomainInformation { get; private set; }
     }
 }

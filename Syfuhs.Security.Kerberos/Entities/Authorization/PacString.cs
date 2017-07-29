@@ -15,7 +15,7 @@ namespace Syfuhs.Security.Kerberos.Entities.Authorization
             this.pointer = pointer;
         }
 
-        public string ReadString(PacBinaryReader reader)
+        public string ReadString(NdrBinaryReader reader)
         {
             var result = reader.ReadString();
 
