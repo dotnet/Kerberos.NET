@@ -11,11 +11,10 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A Managed Code validator for Kerberos tickets</description>
     <releaseNotes>
-      Switched to a proper extensible validation model
-      Added keytab file support
-      Created KerberosAuthenticator and KerberosValidator for separation of tasks
-      Created a proper ticket cache validator that cleans up after itself
-      Minor changes for major performance improvements
+      Added claims support!
+      Added PacClientInfo details
+      Added UpnDomainInfo details
+      Adjusted signature types to parse out specifics
     </releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>security kerberos</tags>
