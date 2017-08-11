@@ -1,6 +1,4 @@
-﻿using Syfuhs.Security.Kerberos;
-using Syfuhs.Security.Kerberos.Aes;
-using Syfuhs.Security.Kerberos.Crypto;
+﻿using Kerberos.NET;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,8 +22,11 @@ namespace KerbCrypto
 
         static void Main(string[] args)
         {
-            AESKerberosConfiguration.Register();
+            MainAsync().Wait();
+        }
 
+        private static async System.Threading.Tasks.Task MainAsync()
+        {
             foreach (var f in Files)
             {
                 var data = File.ReadAllBytes("data\\" + f.Key);
@@ -41,7 +42,7 @@ namespace KerbCrypto
 
                 var authenticator = new KerberosAuthenticator(validator);
 
-                var result = authenticator.Authenticate(data);
+                var result = await authenticator.Authenticate(data);
 
                 ;
 

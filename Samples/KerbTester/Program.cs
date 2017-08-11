@@ -1,10 +1,10 @@
-﻿using Syfuhs.Security.Kerberos;
-using Syfuhs.Security.Kerberos.Aes;
-using Syfuhs.Security.Kerberos.Crypto;
+﻿using Kerberos.NET;
+using Kerberos.NET.Crypto;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace KerbTester
 {
@@ -12,8 +12,11 @@ namespace KerbTester
     {
         static void Main(string[] args)
         {
-            AESKerberosConfiguration.Register();
+            MainAsync(args).Wait();
+        }
 
+        private static async Task MainAsync(string[] args)
+        {
             if (args.Length < 3)
             {
                 ShowHelp();
@@ -67,7 +70,7 @@ namespace KerbTester
                     validator.ValidateAfterDecrypt = ValidationAction.Replay;
                 }
 
-                var identity = authenticator.Authenticate(raw);
+                var identity = await authenticator.Authenticate(raw);
 
                 if (identity == null)
                 {
@@ -83,7 +86,7 @@ namespace KerbTester
             }
             catch (Exception ex)
             {
-                W(ex.Message);
+                W(ex.ToString());
             }
 
             ;

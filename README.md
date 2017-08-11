@@ -16,13 +16,7 @@ There are two ways you can go about using this library. The first is to download
 PM> Install-Package Kerberos.NET
 ```
 
-This will get you the main Kerberos parser and RC4 support, which (sadly) is all people really need in most environments because RC4 is so pervasive still. However, if you want to support newer, better, slightly more secure, algorithms you need to install the AES package as well.
-
-```powershell
-PM> Install-Package Kerberos.NET-AES
-```
-
-The AES package is separated from the main package because it has dependencies on BouncyCastle.
+This will install everything you need to validate tickets. Note that AES support has been merged into the main package because the bouncycastle dependency was removed!
 
 ## On Updates to the Nuget Packages
 
@@ -48,9 +42,19 @@ Assert.IsFalse(string.IsNullOrWhitespace(name));
 
 Note that the constructor parameter for the authenticator is a `KeyTable`. The `KeyTable` is a common format used to store keys on other platforms. You can either use a file created by a tool like `ktpass`, or you can just pass a `KerberosKey` during instantiation and it'll have the same effect.
 
+## .NET Core
+
+Hey, it works! Just add the nuget package as a reference and go. 
+
+[More Information](http://syfuhs.net/2017/08/11/porting-kerberos-net-to-net-core/)
+
 ## Creating a Kerberos SPN in Active Directory
 
 Active Directory requires an identity to be present that matches the domain where the token is being sent. This identity can be any user or computer object in Active Directory, but it needs to be configured correctly. This means it needs a Service Principal Name (SPN). You can find instructions on setting up a test user [here](https://syfuhs.net/2017/03/20/configuring-an-spn-in-active-directory-for-kerberos-net/).
+
+## Active Directory Claims
+
+Active Directory has supported claims since Server 2012. At the time you could only access the claims through Windows principals or ADFS dark magic. Kerberos.NET now natively supports parsing claims in kerberos tickets. Take a look at the [Claims Guide](http://syfuhs.net/2017/07/29/active-directory-claims-and-kerberos-net/) for more information on setting this up.
 
 ## KeyTable (keytab) File Generation
 
@@ -69,13 +73,11 @@ ktpass /princ HTTP/test.identityintervention.com@IDENTITIYINTERVENTION.COM /mapu
 The parameter `princ` is used to specify the generated PrincipalName, and `mapuser` which is used to map it to the user in Active Directory. The `crypto` parameter specifies which algorithms should generate entries.
 
 ## AES Support
-AES support is available. Just register the decryptors during app startup.
+AES tickets are now supported natively. No need to do anything extra!
 
-```C#
-AESKerberosConfiguration.Register();
-```
+## Registering Custom Decryptors
 
-This registration is also a good example for how you can add your own support for other algorithms like DES (don't know why you would, but...) where you associate an Encryption type to a Func<> that instantiates new decryptors. There's also nothing stopping you from DI'ing this process if you like.
+You can add your own support for other algorithms like DES (don't know why you would, but...) where you associate an Encryption type to a Func<> that instantiates new decryptors. There's also nothing stopping you from DI'ing this process if you like.
 
 ```C#
 KerberosRequest.RegisterDecryptor(
@@ -88,7 +90,9 @@ KerberosRequest.RegisterDecryptor(
 
 The built-in replay detection uses a `MemoryCache` to temporarily store references to hashes of the ticket nonces. These references are removed when the ticket expires. The detection process occurs right after decryption as soon as the authenticator sequence number is available.
 
-Note that the built-in detection logic does not work effectively when the application is clustered because the cache is not shared across machines. You will need to create a cache that is shared across machines for this to work correctly in a clustered environment.
+Note that the built-in detection logic does not work effectively when the application is clustered because the cache is not shared across machines. The built-in implementation uses an in-memory service and as such isn't shared with anyone.
+
+You will need to create a cache that is shared across machines for this to work correctly in a clustered environment. This has been simplified greatly through the new .NET Core dependency injection services. All you need to do is register an `IDistributedCache` implementation. You can find more information on that in the [Mirosoft Docs](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/distributed).
 
 If you'd like to use your own replay detection just implement the `ITicketReplayValidator` interface and pass it in the `KerberosValidator` constructor.
 
@@ -109,12 +113,13 @@ There are samples!
 
 # The TODO List
 Just a list of things that should be done, but aren't yet.
-
+ 
+ - The validation process should be vetted by someone other than the developer.
+ - Samples for clustered environments should be created.
+ - ~~Port to .NET Core~~ DONE!
  - ~~Support [keytab](https://web.mit.edu/kerberos/krb5-latest/doc/basic/keytab_def.html) files~~ DONE!
  - ~~Replay detection is weak. The default `ITicketCacheValidator` needs to be a proper LMU cache so older entries are automatically cleaned up. The detection should also probably happen after a partial decoding so we can use the ticket's own expiry to remove itself from the cache. The validator should be simple enough that it can be backed by shared storage for clustered environments.~~ DONE!
  - ~~Validation and transformation isn't extensible. It just dumps a ClaimsIdentity with a fairly arbitrary list of claims from the ticket. You should be able to easily get whatever information you want out of the token. Validation also shouldn't be disabled so easily (it's currently just a bool flag on the validator class).~~ DONE!
- - The validation process should be vetted by someone other than the developer.
- - Samples for clustered environments should be created.
 
 # License
 This project has an MIT License, but both the RC4 and MD4 implementations are externally sourced and have their own license.

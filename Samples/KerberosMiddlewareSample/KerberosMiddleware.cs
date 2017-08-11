@@ -1,6 +1,6 @@
-﻿using Microsoft.Owin;
-using Syfuhs.Security.Kerberos;
-using Syfuhs.Security.Kerberos.Crypto;
+﻿using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Microsoft.Owin;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -31,12 +31,12 @@ namespace KerberosMiddlewareSample
 
             validator.Logger = context.TraceOutput.Write;
 
-            ParseKerberosHeader(context);
+            await ParseKerberosHeader(context);
 
             await next.Invoke(environment);
         }
 
-        private void ParseKerberosHeader(OwinContext context)
+        private async Task ParseKerberosHeader(OwinContext context)
         {
             string[] authzHeader = null;
 
@@ -49,7 +49,7 @@ namespace KerberosMiddlewareSample
 
             var authenticator = new KerberosAuthenticator(validator);
 
-            var identity = authenticator.Authenticate(header);
+            var identity = await authenticator.Authenticate(header);
 
             context.Request.User = new ClaimsPrincipal(identity);
         }
