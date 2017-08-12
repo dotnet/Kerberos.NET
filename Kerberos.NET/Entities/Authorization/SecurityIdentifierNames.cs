@@ -10,9 +10,7 @@ namespace Kerberos.NET.Entities.Authorization
         {
             var template = sddl.Replace(domainSddl, DomainPrefix);
 
-            string name;
-
-            if (WellKnownSids.TryGetValue(template, out name))
+            if (WellKnownSids.TryGetValue(template, out string name))
             {
                 return name;
             }

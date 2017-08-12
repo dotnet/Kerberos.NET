@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Kerberos.NET.Crypto
 {
-    public class KerberosHash
+    public static class KerberosHash
     {
         public static byte[] SHA256(string value)
         {

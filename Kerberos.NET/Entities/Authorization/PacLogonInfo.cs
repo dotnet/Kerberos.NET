@@ -1,9 +1,9 @@
-﻿using Kerberos.NET.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Principal;
+
+#pragma warning disable S2344 // Enumeration type names should not have "Flags" or "Enum" suffixes
 
 namespace Kerberos.NET.Entities.Authorization
 {
@@ -144,7 +144,7 @@ namespace Kerberos.NET.Entities.Authorization
 
             if (UserFlags.HasFlag(UserFlags.LOGON_EXTRA_SIDS))
             {
-                ExtraSids = ParseExtraSids(pacStream, extraSidCount, extraSidPointer).Select(e => e.Id.AppendTo(DomainSid)).ToList();
+                ExtraSids = ParseExtraSids(pacStream, extraSidCount, extraSidPointer).Select(e => e.AppendTo(DomainSid)).ToList();
             }
 
             if (resourceDomainIdPointer != 0)
@@ -162,11 +162,11 @@ namespace Kerberos.NET.Entities.Authorization
             }
         }
 
-        private static PacSid[] ParseExtraSids(NdrBinaryReader pacStream, int extraSidCount, int extraSidPointer)
+        private static SecurityIdentifier[] ParseExtraSids(NdrBinaryReader pacStream, int extraSidCount, int extraSidPointer)
         {
             if (extraSidPointer == 0)
             {
-                return new PacSid[0];
+                return new SecurityIdentifier[0];
             }
 
             int realExtraSidCount = pacStream.ReadInt();
@@ -176,7 +176,7 @@ namespace Kerberos.NET.Entities.Authorization
                 throw new InvalidDataException($"Expected Sid count {extraSidCount} doesn't match actual sid count {realExtraSidCount}");
             }
 
-            var extraSidAtts = new PacSid[extraSidCount];
+            var extraSidAtts = new SecurityIdentifier[extraSidCount];
 
             var pointers = new int[extraSidCount];
             var attributes = new SidAttributes[extraSidCount];
@@ -193,10 +193,10 @@ namespace Kerberos.NET.Entities.Authorization
 
                 if (pointers[i] != 0)
                 {
-                    sid = pacStream.ReadSid();
+                    sid = new SecurityIdentifier(pacStream.ReadSid(), attributes[i]);
                 }
 
-                extraSidAtts[i] = new PacSid(sid, attributes[i]);
+                extraSidAtts[i] = sid;
             }
 
             return extraSidAtts;
@@ -222,8 +222,9 @@ namespace Kerberos.NET.Entities.Authorization
             {
                 pacStream.Align(4);
 
-                attributes.Add(pacStream.ReadRid());
-                var attr = (SidAttributes)pacStream.ReadInt();
+                var sid = pacStream.ReadRid();
+
+                attributes.Add(new SecurityIdentifier(sid, (SidAttributes)pacStream.ReadInt()));
             }
 
             return attributes;

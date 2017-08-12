@@ -66,8 +66,6 @@ namespace Kerberos.NET.Entities.Authorization
                 throw ex;
             }
 
-            var destinationSize = 0;
-
             var work = new byte[bufferWorkSize];
 
             var compressed = new byte[bufferWorkSize];
@@ -79,7 +77,7 @@ namespace Kerberos.NET.Entities.Authorization
                 compressed,
                 compressed.Length,
                 0,
-                out destinationSize,
+                out int destinationSize,
                 work
             );
 

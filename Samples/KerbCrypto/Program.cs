@@ -36,8 +36,8 @@ namespace KerbCrypto
 
                 var validator = new KerberosValidator(key)
                 {
-                    Logger = W,
-                    ValidateAfterDecrypt = ValidationAction.Replay
+                    //Logger = W,
+                    ValidateAfterDecrypt = ValidationActions.Replay
                 };
 
                 var authenticator = new KerberosAuthenticator(validator);

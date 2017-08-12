@@ -9,13 +9,13 @@ namespace Kerberos.NET.Entities
 
         public EncTicketPart Ticket { get; protected set; }
 
-        public static Func<DateTimeOffset> Now = () => DateTimeOffset.UtcNow;
+        private static Func<DateTimeOffset> Now = () => DateTimeOffset.UtcNow;
 
-        public abstract void Decrypt(KeyTable ketab);
+        public abstract void Decrypt(KeyTable keytab);
 
         public virtual TimeSpan Skew { get; protected set; } = TimeSpan.FromMinutes(5);
 
-        public virtual void Validate(ValidationAction validation)
+        public virtual void Validate(ValidationActions validation)
         {
             // As defined in https://tools.ietf.org/html/rfc1510 A.10 KRB_AP_REQ verification
 
@@ -29,12 +29,12 @@ namespace Kerberos.NET.Entities
                 throw new KerberosValidationException("Authenticator is null");
             }
 
-            if (validation.HasFlag(ValidationAction.ClientPrincipalIdentifier))
+            if (validation.HasFlag(ValidationActions.ClientPrincipalIdentifier))
             {
                 ValidateClientPrincipalIdentifier();
             }
 
-            if (validation.HasFlag(ValidationAction.Realm))
+            if (validation.HasFlag(ValidationActions.Realm))
             {
                 ValidateRealm();
             }
@@ -43,17 +43,17 @@ namespace Kerberos.NET.Entities
 
             var ctime = Authenticator.CTime.AddTicks(Authenticator.CuSec / 10);
 
-            if (validation.HasFlag(ValidationAction.TokenWindow))
+            if (validation.HasFlag(ValidationActions.TokenWindow))
             {
                 ValidateTicketSkew(now, Skew, ctime);
             }
 
-            if (validation.HasFlag(ValidationAction.StartTime))
+            if (validation.HasFlag(ValidationActions.StartTime))
             {
                 ValidateTicketStart(now, Skew);
             }
 
-            if (validation.HasFlag(ValidationAction.EndTime))
+            if (validation.HasFlag(ValidationActions.EndTime))
             {
                 ValidateTicketEnd(now, Skew);
             }

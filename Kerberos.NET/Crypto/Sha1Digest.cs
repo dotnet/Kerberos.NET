@@ -11,10 +11,10 @@ namespace Kerberos.NET.Crypto
 
         private uint H1, H2, H3, H4, H5;
 
-        private uint[] X = new uint[80];
-        private int xOff;
+        private readonly uint[] X = new uint[80];
+        private readonly byte[] xBuf;
 
-        private byte[] xBuf;
+        private int xOff;
         private int xBufOff;
 
         private long byteCount;
@@ -35,9 +35,7 @@ namespace Kerberos.NET.Crypto
             return DigestLength;
         }
 
-        internal void ProcessWord(
-            byte[] input,
-            int inOff)
+        internal void ProcessWord(byte[] input, int inOff)
         {
             X[xOff] = BE_To_UInt32(input, inOff);
 
@@ -58,9 +56,7 @@ namespace Kerberos.NET.Crypto
             X[15] = (uint)((ulong)bitLength);
         }
 
-        public int DoFinal(
-            byte[] output,
-            int outOff)
+        public int DoFinal(byte[] output, int outOff)
         {
             Finish();
 
@@ -79,12 +75,13 @@ namespace Kerberos.NET.Crypto
         {
             long bitLength = (byteCount << 3);
 
-            //
-            // add the pad bytes.
-            //
-            Update((byte)128);
+            Update(128);
 
-            while (xBufOff != 0) Update((byte)0);
+            while (xBufOff != 0)
+            {
+                Update(0);
+            }
+
             ProcessLength(bitLength);
             ProcessBlock();
         }
@@ -102,9 +99,6 @@ namespace Kerberos.NET.Crypto
             byteCount++;
         }
 
-        /**
-         * reset the chaining variables
-         */
         public void Reset()
         {
             byteCount = 0;
@@ -122,9 +116,6 @@ namespace Kerberos.NET.Crypto
             Array.Clear(X, 0, X.Length);
         }
 
-        //
-        // Additive constants
-        //
         private const uint Y1 = 0x5a827999;
         private const uint Y2 = 0x6ed9eba1;
         private const uint Y3 = 0x8f1bbcdc;
@@ -150,6 +141,7 @@ namespace Kerberos.NET.Crypto
             //
             // expand 16 word block into 80 word block.
             //
+
             for (int i = 16; i < 80; i++)
             {
                 uint t = X[i - 3] ^ X[i - 8] ^ X[i - 14] ^ X[i - 16];
@@ -159,6 +151,7 @@ namespace Kerberos.NET.Crypto
             //
             // set up working variables.
             //
+
             uint A = H1;
             uint B = H2;
             uint C = H3;
@@ -168,12 +161,11 @@ namespace Kerberos.NET.Crypto
             //
             // round 1
             //
+
             int idx = 0;
 
             for (int j = 0; j < 4; j++)
             {
-                // E = rotateLeft(A, 5) + F(B, C, D) + E + X[idx++] + Y1
-                // B = rotateLeft(B, 30)
                 E += (A << 5 | (A >> 27)) + F(B, C, D) + X[idx++] + Y1;
                 B = B << 30 | (B >> 2);
 
@@ -193,10 +185,9 @@ namespace Kerberos.NET.Crypto
             //
             // round 2
             //
+
             for (int j = 0; j < 4; j++)
             {
-                // E = rotateLeft(A, 5) + H(B, C, D) + E + X[idx++] + Y2
-                // B = rotateLeft(B, 30)
                 E += (A << 5 | (A >> 27)) + H(B, C, D) + X[idx++] + Y2;
                 B = B << 30 | (B >> 2);
 
@@ -216,10 +207,9 @@ namespace Kerberos.NET.Crypto
             //
             // round 3
             //
+
             for (int j = 0; j < 4; j++)
             {
-                // E = rotateLeft(A, 5) + G(B, C, D) + E + X[idx++] + Y3
-                // B = rotateLeft(B, 30)
                 E += (A << 5 | (A >> 27)) + G(B, C, D) + X[idx++] + Y3;
                 B = B << 30 | (B >> 2);
 
@@ -239,10 +229,9 @@ namespace Kerberos.NET.Crypto
             //
             // round 4
             //
+
             for (int j = 0; j < 4; j++)
             {
-                // E = rotateLeft(A, 5) + H(B, C, D) + E + X[idx++] + Y4
-                // B = rotateLeft(B, 30)
                 E += (A << 5 | (A >> 27)) + H(B, C, D) + X[idx++] + Y4;
                 B = B << 30 | (B >> 2);
 
@@ -265,24 +254,16 @@ namespace Kerberos.NET.Crypto
             H4 += D;
             H5 += E;
 
-            //
-            // reset start of the buffer.
-            //
             xOff = 0;
             Array.Clear(X, 0, 16);
         }
 
-        public void BlockUpdate(
-            byte[] input,
-            int inOff,
-            int length)
+        public void BlockUpdate(byte[] input, int inOff, int length)
         {
-            length = System.Math.Max(0, length);
+            length = Math.Max(0, length);
 
-            //
-            // fill the current word
-            //
             int i = 0;
+
             if (xBufOff != 0)
             {
                 while (i < length)
@@ -297,18 +278,13 @@ namespace Kerberos.NET.Crypto
                 }
             }
 
-            //
-            // process whole words.
-            //
             int limit = ((length - i) & ~3) + i;
+
             for (; i < limit; i += 4)
             {
                 ProcessWord(input, inOff + i);
             }
 
-            //
-            // load in the remainder.
-            //
             while (i < length)
             {
                 xBuf[xBufOff++] = input[inOff + i++];
@@ -319,7 +295,7 @@ namespace Kerberos.NET.Crypto
 
         internal static void UInt32_To_BE(uint n, byte[] bs, int off)
         {
-            bs[off] = (byte)(n >> 24);
+            bs[off + 0] = (byte)(n >> 24);
             bs[off + 1] = (byte)(n >> 16);
             bs[off + 2] = (byte)(n >> 8);
             bs[off + 3] = (byte)(n);
@@ -327,10 +303,12 @@ namespace Kerberos.NET.Crypto
 
         internal static uint BE_To_UInt32(byte[] bs, int off)
         {
-            return (uint)bs[off] << 24
-                | (uint)bs[off + 1] << 16
-                | (uint)bs[off + 2] << 8
-                | (uint)bs[off + 3];
+            var result = bs[off] << 24
+                       | bs[off + 1] << 16
+                       | bs[off + 2] << 8
+                       | bs[off + 3];
+
+            return (uint)result;
         }
     }
 }

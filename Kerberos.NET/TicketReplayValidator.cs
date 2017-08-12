@@ -47,9 +47,7 @@ namespace Kerberos.NET
 
         public byte[] Get(string key)
         {
-            object result;
-
-            TryGetValue(key, out result);
+            TryGetValue(key, out object result);
 
             return result as byte[];
         }

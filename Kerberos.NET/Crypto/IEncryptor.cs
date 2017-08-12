@@ -12,9 +12,9 @@ namespace Kerberos.NET.Crypto
 
         void Encrypt(byte[] key, byte[] ki);
 
-        void Encrypt(byte[] ke, byte[] iv, byte[] tmpEnc);
+        void Encrypt(byte[] key, byte[] iv, byte[] tmpEnc);
 
-        void Decrypt(byte[] ke, byte[] iv, byte[] tmpEnc);
+        void Decrypt(byte[] key, byte[] iv, byte[] tmpEnc);
 
         byte[] String2Key(KerberosKey key);
     }

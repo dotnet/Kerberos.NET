@@ -3,6 +3,7 @@ using Kerberos.NET.Entities;
 using System.Linq;
 using System;
 using System.Collections.Generic;
+using Kerberos.NET.Crypto.AES;
 
 namespace Kerberos.NET
 {
@@ -20,6 +21,9 @@ namespace Kerberos.NET
         {
             RegisterDecryptor(EncryptionType.RC4_HMAC_NT, (token) => new RC4DecryptedData(token));
             RegisterDecryptor(EncryptionType.RC4_HMAC_NT_EXP, (token) => new RC4DecryptedData(token));
+
+            RegisterDecryptor(EncryptionType.AES128_CTS_HMAC_SHA1_96, (token) => new AES128DecryptedData(token));
+            RegisterDecryptor(EncryptionType.AES256_CTS_HMAC_SHA1_96, (token) => new AES256DecryptedData(token));
         }
 
         public KerberosRequest(byte[] data)
@@ -94,9 +98,7 @@ namespace Kerberos.NET
 
             DecryptedData decryptor = null;
 
-            Func<KrbApReq, DecryptedData> func = null;
-
-            if (Decryptors.TryGetValue(token.Ticket.EncPart.EType, out func) && func != null)
+            if (Decryptors.TryGetValue(token.Ticket.EncPart.EType, out Func<KrbApReq, DecryptedData> func) && func != null)
             {
                 decryptor = func(token);
             }

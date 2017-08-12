@@ -1,5 +1,6 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Entities;
+
+#pragma warning disable S101 // Types should be named in camel case
 
 namespace Kerberos.NET.Crypto.AES
 {

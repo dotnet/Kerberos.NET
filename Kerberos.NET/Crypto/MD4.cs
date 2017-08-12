@@ -12,8 +12,9 @@ namespace Kerberos.NET.Crypto
         private uint _b;
         private uint _c;
         private uint _d;
-        private uint[] _x;
         private int _bytesProcessed;
+
+        private readonly uint[] _x;
 
         public MD4()
         {
@@ -32,9 +33,9 @@ namespace Kerberos.NET.Crypto
             _bytesProcessed = 0;
         }
 
-        protected override void HashCore(byte[] array, int offset, int length)
+        protected override void HashCore(byte[] array, int ibStart, int cbSize)
         {
-            ProcessMessage(Bytes(array, offset, length));
+            ProcessMessage(Bytes(array, ibStart, cbSize));
         }
 
         protected override byte[] HashFinal()

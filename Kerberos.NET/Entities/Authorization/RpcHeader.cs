@@ -5,7 +5,7 @@ namespace Kerberos.NET.Entities.Authorization
 {
     public class RpcHeader
     {
-        private class NdrConstants
+        private static class NdrConstants
         {
             public const int PROTOCOL_VERSION = 1;
             public const int COMMON_HEADER_BYTES = 8;
@@ -15,10 +15,9 @@ namespace Kerberos.NET.Entities.Authorization
         {
             ReadCommonHeader(pacStream);
 
-            var bytes = pacStream.Read(4);
-
-            bytes = pacStream.Read(8);
-            bytes = pacStream.Read(4);
+            pacStream.Read(4);
+            pacStream.Read(8);
+            pacStream.Read(4);
         }
 
         public byte Version { get; private set; }

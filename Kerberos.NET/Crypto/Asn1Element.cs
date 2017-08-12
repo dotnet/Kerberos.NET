@@ -233,7 +233,7 @@ namespace Kerberos.NET.Crypto
 
         private static List<Asn1Element> DecodeChildren(byte[] rawData, int position, int length)
         {
-            var children = new List<Asn1Element>();
+            var decoded = new List<Asn1Element>();
 
             int childPos = position;
             int end = childPos + length;
@@ -242,7 +242,7 @@ namespace Kerberos.NET.Crypto
             {
                 var el = new Asn1Element(rawData, childPos);
 
-                children.Add(el);
+                decoded.Add(el);
                 childPos += el.TotalLength;
 
                 if (el.Tag == 0x00 && el.Length == 0)
@@ -251,7 +251,7 @@ namespace Kerberos.NET.Crypto
                 }
             }
 
-            return children;
+            return decoded;
         }
 
         private static bool IsAsciiString(byte[] data)

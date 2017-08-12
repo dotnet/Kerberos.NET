@@ -3,6 +3,8 @@ using System.IO;
 using System.Security.Cryptography;
 using AESAlgorithm = System.Security.Cryptography.Aes;
 
+#pragma warning disable S101 // Types should be named in camel case
+
 namespace Kerberos.NET.Crypto
 {
     internal static class AESCTS
@@ -67,9 +69,7 @@ namespace Kerberos.NET.Crypto
                     {
                         if (algorithm == null)
                         {
-                            algorithm = new AesManaged();
-                            algorithm.Padding = PaddingMode.None;
-                            algorithm.Mode = CipherMode.CBC;
+                            algorithm = new AesManaged { Padding = PaddingMode.None, Mode = CipherMode.CBC };
                         }
                     }
                 }
@@ -105,7 +105,6 @@ namespace Kerberos.NET.Crypto
 
         public static byte[] Decrypt(byte[] cipherText, byte[] key, byte[] iv)
         {
-            var keySize = key.Length;
             var padSize = 16 - (cipherText.Length % 16);
 
             if (cipherText.Length < 16)

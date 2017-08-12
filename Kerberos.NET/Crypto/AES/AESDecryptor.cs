@@ -1,13 +1,14 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Entities;
 using System;
 using System.Security;
+
+#pragma warning disable S101 // Types should be named in camel case
 
 namespace Kerberos.NET.Crypto.AES
 {
     public abstract class AESDecryptor : KerberosEncryptor
     {
-        public AESDecryptor(IEncryptor encryptor, IHasher hasher)
+        protected AESDecryptor(IEncryptor encryptor, IHasher hasher)
             : base(encryptor, hasher)
         {
         }

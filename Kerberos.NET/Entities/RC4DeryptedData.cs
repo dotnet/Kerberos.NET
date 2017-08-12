@@ -48,7 +48,7 @@ namespace Kerberos.NET.Entities
         {
             var ciphertext = token.Ticket.EncPart.Cipher;
 
-            KerberosKey key = keytab.GetKey(token);
+            var key = keytab.GetKey(token);
             
             var output = Decrypt(key.GetKey(MD4Encryptor), ciphertext, KeyUsage.KU_TICKET);
 

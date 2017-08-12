@@ -5,7 +5,7 @@ namespace Kerberos.NET
 {
     public interface IKerberosValidator
     {
-        ValidationAction ValidateAfterDecrypt { get; set; }
+        ValidationActions ValidateAfterDecrypt { get; set; }
 
         Task<DecryptedData> Validate(byte[] requestBytes);
     }

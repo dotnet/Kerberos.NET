@@ -22,14 +22,14 @@ namespace KerberosWebSample
 
             // NOTE: ValidateAfterDecrypt is a dangerous flag. It should only be used for samples
 
-            validator = new KerberosValidator(new KerberosKey("P@ssw0rd!")) { ValidateAfterDecrypt = ValidationAction.None };
+            validator = new KerberosValidator(new KerberosKey("P@ssw0rd!")) { ValidateAfterDecrypt = ValidationActions.None };
         }
 
         public async Task Invoke(IDictionary<string, object> environment)
         {
             var context = new OwinContext(environment);
 
-            validator.Logger = context.TraceOutput.Write;
+            //validator.Logger = context.TraceOutput.Write;
 
             if (await ParseKerberosHeader(context))
             {

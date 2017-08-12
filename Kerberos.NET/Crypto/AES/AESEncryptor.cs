@@ -1,8 +1,8 @@
-﻿using Kerberos.NET.Entities;
-using System;
-using System.Linq;
+﻿using System;
 using System.Security.Cryptography;
 using System.Text;
+
+#pragma warning disable S101 // Types should be named in camel case
 
 namespace Kerberos.NET.Crypto
 {
@@ -25,25 +25,25 @@ namespace Kerberos.NET.Crypto
 
         public int KeySize { get { return keySize; } }
 
-        public void Decrypt(byte[] key, byte[] cipherState, byte[] data)
+        public void Decrypt(byte[] key, byte[] iv, byte[] tmpEnc)
         {
-            var output = AESCTS.Decrypt(data, key, cipherState);
+            var output = AESCTS.Decrypt(tmpEnc, key, iv);
 
-            Buffer.BlockCopy(output, 0, data, 0, output.Length);
+            Buffer.BlockCopy(output, 0, tmpEnc, 0, output.Length);
         }
 
-        public void Encrypt(byte[] key, byte[] data)
+        public void Encrypt(byte[] key, byte[] ki)
         {
             var cipherState = new byte[BlockSize];
 
-            Encrypt(key, cipherState, data);
+            Encrypt(key, cipherState, ki);
         }
 
-        public void Encrypt(byte[] key, byte[] cipherState, byte[] data)
+        public void Encrypt(byte[] key, byte[] iv, byte[] tmpEnc)
         {
-            var output = AESCTS.Encrypt(data, key, cipherState);
+            var output = AESCTS.Encrypt(tmpEnc, key, iv);
 
-            Buffer.BlockCopy(output, 0, data, 0, output.Length);
+            Buffer.BlockCopy(output, 0, tmpEnc, 0, output.Length);
         }
 
         public byte[] String2Key(KerberosKey key)
@@ -79,10 +79,8 @@ namespace Kerberos.NET.Crypto
             var iterations = GetIterations(param, 4096);
 
             var saltBytes = GetSaltBytes(salt, null);
-
-            var keySize = KeySize;
-
-            var random = PBKDF2(passwordBytes, saltBytes, iterations, keySize);
+            
+            var random = PBKDF2(passwordBytes, saltBytes, iterations, KeySize);
 
             var tmpKey = Random2Key(random);
 

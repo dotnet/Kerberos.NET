@@ -16,7 +16,7 @@ namespace Kerberos.NET.Entities
                 switch (node.ContextSpecificTag)
                 {
                     case 0:
-                        EType = (EncryptionType)(node[0].AsInt());
+                        EType = (EncryptionType)node[0].AsInt();
                         break;
 
                     case 1:

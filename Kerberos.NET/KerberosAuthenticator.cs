@@ -1,5 +1,4 @@
 ﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Crypto.AES;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Authorization;
 using System;
@@ -12,11 +11,6 @@ namespace Kerberos.NET
 {
     public class KerberosAuthenticator
     {
-        static KerberosAuthenticator()
-        {
-            AESKerberosConfiguration.Register();
-        }
-
         private readonly IKerberosValidator validator;
 
         public KerberosAuthenticator(KeyTable keytab)
@@ -34,7 +28,7 @@ namespace Kerberos.NET
 
             // stripping Negotiate or similar schemes if present
 
-            if (token.IndexOf(' ') > 0)
+            if (token.IndexOf(' ') >= 1)
             {
                 var split = token.Split(' ');
 
@@ -87,7 +81,7 @@ namespace Kerberos.NET
             }
         }
 
-        protected virtual void AddClaims(IEnumerable<ClaimsArray> claimsArray, List<Claim> claims)
+        protected virtual void AddClaims(IEnumerable<ClaimsArray> claimsArray, ICollection<Claim> claims)
         {
             foreach (var array in claimsArray)
             {
@@ -100,7 +94,7 @@ namespace Kerberos.NET
             }
         }
 
-        private void AddClaim(ClaimEntry entry, string issuer, List<Claim> claims)
+        private void AddClaim(ClaimEntry entry, string issuer, ICollection<Claim> claims)
         {
             foreach (var value in entry.GetValues<string>())
             {
@@ -152,7 +146,7 @@ namespace Kerberos.NET
             claims.AddRange(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)));
         }
 
-        protected virtual void AddGroups(PrivilegedAttributeCertificate pac, List<Claim> claims)
+        protected virtual void AddGroups(PrivilegedAttributeCertificate pac, ICollection<Claim> claims)
         {
             var domainSddl = pac.LogonInfo.DomainSid.Value;
 

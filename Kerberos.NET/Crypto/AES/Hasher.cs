@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Kerberos.NET.Crypto
+﻿namespace Kerberos.NET.Crypto
 {
     public abstract class Hasher : IHasher
     {
@@ -17,11 +15,11 @@ namespace Kerberos.NET.Crypto
 
         public byte[] CalculateDigest()
         {
-            var digest = new byte[this.digest.GetDigestSize()];
+            var hashedDigest = new byte[digest.GetDigestSize()];
 
-            this.digest.DoFinal(digest, 0);
+            digest.DoFinal(hashedDigest, 0);
 
-            return digest;
+            return hashedDigest;
         }
 
         public void Hash(byte[] data)

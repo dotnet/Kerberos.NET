@@ -60,14 +60,14 @@ namespace KerbTester
 
                 var validator = new KerberosValidator(keytab)
                 {
-                    Logger = W
+                    //Logger = W
                 };
 
                 var authenticator = new KerberosAuthenticator(validator);
 
                 if (args.Contains("novalidate"))
                 {
-                    validator.ValidateAfterDecrypt = ValidationAction.Replay;
+                    validator.ValidateAfterDecrypt = ValidationActions.Replay;
                 }
 
                 var identity = await authenticator.Authenticate(raw);
@@ -119,11 +119,6 @@ namespace KerbTester
         private static byte[] MD4(byte[] key)
         {
             return new MD4().ComputeHash(key);
-        }
-
-        private static byte[] MD4(string password)
-        {
-            return MD4(Encoding.Unicode.GetBytes(password));
         }
     }
 }

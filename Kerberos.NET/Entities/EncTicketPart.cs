@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 
+#pragma warning disable S2344 // Enumeration type names should not have "Flags" or "Enum" suffixes
+
 namespace Kerberos.NET.Entities
 {
     [Flags]
@@ -57,8 +59,7 @@ namespace Kerberos.NET.Entities
                     case 4:
                         for (int l = 0; l < node.Count; l++)
                         {
-                            var t = new Asn1Element(node.Value);
-                            Transited.Add(new TransitedEncoding(t));
+                            Transited.Add(new TransitedEncoding(new Asn1Element(node.Value)));
                         }
                         break;
                     case 5:
@@ -77,11 +78,7 @@ namespace Kerberos.NET.Entities
                         HostAddresses = node[0].AsLong();
                         break;
                     case 10:
-
-                        var parent = node[0];
-
-                        AuthorizationData = new AuthorizationData(parent);
-
+                        AuthorizationData = new AuthorizationData(node[0]);
                         break;
                 }
             }

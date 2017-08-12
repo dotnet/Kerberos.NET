@@ -3,7 +3,7 @@
 namespace Kerberos.NET
 {
     [Flags]
-    public enum ValidationAction
+    public enum ValidationActions
     {
         None = 0,
 

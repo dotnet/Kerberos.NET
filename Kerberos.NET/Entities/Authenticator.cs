@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
+using System.Collections.Generic;
 
 namespace Kerberos.NET.Entities
 {
@@ -39,16 +40,14 @@ namespace Kerberos.NET.Entities
                     case 7:
                         SequenceNumber = node[0].AsLong();
                         break;
-                    //case 8: // this is not right. its ASN.1 plus vendor-specific data
-                    //    var parent = node[0];
+                    case 8:
+                        var parent = node[0];
 
-                    //    for (var p = 0; p < parent.Count; p++)
-                    //    {
-                    //        var child = parent[p];
-
-                    //        Authorizations.Add(new AuthorizationData(parent));
-                    //    }
-                    //    break;
+                        for (var p = 0; p < parent.Count; p++)
+                        {
+                            Authorizations.Add(new AuthorizationData(parent[p]));
+                        }
+                        break;
                 }
             }
         }
@@ -69,9 +68,9 @@ namespace Kerberos.NET.Entities
 
         public long SequenceNumber { get; private set; }
 
-        //private List<AuthorizationData> authorizations;
+        private List<AuthorizationData> authorizations;
 
-        //public List<AuthorizationData> Authorizations { get { return authorizations ?? (authorizations = new List<AuthorizationData>()); } }
+        public List<AuthorizationData> Authorizations { get { return authorizations ?? (authorizations = new List<AuthorizationData>()); } }
 
         public override string ToString()
         {

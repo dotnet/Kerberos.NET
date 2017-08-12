@@ -1,6 +1,8 @@
 ﻿using Kerberos.NET.Entities.Authorization;
 using System.Text;
 
+#pragma warning disable S2344 // Enumeration type names should not have "Flags" or "Enum" suffixes
+
 namespace Kerberos.NET.Entities
 {
     public enum UpnDomainFlags

@@ -28,18 +28,24 @@ namespace Kerberos.NET
 
             TokenCache = ticketCache ?? new TicketReplayValidator(cache);
 
-            ValidateAfterDecrypt = ValidationAction.All;
+            ValidateAfterDecrypt = ValidationActions.All;
         }
 
-        public Action<string> Logger = (s) => { };
+        private ILogger logger;
 
-        public ValidationAction ValidateAfterDecrypt { get; set; }
-        
+        public ILogger Logger
+        {
+            get { return logger ?? (logger = new DebugLogger()); }
+            set { logger = value; }
+        }
+
+        public ValidationActions ValidateAfterDecrypt { get; set; }
+
         public async Task<DecryptedData> Validate(byte[] requestBytes)
         {
             var kerberosRequest = KerberosRequest.Parse(requestBytes);
 
-            Logger(kerberosRequest.ToString());
+            Logger.WriteLine(kerberosRequest.ToString());
 
             var decryptedToken = kerberosRequest.Decrypt(keytab);
 
@@ -47,8 +53,8 @@ namespace Kerberos.NET
             {
                 return null;
             }
-            
-            Logger(decryptedToken.ToString());
+
+            Logger.WriteLine(decryptedToken.ToString());
 
             if (ValidateAfterDecrypt > 0)
             {
@@ -72,7 +78,7 @@ namespace Kerberos.NET
 
             var replayDetected = true;
 
-            var detectReplay = ValidateAfterDecrypt.HasFlag(ValidationAction.Replay);
+            var detectReplay = ValidateAfterDecrypt.HasFlag(ValidationActions.Replay);
 
             if (!detectReplay)
             {

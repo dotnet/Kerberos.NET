@@ -6,7 +6,7 @@
 
         byte[] CalculateDigest();
 
-        void Hash(byte[] tmp);
+        void Hash(byte[] data);
 
         void Hash(byte[] data, int start, int len);
     }

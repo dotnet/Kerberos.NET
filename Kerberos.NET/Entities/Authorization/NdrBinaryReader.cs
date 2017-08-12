@@ -1,8 +1,6 @@
-﻿using Kerberos.NET.Entities;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Principal;
 
 namespace Kerberos.NET.Entities.Authorization
 {
@@ -112,11 +110,16 @@ namespace Kerberos.NET.Entities.Authorization
             return new PacString(length, maxLength, pointer);
         }
 
-        public string ReadString()
+        public string ReadString(int maxLength = int.MaxValue)
         {
             var total = ReadInt();
             var unused = ReadInt();
             var used = ReadInt();
+
+            if (maxLength < total * 2)
+            {
+                throw new InvalidDataException($"Max length of string {maxLength} is greater than total length {total}");
+            }
 
             if (unused > total || used > total - unused)
             {
@@ -141,7 +144,7 @@ namespace Kerberos.NET.Entities.Authorization
                 readTo--;
             }
 
-            return new string(chars, 0 , readTo);
+            return new string(chars, 0, readTo);
         }
 
         public SecurityIdentifier ReadRid()

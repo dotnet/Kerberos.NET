@@ -17,7 +17,12 @@ namespace Kerberos.NET.Entities.Authorization
 
         public string ReadString(NdrBinaryReader reader)
         {
-            var result = reader.ReadString();
+            if (pointer == 0)
+            {
+                return null;
+            }
+
+            var result = reader.ReadString(maxLength);
 
             int expected = Length / 2;
 

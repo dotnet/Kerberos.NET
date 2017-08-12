@@ -1,4 +1,5 @@
 ﻿using Kerberos.NET.Entities.Authorization;
+using System.IO;
 
 namespace Kerberos.NET.Entities
 {
@@ -21,6 +22,11 @@ namespace Kerberos.NET.Entities
 
             pacStream.Align(8);
             var size = pacStream.ReadInt();
+
+            if (size != ClaimSetSize)
+            {
+                throw new InvalidDataException($"Data length {size} doesn't match expected ClaimSetSize {ClaimSetSize}");
+            }
 
             var claimSet = pacStream.Read(ClaimSetSize);
 

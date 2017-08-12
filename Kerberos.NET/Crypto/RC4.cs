@@ -2,7 +2,7 @@
 {
     // copied from https://bitlush.com/blog/rc4-encryption-in-c-sharp
 
-    public class RC4
+    public static class RC4
     {
         public static byte[] Encrypt(byte[] pwd, byte[] data)
         {
