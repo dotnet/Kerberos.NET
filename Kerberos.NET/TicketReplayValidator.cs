@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using System.Threading;
 
 namespace Kerberos.NET
 {
@@ -52,7 +53,7 @@ namespace Kerberos.NET
             return result as byte[];
         }
 
-        public Task<byte[]> GetAsync(string key)
+        public Task<byte[]> GetAsync(string key, CancellationToken token = default(CancellationToken))
         {
             return Task.FromResult(Get(key));
         }
@@ -62,7 +63,7 @@ namespace Kerberos.NET
             /* refreshing */
         }
 
-        public Task RefreshAsync(string key)
+        public Task RefreshAsync(string key, CancellationToken token = default(CancellationToken))
         {
             return Task.FromResult(0);
         }
@@ -72,7 +73,7 @@ namespace Kerberos.NET
             base.Remove(key);
         }
 
-        public Task RemoveAsync(string key)
+        public Task RemoveAsync(string key, CancellationToken token = default(CancellationToken))
         {
             base.Remove(key);
 
@@ -86,7 +87,7 @@ namespace Kerberos.NET
             created.SetValue(value);
         }
 
-        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options)
+        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = default(CancellationToken))
         {
             Set(key, value, options);
 
