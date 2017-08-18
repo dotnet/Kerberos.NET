@@ -12,9 +12,6 @@
     <PackageLicenseUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageProjectUrl>
     <PackageTags>security kerberos</PackageTags>
-    <Version>1.5.0</Version>
-    <AssemblyVersion>1.5.0.1</AssemblyVersion>
-    <FileVersion>1.5.0.1</FileVersion>
     <PackageReleaseNotes>Migrated library to .NET Core
 Merged AES capabilities into main library -- no more bouncy castle required</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/SteveSyfuhs/Kerberos.NET</RepositoryUrl>
