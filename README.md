@@ -1,6 +1,8 @@
 # Kerberos.NET
 A Managed Code validator for Kerberos tickets.
 
+![Build Status](https://syfuhs2.visualstudio.com/_apis/public/build/definitions/bcf490cf-a965-4d26-999c-8de04067ee1e/1/badge)
+
 # What is it?
 
 Kerberos is a black box in the .NET world. It's services are exposed by Windows in a domain environment and most of the Kerberos-isms are hidden by Windows to simplify usage. .NET then tries to simplify further by treating Kerberos as just a Windows authentication method. This has the side effect that working with Kerberos at a protocol level in .NET is severely limited. That means doing anything out of the ordinary with Kerberos is either painful to do, or simply impossible.

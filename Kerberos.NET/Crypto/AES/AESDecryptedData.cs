@@ -13,6 +13,8 @@ namespace Kerberos.NET.Crypto
             this.token = token;
         }
 
+        public override EncryptionType EType => Token?.Ticket?.EncPart?.EType ?? EncryptionType.NULL;
+
         protected abstract KerberosEncryptor Decryptor { get; }
 
         protected KrbApReq Token { get { return token; } }

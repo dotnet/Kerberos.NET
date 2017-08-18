@@ -5,11 +5,19 @@ namespace Kerberos.NET.Entities
 {
     public abstract class DecryptedData
     {
+        public abstract EncryptionType EType { get; }
+
         public Authenticator Authenticator { get; protected set; }
 
         public EncTicketPart Ticket { get; protected set; }
 
-        private static Func<DateTimeOffset> Now = () => DateTimeOffset.UtcNow;
+        private Func<DateTimeOffset> nowFunc;
+
+        public Func<DateTimeOffset> Now
+        {
+            get { return nowFunc ?? (nowFunc = () => DateTimeOffset.UtcNow); }
+            set { nowFunc = value; }
+        }
 
         public abstract void Decrypt(KeyTable keytab);
 

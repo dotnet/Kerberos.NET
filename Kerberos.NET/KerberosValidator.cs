@@ -41,6 +41,14 @@ namespace Kerberos.NET
 
         public ValidationActions ValidateAfterDecrypt { get; set; }
 
+        private Func<DateTimeOffset> nowFunc;
+
+        public Func<DateTimeOffset> Now
+        {
+            get { return nowFunc ?? (nowFunc = () => DateTimeOffset.UtcNow); }
+            set { nowFunc = value; }
+        }
+
         public async Task<DecryptedData> Validate(byte[] requestBytes)
         {
             var kerberosRequest = KerberosRequest.Parse(requestBytes);
@@ -55,6 +63,8 @@ namespace Kerberos.NET
             }
 
             Logger.WriteLine(decryptedToken.ToString());
+
+            decryptedToken.Now = Now;
 
             if (ValidateAfterDecrypt > 0)
             {

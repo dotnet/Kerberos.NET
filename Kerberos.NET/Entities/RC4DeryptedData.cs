@@ -13,6 +13,8 @@ namespace Kerberos.NET.Entities
             this.token = token;
         }
 
+        public override EncryptionType EType => EncryptionType.RC4_HMAC_NT;
+
         private static byte[] GetSalt(int usage)
         {
             switch (usage)
