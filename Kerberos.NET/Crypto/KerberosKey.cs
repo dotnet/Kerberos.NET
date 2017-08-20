@@ -30,8 +30,6 @@ namespace Kerberos.NET.Crypto
 
         public string Password { get { return password; } }
 
-        public byte[] Key { get { return key; } }
-
         public string Host { get { return host; } }
 
         public PrincipalName PrincipalName { get { return principalName; } }

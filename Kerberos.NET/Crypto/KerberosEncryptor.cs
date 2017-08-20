@@ -19,12 +19,7 @@ namespace Kerberos.NET.Crypto
         protected IEncryptor Encryptor { get { return encryptor; } }
 
         public virtual int PaddingSize { get { return 0; } }
-
-        public virtual byte[] Decrypt(KrbApReq token, KerberosKey key, KeyUsage usage)
-        {
-            return Decrypt(token.Ticket.EncPart.Cipher, key.WithPrincipalName(token.Ticket.SName), usage);
-        }
-
+        
         public abstract byte[] Decrypt(byte[] cipher, KerberosKey key, KeyUsage usage);
 
         protected virtual byte[] MakeChecksum(byte[] key, byte[] data, int hashSize)
