@@ -2,9 +2,12 @@ using System;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Crypto;
 using System.Globalization;
-using Microsoft.Extensions.Caching.Distributed;
 using System.Threading.Tasks;
 using System.Text;
+
+#if NETSTANDARD2_0
+using Microsoft.Extensions.Caching.Distributed;
+#endif
 
 namespace Kerberos.NET
 {
@@ -21,7 +24,7 @@ namespace Kerberos.NET
         public KerberosValidator(KerberosKey key, ITicketReplayValidator ticketCache = null)
             : this(new KeyTable(key), ticketCache)
         { }
-
+#if NETSTANDARD2_0
         public KerberosValidator(KeyTable keytab, ITicketReplayValidator ticketCache = null, IDistributedCache cache = null)
         {
             this.keytab = keytab;
@@ -30,7 +33,16 @@ namespace Kerberos.NET
 
             ValidateAfterDecrypt = ValidationActions.All;
         }
+#else
+        public KerberosValidator(KeyTable keytab, ITicketReplayValidator ticketCache = null)
+        {
+            this.keytab = keytab;
 
+            TokenCache = ticketCache ?? new TicketReplayValidator();
+
+            ValidateAfterDecrypt = ValidationActions.All;
+        }
+#endif
         private ILogger logger;
 
         public ILogger Logger

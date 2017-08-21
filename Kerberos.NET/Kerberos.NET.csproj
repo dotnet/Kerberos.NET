@@ -1,22 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net46</TargetFrameworks>
     <DebugType>Full</DebugType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Kerberos.NET</PackageId>
     <Authors>Steve Syfuhs</Authors>
     <Company>Steve Syfuhs</Company>
     <Product>Kerberos.NET library</Product>
-    <Description>A Managed Code validator for Kerberos tickets</Description>
+    <Description>A cross-platform, pure managed-code Kerberos Ticket parsing, validation, and authentication library that doesn’t rely on any OS components.</Description>
     <Copyright>Copyright 2017</Copyright>
     <PackageLicenseUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageProjectUrl>
     <PackageTags>security kerberos</PackageTags>
-    <PackageReleaseNotes>Migrated library to .NET Core
-Merged AES capabilities into main library -- no more bouncy castle required</PackageReleaseNotes>
+    <PackageReleaseNotes>Added .NET 4.6 target for easier dependency management</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/SteveSyfuhs/Kerberos.NET</RepositoryUrl>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
-  <ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.0.0" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <Reference Include="System.Runtime.Caching" />
+  </ItemGroup>
+
 </Project>
