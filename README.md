@@ -2,6 +2,7 @@
 A Managed Code validator for Kerberos tickets.
 
 ![Build Status](https://syfuhs2.visualstudio.com/_apis/public/build/definitions/bcf490cf-a965-4d26-999c-8de04067ee1e/1/badge)
+![Nuget Package](https://img.shields.io/nuget/v/Kerberos.NET.svg)
 
 # What is it?
 
