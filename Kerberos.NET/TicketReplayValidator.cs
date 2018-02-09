@@ -1,4 +1,4 @@
-﻿#if NET46
+﻿#if NET452
 using System.Collections.Concurrent;
 using System.Runtime.Caching;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace Kerberos.NET
 {
-#if NET46
+#if NET452
     internal class TicketReplayValidator : ITicketReplayValidator
     {
         private static readonly ConcurrentDictionary<string, ObjectCache> CacheRegions = new ConcurrentDictionary<string, ObjectCache>();
@@ -104,7 +104,7 @@ namespace Kerberos.NET
             return result as byte[];
         }
 
-        public Task<byte[]> GetAsync(string key, CancellationToken token = default(CancellationToken))
+        public Task<byte[]> GetAsync(string key)
         {
             return Task.FromResult(Get(key));
         }
@@ -114,7 +114,7 @@ namespace Kerberos.NET
             /* refreshing */
         }
 
-        public Task RefreshAsync(string key, CancellationToken token = default(CancellationToken))
+        public Task RefreshAsync(string key)
         {
             return Task.FromResult(0);
         }
@@ -124,7 +124,7 @@ namespace Kerberos.NET
             base.Remove(key);
         }
 
-        public Task RemoveAsync(string key, CancellationToken token = default(CancellationToken))
+        public Task RemoveAsync(string key)
         {
             base.Remove(key);
 
@@ -138,7 +138,7 @@ namespace Kerberos.NET
             created.SetValue(value);
         }
 
-        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = default(CancellationToken))
+        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options)
         {
             Set(key, value, options);
 
