@@ -15,6 +15,6 @@ namespace Kerberos.NET
             : base(message, inner) { }
 
         protected ReplayException(SerializationInfo info, StreamingContext context)
-            : base(info, context) { }
+            : base(info.ToString()) { }
     }
 }

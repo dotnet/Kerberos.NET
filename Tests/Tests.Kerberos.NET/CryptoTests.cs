@@ -8,13 +8,13 @@ using Kerberos.NET.Entities;
 namespace Tests.Kerberos.NET
 {
     [TestClass]
-    public class CryptoTests
+    public class CryptoTests : BaseTest
     {
         [TestMethod]
         public async Task TestRC4Kerberos()
         {
-            var data = File.ReadAllBytes("data\\rc4-kerberos-data");
-            var key = File.ReadAllBytes("data\\rc4-key-data");
+            var data = ReadFile("rc4-kerberos-data");
+            var key = ReadFile("rc4-key-data");
 
             await TestDecode(data, key, EncryptionType.RC4_HMAC_NT);
         }
@@ -22,8 +22,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task TestRC4SPNego()
         {
-            var data = File.ReadAllBytes("data\\rc4-spnego-data");
-            var key = File.ReadAllBytes("data\\rc4-key-data");
+            var data = ReadFile("rc4-spnego-data");
+            var key = ReadFile("rc4-key-data");
 
             await TestDecode(data, key, EncryptionType.RC4_HMAC_NT);
         }
@@ -31,8 +31,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task TestAES128Kerberos()
         {
-            var data = File.ReadAllBytes("data\\aes128-kerberos-data");
-            var key = File.ReadAllBytes("data\\aes128-key-data");
+            var data = ReadFile("aes128-kerberos-data");
+            var key = ReadFile("aes128-key-data");
 
             await TestDecode(data, key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
         }
@@ -40,8 +40,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task TestAES128SPNego()
         {
-            var data = File.ReadAllBytes("data\\aes128-spnego-data");
-            var key = File.ReadAllBytes("data\\aes128-key-data");
+            var data = ReadFile("aes128-spnego-data");
+            var key = ReadFile("aes128-key-data");
 
             await TestDecode(data, key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
         }
@@ -49,8 +49,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task TestAES256Kerberos()
         {
-            var data = File.ReadAllBytes("data\\aes256-kerberos-data");
-            var key = File.ReadAllBytes("data\\aes256-key-data");
+            var data = ReadFile("aes256-kerberos-data");
+            var key = ReadFile("aes256-key-data");
 
             await TestDecode(data, key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
         }
@@ -58,8 +58,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task TestAES256SPNego()
         {
-            var data = File.ReadAllBytes("data\\aes256-spnego-data");
-            var key = File.ReadAllBytes("data\\aes256-key-data");
+            var data = ReadFile("aes256-spnego-data");
+            var key = ReadFile("aes256-key-data");
 
             await TestDecode(data, key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
         }

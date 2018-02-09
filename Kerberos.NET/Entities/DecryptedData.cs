@@ -89,7 +89,7 @@ namespace Kerberos.NET.Entities
 
         protected virtual void ValidateRealm()
         {
-            if (!string.Equals(Ticket.CRealm, Authenticator.Realm, StringComparison.InvariantCultureIgnoreCase))
+            if (!string.Equals(Ticket.CRealm, Authenticator.Realm, StringComparison.OrdinalIgnoreCase))
             {
                 throw new KerberosValidationException(
                     $"Ticket ({Ticket.CRealm}) and Authenticator ({Authenticator.Realm}) realms do not match"

@@ -14,8 +14,5 @@ namespace Kerberos.NET
 
         public KerberosValidationException(string message, Exception inner)
             : base(message, inner) { }
-
-        protected KerberosValidationException(SerializationInfo info, StreamingContext context)
-            : base(info, context) { }
     }
 }

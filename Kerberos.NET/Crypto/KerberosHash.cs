@@ -12,7 +12,7 @@ namespace Kerberos.NET.Crypto
 
         public static byte[] SHA256(byte[] bytes)
         {
-            using (var sha = new SHA256Managed())
+            using (var sha = System.Security.Cryptography.SHA256.Create())
             {
                 return sha.ComputeHash(bytes);
             }

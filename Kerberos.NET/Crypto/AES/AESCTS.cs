@@ -69,7 +69,10 @@ namespace Kerberos.NET.Crypto
                     {
                         if (algorithm == null)
                         {
-                            algorithm = new AesManaged { Padding = PaddingMode.None, Mode = CipherMode.CBC };
+                            var impl = Aes.Create();
+                            impl.Padding = PaddingMode.None;
+                            impl.Mode = CipherMode.CBC;
+                            algorithm = impl;
                         }
                     }
                 }

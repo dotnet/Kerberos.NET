@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Text;
 
-#if NETSTANDARD2_0
+#if NETSTANDARD1_3
 using Microsoft.Extensions.Caching.Distributed;
 #endif
 
@@ -24,7 +24,7 @@ namespace Kerberos.NET
         public KerberosValidator(KerberosKey key, ITicketReplayValidator ticketCache = null)
             : this(new KeyTable(key), ticketCache)
         { }
-#if NETSTANDARD2_0
+#if NETSTANDARD1_3
         public KerberosValidator(KeyTable keytab, ITicketReplayValidator ticketCache = null, IDistributedCache cache = null)
         {
             this.keytab = keytab;

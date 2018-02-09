@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 namespace Tests.Kerberos.NET
 {
     [TestClass]
-    public class ValidatorTests
+    public class ValidatorTests : BaseTest
     {
         [TestMethod]
         public async Task TestKerberosValidator()
         {
-            var data = File.ReadAllBytes("data\\rc4-kerberos-data");
-            var key = File.ReadAllBytes("data\\rc4-key-data");
+            var data = ReadFile("rc4-kerberos-data");
+            var key = ReadFile("rc4-key-data");
 
             var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.Replay };
 
@@ -27,8 +27,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task TestKerberosValidatorNone()
         {
-            var data = File.ReadAllBytes("data\\rc4-kerberos-data");
-            var key = File.ReadAllBytes("data\\rc4-key-data");
+            var data = ReadFile("rc4-kerberos-data");
+            var key = ReadFile("rc4-key-data");
 
             var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.None };
 
@@ -40,8 +40,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task TestKerberosValidatorTimeOffset()
         {
-            var data = File.ReadAllBytes("data\\rc4-kerberos-data");
-            var key = File.ReadAllBytes("data\\rc4-key-data");
+            var data = ReadFile("rc4-kerberos-data");
+            var key = ReadFile("rc4-key-data");
 
             var validator = new KerberosValidator(key);
 
@@ -55,8 +55,8 @@ namespace Tests.Kerberos.NET
         [TestMethod, ExpectedException(typeof(SecurityException))]
         public async Task TestKerberosValidatorBadKey()
         {
-            var data = File.ReadAllBytes("data\\aes128-kerberos-data");
-            var key = File.ReadAllBytes("data\\rc4-key-data");
+            var data = ReadFile("aes128-kerberos-data");
+            var key = ReadFile("rc4-key-data");
 
             var validator = new KerberosValidator(key);
 
@@ -66,8 +66,8 @@ namespace Tests.Kerberos.NET
         [TestMethod, ExpectedException(typeof(KerberosValidationException))]
         public async Task TestKerberosValidatorExpiredTicket()
         {
-            var data = File.ReadAllBytes("data\\rc4-kerberos-data");
-            var key = File.ReadAllBytes("data\\rc4-key-data");
+            var data = ReadFile("rc4-kerberos-data");
+            var key = ReadFile("rc4-key-data");
 
             var validator = new KerberosValidator(key);
 
