@@ -109,7 +109,7 @@ namespace Kerberos.NET.Entities
 
         protected virtual void ValidateClientPrincipalIdentifier()
         {
-            if (!Ticket.CName.Equals(Authenticator.CName))
+            if (!Ticket.CName.Matches(Authenticator.CName))
             {
                 throw new KerberosValidationException(
                     "Ticket CName " +

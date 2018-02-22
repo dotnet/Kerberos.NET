@@ -69,6 +69,7 @@ namespace Kerberos.NET.Entities
                 return false;
             }
 
+            // NT_PRINCIPAL will not match NT_SRV_INST for example
             if (other.NameType != NameType)
             {
                 return false;
@@ -76,7 +77,28 @@ namespace Kerberos.NET.Entities
 
             var namesIntersected = other.Names.Intersect(Names);
 
+            // Names list for principal must be exact; additional entries in keytab will fail
             if (namesIntersected.Count() != other.Names.Count || namesIntersected.Count() != Names.Count)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool Matches(object obj)
+        {
+            var other = obj as PrincipalName;
+
+            if (other == null)
+            {
+                return false;
+            }
+
+            // Any NameType is allowed.  Names collection in two objects must contain at least one common name
+            var namesIntersected = other.Names.Intersect(Names);
+
+            if (namesIntersected.Count() == 0)
             {
                 return false;
             }

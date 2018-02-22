@@ -56,9 +56,17 @@ namespace Kerberos.NET.Crypto
             var type = token.Ticket.EncPart.EType;
             var sname = token.Ticket.SName;
 
-            var entry = Entries.FirstOrDefault(e => e.EncryptionType == type && sname.Equals(e.Principal));
+            // Match on type (e.g. RC4_HMAC_NT) and name (Realm + Name)
+            var entry = Entries.FirstOrDefault(e => e.EncryptionType == type && sname.Matches(e.Principal));
 
-            if (entry == null && Entries.Count == 1)
+            // Fall back to first entry with matching type (RC4_HMAC_NT)
+            if (entry == null)
+            {
+                entry = Entries.FirstOrDefault(e => e.EncryptionType == type);
+            }
+
+            // Fall back to first entry
+            if (entry == null)
             {
                 entry = Entries.FirstOrDefault();
             }
