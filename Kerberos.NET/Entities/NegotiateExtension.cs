@@ -40,8 +40,10 @@ namespace Kerberos.NET.Entities
 
     public class AuthScheme
     {
+        [KerberosIgnore]
         public uint AuthSchemeArrayOffset { get; private set; }
 
+        [KerberosIgnore]
         public ushort AuthSchemeCount { get; private set; }
 
         public Guid[] Schemes { get; private set; }
@@ -93,8 +95,10 @@ namespace Kerberos.NET.Entities
 
     public class ExtensionVector
     {
+        [KerberosIgnore]
         public uint ExtensionArrayOffset { get; private set; }
 
+        [KerberosIgnore]
         public ushort ExtensionCount { get; private set; }
 
         public Extension[] Extensions { get; private set; }
@@ -128,8 +132,10 @@ namespace Kerberos.NET.Entities
 
         public uint SequenceNumber { get; private set; }
 
+        [KerberosIgnore]
         public uint cbHeaderLength { get; private set; }
 
+        [KerberosIgnore]
         public uint cbMessageLength { get; private set; }
 
         public Guid ConversationId { get; private set; }

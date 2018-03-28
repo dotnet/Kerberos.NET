@@ -7,6 +7,11 @@ namespace Kerberos.NET.Entities
     {
         public ClaimsSetMetadata(byte[] data)
         {
+            if (data.Length <= 0)
+            {
+                return;
+            }
+
             var pacStream = new NdrBinaryReader(data);
 
             Header = new RpcHeader(pacStream);
@@ -40,16 +45,19 @@ namespace Kerberos.NET.Entities
             ReservedField = pacStream.Read(ReservedFieldSize);
         }
 
+        [KerberosIgnore]
         public int ClaimSetSize { get; private set; }
 
         public ClaimsSet ClaimsSet { get; private set; }
 
         public CompressionFormat CompressionFormat { get; private set; }
 
+        [KerberosIgnore]
         public int UncompressedClaimSetSize { get; private set; }
 
         public short ReservedType { get; private set; }
 
+        [KerberosIgnore]
         public int ReservedFieldSize { get; private set; }
 
         public byte[] ReservedField { get; private set; }

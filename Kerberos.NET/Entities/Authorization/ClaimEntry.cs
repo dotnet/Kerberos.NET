@@ -34,6 +34,7 @@ namespace Kerberos.NET.Entities.Authorization
 
         public ClaimType Type { get; private set; }
 
+        [KerberosIgnore]
         public uint Count { get; private set; }
 
         private object[] values;

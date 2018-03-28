@@ -17,6 +17,7 @@ namespace Kerberos.NET.Entities
 
         public DateTimeOffset ClientId { get; private set; }
 
+        [KerberosIgnore]
         public short NameLength { get; private set; }
 
         public string Name { get; private set; }

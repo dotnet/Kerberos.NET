@@ -37,12 +37,16 @@ namespace Kerberos.NET.Entities
 
         public string Domain { get; private set; }
 
+        [KerberosIgnore]
         public short UpnLength { get; private set; }
 
+        [KerberosIgnore]
         public short UpnOffset { get; private set; }
 
+        [KerberosIgnore]
         public short DnsDomainNameLength { get; private set; }
 
+        [KerberosIgnore]
         public short DnsDomainNameOffset { get; private set; }
 
         public UpnDomainFlags Flags { get; private set; }

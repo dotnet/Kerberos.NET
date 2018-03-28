@@ -42,6 +42,7 @@ namespace Kerberos.NET.Entities.Authorization
 
         public ClaimSourceType ClaimSource { get; private set; }
 
+        [KerberosIgnore]
         public uint Count { get; private set; }
 
         public IEnumerable<ClaimEntry> ClaimEntries { get; private set; }

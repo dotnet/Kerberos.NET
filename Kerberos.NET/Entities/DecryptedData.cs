@@ -13,6 +13,7 @@ namespace Kerberos.NET.Entities
 
         private Func<DateTimeOffset> nowFunc;
 
+        [KerberosIgnore]
         public Func<DateTimeOffset> Now
         {
             get { return nowFunc ?? (nowFunc = () => DateTimeOffset.UtcNow); }

@@ -44,12 +44,14 @@ namespace Kerberos.NET.Entities.Authorization
             return claims;
         }
 
+        [KerberosIgnore]
         public int Count { get; private set; }
 
         public IEnumerable<ClaimsArray> ClaimsArray { get; private set; }
 
         public short ReservedType { get; private set; }
 
+        [KerberosIgnore]
         public int ReservedFieldSize { get; private set; }
 
         public byte[] ReservedField { get; private set; }

@@ -48,7 +48,7 @@ namespace Kerberos.NET.Crypto
 
         public byte[] String2Key(KerberosKey key)
         {
-            return String2Key(key.Password, GenerateSalt(key), null);
+            return String2Key(key.PasswordBytes, GenerateSalt(key), null);
         }
 
         private static string GenerateSalt(KerberosKey key)
@@ -72,9 +72,9 @@ namespace Kerberos.NET.Crypto
 
         private static readonly byte[] KerberosConstant = Encoding.UTF8.GetBytes("kerberos");
 
-        private byte[] String2Key(string key, string salt, byte[] param)
+        private byte[] String2Key(byte[] password, string salt, byte[] param)
         {
-            var passwordBytes = Encoding.UTF8.GetBytes(key);
+            var passwordBytes = UnicodeToUtf8(password);
 
             var iterations = GetIterations(param, 4096);
 
@@ -85,6 +85,11 @@ namespace Kerberos.NET.Crypto
             var tmpKey = Random2Key(random);
 
             return DK(tmpKey, KerberosConstant);
+        }
+
+        private static byte[] UnicodeToUtf8(byte[] str)
+        {
+            return Encoding.Convert(Encoding.Unicode, Encoding.UTF8, str, 0, str.Length);
         }
 
         private static byte[] PBKDF2(byte[] passwordBytes, byte[] salt, int iterations, int keySize)
