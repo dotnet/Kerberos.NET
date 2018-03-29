@@ -73,14 +73,23 @@ namespace KerbDump
         {
             var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.None };
 
-            var decrypted = await validator.Validate(Convert.FromBase64String(ticket));
+            var ticketBytes = Convert.FromBase64String(ticket);
 
-            return FormatSerialize(decrypted);
+            var decrypted = await validator.Validate(ticketBytes);
+
+            var request = KerberosRequest.Parse(ticketBytes);
+
+            return FormatSerialize(new { Request = request, Decrypted = decrypted });
         }
 
         private string FormatSerialize(object obj)
         {
-            var settings = new JsonSerializerSettings { Formatting = Formatting.Indented, Converters = new[] { new StringEnumConverter() }, ContractResolver = new KerberosIgnoreResolver() };
+            var settings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                Converters = new[] { new StringEnumConverter() },
+                ContractResolver = new KerberosIgnoreResolver()
+            };
 
             return JsonConvert.SerializeObject(obj, settings);
         }
