@@ -136,7 +136,7 @@ namespace Kerberos.NET.Entities
 
         public byte[] String2Key(KerberosKey key)
         {
-            return KerberosHash.MD4(key.Password);
+            return KerberosHash.MD4(key.PasswordBytes);
         }
     }
 }

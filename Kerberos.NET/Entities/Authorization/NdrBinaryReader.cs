@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 namespace Kerberos.NET.Entities.Authorization
 {
@@ -112,11 +113,11 @@ namespace Kerberos.NET.Entities.Authorization
 
         public string ReadString(int maxLength = int.MaxValue)
         {
-            var total = ReadInt();
-            var unused = ReadInt();
-            var used = ReadInt();
+            var total = ReadInt() * 2;
+            var unused = ReadInt() * 2;
+            var used = ReadInt() * 2;
 
-            if (maxLength < total * 2)
+            if (maxLength < total)
             {
                 throw new InvalidDataException($"Max length of string {maxLength} is greater than total length {total}");
             }
@@ -128,23 +129,20 @@ namespace Kerberos.NET.Entities.Authorization
                 );
             }
 
-            reader.BaseStream.Seek(unused * 2, SeekOrigin.Current);
-
-            var chars = new char[used];
-
-            for (var l = 0; l < used; l++)
-            {
-                chars[l] = ReadChar();
-            }
+            reader.BaseStream.Seek(unused, SeekOrigin.Current);
+            
+            var chars = reader.ReadBytes(used);
 
             var readTo = chars.Length;
 
-            if (readTo > 0 && chars[chars.Length - 1] == '\0')
+            if (readTo > 1 &&
+                chars[chars.Length - 1] == '\0' &&
+                chars[chars.Length - 2] == '\0')
             {
-                readTo--;
+                readTo -= 2;
             }
 
-            return new string(chars, 0, readTo);
+            return Encoding.Unicode.GetString(chars, 0, readTo);
         }
 
         public SecurityIdentifier ReadRid()

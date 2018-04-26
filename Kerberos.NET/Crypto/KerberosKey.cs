@@ -10,7 +10,12 @@ namespace Kerberos.NET.Crypto
         {
         }
 
-        private KerberosKey(byte[] key, string password, byte[] passwordBytes = null, PrincipalName principalName = null, string host = null)
+        private KerberosKey(
+            byte[] key, 
+            string password, 
+            byte[] passwordBytes = null, 
+            PrincipalName principalName = null, 
+            string host = null)
         {
             this.key = key;
             this.password = password;
