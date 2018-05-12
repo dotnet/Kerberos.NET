@@ -5,10 +5,6 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Text;
 
-#if NETSTANDARD1_3
-using Microsoft.Extensions.Caching.Distributed;
-#endif
-
 namespace Kerberos.NET
 {
     public class KerberosValidator : IKerberosValidator
@@ -24,16 +20,7 @@ namespace Kerberos.NET
         public KerberosValidator(KerberosKey key, ITicketReplayValidator ticketCache = null)
             : this(new KeyTable(key), ticketCache)
         { }
-#if NETSTANDARD1_3
-        public KerberosValidator(KeyTable keytab, ITicketReplayValidator ticketCache = null, IDistributedCache cache = null)
-        {
-            this.keytab = keytab;
 
-            TokenCache = ticketCache ?? new TicketReplayValidator(cache);
-
-            ValidateAfterDecrypt = ValidationActions.All;
-        }
-#else
         public KerberosValidator(KeyTable keytab, ITicketReplayValidator ticketCache = null)
         {
             this.keytab = keytab;
@@ -42,7 +29,7 @@ namespace Kerberos.NET
 
             ValidateAfterDecrypt = ValidationActions.All;
         }
-#endif
+
         private ILogger logger;
 
         public ILogger Logger
