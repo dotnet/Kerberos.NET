@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.IdentityModel.Selectors;
 using System.IdentityModel.Tokens;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
@@ -40,6 +41,11 @@ namespace KerbDump
 
         private async Task Decode()
         {
+            if (string.IsNullOrWhiteSpace(txtTicket.Text))
+            {
+                return;
+            }
+
             string ticket;
 
             if (string.IsNullOrWhiteSpace(txtKey.Text))
@@ -48,25 +54,35 @@ namespace KerbDump
             }
             else
             {
-                KeyTable key;
+                var key = table;
 
-                if (chkEncodedKey.Checked)
+                if (key == null)
                 {
-                    var bytes = Convert.FromBase64String(txtKey.Text);
+                    if (chkEncodedKey.Checked)
+                    {
+                        var bytes = Convert.FromBase64String(txtKey.Text);
 
-                    key = new KeyTable(new KerberosKey(password: bytes, host: txtHost.Text));
-                }
-                else
-                {
-                    key = new KeyTable(new KerberosKey(txtKey.Text, host: string.IsNullOrWhiteSpace(txtHost.Text) ? null : txtHost.Text));
+                        key = new KeyTable(new KerberosKey(password: bytes, host: txtHost.Text));
+                    }
+                    else
+                    {
+                        key = new KeyTable(new KerberosKey(txtKey.Text, host: string.IsNullOrWhiteSpace(txtHost.Text) ? null : txtHost.Text));
+                    }
                 }
 
                 ticket = await Decode(txtTicket.Text, key);
             }
 
+            DisplayDeconstructed(ticket, "Decoded Ticket");
+        }
+
+        private void DisplayDeconstructed(string ticket, string label)
+        {
+            label2.Text = label;
+
             txtDump.Text = ticket;
 
-            CreateTreeView(txtDump.Text);
+            CreateTreeView(ticket, label);
         }
 
         private async Task<string> Decode(string ticket, KeyTable key)
@@ -79,7 +95,44 @@ namespace KerbDump
 
             var request = KerberosRequest.Parse(ticketBytes);
 
-            return FormatSerialize(new { Request = request, Decrypted = decrypted });
+            var keytableFormat = GenerateFormattedKeyTable(key);
+
+            return FormatSerialize(new { Request = request, Decrypted = decrypted, KeyTable = keytableFormat });
+        }
+
+        private readonly IEncryptor NoOpEncryptor = new NoOpEncryptor();
+
+        private object GenerateFormattedKeyTable(KeyTable keytab)
+        {
+            if (keytab == null)
+            {
+                return null;
+            }
+
+            var keys = keytab.Entries.Select(k =>
+            {
+                var key = new KerberosKey(Encoding.Unicode.GetString(k.Key.GetKey(NoOpEncryptor)), k.Principal);
+
+                return new
+                {
+                    k.EncryptionType,
+                    k.Length,
+                    k.Timestamp,
+                    k.Version,
+                    key.Host,
+                    key.PasswordBytes,
+                    Key = key.PrincipalName
+                };
+            });
+
+            var table = new
+            {
+                keytab.FileVersion,
+                keytab.KerberosVersion,
+                Entries = keys.ToArray()
+            };
+
+            return table;
         }
 
         private string FormatSerialize(object obj)
@@ -100,7 +153,11 @@ namespace KerbDump
 
             KerberosRequest request = KerberosRequest.Parse(ticketBytes);
 
-            return FormatSerialize(request);
+            var keytab = GenerateFormattedKeyTable(table);
+
+            var obj = new { Request = request, KeyTable = keytab };
+
+            return FormatSerialize(obj);
         }
 
         private void btnDecodeLocal_Click(object sender, EventArgs e)
@@ -161,7 +218,7 @@ namespace KerbDump
             txtTicket.Text = Convert.ToBase64String(securityToken.GetRequest());
         }
 
-        private void CreateTreeView(string json)
+        private void CreateTreeView(string json, string label)
         {
             treeView1.BeginUpdate();
 
@@ -172,7 +229,7 @@ namespace KerbDump
             {
                 var obj = JToken.Load(jsonReader);
 
-                var root = new TreeNode("Decoded Ticket");
+                var root = new TreeNode(label);
 
                 AddNode(obj, root);
 
@@ -220,6 +277,61 @@ namespace KerbDump
                     AddNode(array[i], childNode);
                 }
             }
+        }
+
+        private void btnLoadKeytab_Click(object sender, EventArgs e)
+        {
+            var dialog = new OpenFileDialog();
+
+            var result = dialog.ShowDialog(this);
+
+            if (result == DialogResult.OK)
+            {
+                LoadKeytab(dialog.FileName);
+            }
+        }
+
+        private KeyTable table;
+
+        private void LoadKeytab(string fileName)
+        {
+            try
+            {
+                var keytab = new KeyTable(File.ReadAllBytes(fileName));
+
+                if (keytab.Entries.Any())
+                {
+                    table = keytab;
+
+                    lblKeytab.Text = fileName;
+
+                    if (string.IsNullOrWhiteSpace(txtTicket.Text))
+                    {
+                        var formatted = GenerateFormattedKeyTable(table);
+
+                        var serialized = FormatSerialize(new { KeyTable = formatted });
+
+                        DisplayDeconstructed(serialized, "KeyTable");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                lblKeytab.Text = "";
+                this.ShowError(ex);
+            }
+        }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            txtTicket.Text = "";
+            txtDump.Text = "";
+            txtHost.Text = "";
+            txtKey.Text = "";
+
+            treeView1.Nodes.Clear();
+            table = null;
+            lblKeytab.Text = "";
         }
     }
 

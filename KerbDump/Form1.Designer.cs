@@ -42,6 +42,9 @@
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.label2 = new System.Windows.Forms.Label();
             this.btnDecodeLocal = new System.Windows.Forms.Button();
+            this.btnLoadKeytab = new System.Windows.Forms.Button();
+            this.lblKeytab = new System.Windows.Forms.Label();
+            this.btnClear = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -218,19 +221,53 @@
             // btnDecodeLocal
             // 
             this.btnDecodeLocal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnDecodeLocal.Location = new System.Drawing.Point(1094, 470);
+            this.btnDecodeLocal.Location = new System.Drawing.Point(996, 470);
             this.btnDecodeLocal.Name = "btnDecodeLocal";
-            this.btnDecodeLocal.Size = new System.Drawing.Size(130, 23);
+            this.btnDecodeLocal.Size = new System.Drawing.Size(228, 23);
             this.btnDecodeLocal.TabIndex = 3;
-            this.btnDecodeLocal.Text = "Decode with Local";
+            this.btnDecodeLocal.Text = "Request for local and Decode with LSA Secret";
             this.btnDecodeLocal.UseVisualStyleBackColor = true;
             this.btnDecodeLocal.Click += new System.EventHandler(this.btnDecodeLocal_Click);
+            // 
+            // btnLoadKeytab
+            // 
+            this.btnLoadKeytab.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnLoadKeytab.Location = new System.Drawing.Point(12, 470);
+            this.btnLoadKeytab.Name = "btnLoadKeytab";
+            this.btnLoadKeytab.Size = new System.Drawing.Size(106, 23);
+            this.btnLoadKeytab.TabIndex = 4;
+            this.btnLoadKeytab.Text = "Load Keytab";
+            this.btnLoadKeytab.UseVisualStyleBackColor = true;
+            this.btnLoadKeytab.Click += new System.EventHandler(this.btnLoadKeytab_Click);
+            // 
+            // lblKeytab
+            // 
+            this.lblKeytab.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblKeytab.AutoSize = true;
+            this.lblKeytab.Location = new System.Drawing.Point(124, 475);
+            this.lblKeytab.Name = "lblKeytab";
+            this.lblKeytab.Size = new System.Drawing.Size(0, 13);
+            this.lblKeytab.TabIndex = 5;
+            // 
+            // btnClear
+            // 
+            this.btnClear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnClear.Location = new System.Drawing.Point(887, 470);
+            this.btnClear.Name = "btnClear";
+            this.btnClear.Size = new System.Drawing.Size(103, 23);
+            this.btnClear.TabIndex = 6;
+            this.btnClear.Text = "Clear";
+            this.btnClear.UseVisualStyleBackColor = true;
+            this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1372, 505);
+            this.Controls.Add(this.btnClear);
+            this.Controls.Add(this.lblKeytab);
+            this.Controls.Add(this.btnLoadKeytab);
             this.Controls.Add(this.btnDecodeLocal);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.button1);
@@ -248,6 +285,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -266,6 +304,9 @@
         private System.Windows.Forms.Button btnDecodeLocal;
         private System.Windows.Forms.TreeView treeView1;
         private System.Windows.Forms.SplitContainer splitContainer2;
+        private System.Windows.Forms.Button btnLoadKeytab;
+        private System.Windows.Forms.Label lblKeytab;
+        private System.Windows.Forms.Button btnClear;
     }
 }
 

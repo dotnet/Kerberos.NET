@@ -1,4 +1,5 @@
 ﻿using Kerberos.NET.Entities;
+using System;
 using System.Text;
 
 namespace Kerberos.NET.Crypto
@@ -11,10 +12,10 @@ namespace Kerberos.NET.Crypto
         }
 
         private KerberosKey(
-            byte[] key, 
-            string password, 
-            byte[] passwordBytes = null, 
-            PrincipalName principalName = null, 
+            byte[] key,
+            string password,
+            byte[] passwordBytes = null,
+            PrincipalName principalName = null,
             string host = null)
         {
             this.key = key;
@@ -61,6 +62,11 @@ namespace Kerberos.NET.Crypto
             if (key != null && key.Length > 0)
             {
                 return key;
+            }
+
+            if (encryptor == null)
+            {
+                throw new NotSupportedException();
             }
 
             return encryptor.String2Key(this);
