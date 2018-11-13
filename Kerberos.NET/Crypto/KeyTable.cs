@@ -105,9 +105,20 @@ namespace Kerberos.NET.Crypto
 
             var bytesConsumedInEntry = endPosition - startPosition;
 
-            if (Length - bytesConsumedInEntry > 0)
+            if (Length - bytesConsumedInEntry >= 4)
             {
-                Version = ReadInt32(reader);
+                var newVersion = ReadInt32(reader);
+                if (newVersion != 0)
+                {
+                    Version = newVersion;
+                }
+
+                bytesConsumedInEntry += 4;
+            }
+
+            if (bytesConsumedInEntry < Length)
+            {
+                reader.BaseStream.Seek(Length - bytesConsumedInEntry, SeekOrigin.Current);
             }
         }
 
