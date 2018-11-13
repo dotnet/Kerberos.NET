@@ -51,6 +51,9 @@
     <None Update="Data\sample_with_32_bit_version_override.keytab">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\sample_with_padding.keytab">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
