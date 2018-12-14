@@ -20,7 +20,7 @@
     <PackageLicenseUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageProjectUrl>
     <PackageTags>security kerberos</PackageTags>
-    <PackageReleaseNotesAdded support for delegation info in PAC and fixed an issue parsing authorization data in the authenticator.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added support for delegation info in PAC and fixed an issue parsing authorization data in the authenticator.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/SteveSyfuhs/Kerberos.NET</RepositoryUrl>
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
