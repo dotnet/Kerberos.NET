@@ -10,45 +10,44 @@ namespace Kerberos.NET.Entities
         U = 1
     }
 
-    public class UpnDomainInfo
+    public class UpnDomainInfo : NdrObject
     {
         public UpnDomainInfo(byte[] data)
+            : base(data)
         {
-            var pacStream = new NdrBinaryReader(data);
+            UpnLength = Stream.ReadShort();
+            UpnOffset = Stream.ReadShort();
 
-            UpnLength = pacStream.ReadShort();
-            UpnOffset = pacStream.ReadShort();
+            DnsDomainNameLength = Stream.ReadShort();
+            DnsDomainNameOffset = Stream.ReadShort();
 
-            DnsDomainNameLength = pacStream.ReadShort();
-            DnsDomainNameOffset = pacStream.ReadShort();
+            Flags = (UpnDomainFlags)Stream.ReadInt();
 
-            Flags = (UpnDomainFlags)pacStream.ReadInt();
+            Stream.Align(8);
 
-            pacStream.Align(8);
+            Upn = Encoding.Unicode.GetString(Stream.Read(UpnLength));
 
-            Upn = Encoding.Unicode.GetString(pacStream.Read(UpnLength));
+            Stream.Align(8);
 
-            pacStream.Align(8);
-
-            Domain = Encoding.Unicode.GetString(pacStream.Read(DnsDomainNameLength));
+            Domain = Encoding.Unicode.GetString(Stream.Read(DnsDomainNameLength));
         }
 
-        public string Upn { get; private set; }
+        public string Upn { get; }
 
-        public string Domain { get; private set; }
-
-        [KerberosIgnore]
-        public short UpnLength { get; private set; }
+        public string Domain { get; }
 
         [KerberosIgnore]
-        public short UpnOffset { get; private set; }
+        public short UpnLength { get; }
 
         [KerberosIgnore]
-        public short DnsDomainNameLength { get; private set; }
+        public short UpnOffset { get; }
 
         [KerberosIgnore]
-        public short DnsDomainNameOffset { get; private set; }
+        public short DnsDomainNameLength { get; }
 
-        public UpnDomainFlags Flags { get; private set; }
+        [KerberosIgnore]
+        public short DnsDomainNameOffset { get; }
+
+        public UpnDomainFlags Flags { get; }
     }
 }

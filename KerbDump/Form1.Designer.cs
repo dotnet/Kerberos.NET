@@ -45,6 +45,7 @@
             this.btnLoadKeytab = new System.Windows.Forms.Button();
             this.lblKeytab = new System.Windows.Forms.Label();
             this.btnClear = new System.Windows.Forms.Button();
+            this.btnRequest = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -225,7 +226,7 @@
             this.btnDecodeLocal.Name = "btnDecodeLocal";
             this.btnDecodeLocal.Size = new System.Drawing.Size(228, 23);
             this.btnDecodeLocal.TabIndex = 3;
-            this.btnDecodeLocal.Text = "Request for local and Decode with LSA Secret";
+            this.btnDecodeLocal.Text = "Decode with LSA Secret";
             this.btnDecodeLocal.UseVisualStyleBackColor = true;
             this.btnDecodeLocal.Click += new System.EventHandler(this.btnDecodeLocal_Click);
             // 
@@ -252,7 +253,7 @@
             // btnClear
             // 
             this.btnClear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnClear.Location = new System.Drawing.Point(887, 470);
+            this.btnClear.Location = new System.Drawing.Point(679, 470);
             this.btnClear.Name = "btnClear";
             this.btnClear.Size = new System.Drawing.Size(103, 23);
             this.btnClear.TabIndex = 6;
@@ -260,11 +261,23 @@
             this.btnClear.UseVisualStyleBackColor = true;
             this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
             // 
+            // btnRequest
+            // 
+            this.btnRequest.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnRequest.Location = new System.Drawing.Point(788, 470);
+            this.btnRequest.Name = "btnRequest";
+            this.btnRequest.Size = new System.Drawing.Size(202, 23);
+            this.btnRequest.TabIndex = 7;
+            this.btnRequest.Text = "Request for";
+            this.btnRequest.UseVisualStyleBackColor = true;
+            this.btnRequest.Click += new System.EventHandler(this.btnRequest_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1372, 505);
+            this.Controls.Add(this.btnRequest);
             this.Controls.Add(this.btnClear);
             this.Controls.Add(this.lblKeytab);
             this.Controls.Add(this.btnLoadKeytab);
@@ -307,6 +320,7 @@
         private System.Windows.Forms.Button btnLoadKeytab;
         private System.Windows.Forms.Label lblKeytab;
         private System.Windows.Forms.Button btnClear;
+        private System.Windows.Forms.Button btnRequest;
     }
 }
 

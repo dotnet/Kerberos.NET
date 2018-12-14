@@ -19,12 +19,41 @@ namespace KerbDump
 {
     public partial class Form1 : Form
     {
+        private const string RequestTemplateText = "Request for {0}";
+
         public Form1()
         {
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
 
             InitializeComponent();
+
+            SetHost();
+
+            txtHost.TextChanged += Host_Changed;
+
+            txtHost.Text = hostName;
+        }
+
+        private void SetHost()
+        {
+            hostName = Environment.MachineName.ToLowerInvariant();
+        }
+
+        string hostName = "";
+
+        private void Host_Changed(object sender, EventArgs e)
+        {
+            hostName = txtHost.Text;
+
+            if (!string.IsNullOrWhiteSpace(hostName))
+            {
+                btnRequest.Text = string.Format(RequestTemplateText, hostName);
+            }
+            else
+            {
+                btnRequest.Text = string.Format(RequestTemplateText, "<host>");
+            }
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -164,10 +193,6 @@ namespace KerbDump
         {
             try
             {
-                RequestLocalTicket();
-
-                txtHost.Text = Environment.MachineName.ToLowerInvariant();
-
                 using (var secret = new LSASecret("$MACHINE.ACC"))
                 {
                     secret.GetSecret(out byte[] bytes);
@@ -208,8 +233,15 @@ namespace KerbDump
 
         private void RequestLocalTicket()
         {
+            if (string.IsNullOrWhiteSpace(hostName))
+            {
+                SetHost();
+
+                txtHost.Text = hostName;
+            }
+
             var tokenProvider = new KerberosSecurityTokenProvider(
-                Environment.MachineName,
+                hostName,
                 TokenImpersonationLevel.Identification
             );
 
@@ -328,10 +360,23 @@ namespace KerbDump
             txtDump.Text = "";
             txtHost.Text = "";
             txtKey.Text = "";
+            chkEncodedKey.Checked = false;
 
             treeView1.Nodes.Clear();
             table = null;
             lblKeytab.Text = "";
+        }
+
+        private void btnRequest_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                RequestLocalTicket();
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex);
+            }
         }
     }
 

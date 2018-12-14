@@ -6,28 +6,25 @@ namespace Kerberos.NET.Entities.Authorization
     public class ClaimsSet : NdrMessage
     {
         public ClaimsSet(byte[] claims)
+            : base(claims)
         {
-            var pacStream = new NdrBinaryReader(claims);
+            Count = Stream.ReadInt();
 
-            Header = new RpcHeader(pacStream);
+            Stream.Seek(4);
 
-            Count = pacStream.ReadInt();
+            ReservedType = Stream.ReadShort();
+            ReservedFieldSize = Stream.ReadInt();
 
-            pacStream.Seek(4);
+            ReservedField = Stream.Read(ReservedFieldSize);
 
-            ReservedType = pacStream.ReadShort();
-            ReservedFieldSize = pacStream.ReadInt();
+            Stream.Align(8);
 
-            ReservedField = pacStream.Read(ReservedFieldSize);
-
-            pacStream.Align(8);
-
-            ClaimsArray = ReadClaimsArray(pacStream);
+            ClaimsArray = ReadClaimsArray(Stream);
         }
 
-        private IEnumerable<ClaimsArray> ReadClaimsArray(NdrBinaryReader pacStream)
+        private IEnumerable<ClaimsArray> ReadClaimsArray(NdrBinaryReader stream)
         {
-            var count = pacStream.ReadInt();
+            var count = stream.ReadInt();
 
             if (count != Count)
             {
@@ -38,22 +35,22 @@ namespace Kerberos.NET.Entities.Authorization
 
             for (var i = 0; i < Count; i++)
             {
-                claims.Add(new ClaimsArray(pacStream));
+                claims.Add(new ClaimsArray(stream));
             }
 
             return claims;
         }
 
         [KerberosIgnore]
-        public int Count { get; private set; }
+        public int Count { get; }
 
-        public IEnumerable<ClaimsArray> ClaimsArray { get; private set; }
+        public IEnumerable<ClaimsArray> ClaimsArray { get; }
 
-        public short ReservedType { get; private set; }
+        public short ReservedType { get; }
 
         [KerberosIgnore]
-        public int ReservedFieldSize { get; private set; }
+        public int ReservedFieldSize { get; }
 
-        public byte[] ReservedField { get; private set; }
+        public byte[] ReservedField { get; }
     }
 }

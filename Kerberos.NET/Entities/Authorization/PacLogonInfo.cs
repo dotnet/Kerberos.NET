@@ -59,82 +59,79 @@ namespace Kerberos.NET.Entities.Authorization
     public class PacLogonInfo : NdrMessage
     {
         public PacLogonInfo(byte[] node)
+            : base(node)
         {
-            var pacStream = new NdrBinaryReader(node);
+            LogonTime = Stream.ReadFiletime();
+            LogoffTime = Stream.ReadFiletime();
+            KickOffTime = Stream.ReadFiletime();
+            PwdLastChangeTime = Stream.ReadFiletime();
+            PwdCanChangeTime = Stream.ReadFiletime();
+            PwdMustChangeTime = Stream.ReadFiletime();
 
-            Header = new RpcHeader(pacStream);
+            var userName = Stream.ReadRPCUnicodeString();
+            var userDisplayName = Stream.ReadRPCUnicodeString();
+            var logonScript = Stream.ReadRPCUnicodeString();
+            var profilePath = Stream.ReadRPCUnicodeString();
+            var homeDirectory = Stream.ReadRPCUnicodeString();
+            var homeDrive = Stream.ReadRPCUnicodeString();
 
-            LogonTime = pacStream.ReadFiletime();
-            LogoffTime = pacStream.ReadFiletime();
-            KickOffTime = pacStream.ReadFiletime();
-            PwdLastChangeTime = pacStream.ReadFiletime();
-            PwdCanChangeTime = pacStream.ReadFiletime();
-            PwdMustChangeTime = pacStream.ReadFiletime();
+            LogonCount = Stream.ReadShort();
+            BadPasswordCount = Stream.ReadShort();
 
-            var userName = pacStream.ReadRPCUnicodeString();
-            var userDisplayName = pacStream.ReadRPCUnicodeString();
-            var logonScript = pacStream.ReadRPCUnicodeString();
-            var profilePath = pacStream.ReadRPCUnicodeString();
-            var homeDirectory = pacStream.ReadRPCUnicodeString();
-            var homeDrive = pacStream.ReadRPCUnicodeString();
-
-            LogonCount = pacStream.ReadShort();
-            BadPasswordCount = pacStream.ReadShort();
-
-            var userSid = pacStream.ReadRid();
-            var groupSid = pacStream.ReadRid();
+            var userSid = Stream.ReadRid();
+            var groupSid = Stream.ReadRid();
 
             // Groups information
-            var groupCount = pacStream.ReadInt();
-            var groupPointer = pacStream.ReadInt();
+            var groupCount = Stream.ReadInt();
+            var groupPointer = Stream.ReadInt();
 
-            UserFlags = (UserFlags)pacStream.ReadInt();
+            UserFlags = (UserFlags)Stream.ReadInt();
 
             // sessionKey
-            pacStream.Read(new byte[16]);
+            Stream.Read(new byte[16]);
 
-            var serverNameString = pacStream.ReadRPCUnicodeString();
-            var domainNameString = pacStream.ReadRPCUnicodeString();
-            var domainIdPointer = pacStream.ReadInt();
+            var serverNameString = Stream.ReadRPCUnicodeString();
+            var domainNameString = Stream.ReadRPCUnicodeString();
+            var domainIdPointer = Stream.ReadInt();
 
             // reserved1
-            pacStream.Read(new byte[8]);
+            Stream.Read(new byte[8]);
 
-            UserAccountControl = (UserAccountControlFlags)pacStream.ReadInt();
+            UserAccountControl = (UserAccountControlFlags)Stream.ReadInt();
 
-            SubAuthStatus = pacStream.ReadInt();
-            LastSuccessfulILogon = pacStream.ReadFiletime();
-            LastFailedILogon = pacStream.ReadFiletime();
-            FailedILogonCount = pacStream.ReadInt();
+            SubAuthStatus = Stream.ReadInt();
+            LastSuccessfulILogon = Stream.ReadFiletime();
+            LastFailedILogon = Stream.ReadFiletime();
+            FailedILogonCount = Stream.ReadInt();
 
             // reserved3
-            pacStream.ReadInt();
+            Stream.ReadInt();
 
             // Extra SIDs information
-            var extraSidCount = pacStream.ReadInt();
-            var extraSidPointer = pacStream.ReadInt();
+            var extraSidCount = Stream.ReadInt();
+            var extraSidPointer = Stream.ReadInt();
 
-            var resourceDomainIdPointer = pacStream.ReadInt();
-            var resourceGroupCount = pacStream.ReadInt();
-            var resourceGroupPointer = pacStream.ReadInt();
+            var resourceDomainIdPointer = Stream.ReadInt();
+            var resourceGroupCount = Stream.ReadInt();
+            var resourceGroupPointer = Stream.ReadInt();
 
-            UserName = userName.ReadString(pacStream);
-            UserDisplayName = userDisplayName.ReadString(pacStream);
-            LogonScript = logonScript.ReadString(pacStream);
-            ProfilePath = profilePath.ReadString(pacStream);
-            HomeDirectory = homeDirectory.ReadString(pacStream);
-            HomeDrive = homeDrive.ReadString(pacStream);
+            UserName = userName.ReadString(Stream);
+            UserDisplayName = userDisplayName.ReadString(Stream);
+            LogonScript = logonScript.ReadString(Stream);
+            ProfilePath = profilePath.ReadString(Stream);
+            HomeDirectory = homeDirectory.ReadString(Stream);
+            HomeDrive = homeDrive.ReadString(Stream);
 
             // Groups data
-            var groupSids = ParseAttributes(pacStream, groupCount, groupPointer);
+            var groupSids = ParseAttributes(Stream, groupCount, groupPointer);
 
             // Server related strings
-            ServerName = serverNameString.ReadString(pacStream);
-            DomainName = domainNameString.ReadString(pacStream);
+            ServerName = serverNameString.ReadString(Stream);
+            DomainName = domainNameString.ReadString(Stream);
 
             if (domainIdPointer != 0)
             {
-                DomainSid = pacStream.ReadSid();
+                DomainSid = Stream.ReadSid();
             }
 
             UserSid = userSid.AppendTo(DomainSid);
@@ -144,32 +141,32 @@ namespace Kerberos.NET.Entities.Authorization
 
             if (UserFlags.HasFlag(UserFlags.LOGON_EXTRA_SIDS))
             {
-                ExtraSids = ParseExtraSids(pacStream, extraSidCount, extraSidPointer).Select(e => e.AppendTo(DomainSid)).ToList();
+                ExtraSids = ParseExtraSids(Stream, extraSidCount, extraSidPointer).Select(e => e.AppendTo(DomainSid)).ToList();
             }
 
             if (resourceDomainIdPointer != 0)
             {
-                ResourceDomainSid = pacStream.ReadSid();
+                ResourceDomainSid = Stream.ReadSid();
             }
 
             if (UserFlags.HasFlag(UserFlags.LOGON_RESOURCE_GROUPS))
             {
                 ResourceGroups = ParseAttributes(
-                    pacStream,
+                    Stream,
                     resourceGroupCount,
                     resourceGroupPointer
                 ).Select(g => g.AppendTo(DomainSid)).ToList();
             }
         }
 
-        private static SecurityIdentifier[] ParseExtraSids(NdrBinaryReader pacStream, int extraSidCount, int extraSidPointer)
+        private static SecurityIdentifier[] ParseExtraSids(NdrBinaryReader Stream, int extraSidCount, int extraSidPointer)
         {
             if (extraSidPointer == 0)
             {
                 return new SecurityIdentifier[0];
             }
 
-            int realExtraSidCount = pacStream.ReadInt();
+            int realExtraSidCount = Stream.ReadInt();
 
             if (realExtraSidCount != extraSidCount)
             {
@@ -183,8 +180,8 @@ namespace Kerberos.NET.Entities.Authorization
 
             for (int i = 0; i < extraSidCount; i++)
             {
-                pointers[i] = pacStream.ReadInt();
-                attributes[i] = (SidAttributes)pacStream.ReadUnsignedInt();
+                pointers[i] = Stream.ReadInt();
+                attributes[i] = (SidAttributes)Stream.ReadUnsignedInt();
             }
 
             for (int i = 0; i < extraSidCount; i++)
@@ -193,7 +190,7 @@ namespace Kerberos.NET.Entities.Authorization
 
                 if (pointers[i] != 0)
                 {
-                    sid = new SecurityIdentifier(pacStream.ReadSid(), attributes[i]);
+                    sid = new SecurityIdentifier(Stream.ReadSid(), attributes[i]);
                 }
 
                 extraSidAtts[i] = sid;
@@ -202,7 +199,7 @@ namespace Kerberos.NET.Entities.Authorization
             return extraSidAtts;
         }
 
-        private static IEnumerable<SecurityIdentifier> ParseAttributes(NdrBinaryReader pacStream, int count, int pointer)
+        private static IEnumerable<SecurityIdentifier> ParseAttributes(NdrBinaryReader Stream, int count, int pointer)
         {
             var attributes = new List<SecurityIdentifier>();
 
@@ -211,7 +208,7 @@ namespace Kerberos.NET.Entities.Authorization
                 return attributes;
             }
 
-            int realCount = pacStream.ReadInt();
+            int realCount = Stream.ReadInt();
 
             if (realCount != count)
             {
@@ -220,72 +217,72 @@ namespace Kerberos.NET.Entities.Authorization
 
             for (int i = 0; i < count; i++)
             {
-                pacStream.Align(4);
+                Stream.Align(4);
 
-                var sid = pacStream.ReadRid();
+                var sid = Stream.ReadRid();
 
-                attributes.Add(new SecurityIdentifier(sid, (SidAttributes)pacStream.ReadInt()));
+                attributes.Add(new SecurityIdentifier(sid, (SidAttributes)Stream.ReadInt()));
             }
 
             return attributes;
         }
 
-        public DateTimeOffset LogonTime { get; private set; }
+        public DateTimeOffset LogonTime { get; }
 
-        public DateTimeOffset LogoffTime { get; private set; }
+        public DateTimeOffset LogoffTime { get; }
 
-        public DateTimeOffset KickOffTime { get; private set; }
+        public DateTimeOffset KickOffTime { get; }
 
-        public DateTimeOffset PwdLastChangeTime { get; private set; }
+        public DateTimeOffset PwdLastChangeTime { get; }
 
-        public DateTimeOffset PwdCanChangeTime { get; private set; }
+        public DateTimeOffset PwdCanChangeTime { get; }
 
-        public DateTimeOffset PwdMustChangeTime { get; private set; }
+        public DateTimeOffset PwdMustChangeTime { get; }
 
-        public long LogonCount { get; private set; }
+        public long LogonCount { get; }
 
-        public long BadPasswordCount { get; private set; }
+        public long BadPasswordCount { get; }
 
-        public string UserName { get; private set; }
+        public string UserName { get; }
 
-        public string UserDisplayName { get; private set; }
+        public string UserDisplayName { get; }
 
-        public string LogonScript { get; private set; }
+        public string LogonScript { get; }
 
-        public string ProfilePath { get; private set; }
+        public string ProfilePath { get; }
 
-        public string HomeDirectory { get; private set; }
+        public string HomeDirectory { get; }
 
-        public string HomeDrive { get; private set; }
+        public string HomeDrive { get; }
 
-        public string ServerName { get; private set; }
+        public string ServerName { get; }
 
-        public string DomainName { get; private set; }
+        public string DomainName { get; }
 
-        public SecurityIdentifier UserSid { get; private set; }
+        public SecurityIdentifier UserSid { get; }
 
-        public SecurityIdentifier GroupSid { get; private set; }
+        public SecurityIdentifier GroupSid { get; }
 
-        public IEnumerable<SecurityIdentifier> GroupSids { get; private set; }
+        public IEnumerable<SecurityIdentifier> GroupSids { get; }
 
-        public IEnumerable<SecurityIdentifier> ExtraSids { get; private set; }
+        public IEnumerable<SecurityIdentifier> ExtraSids { get; }
 
-        public UserAccountControlFlags UserAccountControl { get; private set; }
+        public UserAccountControlFlags UserAccountControl { get; }
 
-        public UserFlags UserFlags { get; private set; }
+        public UserFlags UserFlags { get; }
 
-        public int FailedILogonCount { get; private set; }
+        public int FailedILogonCount { get; }
 
-        public DateTimeOffset LastFailedILogon { get; private set; }
+        public DateTimeOffset LastFailedILogon { get; }
 
-        public DateTimeOffset LastSuccessfulILogon { get; private set; }
+        public DateTimeOffset LastSuccessfulILogon { get; }
 
-        public int SubAuthStatus { get; private set; }
+        public int SubAuthStatus { get; }
 
-        public SecurityIdentifier ResourceDomainSid { get; private set; }
+        public SecurityIdentifier ResourceDomainSid { get; }
 
-        public IEnumerable<SecurityIdentifier> ResourceGroups { get; private set; }
+        public IEnumerable<SecurityIdentifier> ResourceGroups { get; }
 
-        public SecurityIdentifier DomainSid { get; private set; }
+        public SecurityIdentifier DomainSid { get; }
     }
 }

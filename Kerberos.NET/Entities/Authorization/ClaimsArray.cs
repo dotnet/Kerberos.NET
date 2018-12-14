@@ -9,18 +9,19 @@ namespace Kerberos.NET.Entities.Authorization
         CLAIMS_SOURCE_TYPE_CERTIFICATE
     }
 
-    public class ClaimsArray
+    public class ClaimsArray : NdrObject
     {
-        public ClaimsArray(NdrBinaryReader pacStream)
+        public ClaimsArray(NdrBinaryReader stream)
+            : base(stream)
         {
-            ClaimSource = (ClaimSourceType)pacStream.ReadInt();
-            Count = pacStream.ReadUnsignedInt();
+            ClaimSource = (ClaimSourceType)Stream.ReadInt();
+            Count = Stream.ReadUnsignedInt();
 
             var claims = new List<ClaimEntry>();
 
-            pacStream.Seek(4);
+            Stream.Seek(4);
 
-            var count = pacStream.ReadInt();
+            var count = Stream.ReadInt();
 
             if (Count != count)
             {
@@ -29,22 +30,22 @@ namespace Kerberos.NET.Entities.Authorization
 
             for (var i = 0; i < Count; i++)
             {
-                claims.Add(new ClaimEntry(pacStream));
+                claims.Add(new ClaimEntry(Stream));
             }
 
             foreach (var entry in claims)
             {
-                entry.ReadValue(pacStream);
+                entry.ReadValue(Stream);
             }
 
             ClaimEntries = claims;
         }
 
-        public ClaimSourceType ClaimSource { get; private set; }
+        public ClaimSourceType ClaimSource { get; }
 
         [KerberosIgnore]
-        public uint Count { get; private set; }
+        public uint Count { get; }
 
-        public IEnumerable<ClaimEntry> ClaimEntries { get; private set; }
+        public IEnumerable<ClaimEntry> ClaimEntries { get; }
     }
 }

@@ -4,22 +4,21 @@ using System.Text;
 
 namespace Kerberos.NET.Entities
 {
-    public class PacClientInfo
+    public class PacClientInfo : NdrObject
     {
         public PacClientInfo(byte[] data)
+            : base(data)
         {
-            var pacStream = new NdrBinaryReader(data);
-
-            ClientId = pacStream.ReadFiletime();
-            NameLength = pacStream.ReadShort();
-            Name = Encoding.Unicode.GetString(pacStream.Read(NameLength));
+            ClientId = Stream.ReadFiletime();
+            NameLength = Stream.ReadShort();
+            Name = Encoding.Unicode.GetString(Stream.Read(NameLength));
         }
 
-        public DateTimeOffset ClientId { get; private set; }
+        public DateTimeOffset ClientId { get; }
 
         [KerberosIgnore]
-        public short NameLength { get; private set; }
+        public short NameLength { get; }
 
-        public string Name { get; private set; }
+        public string Name { get; }
     }
 }

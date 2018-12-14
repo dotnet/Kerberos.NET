@@ -37,6 +37,11 @@ namespace Kerberos.NET.Entities.Authorization
             }
         }
 
+        public RpcHeader ReadNdrHeader()
+        {
+            return new RpcHeader(this);
+        }
+
         public byte[] Read(int length)
         {
             return reader.ReadBytes(length);

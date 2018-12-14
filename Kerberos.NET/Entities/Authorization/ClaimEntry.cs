@@ -15,42 +15,45 @@ namespace Kerberos.NET.Entities.Authorization
     }
 
     [DebuggerDisplay("{Id}")]
-    public class ClaimEntry
+    public class ClaimEntry : NdrObject
     {
-        public ClaimEntry(NdrBinaryReader pacStream)
+        public ClaimEntry(NdrBinaryReader stream)
+            : base(stream)
         {
-            pacStream.Seek(4);
+            Stream.Seek(4);
 
-            Type = (ClaimType)pacStream.ReadShort();
+            Type = (ClaimType)Stream.ReadShort();
 
-            pacStream.Align(4);
+            Stream.Align(4);
 
-            Count = pacStream.ReadUnsignedInt();
+            Count = Stream.ReadUnsignedInt();
 
-            pacStream.Seek(4);
+            Stream.Seek(4);
         }
 
         public string Id { get; private set; }
 
-        public ClaimType Type { get; private set; }
+        public ClaimType Type { get; }
 
         [KerberosIgnore]
-        public uint Count { get; private set; }
+        public uint Count { get; }
 
         private object[] values;
+
+        public IEnumerable<object> RawValues { get { return values; } }
 
         public IEnumerable<T> GetValues<T>()
         {
             return values.Select(v => (T)Convert.ChangeType(v, typeof(T)));
         }
 
-        internal void ReadValue(NdrBinaryReader pacStream)
+        internal void ReadValue(NdrBinaryReader stream)
         {
-            Id = pacStream.ReadString();
+            Id = stream.ReadString();
 
-            pacStream.Align(4);
+            stream.Align(4);
 
-            var count = pacStream.ReadInt();
+            var count = stream.ReadInt();
 
             if (count != Count)
             {
@@ -59,18 +62,18 @@ namespace Kerberos.NET.Entities.Authorization
 
             if (Type == ClaimType.CLAIM_TYPE_STRING)
             {
-                var ptr = pacStream.ReadInt();
+                var ptr = stream.ReadInt();
 
                 if (count > 1 && ptr != 0)
                 {
-                    pacStream.Seek(8);
+                    stream.Seek(8);
                 }
             }
 
-            ReadValues(pacStream);
+            ReadValues(stream);
         }
 
-        private void ReadValues(NdrBinaryReader pacStream)
+        private void ReadValues(NdrBinaryReader Stream)
         {
             values = new object[Count];
 
@@ -79,16 +82,16 @@ namespace Kerberos.NET.Entities.Authorization
                 switch (Type)
                 {
                     case ClaimType.CLAIM_TYPE_BOOLEAN:
-                        values[i] = Convert.ToBoolean(pacStream.ReadLong());
+                        values[i] = Convert.ToBoolean(Stream.ReadLong());
                         break;
                     case ClaimType.CLAIM_TYPE_INT64:
-                        values[i] = pacStream.ReadLong();
+                        values[i] = Stream.ReadLong();
                         break;
                     case ClaimType.CLAIM_TYPE_UINT64:
-                        values[i] = (ulong)pacStream.ReadLong();
+                        values[i] = (ulong)Stream.ReadLong();
                         break;
                     case ClaimType.CLAIM_TYPE_STRING:
-                        values[i] = pacStream.ReadString();
+                        values[i] = Stream.ReadString();
                         break;
                 }
             }

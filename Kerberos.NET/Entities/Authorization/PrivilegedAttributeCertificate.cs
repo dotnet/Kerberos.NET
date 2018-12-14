@@ -19,16 +19,15 @@ namespace Kerberos.NET.Entities
         DEVICE_CLAIMS = 0x0000000F
     }
 
-    public class PrivilegedAttributeCertificate
+    public class PrivilegedAttributeCertificate : NdrObject
     {
         private const int PAC_VERSION = 0;
 
         public PrivilegedAttributeCertificate(byte[] pacData)
+            : base(pacData)
         {
-            var pacStream = new NdrBinaryReader(pacData);
-
-            var count = pacStream.ReadInt();
-            var version = pacStream.ReadInt();
+            var count = Stream.ReadInt();
+            var version = Stream.ReadInt();
 
             if (version != PAC_VERSION)
             {
@@ -39,10 +38,10 @@ namespace Kerberos.NET.Entities
 
             for (var i = 0; i < count; i++)
             {
-                var type = (PacType)pacStream.ReadInt();
-                var size = pacStream.ReadInt();
+                var type = (PacType)Stream.ReadInt();
+                var size = Stream.ReadInt();
 
-                var offset = pacStream.ReadLong();
+                var offset = Stream.ReadLong();
                 var data = new byte[size];
 
                 Buffer.BlockCopy(pacData, (int)offset, data, 0, size);
@@ -87,6 +86,7 @@ namespace Kerberos.NET.Entities
                     ClientInformation = new PacClientInfo(data);
                     break;
                 case PacType.CONSTRAINED_DELEGATION_INFO:
+                    DelegationInformation = new PacDelegationInfo(data);
                     break;
                 case PacType.UPN_DOMAIN_INFO:
                     UpnDomainInformation = new UpnDomainInfo(data);
@@ -119,5 +119,7 @@ namespace Kerberos.NET.Entities
         public PacClientInfo ClientInformation { get; private set; }
 
         public UpnDomainInfo UpnDomainInformation { get; private set; }
+
+        public PacDelegationInfo DelegationInformation { get; private set; }
     }
 }

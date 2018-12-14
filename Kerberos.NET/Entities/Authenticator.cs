@@ -41,7 +41,7 @@ namespace Kerberos.NET.Entities
                         SequenceNumber = node[0].AsLong();
                         break;
                     case 8:
-                        var parent = node[0];
+                        var parent = node;
 
                         for (var p = 0; p < parent.Count; p++)
                         {
