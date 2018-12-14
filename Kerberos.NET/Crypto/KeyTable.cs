@@ -82,6 +82,8 @@ namespace Kerberos.NET.Crypto
         {
             Length = ReadInt32(reader);
 
+            var startPosition = reader.BaseStream.Position;
+
             var bytesAvailable = reader.BytesAvailable();
 
             if (Length > bytesAvailable)
@@ -98,6 +100,26 @@ namespace Kerberos.NET.Crypto
             Version = reader.ReadByte();
 
             Key = ReadKey(reader);
+
+            var endPosition = reader.BaseStream.Position;
+
+            var bytesConsumedInEntry = endPosition - startPosition;
+
+            if (Length - bytesConsumedInEntry >= 4)
+            {
+                var newVersion = ReadInt32(reader);
+                if (newVersion != 0)
+                {
+                    Version = newVersion;
+                }
+
+                bytesConsumedInEntry += 4;
+            }
+
+            if (bytesConsumedInEntry < Length)
+            {
+                reader.BaseStream.Seek(Length - bytesConsumedInEntry, SeekOrigin.Current);
+            }
         }
 
         public KeyEntry(KerberosKey key)
