@@ -59,7 +59,7 @@ namespace Kerberos.NET.Entities
                     case 4:
                         for (int l = 0; l < node.Count; l++)
                         {
-                            Transited.Add(new TransitedEncoding(new Asn1Element(node.Value)));
+                            Transited.Add(new TransitedEncoding(node[0]));
                         }
                         break;
                     case 5:
@@ -78,7 +78,18 @@ namespace Kerberos.NET.Entities
                         HostAddresses = node[0].AsLong();
                         break;
                     case 10:
-                        AuthorizationData = new AuthorizationData(node[0]);
+                        var parent = node[0];
+
+                        var authorizations = new List<AuthorizationData>();
+
+                        for (var p = 0; p < parent.Count; p++)
+                        {
+                            var azElements = AuthorizationDataElement.ParseElements(parent[p]);
+
+                            authorizations.AddRange(azElements);
+                        }
+
+                        AuthorizationData = authorizations;
                         break;
                 }
             }
@@ -106,7 +117,7 @@ namespace Kerberos.NET.Entities
 
         public long HostAddresses { get; private set; }
 
-        public AuthorizationData AuthorizationData { get; private set; }
+        public IEnumerable<AuthorizationData> AuthorizationData { get; private set; }
 
         public override string ToString()
         {

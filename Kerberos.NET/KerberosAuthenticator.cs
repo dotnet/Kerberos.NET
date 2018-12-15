@@ -53,11 +53,15 @@ namespace Kerberos.NET
 
             var claims = new List<Claim>();
 
-            foreach (var authz in ticket.AuthorizationData.Authorizations)
+            foreach (var authData in ticket.AuthorizationData)
             {
-                if (authz.PrivilegedAttributeCertificate != null)
+                foreach (var authz in authData.Authorizations)
                 {
-                    MergeAttributes(ticket, authz.PrivilegedAttributeCertificate, claims);
+                    if (authz.Type == AuthorizationDataValueType.AD_WIN2K_PAC)
+                    {
+                        var pac = (PacElement)authz;
+                        MergeAttributes(ticket, pac.Certificate, claims);
+                    }
                 }
             }
 

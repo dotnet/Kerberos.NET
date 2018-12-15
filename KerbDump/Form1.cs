@@ -1,15 +1,18 @@
-﻿using Kerberos.NET;
+﻿using KerbDump.Properties;
+using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IdentityModel.Selectors;
 using System.IdentityModel.Tokens;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,6 +36,25 @@ namespace KerbDump
             txtHost.TextChanged += Host_Changed;
 
             txtHost.Text = hostName;
+
+            TryLoadPersistedSettings();
+        }
+
+        private void TryLoadPersistedSettings()
+        {
+            if (!Settings.Default.ShouldRemember)
+            {
+                chkRemember.Checked = false;
+
+                return;
+            }
+
+            txtTicket.Text = Settings.Default.Ticket;
+            txtKey.Text = Unprotect(Settings.Default.Secret);
+            chkEncodedKey.Checked = Settings.Default.IsSecretEncoded;
+            txtHost.Text = Settings.Default.Host;
+
+            button1_Click(this, EventArgs.Empty);
         }
 
         private void SetHost()
@@ -70,6 +92,15 @@ namespace KerbDump
 
         private async Task Decode()
         {
+            if (chkRemember.Checked)
+            {
+                TryPersistingValues();
+            }
+            else
+            {
+                ResetPersistedValues();
+            }
+
             if (string.IsNullOrWhiteSpace(txtTicket.Text))
             {
                 return;
@@ -103,6 +134,62 @@ namespace KerbDump
             }
 
             DisplayDeconstructed(ticket, "Decoded Ticket");
+        }
+
+        private void ResetPersistedValues()
+        {
+            try
+            {
+                Settings.Default.Reset();
+                Settings.Default.Save();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+        }
+
+        private void TryPersistingValues()
+        {
+            try
+            {
+                Settings.Default.ShouldRemember = true;
+
+                Settings.Default.Ticket = txtTicket.Text;
+                Settings.Default.Secret = Protect(txtKey.Text);
+                Settings.Default.IsSecretEncoded = chkEncodedKey.Checked;
+                Settings.Default.Host = txtHost.Text;
+
+                Settings.Default.Save();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+        }
+
+        private string Protect(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return text;
+            }
+
+            var protectedSecret = ProtectedData.Protect(Encoding.Unicode.GetBytes(text), null, DataProtectionScope.CurrentUser);
+
+            return Convert.ToBase64String(protectedSecret);
+        }
+
+        private string Unprotect(string secret)
+        {
+            if (string.IsNullOrWhiteSpace(secret))
+            {
+                return secret;
+            }
+
+            var unprotected = ProtectedData.Unprotect(Convert.FromBase64String(secret), null, DataProtectionScope.CurrentUser);
+
+            return Encoding.Unicode.GetString(unprotected);
         }
 
         private void DisplayDeconstructed(string ticket, string label)

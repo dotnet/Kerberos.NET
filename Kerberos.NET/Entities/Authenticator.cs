@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Kerberos.NET.Entities
 {
@@ -41,11 +42,13 @@ namespace Kerberos.NET.Entities
                         SequenceNumber = node[0].AsLong();
                         break;
                     case 8:
-                        var parent = node;
+                        var parent = node[0];
 
                         for (var p = 0; p < parent.Count; p++)
                         {
-                            Authorizations.Add(new AuthorizationData(parent[p]));
+                            var azElements = AuthorizationDataElement.ParseElements(parent[p]);
+                            
+                            Authorizations.AddRange(azElements);
                         }
                         break;
                 }

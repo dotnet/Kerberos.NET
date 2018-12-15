@@ -2,6 +2,11 @@
 
 namespace Kerberos.NET.Entities
 {
+    public enum TransitedEncodingType : long
+    {
+        DomainX500Compress = 1
+    }
+
     public class TransitedEncoding
     {
         public TransitedEncoding(Asn1Element element)
@@ -12,7 +17,7 @@ namespace Kerberos.NET.Entities
                 switch (node.ContextSpecificTag)
                 {
                     case 0:
-                        Type = node[0].AsLong();
+                        Type = (TransitedEncodingType)node[0].AsLong();
                         break;
                     case 1:
                         Contents = node[0].AsString();
@@ -21,7 +26,7 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public long Type { get; private set; }
+        public TransitedEncodingType Type { get; private set; }
 
         public string Contents { get; private set; }
     }

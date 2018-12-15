@@ -3,75 +3,234 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System;
 using System.IO;
+using System.Text;
+using System.Linq;
 
 #pragma warning disable S2346 // Flags enumerations zero-value members should be named "None"
 
 namespace Kerberos.NET.Entities
 {
-    [DebuggerDisplay("{AdType}")]
-    public class AuthorizationDataElement
+    public enum AuthorizationDataType : long
     {
-        public AuthorizationDataElement(Asn1Element parent)
-        {
-            for (var i = 0; i < parent.Count; i++)
-            {
-                var element = parent[i];
-                var child = element[0];
+        AdIfRelevant = 1,
+        AdIntendedForServer = 2,
+        AdIntendedForApplicationClass = 3,
+        AdKdcIssued = 4,
+        AdAndOr = 5,
+        AdMandatoryTicketExtensions = 6,
+        AdInTicketExtensions = 7,
+        AdMandatoryForKdc = 8,
+        OsfDce = 64,
+        Sesame = 65,
+        AdOsfDcePkiCertId = 66,
+        AdWin2kPac = 128
+    }
 
-                switch (element.ContextSpecificTag)
+    public enum AuthorizationDataValueType
+    {
+        AD_WIN2K_PAC = 128,
+        AD_ETYPE_NEGOTIATION = 129,
+        KERB_AUTH_DATA_TOKEN_RESTRICTIONS = 141,
+        KERB_LOCAL = 142,
+        KERB_AP_OPTIONS = 143,
+        KERB_SERVICE_TARGET = 144
+    }
+
+    [DebuggerDisplay("{AdType}")]
+    public abstract class AuthorizationDataElement
+    {
+        public abstract AuthorizationDataValueType Type { get; }
+
+        public static IEnumerable<AuthorizationData> ParseElements(Asn1Element authData)
+        {
+            var dictionary = new Dictionary<AuthorizationDataType, IEnumerable<AuthorizationDataElement>>();
+
+            AuthorizationDataType adType = 0;
+
+            for (var i = 0; i < authData.Count; i++)
+            {
+                var authDataElement = authData[i];
+
+                switch (authDataElement.ContextSpecificTag)
                 {
                     case 0:
-                        AdType = child.AsLong();
+                        adType = (AuthorizationDataType)authDataElement[0].AsLong();
                         break;
                     case 1:
-                        ExtractPacData(new Asn1Element(child.Value)[0]);
+                        switch (adType)
+                        {
+                            case AuthorizationDataType.AdIfRelevant:
+                                var relevant = new Asn1Element(authDataElement[0].Value);
+
+                                for (var r = 0; r < relevant.Count; r++)
+                                {
+                                    AddRestrictionType(dictionary, adType, ExtractRestrictions(relevant[r]));
+                                }
+                                break;
+                            default:
+                                Debug.WriteLine($"Unknown AdType: {adType}");
+                                break;
+                        }
+
                         break;
                 }
             }
+
+            return dictionary.Select(kv => new AuthorizationData(kv.Key, kv.Value));
         }
 
-        private void ExtractPacData(Asn1Element pacParent)
+        private static void AddRestrictionType(
+            Dictionary<AuthorizationDataType, IEnumerable<AuthorizationDataElement>> dictionary,
+            AuthorizationDataType adType,
+            IEnumerable<AuthorizationDataElement> elementsToAdd
+        )
         {
-            for (var i = 0; i < pacParent.Count; i++)
-            {
-                var ifRelevant = pacParent[i];
+            var elements = new List<AuthorizationDataElement>();
 
-                switch (ifRelevant.ContextSpecificTag)
+            if (dictionary.TryGetValue(adType, out IEnumerable<AuthorizationDataElement> existingElements))
+            {
+                elements = existingElements.Union(elementsToAdd).ToList();
+            }
+            else
+            {
+                elements = elementsToAdd.ToList();
+            }
+
+            dictionary[adType] = elements;
+        }
+
+        private static IEnumerable<AuthorizationDataElement> ExtractRestrictions(Asn1Element restrictions)
+        {
+            var elements = new List<AuthorizationDataElement>();
+
+            AuthorizationDataValueType type = 0;
+
+            for (var i = 0; i < restrictions.Count; i++)
+            {
+                switch (restrictions[i].ContextSpecificTag)
                 {
                     case 0:
-                        AdIfRelevant = ifRelevant[0].AsInt();
+                        type = (AuthorizationDataValueType)restrictions[i][0].AsInt();
                         break;
                     case 1:
-                        switch (AdIfRelevant)
+                        var rel = ParseAdIfRelevant(restrictions[i], type);
+
+                        if (rel != null)
                         {
-                            case AD_WIN2K_PAC:
-                                PrivilegedAttributeCertificate = new PrivilegedAttributeCertificate(ifRelevant[0].Value);
-                                break;
-                            case KERB_AUTH_DATA_TOKEN_RESTRICTIONS:
-                                Restriction = new RestrictionEntry(ifRelevant[0].Value);
-                                break;
+                            elements.Add(rel);
                         }
                         break;
                 }
+
+            }
+
+            return elements;
+        }
+
+        private static AuthorizationDataElement ParseIfRelevant(Asn1Element restriction)
+        {
+            AuthorizationDataValueType type = 0;
+
+            switch (restriction.ContextSpecificTag)
+            {
+                case 0:
+                    type = (AuthorizationDataValueType)restriction[0].AsInt();
+                    break;
+                case 1:
+                    return ParseAdIfRelevant(restriction, type);
+            }
+
+            throw new InvalidDataException();
+        }
+
+        private static AuthorizationDataElement ParseAdIfRelevant(Asn1Element restriction, AuthorizationDataValueType type)
+        {
+            switch (type)
+            {
+                case AuthorizationDataValueType.AD_WIN2K_PAC:
+                    return new PacElement(restriction[0].Value);
+                case AuthorizationDataValueType.AD_ETYPE_NEGOTIATION:
+                    return ParseETypes(restriction[0].Value);
+                case AuthorizationDataValueType.KERB_AUTH_DATA_TOKEN_RESTRICTIONS:
+                    return new RestrictionEntry(restriction[0].Value);
+                case AuthorizationDataValueType.KERB_AP_OPTIONS:
+                    return new KerbApOptions(restriction[0].Value); //CHANNEL_BINDING_TOKEN                    ;
+                case AuthorizationDataValueType.KERB_LOCAL:
+                    return new KerbLocal(restriction[0].Value);
+                case AuthorizationDataValueType.KERB_SERVICE_TARGET:
+                    return new KerbServiceName(restriction[0].Value);
+                default:
+                    return null;
             }
         }
 
-        private const int AD_WIN2K_PAC = 128;
-        private const int KERB_AUTH_DATA_TOKEN_RESTRICTIONS = 141;
+        private static NegotiatedETypes ParseETypes(byte[] value)
+        {
+            var etypes = new List<EncryptionType>();
 
-        public long AdType { get; private set; }
+            var element = new Asn1Element(value);
 
-        public byte[] AdData { get; private set; }
+            for (var i = 0; i < element.Count; i++)
+            {
+                etypes.Add((EncryptionType)element[i].AsInt());
+            }
 
-        public int AdIfRelevant { get; private set; }
-
-        public PrivilegedAttributeCertificate PrivilegedAttributeCertificate { get; private set; }
-
-        public RestrictionEntry Restriction { get; private set; }
+            return new NegotiatedETypes(etypes);
+        }
     }
 
-    public class RestrictionEntry
+    public class KerbServiceName : AuthorizationDataElement
     {
+        public override AuthorizationDataValueType Type => AuthorizationDataValueType.KERB_SERVICE_TARGET;
+
+        public KerbServiceName(byte[] val)
+        {
+            ServiceName = Encoding.Unicode.GetString(val);
+        }
+
+        public string ServiceName { get; }
+    }
+
+    public class KerbApOptions : AuthorizationDataElement
+    {
+        public override AuthorizationDataValueType Type => AuthorizationDataValueType.KERB_AP_OPTIONS;
+
+        public KerbApOptions(byte[] options)
+        {
+            Options = options;
+        }
+
+        public byte[] Options { get; }
+    }
+
+    public class KerbLocal : AuthorizationDataElement
+    {
+        public override AuthorizationDataValueType Type => AuthorizationDataValueType.KERB_LOCAL;
+
+        public KerbLocal(byte[] val)
+        {
+            Value = val;
+        }
+
+        public byte[] Value { get; }
+    }
+
+    public class NegotiatedETypes : AuthorizationDataElement
+    {
+        public override AuthorizationDataValueType Type => AuthorizationDataValueType.AD_ETYPE_NEGOTIATION;
+
+        public NegotiatedETypes(IEnumerable<EncryptionType> types)
+        {
+            ETypes = types;
+        }
+
+        public IEnumerable<EncryptionType> ETypes { get; }
+    }
+
+    public class RestrictionEntry : AuthorizationDataElement
+    {
+        public override AuthorizationDataValueType Type => AuthorizationDataValueType.KERB_AUTH_DATA_TOKEN_RESTRICTIONS;
+
         public RestrictionEntry(byte[] value)
         {
             var element = new Asn1Element(value)[0];
@@ -83,7 +242,7 @@ namespace Kerberos.NET.Entities
                 switch (entry.ContextSpecificTag)
                 {
                     case 0:
-                        Type = entry[0].AsInt();
+                        RestrictionType = entry[0].AsInt();
                         break;
                     case 1:
                         Restriction = new LsapTokenInfoIntegrity(entry[0].Value);
@@ -92,7 +251,7 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public int Type { get; private set; }
+        public int RestrictionType { get; private set; }
 
         public LsapTokenInfoIntegrity Restriction { get; private set; }
     }
@@ -136,20 +295,24 @@ namespace Kerberos.NET.Entities
 
     public class AuthorizationData
     {
-        protected AuthorizationData() { }
-
-        public AuthorizationData(Asn1Element element)
+        public AuthorizationData() { }
+        
+        public AuthorizationData(AuthorizationDataType key, IEnumerable<AuthorizationDataElement> value)
         {
-            for (var c = 0; c < element.Count; c++)
-            {
-                var child = element[c];
-
-                Authorizations.Add(new AuthorizationDataElement(child));
-            }
+            Type = key;
+            authorizations = value.ToList();
         }
+
+        public AuthorizationDataType Type { get; }
 
         private List<AuthorizationDataElement> authorizations;
 
-        public List<AuthorizationDataElement> Authorizations { get { return authorizations ?? (authorizations = new List<AuthorizationDataElement>()); } }
+        public IEnumerable<AuthorizationDataElement> Authorizations
+        {
+            get
+            {
+                return authorizations ?? (authorizations = new List<AuthorizationDataElement>());
+            }
+        }
     }
 }

@@ -46,6 +46,7 @@
             this.lblKeytab = new System.Windows.Forms.Label();
             this.btnClear = new System.Windows.Forms.Button();
             this.btnRequest = new System.Windows.Forms.Button();
+            this.chkRemember = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -77,6 +78,7 @@
             // 
             // splitContainer1.Panel1
             // 
+            this.splitContainer1.Panel1.Controls.Add(this.chkRemember);
             this.splitContainer1.Panel1.Controls.Add(this.label4);
             this.splitContainer1.Panel1.Controls.Add(this.txtHost);
             this.splitContainer1.Panel1.Controls.Add(this.chkEncodedKey);
@@ -272,6 +274,20 @@
             this.btnRequest.UseVisualStyleBackColor = true;
             this.btnRequest.Click += new System.EventHandler(this.btnRequest_Click);
             // 
+            // chkRemember
+            // 
+            this.chkRemember.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.chkRemember.AutoSize = true;
+            this.chkRemember.Checked = true;
+            this.chkRemember.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkRemember.Location = new System.Drawing.Point(112, 425);
+            this.chkRemember.Name = "chkRemember";
+            this.chkRemember.Size = new System.Drawing.Size(77, 17);
+            this.chkRemember.TabIndex = 7;
+            this.chkRemember.Text = "Remember";
+            this.chkRemember.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -321,6 +337,7 @@
         private System.Windows.Forms.Label lblKeytab;
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.Button btnRequest;
+        private System.Windows.Forms.CheckBox chkRemember;
     }
 }
 

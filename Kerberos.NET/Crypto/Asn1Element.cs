@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Kerberos.NET.Crypto
 {
-    [DebuggerDisplay("CST {ContextSpecificTag}; T: {Tag}; Count: {Count}")]
+    [DebuggerDisplay("CST {ContextSpecificTag}; T: {Tag}; Children: {Count}; Length: {Length}")]
     public class Asn1Element
     {
         private readonly int position;
@@ -15,7 +15,8 @@ namespace Kerberos.NET.Crypto
         private readonly int valuePosition;
         private readonly List<Asn1Element> children;
 
-        public Asn1Element(byte[] rawData) : this(rawData, 0)
+        public Asn1Element(byte[] rawData)
+            : this(rawData, 0)
         {
 
         }
