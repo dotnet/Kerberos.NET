@@ -31,6 +31,25 @@ namespace Kerberos.NET.Entities
         public PrivilegedAttributeCertificate Certificate { get; }
     }
 
+    public class PacCredentialInfo : NdrObject
+    {
+        public PacCredentialInfo(byte[] info)
+            : base(info)
+        {
+            Version = Stream.ReadInt();
+
+            EncryptionType = (EncryptionType)Stream.ReadInt();
+            
+            SerializedData = Stream.ReadToEnd();
+        }
+
+        public int Version { get; }
+
+        public EncryptionType EncryptionType { get; }
+
+        public byte[] SerializedData { get; }
+    }
+
     public class PrivilegedAttributeCertificate : NdrObject
     {
         private const int PAC_VERSION = 0;
@@ -86,7 +105,7 @@ namespace Kerberos.NET.Entities
                     LogonInfo = new PacLogonInfo(data);
                     break;
                 case PacType.CREDENTIAL_TYPE:
-                    CredentialType = data;
+                    CredentialType = new PacCredentialInfo(data);
                     break;
                 case PacType.SERVER_CHECKSUM:
                     ServerSignature = new PacSignature(data);
@@ -120,7 +139,7 @@ namespace Kerberos.NET.Entities
 
         public PacSignature ServerSignature { get; private set; }
 
-        public byte[] CredentialType { get; private set; }
+        public PacCredentialInfo CredentialType { get; private set; }
 
         public PacSignature KdcSignature { get; private set; }
 
