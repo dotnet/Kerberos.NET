@@ -391,11 +391,54 @@ namespace KerbDump
             {
                 for (int i = 0; i < array.Count; i++)
                 {
-                    var childNode = inTreeNode.Nodes[inTreeNode.Nodes.Add(new TreeNode(i.ToString()))];
+                    var value = array[i];
 
-                    AddNode(array[i], childNode);
+                    if (value.Type == JTokenType.String)
+                    {
+                        AddNode(value, inTreeNode);
+                    }
+                    else
+                    {
+                        var typeNames = new[] { "Type", "Mechanism", "Value" };
+
+                        string typeName = null;
+
+                        foreach (var type in typeNames)
+                        {
+                            if (TryExtractPropertyForName(value, type, out typeName))
+                            {
+                                break;
+                            }
+                        }
+
+                        if (string.IsNullOrWhiteSpace(typeName))
+                        {
+                            typeName = i.ToString();
+                        }
+
+                        var childNode = inTreeNode.Nodes[inTreeNode.Nodes.Add(new TreeNode(typeName))];
+
+                        AddNode(value, childNode);
+                    }
                 }
             }
+        }
+
+        private static bool TryExtractPropertyForName(JToken value, string type, out string typeName)
+        {
+            typeName = null;
+
+            if (value is JObject valueObj &&
+                valueObj.TryGetValue(type, out JToken typeProp))
+            {
+                typeName = typeProp.ToString();
+
+                valueObj.Remove(type);
+
+                return true;
+            }
+
+            return false;
         }
 
         private void btnLoadKeytab_Click(object sender, EventArgs e)

@@ -59,7 +59,7 @@ namespace Kerberos.NET.Entities
                     case 4:
                         for (int l = 0; l < node.Count; l++)
                         {
-                            Transited.Add(new TransitedEncoding(node[0]));
+                            Transited.Add(new TransitedEncoding(node[l]));
                         }
                         break;
                     case 5:
