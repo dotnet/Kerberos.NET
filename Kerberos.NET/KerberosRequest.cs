@@ -13,18 +13,34 @@ namespace Kerberos.NET
             ContextToken.RegisterDecryptor(type, func);
         }
 
-        private readonly NegotiateContextToken negotiate;
+        private readonly ContextToken negotiate;
 
         public KerberosRequest(byte[] data)
         {
-            negotiate = MessageParser.ParseNegotiate(data);
+            negotiate = MessageParser.ParseContext(data);
         }
 
         public MechType MechType { get { return negotiate.MechType; } }
 
-        public NegTokenInit NegotiationRequest { get { return negotiate?.NegotiationToken; } }
-        
-        public KrbApReq Request { get { return negotiate?.NegotiationToken?.MechToken?.InnerContextToken; } }
+        public NegTokenInit NegotiationRequest
+        {
+            get
+            {
+                var negToken = negotiate as NegotiateContextToken;
+
+                return negToken?.NegotiationToken;
+            }
+        }
+
+        public KrbApReq Request
+        {
+            get
+            {
+                var negToken = negotiate as NegotiateContextToken;
+
+                return negToken?.NegotiationToken?.MechToken?.InnerContextToken;
+            }
+        }
 
         public static KerberosRequest Parse(byte[] data)
         {
