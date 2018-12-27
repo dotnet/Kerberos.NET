@@ -6,7 +6,7 @@ namespace Kerberos.NET.Entities
 {
     public class MechToken
     {
-        public MechToken(Asn1Element sequence, IEnumerable<MechType> mechTypes)
+        public MechToken Decode(Asn1Element sequence, IEnumerable<MechType> mechTypes)
         {
             if (sequence.Count <= 0 && mechTypes.Any(a => a.Oid == MechType.NEGOEX))
             {
@@ -35,18 +35,20 @@ namespace Kerberos.NET.Entities
                         switch (node.ApplicationTag)
                         {
                             case KrbApReq.ApplicationTag:
-                                InnerContextToken = new KrbApReq(node[0]);
+                                InnerContextToken = new KrbApReq().Decode(node[0]);
                                 break;
                         }
                         break;
                 }
             }
+
+            return this;
         }
 
-        public NegotiateExtension NegotiateExtension { get; }
+        public NegotiateExtension NegotiateExtension;
 
-        public MechType ThisMech { get; }
+        public MechType ThisMech;
 
-        public KrbApReq InnerContextToken { get; }
+        public KrbApReq InnerContextToken;
     }
 }

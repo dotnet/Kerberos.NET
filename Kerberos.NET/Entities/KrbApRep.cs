@@ -12,7 +12,7 @@ namespace Kerberos.NET.Entities
 
         public KrbApRep() { }
 
-        public KrbApRep(Asn1Element sequence)
+        public KrbApRep Decode(Asn1Element sequence)
         {
             for (var i = 0; i < sequence.Count; i++)
             {
@@ -27,37 +27,39 @@ namespace Kerberos.NET.Entities
                         MessageType = (MessageType)element[0].AsInt();
                         break;
                     case 2:
-                        EncPart = new EncryptedData(element);
+                        EncPart = new EncryptedData().Decode(element);
                         break;
                 }
             }
+
+            return this;
         }
 
-        [Tag(0)]
+        ////[Tag(0)]
         public int VersionNumber;
 
-        [Tag(1)]
+        //[Tag(1)]
         public MessageType MessageType;
 
-        [Tag(2)]
+        //[Tag(2)]
         public EncryptedData EncPart;
 
         public const KeyUsage EncPartKeyUsage = KeyUsage.KU_ENC_AP_REP_PART;
     }
 
-    [Tag(27, System.Security.Cryptography.Asn1.TagClass.Application)]
+    //[Tag(27, System.Security.Cryptography.Asn1.TagClass.Application)]
     public class EncAPRepPart
     {
-        [Tag(0)]
+        //[Tag(0)]
         public DateTimeOffset CTime;
 
-        [Tag(1)]
+        //[Tag(1)]
         public long CuSec;
 
-        [Tag(2), OptionalValue]
+        //[Tag(2), OptionalValue]
         public EncryptionKey SubKey;
 
-        [Tag(3), OptionalValue]
+        //[Tag(3), OptionalValue]
         public int SequenceNumber;
     }
 }

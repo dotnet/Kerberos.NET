@@ -34,7 +34,7 @@ namespace Kerberos.NET.Crypto
 
         private void DecodeTicket(byte[] decryptedTicket)
         {
-            Ticket = new EncTicketPart(new Asn1Element(decryptedTicket));
+            Ticket = new EncTicketPart().Decode(new Asn1Element(decryptedTicket));
 
             var decryptedAuthenticator = Decryptor.Decrypt(
                 Token.Authenticator.Cipher,
@@ -44,7 +44,7 @@ namespace Kerberos.NET.Crypto
                 KeyUsage.KU_AP_REQ_AUTHENTICATOR
             );
 
-            Authenticator = new Authenticator(new Asn1Element(decryptedAuthenticator));
+            Authenticator = new Authenticator().Decode(new Asn1Element(decryptedAuthenticator));
         }
     }
 }

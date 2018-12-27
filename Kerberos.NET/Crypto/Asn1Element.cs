@@ -31,6 +31,15 @@ namespace Kerberos.NET.Crypto
 
         public byte[] RawData { get; private set; }
 
+        public byte[] BlockCopy()
+        {
+            var block = new byte[Value.Length];
+
+            Buffer.BlockCopy(Value, 0, block, 0, Value.Length);
+
+            return block;
+        }
+
         public Asn1Element(byte[] rawData, int start)
         {
             RawData = rawData;

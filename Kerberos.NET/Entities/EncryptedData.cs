@@ -1,5 +1,4 @@
 ﻿using Kerberos.NET.Crypto;
-using System;
 using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Entities
@@ -7,9 +6,7 @@ namespace Kerberos.NET.Entities
     [StructLayout(LayoutKind.Sequential)]
     public sealed class EncryptedData
     {
-        public EncryptedData() { }
-
-        public EncryptedData(Asn1Element element)
+        public EncryptedData Decode(Asn1Element element)
         {
             var childNode = element[0];
 
@@ -28,23 +25,21 @@ namespace Kerberos.NET.Entities
                         break;
 
                     case 2:
-                        var cipherNode = node[0];
-
-                        Cipher = new byte[cipherNode.Length];
-
-                        Buffer.BlockCopy(cipherNode.Value, 0, Cipher, 0, Cipher.Length);
+                        Cipher = node[0].BlockCopy();
                         break;
                 }
             }
+
+            return this;
         }
 
-        [ExpectedTag(0)]
+        //[ExpectedTag(0)]
         public EncryptionType EType;
 
-        [ExpectedTag(1), OptionalValue]
+        //[ExpectedTag(1), OptionalValue]
         public int? KeyVersionNumber;
 
-        [ExpectedTag(2)]
+        //[ExpectedTag(2)]
         public byte[] Cipher;
     }
 }

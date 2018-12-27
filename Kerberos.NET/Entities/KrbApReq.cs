@@ -8,7 +8,7 @@ namespace Kerberos.NET.Entities
     {
         public const int ApplicationTag = 14;
 
-        public KrbApReq(Asn1Element childNode)
+        public KrbApReq Decode(Asn1Element childNode)
         {
             for (var i = 0; i < childNode.Count; i++)
             {
@@ -29,24 +29,26 @@ namespace Kerberos.NET.Entities
                         break;
 
                     case 3:
-                        Ticket = new Ticket(node[0]);
+                        Ticket = new Ticket().Decode(node[0]);
                         break;
 
                     case 4:
-                        Authenticator = new EncryptedData(node);
+                        Authenticator = new EncryptedData().Decode(node);
                         break;
                 }
             }
+
+            return this;
         }
 
-        public int ProtocolVersionNumber { get; }
+        public int ProtocolVersionNumber;
 
-        public MessageType MessageType { get; }
+        public MessageType MessageType;
 
-        public APOptions APOptions { get; }
+        public APOptions APOptions;
 
-        public Ticket Ticket { get; }
+        public Ticket Ticket;
 
-        public EncryptedData Authenticator { get; }
+        public EncryptedData Authenticator;
     }
 }

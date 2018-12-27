@@ -7,7 +7,7 @@ namespace Kerberos.NET.Entities
 {
     public class NegTokenInit
     {
-        public NegTokenInit(Asn1Element sequence)
+        public NegTokenInit Decode(Asn1Element sequence)
         {
             for (var i = 0; i < sequence.Count; i++)
             {
@@ -21,12 +21,14 @@ namespace Kerberos.NET.Entities
                     case 1: // reqFlags
                         break;
                     case 2:
-                        MechToken = new MechToken(element.AsEncapsulatedElement(), MechTypes);
+                        MechToken = new MechToken().Decode(element.AsEncapsulatedElement(), MechTypes);
                         break;
                     case 3: // mecListMIC
                         break;
                 }
             }
+
+            return this;
         }
 
         private void SetMechTypes(Asn1Element sequence)
@@ -56,6 +58,6 @@ namespace Kerberos.NET.Entities
 
         public List<MechType> MechTypes { get { return mechTypes ?? (mechTypes = new List<MechType>()); } }
 
-        public MechToken MechToken { get; }
+        public MechToken MechToken;
     }
 }

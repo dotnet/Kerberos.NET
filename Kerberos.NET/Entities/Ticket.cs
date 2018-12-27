@@ -4,7 +4,7 @@ namespace Kerberos.NET.Entities
 {
     public class Ticket
     {
-        public Ticket(Asn1Element element)
+        public Ticket Decode(Asn1Element element)
         {
             var childNode = element[0];
 
@@ -23,22 +23,24 @@ namespace Kerberos.NET.Entities
                         break;
 
                     case 2:
-                        SName = new PrincipalName(node[0], Realm);
+                        SName = new PrincipalName().Decode(node[0], Realm);
                         break;
 
                     case 3:
-                        EncPart = new EncryptedData(node);
+                        EncPart = new EncryptedData().Decode(node);
                         break;
                 }
             }
+
+            return this;
         }
 
-        public int TicketVersionNumber { get; }
+        public int TicketVersionNumber;
 
-        public string Realm { get; }
+        public string Realm;
 
-        public PrincipalName SName { get; }
+        public PrincipalName SName;
 
-        public EncryptedData EncPart { get; }
+        public EncryptedData EncPart;
     }
 }

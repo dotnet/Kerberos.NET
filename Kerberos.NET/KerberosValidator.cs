@@ -50,7 +50,7 @@ namespace Kerberos.NET
 
         public async Task<DecryptedData> Validate(byte[] requestBytes)
         {
-            var kerberosRequest = KerberosRequest.Parse(requestBytes);
+            var kerberosRequest = MessageParser.ParseContext(requestBytes);
 
             Logger.WriteLine(kerberosRequest.ToString());
 

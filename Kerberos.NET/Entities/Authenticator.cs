@@ -1,13 +1,12 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kerberos.NET.Entities
 {
     public class Authenticator
     {
-        public Authenticator(Asn1Element asn1Element)
+        public Authenticator Decode(Asn1Element asn1Element)
         {
             Asn1Element childNode = asn1Element[0];
 
@@ -24,7 +23,7 @@ namespace Kerberos.NET.Entities
                         Realm = node[0].AsString();
                         break;
                     case 2:
-                        CName = new PrincipalName(node[0], Realm);
+                        CName = new PrincipalName().Decode(node[0], Realm);
                         break;
                     case 3:
                         Checksum = node[0].Value;
@@ -36,7 +35,7 @@ namespace Kerberos.NET.Entities
                         CTime = node[0].AsDateTimeOffset();
                         break;
                     case 6:
-                        SubSessionKey = new EncryptionKey(node[0]);
+                        SubSessionKey = new EncryptionKey().Decode(node[0]);
                         break;
                     case 7:
                         SequenceNumber = node[0].AsLong();
@@ -53,26 +52,28 @@ namespace Kerberos.NET.Entities
                         break;
                 }
             }
+
+            return this;
         }
 
-        public long VersionNumber { get; }
+        public long VersionNumber;
 
-        public string Realm { get; }
+        public string Realm;
 
-        public PrincipalName CName { get; }
+        public PrincipalName CName;
 
-        public byte[] Checksum { get; }
+        public byte[] Checksum;
 
-        public long CuSec { get; }
+        public long CuSec;
 
-        public DateTimeOffset CTime { get; }
+        public DateTimeOffset CTime;
 
         [Obsolete]
         public byte[] Subkey { get { return SubSessionKey?.RawKey; } }
 
-        public EncryptionKey SubSessionKey { get; }
+        public EncryptionKey SubSessionKey;
 
-        public long SequenceNumber { get; }
+        public long SequenceNumber;
 
         private List<AuthorizationData> authorizations;
 

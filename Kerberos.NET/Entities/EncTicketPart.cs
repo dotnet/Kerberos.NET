@@ -29,7 +29,7 @@ namespace Kerberos.NET.Entities
 
     public class EncryptionKey
     {
-        public EncryptionKey(Asn1Element element)
+        public EncryptionKey Decode(Asn1Element element)
         {
             for (var i = 0; i < element.Count; i++)
             {
@@ -45,22 +45,24 @@ namespace Kerberos.NET.Entities
                         break;
                 }
             }
+
+            return this;
         }
 
-        public EncryptionType KeyType { get; }
+        public EncryptionType KeyType;
 
-        public byte[] RawKey { get; }
+        public byte[] RawKey;
     }
 
     public class EncTicketPart
     {
-        public EncTicketPart(Asn1Element asn1Element)
+        public EncTicketPart Decode(Asn1Element asn1Element)
         {
             var childNode = asn1Element[0];
 
             if (childNode == null)
             {
-                return;
+                return null;
             }
 
             for (var i = 0; i < childNode.Count; i++)
@@ -73,18 +75,18 @@ namespace Kerberos.NET.Entities
                         TicketFlags = (TicketFlags)node[0].AsLong();
                         break;
                     case 1:
-                        Key = new EncryptionKey(node[0]);
+                        Key = new EncryptionKey().Decode(node[0]);
                         break;
                     case 2:
                         CRealm = node[0].AsString();
                         break;
                     case 3:
-                        CName = new PrincipalName(node[0], CRealm);
+                        CName = new PrincipalName().Decode(node[0], CRealm);
                         break;
                     case 4:
                         for (int l = 0; l < node.Count; l++)
                         {
-                            Transited.Add(new TransitedEncoding(node[l]));
+                            Transited.Add(new TransitedEncoding().Decode(node[l]));
                         }
                         break;
                     case 5:
@@ -118,34 +120,36 @@ namespace Kerberos.NET.Entities
                         break;
                 }
             }
+
+            return this;
         }
 
-        public TicketFlags TicketFlags { get; }
+        public TicketFlags TicketFlags;
 
         [Obsolete]
         public byte[] EncryptionKey { get { return Key?.RawKey; } }
 
-        public EncryptionKey Key { get; }
+        public EncryptionKey Key;
 
-        public string CRealm { get; }
+        public string CRealm;
 
-        public PrincipalName CName { get; }
+        public PrincipalName CName;
 
         private List<TransitedEncoding> transited;
 
         public List<TransitedEncoding> Transited { get { return transited ?? (transited = new List<TransitedEncoding>()); } }
 
-        public DateTimeOffset AuthTime { get; }
+        public DateTimeOffset AuthTime;
 
-        public DateTimeOffset StartTime { get; }
+        public DateTimeOffset StartTime;
 
-        public DateTimeOffset EndTime { get; }
+        public DateTimeOffset EndTime;
 
-        public DateTimeOffset RenewTill { get; }
+        public DateTimeOffset RenewTill;
 
-        public long HostAddresses { get; }
+        public long HostAddresses;
 
-        public IEnumerable<AuthorizationData> AuthorizationData { get; }
+        public IEnumerable<AuthorizationData> AuthorizationData;
 
         public override string ToString()
         {

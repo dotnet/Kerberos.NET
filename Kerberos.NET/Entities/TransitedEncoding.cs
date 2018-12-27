@@ -9,7 +9,7 @@ namespace Kerberos.NET.Entities
 
     public class TransitedEncoding
     {
-        public TransitedEncoding(Asn1Element element)
+        public TransitedEncoding Decode(Asn1Element element)
         {
             for (var i = 0; i < element.Count; i++)
             {
@@ -24,10 +24,12 @@ namespace Kerberos.NET.Entities
                         break;
                 }
             }
+
+            return this;
         }
 
-        public TransitedEncodingType Type { get; }
+        public TransitedEncodingType Type;
 
-        public string Contents { get; }
+        public string Contents;
     }
 }

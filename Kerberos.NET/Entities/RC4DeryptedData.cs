@@ -7,7 +7,7 @@ namespace Kerberos.NET.Entities
     public class RC4DecryptedData : DecryptedData
     {
         private readonly KrbApReq token;
-        
+
         public RC4DecryptedData(KrbApReq token)
         {
             this.token = token;
@@ -51,10 +51,10 @@ namespace Kerberos.NET.Entities
             var ciphertext = token.Ticket.EncPart.Cipher;
 
             var key = keytab.GetKey(token);
-            
+
             var decryptedTicket = Decrypt(key.GetKey(MD4Encryptor), ciphertext, KeyUsage.KU_TICKET);
 
-            Ticket = new EncTicketPart(new Asn1Element(decryptedTicket));
+            Ticket = new EncTicketPart().Decode(new Asn1Element(decryptedTicket));
 
             var decryptedAuthenticator = Decrypt(
                 Ticket.Key.RawKey,
@@ -62,7 +62,7 @@ namespace Kerberos.NET.Entities
                 KeyUsage.KU_AP_REQ_AUTHENTICATOR
             );
 
-            Authenticator = new Authenticator(new Asn1Element(decryptedAuthenticator));
+            Authenticator = new Authenticator().Decode(new Asn1Element(decryptedAuthenticator));
         }
 
         private static byte[] Decrypt(byte[] k1, byte[] ciphertext, KeyUsage keyType)

@@ -7,7 +7,9 @@ namespace Kerberos.NET.Entities
 {
     public class PrincipalName
     {
-        public PrincipalName(Asn1Element element, string realm)
+        public PrincipalName() { }
+
+        public PrincipalName Decode(Asn1Element element, string realm)
         {
             for (var i = 0; i < element.Count; i++)
             {
@@ -41,6 +43,8 @@ namespace Kerberos.NET.Entities
             }
 
             Realm = realm;
+
+            return this;
         }
 
         public PrincipalName(PrincipalNameType nameType, string realm, IEnumerable<string> names)
@@ -50,13 +54,13 @@ namespace Kerberos.NET.Entities
             this.names = new List<string>(names);
         }
 
-        public string Realm { get; }
+        public string Realm;
 
         private List<string> names;
 
         public List<string> Names { get { return names ?? (names = new List<string>()); } }
 
-        public PrincipalNameType NameType { get; }
+        public PrincipalNameType NameType;
 
         public override bool Equals(object obj)
         {

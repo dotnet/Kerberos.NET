@@ -2,14 +2,26 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Crypto.AES;
 
 namespace Kerberos.NET.Entities
 {
     [StructLayout(LayoutKind.Sequential)]
     public abstract class ContextToken : Asn1Message
     {
+        private static readonly Dictionary<EncryptionType, Func<KrbApReq, DecryptedData>> Decryptors
+            = new Dictionary<EncryptionType, Func<KrbApReq, DecryptedData>>();
+
+        static ContextToken()
+        {
+            RegisterDecryptor(EncryptionType.RC4_HMAC_NT, (token) => new RC4DecryptedData(token));
+            RegisterDecryptor(EncryptionType.RC4_HMAC_NT_EXP, (token) => new RC4DecryptedData(token));
+
+            RegisterDecryptor(EncryptionType.AES128_CTS_HMAC_SHA1_96, (token) => new AES128DecryptedData(token));
+            RegisterDecryptor(EncryptionType.AES256_CTS_HMAC_SHA1_96, (token) => new AES256DecryptedData(token));
+        }
+
         protected ContextToken(Asn1Element sequence)
         {
             for (var i = 0; i < sequence.Count; i++)
@@ -31,16 +43,45 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public Oid MechType;
+        public MechType MechType;
 
         private static readonly Dictionary<string, Func<Asn1Element, ContextToken>> KnownMessageTypes
             = new Dictionary<string, Func<Asn1Element, ContextToken>>
             {
-                { Entities.MechType.SPNEGO, e=> new NegotiateContextToken(e) },
-                { Entities.MechType.NEGOEX, e=> new NegotiateContextToken(e) },
-                { Entities.MechType.KerberosV5, e=> new KerberosContextToken(e) },
-                { Entities.MechType.KerberosV5Legacy, e=> new KerberosContextToken(e) }
+                { MechType.SPNEGO, e=> new NegotiateContextToken(e) },
+                { MechType.NEGOEX, e=> new NegotiateContextToken(e) },
+                { MechType.KerberosV5, e=> new KerberosContextToken(e) },
+                { MechType.KerberosV5Legacy, e=> new KerberosContextToken(e) }
             };
+
+        public static void RegisterDecryptor(EncryptionType type, Func<KrbApReq, DecryptedData> func)
+        {
+            Decryptors[type] = func;
+        }
+
+        public abstract DecryptedData Decrypt(KeyTable keys);
+
+        protected static DecryptedData Decrypt(KrbApReq token, KeyTable keytab)
+        {
+            if (token?.Ticket?.EncPart == null)
+            {
+                return null;
+            }
+
+            DecryptedData decryptor = null;
+            
+            if (Decryptors.TryGetValue(token.Ticket.EncPart.EType, out Func<KrbApReq, DecryptedData> func) && func != null)
+            {
+                decryptor = func(token);
+            }
+
+            if (decryptor != null)
+            {
+                decryptor.Decrypt(keytab);
+            }
+
+            return decryptor;
+        }
 
         internal static ContextToken Parse(Asn1Element element)
         {
@@ -61,7 +102,7 @@ namespace Kerberos.NET.Entities
 
         private static string TryDiscoverMechType(Asn1Element element)
         {
-            var mechType = element.Find(e => e.Class == TagClass.Universal && e.UniversalTag == Entities.MechType.UniversalTag);
+            var mechType = element.Find(e => e.Class == TagClass.Universal && e.UniversalTag == MechType.UniversalTag);
 
             return mechType?.AsString();
         }
@@ -70,8 +111,8 @@ namespace Kerberos.NET.Entities
         {
             switch (element.UniversalTag)
             {
-                case Entities.MechType.UniversalTag:
-                    MechType = new Oid(element.AsString());
+                case MechType.UniversalTag:
+                    MechType = new MechType(element.AsString());
                     break;
             }
         }

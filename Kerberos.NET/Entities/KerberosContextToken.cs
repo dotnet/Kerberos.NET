@@ -11,21 +11,26 @@ namespace Kerberos.NET.Entities
         {
         }
 
-        [ExpectedTag(KrbApReq.ApplicationTag), SequenceOf, OptionalValue]
+        //[ExpectedTag(KrbApReq.ApplicationTag), SequenceOf, OptionalValue]
         public KrbApReq KrbApReq;
 
-        [ExpectedTag(KrbApRep.ApplicationTag), SequenceOf, OptionalValue]
+        //[ExpectedTag(KrbApRep.ApplicationTag), SequenceOf, OptionalValue]
         public KrbApRep KrbApRep;
+
+        public override DecryptedData Decrypt(KeyTable keys)
+        {
+            return Decrypt(KrbApReq, keys);
+        }
 
         protected override void ParseApplication(Asn1Element element)
         {
             switch (element.ApplicationTag)
             {
                 case KrbApReq.ApplicationTag:
-                    KrbApReq = new KrbApReq(element[0]);
+                    KrbApReq = new KrbApReq().Decode(element[0]);
                     break;
                 case KrbApRep.ApplicationTag:
-                    KrbApRep = new KrbApRep(element[0]);
+                    KrbApRep = new KrbApRep().Decode(element[0]);
                     break;
             }
         }

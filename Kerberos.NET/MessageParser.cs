@@ -1,14 +1,31 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Kerberos.NET
 {
     public static class MessageParser
     {
+        public static ContextToken ParseContext(byte[] data)
+        {
+            return Parse<ContextToken>(data);
+        }
+
+        public static NegotiateContextToken ParseNegotiate(byte[] data)
+        {
+            return Parse<NegotiateContextToken>(data);
+        }
+
+        public static KerberosContextToken ParseKerberos(byte[] data)
+        {
+            return Parse<KerberosContextToken>(data);
+        }
+
+        public static T Parse<T>(byte[] data)
+        {
+            return (T)Parse(data);
+        }
+
         public static object Parse(byte[] data)
         {
             var element = new Asn1Element(data);
@@ -32,10 +49,7 @@ namespace Kerberos.NET
             switch (element.ContextSpecificTag)
             {
                 case 1:
-                    var targ = new NegTokenTarg();
-                    targ.Decode(element[0]);
-
-                    return targ;
+                    return new NegTokenTarg().Decode(element[0]);
             }
 
             throw new InvalidDataException();

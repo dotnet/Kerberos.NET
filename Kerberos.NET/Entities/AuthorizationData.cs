@@ -150,9 +150,9 @@ namespace Kerberos.NET.Entities
                 case AuthorizationDataValueType.AD_WIN2K_PAC:
                     return new PacElement(restriction[0].Value);
                 case AuthorizationDataValueType.AD_ETYPE_NEGOTIATION:
-                    return ParseETypes(restriction[0].AsEncapsulatedElement());
+                    return ParseETypes(restriction.AsEncapsulatedElement());
                 case AuthorizationDataValueType.KERB_AUTH_DATA_TOKEN_RESTRICTIONS:
-                    return new RestrictionEntry(restriction[0].AsEncapsulatedElement());
+                    return new RestrictionEntry().Decode(restriction.AsEncapsulatedElement());
                 case AuthorizationDataValueType.KERB_AP_OPTIONS:
                     return new KerbApOptions(restriction[0].AsInt(reverse: true));
                 case AuthorizationDataValueType.KERB_LOCAL:
@@ -230,7 +230,7 @@ namespace Kerberos.NET.Entities
     {
         public override AuthorizationDataValueType Type => AuthorizationDataValueType.KERB_AUTH_DATA_TOKEN_RESTRICTIONS;
 
-        public RestrictionEntry(Asn1Element sequence)
+        public RestrictionEntry Decode(Asn1Element sequence)
         {
             var element = sequence[0];
 
@@ -248,11 +248,13 @@ namespace Kerberos.NET.Entities
                         break;
                 }
             }
+
+            return this;
         }
 
-        public int RestrictionType { get; }
+        public int RestrictionType;
 
-        public LsapTokenInfoIntegrity Restriction { get; }
+        public LsapTokenInfoIntegrity Restriction;
     }
 
     public class LsapTokenInfoIntegrity

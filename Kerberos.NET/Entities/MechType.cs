@@ -21,6 +21,7 @@ namespace Kerberos.NET.Entities
 
         private Oid oid;
 
+        [KerberosIgnore]
         public Oid ObjectIdentifier { get { return oid ?? (oid = new Oid(Oid)); } }
 
         public MechType(string oid)
