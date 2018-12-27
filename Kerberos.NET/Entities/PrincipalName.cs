@@ -9,11 +9,9 @@ namespace Kerberos.NET.Entities
     {
         public PrincipalName(Asn1Element element, string realm)
         {
-            var childNode = element[0];
-
-            for (var i = 0; i < childNode.Count; i++)
+            for (var i = 0; i < element.Count; i++)
             {
-                var node = childNode[i];
+                var node = element[i];
 
                 var listNode = node[0];
 
@@ -52,13 +50,13 @@ namespace Kerberos.NET.Entities
             this.names = new List<string>(names);
         }
 
-        public string Realm { get; private set; }
+        public string Realm { get; }
 
         private List<string> names;
 
         public List<string> Names { get { return names ?? (names = new List<string>()); } }
 
-        public PrincipalNameType NameType { get; private set; }
+        public PrincipalNameType NameType { get; }
 
         public override bool Equals(object obj)
         {
@@ -70,6 +68,7 @@ namespace Kerberos.NET.Entities
             }
 
             // NT_PRINCIPAL will not match NT_SRV_INST for example
+
             if (other.NameType != NameType)
             {
                 return false;
@@ -78,6 +77,7 @@ namespace Kerberos.NET.Entities
             var namesIntersected = other.Names.Intersect(Names);
 
             // Names list for principal must be exact; additional entries in keytab will fail
+
             if (namesIntersected.Count() != other.Names.Count || namesIntersected.Count() != Names.Count)
             {
                 return false;
@@ -96,6 +96,7 @@ namespace Kerberos.NET.Entities
             }
 
             // Any NameType is allowed.  Names collection in two objects must contain at least one common name
+
             var namesIntersected = other.Names.Intersect(Names);
 
             if (namesIntersected.Count() == 0)

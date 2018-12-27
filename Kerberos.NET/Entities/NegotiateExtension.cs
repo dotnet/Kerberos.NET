@@ -10,20 +10,20 @@ namespace Kerberos.NET.Entities
             Message = new NegotiateMessage(new BinaryReader(new MemoryStream(data)));
         }
 
-        public NegotiateMessage Message { get; private set; }
+        public NegotiateMessage Message { get; }
     }
 
     public class NegotiateMessage
     {
-        public NegotiateMessageHeader Header { get; private set; }
+        public NegotiateMessageHeader Header { get; }
 
-        public byte[] Random { get; private set; }
+        public byte[] Random { get; }
 
-        public ulong ProtocolVersion { get; private set; }
+        public ulong ProtocolVersion { get; }
 
-        public AuthScheme AuthSchemes { get; private set; }
+        public AuthScheme AuthSchemes { get; }
 
-        public ExtensionVector Extensions { get; private set; }
+        public ExtensionVector Extensions { get; }
 
         public NegotiateMessage(BinaryReader reader)
         {
@@ -37,16 +37,15 @@ namespace Kerberos.NET.Entities
         }
     }
 
-
     public class AuthScheme
     {
         [KerberosIgnore]
-        public uint AuthSchemeArrayOffset { get; private set; }
+        public uint AuthSchemeArrayOffset { get; }
 
         [KerberosIgnore]
-        public ushort AuthSchemeCount { get; private set; }
+        public ushort AuthSchemeCount { get; }
 
-        public Guid[] Schemes { get; private set; }
+        public Guid[] Schemes { get; }
 
         public AuthScheme(BinaryReader reader)
         {
@@ -71,9 +70,9 @@ namespace Kerberos.NET.Entities
 
     public class Extension
     {
-        public uint Type { get; private set; }
+        public uint Type { get; }
 
-        public byte[] Value { get; private set; }
+        public byte[] Value { get; }
 
         public Extension(BinaryReader reader)
         {
@@ -96,12 +95,12 @@ namespace Kerberos.NET.Entities
     public class ExtensionVector
     {
         [KerberosIgnore]
-        public uint ExtensionArrayOffset { get; private set; }
+        public uint ExtensionArrayOffset { get; }
 
         [KerberosIgnore]
-        public ushort ExtensionCount { get; private set; }
+        public ushort ExtensionCount { get; }
 
-        public Extension[] Extensions { get; private set; }
+        public Extension[] Extensions { get; }
 
         public ExtensionVector(BinaryReader reader)
         {
@@ -126,19 +125,19 @@ namespace Kerberos.NET.Entities
 
     public class NegotiateMessageHeader
     {
-        public ulong Signature { get; private set; }
+        public ulong Signature { get; }
 
-        public NegotiateMessageType MessageType { get; private set; }
+        public NegotiateMessageType MessageType { get; }
 
-        public uint SequenceNumber { get; private set; }
-
-        [KerberosIgnore]
-        public uint cbHeaderLength { get; private set; }
+        public uint SequenceNumber { get; }
 
         [KerberosIgnore]
-        public uint cbMessageLength { get; private set; }
+        public uint cbHeaderLength { get; }
 
-        public Guid ConversationId { get; private set; }
+        [KerberosIgnore]
+        public uint cbMessageLength { get; }
+
+        public Guid ConversationId { get; }
 
         private const ulong HeaderSignature = 0x535458454f47454e;
 

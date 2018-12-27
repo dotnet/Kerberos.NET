@@ -18,9 +18,12 @@ namespace Kerberos.NET.Entities
                     case 0:
                         SetMechTypes(element);
                         break;
-
+                    case 1: // reqFlags
+                        break;
                     case 2:
-                        MechToken = new InitialContextToken(element[0], MechTypes);
+                        MechToken = new MechToken(element.AsEncapsulatedElement(), MechTypes);
+                        break;
+                    case 3: // mecListMIC
                         break;
                 }
             }
@@ -36,7 +39,7 @@ namespace Kerberos.NET.Entities
                 {
                     var childNode = element[j];
 
-                    if (childNode.ContextSpecificTag == MechType.ContextTag)
+                    if (childNode.UniversalTag == MechType.UniversalTag)
                     {
                         MechTypes.Add(new MechType(childNode.AsString()));
                     }
@@ -53,6 +56,6 @@ namespace Kerberos.NET.Entities
 
         public List<MechType> MechTypes { get { return mechTypes ?? (mechTypes = new List<MechType>()); } }
 
-        public InitialContextToken MechToken { get; private set; }
+        public MechToken MechToken { get; }
     }
 }

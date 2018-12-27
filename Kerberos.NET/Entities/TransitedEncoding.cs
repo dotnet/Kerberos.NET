@@ -26,8 +26,8 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public TransitedEncodingType Type { get; private set; }
+        public TransitedEncodingType Type { get; }
 
-        public string Contents { get; private set; }
+        public string Contents { get; }
     }
 }

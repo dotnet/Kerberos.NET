@@ -6,18 +6,16 @@ namespace Kerberos.NET.Crypto
 {
     public abstract class AESDecryptedData : DecryptedData
     {
-        private readonly KrbApReq token;
-
         protected AESDecryptedData(KrbApReq token)
         {
-            this.token = token;
+            this.Token = token;
         }
 
         public override EncryptionType EType => Token?.Ticket?.EncPart?.EType ?? EncryptionType.NULL;
 
         protected abstract KerberosEncryptor Decryptor { get; }
 
-        protected KrbApReq Token { get { return token; } }
+        protected KrbApReq Token { get; }
 
         public override void Decrypt(KeyTable keytab)
         {
@@ -26,7 +24,7 @@ namespace Kerberos.NET.Crypto
             var decrypted = Decryptor.Decrypt(
                 Token.Ticket.EncPart.Cipher,
                 key.WithPrincipalName(
-                    token.Ticket.SName
+                    Token.Ticket.SName
                 ),
                 KeyUsage.KU_TICKET
             );
@@ -34,14 +32,14 @@ namespace Kerberos.NET.Crypto
             DecodeTicket(decrypted);
         }
 
-        private void DecodeTicket(byte[] output)
+        private void DecodeTicket(byte[] decryptedTicket)
         {
-            Ticket = new EncTicketPart(new Asn1Element(output));
+            Ticket = new EncTicketPart(new Asn1Element(decryptedTicket));
 
             var decryptedAuthenticator = Decryptor.Decrypt(
                 Token.Authenticator.Cipher,
                 new KerberosKey(
-                    Ticket.EncryptionKey
+                    Ticket.Key.RawKey
                 ),
                 KeyUsage.KU_AP_REQ_AUTHENTICATOR
             );

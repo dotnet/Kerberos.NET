@@ -52,12 +52,12 @@ namespace Kerberos.NET.Entities
 
             var key = keytab.GetKey(token);
             
-            var output = Decrypt(key.GetKey(MD4Encryptor), ciphertext, KeyUsage.KU_TICKET);
+            var decryptedTicket = Decrypt(key.GetKey(MD4Encryptor), ciphertext, KeyUsage.KU_TICKET);
 
-            Ticket = new EncTicketPart(new Asn1Element(output));
+            Ticket = new EncTicketPart(new Asn1Element(decryptedTicket));
 
             var decryptedAuthenticator = Decrypt(
-                Ticket.EncryptionKey,
+                Ticket.Key.RawKey,
                 token.Authenticator.Cipher,
                 KeyUsage.KU_AP_REQ_AUTHENTICATOR
             );

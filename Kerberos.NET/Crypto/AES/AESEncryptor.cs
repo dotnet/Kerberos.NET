@@ -8,22 +8,18 @@ namespace Kerberos.NET.Crypto
 {
     public abstract class AESEncryptor : IEncryptor
     {
-        private readonly int blockSize;
-        private readonly int keyInputSize;
-        private readonly int keySize;
-
         protected AESEncryptor(int blockSize, int keyInputSize, int keySize)
         {
-            this.blockSize = blockSize;
-            this.keyInputSize = keyInputSize;
-            this.keySize = keySize;
+            this.BlockSize = blockSize;
+            this.KeyInputSize = keyInputSize;
+            this.KeySize = keySize;
         }
 
-        public int BlockSize { get { return blockSize; } }
+        public int BlockSize { get; }
 
-        public int KeyInputSize { get { return keyInputSize; } }
+        public int KeyInputSize { get; }
 
-        public int KeySize { get { return keySize; } }
+        public int KeySize { get; }
 
         public void Decrypt(byte[] key, byte[] iv, byte[] tmpEnc)
         {

@@ -33,10 +33,10 @@ namespace Kerberos.NET.Entities.Authorization
             }
         }
 
-        public SignatureType Type { get; private set; }
+        public SignatureType Type { get; }
 
-        public byte[] Signature { get; private set; }
+        public byte[] Signature { get; }
 
-        public short RODCIdentifier { get; private set; }
+        public short RODCIdentifier { get; }
     }
 }

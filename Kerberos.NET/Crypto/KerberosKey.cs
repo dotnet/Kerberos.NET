@@ -6,8 +6,11 @@ namespace Kerberos.NET.Crypto
 {
     public class KerberosKey
     {
-        public KerberosKey(string password, PrincipalName principalName = null, string host = null)
-            : this(null, password, null, principalName, host)
+        public KerberosKey(
+            string password,
+            PrincipalName principalName = null,
+            string host = null
+        ) : this(null, password, null, principalName, host)
         {
         }
 
@@ -19,10 +22,10 @@ namespace Kerberos.NET.Crypto
             string host = null)
         {
             this.key = key;
-            this.password = password;
+            this.Password = password;
             this.passwordBytes = passwordBytes;
-            this.principalName = principalName;
-            this.host = host;
+            this.PrincipalName = principalName;
+            this.Host = host;
         }
 
         public KerberosKey(byte[] key = null, byte[] password = null, string host = null)
@@ -31,12 +34,8 @@ namespace Kerberos.NET.Crypto
         }
 
         private readonly byte[] key;
-        private readonly string password;
-        private readonly string host;
 
-        private readonly PrincipalName principalName;
-
-        public string Password { get { return password; } }
+        public string Password { get; }
 
         private byte[] passwordBytes;
 
@@ -53,9 +52,9 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public string Host { get { return host; } }
+        public string Host { get; }
 
-        public PrincipalName PrincipalName { get { return principalName; } }
+        public PrincipalName PrincipalName { get; }
 
         public byte[] GetKey(IEncryptor encryptor)
         {
@@ -76,10 +75,10 @@ namespace Kerberos.NET.Crypto
         {
             if (passwordBytes != null && passwordBytes.Length > 0)
             {
-                return new KerberosKey(null, password, passwordBytes, sName, host);
+                return new KerberosKey(null, Password, passwordBytes, sName, Host);
             }
 
-            return new KerberosKey(key, password, null, sName, host);
+            return new KerberosKey(key, Password, null, sName, Host);
         }
     }
 }

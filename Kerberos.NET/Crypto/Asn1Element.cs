@@ -1,13 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Kerberos.NET.Crypto
 {
-    [DebuggerDisplay("CST {ContextSpecificTag}; T: {Tag}; Children: {Count}; Length: {Length}")]
+    public enum TagClass
+    {
+        Universal = 0,
+        Application = 1,
+        ContextSpecific = 2,
+        Private = 3
+    }
+
+    [DebuggerDisplay("Class: {Class}; UT: {UniversalTag}; AT: {ApplicationTag}; CST: {ContextSpecificTag}; T: {Tag}; Constructed: {IsConstructed}; Children: {Count}")]
     public class Asn1Element
     {
         private readonly int position;
@@ -72,6 +80,16 @@ namespace Kerberos.NET.Crypto
             }
         }
 
+        public Asn1Element Find(Func<Asn1Element, bool> expression)
+        {
+            return children.FirstOrDefault(expression);
+        }
+
+        public Asn1Element AsEncapsulatedElement()
+        {
+            return new Asn1Element(AsOctetString());
+        }
+
         public string AsString(bool hexify = false)
         {
             if (hexify)
@@ -110,11 +128,28 @@ namespace Kerberos.NET.Crypto
             return Hexify(Value, lineLength: 16, spaces: true);
         }
 
-        public int AsInt()
+        public byte[] AsOctetString()
+        {
+            var octet = this[0];
+
+            if (octet.Class != TagClass.Universal && octet.UniversalTag != 4)
+            {
+                throw new InvalidDataException();
+            }
+
+            return octet.Value;
+        }
+
+        public int AsInt(bool reverse = false)
         {
             var bytes = Value;
 
             int num = 0;
+
+            if (reverse)
+            {
+                Array.Reverse(bytes);
+            }
 
             for (int i = 0; i < bytes.Length; i++)
             {
@@ -176,6 +211,40 @@ namespace Kerberos.NET.Crypto
 
         public byte Tag { get { return RawData[position]; } }
 
+        public TagClass Class
+        {
+            get
+            {
+                return (TagClass)((Tag & 192) >> 6);
+            }
+        }
+
+        public int UniversalTag
+        {
+            get
+            {
+                if ((Tag & 192) == 0)
+                {
+                    return Tag & 31;
+                }
+
+                return 0;
+            }
+        }
+
+        public int ApplicationTag
+        {
+            get
+            {
+                if ((Tag & 32) != 0)
+                {
+                    return Tag & 31;
+                }
+
+                return 0;
+            }
+        }
+
         public int ContextSpecificTag
         {
             get
@@ -185,7 +254,7 @@ namespace Kerberos.NET.Crypto
                     return Tag & 31;
                 }
 
-                return Tag;
+                return 0;
             }
         }
 

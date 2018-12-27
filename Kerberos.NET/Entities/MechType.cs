@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics;
+using System.Security.Cryptography;
 
 namespace Kerberos.NET.Entities
 {
     [DebuggerDisplay("{Mechanism} {Oid}")]
-    public class MechType
+    [TreatAsTag(UniversalTag, "ObjectIdentifier")]
+    public sealed class MechType
     {
         public const string SPNEGO = "1.3.6.1.5.5.2";
         public const string KerberosV5Legacy = "1.2.840.48018.1.2.2";
@@ -11,11 +13,15 @@ namespace Kerberos.NET.Entities
         public const string NTLM = "1.3.6.1.4.1.311.2.2.10";
         public const string NEGOEX = "1.3.6.1.4.1.311.2.2.30";
 
-        public const int ContextTag = 6;
+        public const int UniversalTag = 6;
 
-        public string Mechanism { get; private set; }
+        public string Mechanism { get; }
 
-        public string Oid { get; private set; }
+        public string Oid { get; }
+
+        private Oid oid;
+
+        public Oid ObjectIdentifier { get { return oid ?? (oid = new Oid(Oid)); } }
 
         public MechType(string oid)
         {
@@ -46,5 +52,4 @@ namespace Kerberos.NET.Entities
             return "";
         }
     }
-
 }

@@ -27,6 +27,31 @@ namespace Kerberos.NET.Entities
         Anonymous = 0x00008000
     }
 
+    public class EncryptionKey
+    {
+        public EncryptionKey(Asn1Element element)
+        {
+            for (var i = 0; i < element.Count; i++)
+            {
+                var node = element[i];
+
+                switch (node.ContextSpecificTag)
+                {
+                    case 0:
+                        KeyType = (EncryptionType)node[0].AsInt();
+                        break;
+                    case 1:
+                        RawKey = node[0].Value;
+                        break;
+                }
+            }
+        }
+
+        public EncryptionType KeyType { get; }
+
+        public byte[] RawKey { get; }
+    }
+
     public class EncTicketPart
     {
         public EncTicketPart(Asn1Element asn1Element)
@@ -48,13 +73,13 @@ namespace Kerberos.NET.Entities
                         TicketFlags = (TicketFlags)node[0].AsLong();
                         break;
                     case 1:
-                        EncryptionKey = node[0][1][0].Value;
+                        Key = new EncryptionKey(node[0]);
                         break;
                     case 2:
                         CRealm = node[0].AsString();
                         break;
                     case 3:
-                        CName = new PrincipalName(node, CRealm);
+                        CName = new PrincipalName(node[0], CRealm);
                         break;
                     case 4:
                         for (int l = 0; l < node.Count; l++)
@@ -95,29 +120,32 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public TicketFlags TicketFlags { get; private set; }
+        public TicketFlags TicketFlags { get; }
 
-        public byte[] EncryptionKey { get; private set; }
+        [Obsolete]
+        public byte[] EncryptionKey { get { return Key?.RawKey; } }
 
-        public string CRealm { get; private set; }
+        public EncryptionKey Key { get; }
 
-        public PrincipalName CName { get; private set; }
+        public string CRealm { get; }
+
+        public PrincipalName CName { get; }
 
         private List<TransitedEncoding> transited;
 
         public List<TransitedEncoding> Transited { get { return transited ?? (transited = new List<TransitedEncoding>()); } }
 
-        public DateTimeOffset AuthTime { get; private set; }
+        public DateTimeOffset AuthTime { get; }
 
-        public DateTimeOffset StartTime { get; private set; }
+        public DateTimeOffset StartTime { get; }
 
-        public DateTimeOffset EndTime { get; private set; }
+        public DateTimeOffset EndTime { get; }
 
-        public DateTimeOffset RenewTill { get; private set; }
+        public DateTimeOffset RenewTill { get; }
 
-        public long HostAddresses { get; private set; }
+        public long HostAddresses { get; }
 
-        public IEnumerable<AuthorizationData> AuthorizationData { get; private set; }
+        public IEnumerable<AuthorizationData> AuthorizationData { get; }
 
         public override string ToString()
         {

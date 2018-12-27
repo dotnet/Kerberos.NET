@@ -36,7 +36,7 @@ namespace Kerberos.NET.Entities
         KERB_SERVICE_TARGET = 144
     }
 
-    [DebuggerDisplay("{AdType}")]
+    [DebuggerDisplay("{Type}")]
     public abstract class AuthorizationDataElement
     {
         public abstract AuthorizationDataValueType Type { get; }
@@ -60,7 +60,7 @@ namespace Kerberos.NET.Entities
                         switch (adType)
                         {
                             case AuthorizationDataType.AdIfRelevant:
-                                var relevant = new Asn1Element(authDataElement[0].Value);
+                                var relevant = authDataElement.AsEncapsulatedElement();
 
                                 for (var r = 0; r < relevant.Count; r++)
                                 {
@@ -150,11 +150,11 @@ namespace Kerberos.NET.Entities
                 case AuthorizationDataValueType.AD_WIN2K_PAC:
                     return new PacElement(restriction[0].Value);
                 case AuthorizationDataValueType.AD_ETYPE_NEGOTIATION:
-                    return ParseETypes(restriction[0].Value);
+                    return ParseETypes(restriction[0].AsEncapsulatedElement());
                 case AuthorizationDataValueType.KERB_AUTH_DATA_TOKEN_RESTRICTIONS:
-                    return new RestrictionEntry(restriction[0].Value);
+                    return new RestrictionEntry(restriction[0].AsEncapsulatedElement());
                 case AuthorizationDataValueType.KERB_AP_OPTIONS:
-                    return new KerbApOptions(restriction[0].Value); //CHANNEL_BINDING_TOKEN                    ;
+                    return new KerbApOptions(restriction[0].AsInt(reverse: true));
                 case AuthorizationDataValueType.KERB_LOCAL:
                     return new KerbLocal(restriction[0].Value);
                 case AuthorizationDataValueType.KERB_SERVICE_TARGET:
@@ -164,11 +164,9 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        private static NegotiatedETypes ParseETypes(byte[] value)
+        private static NegotiatedETypes ParseETypes(Asn1Element element)
         {
             var etypes = new List<EncryptionType>();
-
-            var element = new Asn1Element(value);
 
             for (var i = 0; i < element.Count; i++)
             {
@@ -179,6 +177,7 @@ namespace Kerberos.NET.Entities
         }
     }
 
+    [DebuggerDisplay("{ServiceName}")]
     public class KerbServiceName : AuthorizationDataElement
     {
         public override AuthorizationDataValueType Type => AuthorizationDataValueType.KERB_SERVICE_TARGET;
@@ -195,12 +194,12 @@ namespace Kerberos.NET.Entities
     {
         public override AuthorizationDataValueType Type => AuthorizationDataValueType.KERB_AP_OPTIONS;
 
-        public KerbApOptions(byte[] options)
+        public KerbApOptions(int options)
         {
-            Options = options;
+            Options = (APOptions)options;
         }
 
-        public byte[] Options { get; }
+        public APOptions Options { get; }
     }
 
     public class KerbLocal : AuthorizationDataElement
@@ -231,9 +230,9 @@ namespace Kerberos.NET.Entities
     {
         public override AuthorizationDataValueType Type => AuthorizationDataValueType.KERB_AUTH_DATA_TOKEN_RESTRICTIONS;
 
-        public RestrictionEntry(byte[] value)
+        public RestrictionEntry(Asn1Element sequence)
         {
-            var element = new Asn1Element(value)[0];
+            var element = sequence[0];
 
             for (var i = 0; i < element.Count; i++)
             {
@@ -251,9 +250,9 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public int RestrictionType { get; private set; }
+        public int RestrictionType { get; }
 
-        public LsapTokenInfoIntegrity Restriction { get; private set; }
+        public LsapTokenInfoIntegrity Restriction { get; }
     }
 
     public class LsapTokenInfoIntegrity
@@ -268,11 +267,11 @@ namespace Kerberos.NET.Entities
             MachineId = reader.ReadBytes(32);
         }
 
-        public TokenTypes Flags { get; private set; }
+        public TokenTypes Flags { get; }
 
-        public IntegrityLevels TokenIntegrityLevel { get; private set; }
+        public IntegrityLevels TokenIntegrityLevel { get; }
 
-        public byte[] MachineId { get; private set; }
+        public byte[] MachineId { get; }
     }
 
     [Flags]
@@ -293,10 +292,11 @@ namespace Kerberos.NET.Entities
         ProtectedProcess = 0x00005000
     }
 
+    [DebuggerDisplay("{Type}")]
     public class AuthorizationData
     {
         public AuthorizationData() { }
-        
+
         public AuthorizationData(AuthorizationDataType key, IEnumerable<AuthorizationDataElement> value)
         {
             Type = key;

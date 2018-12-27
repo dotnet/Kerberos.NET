@@ -6,7 +6,7 @@ namespace Kerberos.NET.Entities
     {
         public Ticket(Asn1Element element)
         {
-            var childNode = element[0][0];
+            var childNode = element[0];
 
             for (var i = 0; i < childNode.Count; i++)
             {
@@ -23,7 +23,7 @@ namespace Kerberos.NET.Entities
                         break;
 
                     case 2:
-                        SName = new PrincipalName(node, Realm);
+                        SName = new PrincipalName(node[0], Realm);
                         break;
 
                     case 3:
@@ -33,12 +33,12 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public int TicketVersionNumber { get; private set; }
+        public int TicketVersionNumber { get; }
 
-        public string Realm { get; private set; }
+        public string Realm { get; }
 
-        public PrincipalName SName { get; private set; }
+        public PrincipalName SName { get; }
 
-        public EncryptedData EncPart { get; private set; }
+        public EncryptedData EncPart { get; }
     }
 }

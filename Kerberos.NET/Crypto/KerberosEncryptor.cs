@@ -17,8 +17,6 @@ namespace Kerberos.NET.Crypto
         private readonly IHasher hasher;
 
         protected IEncryptor Encryptor { get { return encryptor; } }
-
-        public virtual int PaddingSize { get { return 0; } }
         
         public abstract byte[] Decrypt(byte[] cipher, KerberosKey key, KeyUsage usage);
 

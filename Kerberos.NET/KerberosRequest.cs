@@ -34,26 +34,44 @@ namespace Kerberos.NET
             {
                 var child = element[i];
 
-                switch (child.ContextSpecificTag)
+                switch (child.Class)
                 {
-                    case 0:
-                        NegotiationToken = new NegTokenInit(child[0]);
+                    case TagClass.Universal:
+                        switch (child.UniversalTag)
+                        {
+                            case MechType.UniversalTag:
+                                MechType = new MechType(child.AsString());
+                                break;
+                        }
                         break;
-                    case MechType.ContextTag:
-                        MechType = new MechType(child.AsString());
+                    case TagClass.ContextSpecific:
+                        switch (child.ContextSpecificTag)
+                        {
+                            case 0:
+                                NegotiationRequest = new NegTokenInit(child[0]);
+                                break;
+                            case 1:
+                                NegotiationResponse = new NegTokenTarg();
+                                NegotiationResponse.Decode(child[0]);
+                                break;
+                            case 110:
+                                Request = new KrbApReq(child[0]);
+                                break;
+                        }
                         break;
-                    case 110:
-                        Request = new KrbApReq(child[0]);
+                    default:
                         break;
                 }
             }
         }
 
-        public MechType MechType { get; private set; }
+        public MechType MechType { get; }
 
-        public NegTokenInit NegotiationToken { get; private set; }
+        public NegTokenInit NegotiationRequest { get; }
 
-        public KrbApReq Request { get; private set; }
+        public NegTokenTarg NegotiationResponse { get; }
+
+        public KrbApReq Request { get; }
 
         public static KerberosRequest Parse(byte[] data)
         {
@@ -64,9 +82,9 @@ namespace Kerberos.NET
 
         public DecryptedData Decrypt(KeyTable keytab)
         {
-            if (NegotiationToken != null)
+            if (NegotiationRequest != null)
             {
-                return DecryptNegotiate(NegotiationToken, keytab);
+                return DecryptNegotiate(NegotiationRequest, keytab);
             }
 
             if (Request != null)
@@ -114,14 +132,14 @@ namespace Kerberos.NET
         public override string ToString()
         {
             var mech = MechType?.Mechanism;
-            var messageType = NegotiationToken?.MechToken?.InnerContextToken?.MessageType;
-            var authEType = NegotiationToken?.MechToken?.InnerContextToken?.Authenticator?.EType;
-            var realm = NegotiationToken?.MechToken?.InnerContextToken?.Ticket?.Realm;
-            var ticketEType = NegotiationToken?.MechToken?.InnerContextToken?.Ticket?.EncPart?.EType;
-            var nameType = NegotiationToken?.MechToken?.InnerContextToken?.Ticket?.SName?.NameType;
+            var messageType = NegotiationRequest?.MechToken?.InnerContextToken?.MessageType;
+            var authEType = NegotiationRequest?.MechToken?.InnerContextToken?.Authenticator?.EType;
+            var realm = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.Realm;
+            var ticketEType = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.EncPart?.EType;
+            var nameType = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.SName?.NameType;
 
             var names = "";
-            var snames = NegotiationToken?.MechToken?.InnerContextToken?.Ticket?.SName?.Names;
+            var snames = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.SName?.Names;
 
             if (snames?.Any() ?? false)
             {

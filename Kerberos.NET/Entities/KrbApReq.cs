@@ -1,9 +1,13 @@
 ﻿using Kerberos.NET.Crypto;
+using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Entities
 {
-    public class KrbApReq
+    [StructLayout(LayoutKind.Sequential)]
+    public sealed class KrbApReq
     {
+        public const int ApplicationTag = 14;
+
         public KrbApReq(Asn1Element childNode)
         {
             for (var i = 0; i < childNode.Count; i++)
@@ -25,7 +29,7 @@ namespace Kerberos.NET.Entities
                         break;
 
                     case 3:
-                        Ticket = new Ticket(node);
+                        Ticket = new Ticket(node[0]);
                         break;
 
                     case 4:
@@ -35,14 +39,14 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public int ProtocolVersionNumber { get; private set; }
+        public int ProtocolVersionNumber { get; }
 
-        public MessageType MessageType { get; private set; }
+        public MessageType MessageType { get; }
 
-        public APOptions APOptions { get; private set; }
+        public APOptions APOptions { get; }
 
-        public Ticket Ticket { get; private set; }
+        public Ticket Ticket { get; }
 
-        public EncryptedData Authenticator { get; private set; }
+        public EncryptedData Authenticator { get; }
     }
 }

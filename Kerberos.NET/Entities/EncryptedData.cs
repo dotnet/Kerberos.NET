@@ -1,10 +1,14 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
+using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Entities
 {
-    public class EncryptedData
+    [StructLayout(LayoutKind.Sequential)]
+    public sealed class EncryptedData
     {
+        public EncryptedData() { }
+
         public EncryptedData(Asn1Element element)
         {
             var childNode = element[0];
@@ -34,10 +38,13 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public EncryptionType EType { get; private set; }
+        [ExpectedTag(0)]
+        public EncryptionType EType;
 
-        public int? KeyVersionNumber { get; private set; }
+        [ExpectedTag(1), OptionalValue]
+        public int? KeyVersionNumber;
 
-        public byte[] Cipher { get; private set; }
+        [ExpectedTag(2)]
+        public byte[] Cipher;
     }
 }

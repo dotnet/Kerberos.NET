@@ -24,7 +24,7 @@ namespace Kerberos.NET.Entities
                         Realm = node[0].AsString();
                         break;
                     case 2:
-                        CName = new PrincipalName(node, Realm);
+                        CName = new PrincipalName(node[0], Realm);
                         break;
                     case 3:
                         Checksum = node[0].Value;
@@ -36,7 +36,7 @@ namespace Kerberos.NET.Entities
                         CTime = node[0].AsDateTimeOffset();
                         break;
                     case 6:
-                        Subkey = node[0][1][0].Value;
+                        SubSessionKey = new EncryptionKey(node[0]);
                         break;
                     case 7:
                         SequenceNumber = node[0].AsLong();
@@ -55,21 +55,24 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public long VersionNumber { get; private set; }
+        public long VersionNumber { get; }
 
-        public string Realm { get; private set; }
+        public string Realm { get; }
 
-        public PrincipalName CName { get; private set; }
+        public PrincipalName CName { get; }
 
-        public byte[] Checksum { get; private set; }
+        public byte[] Checksum { get; }
 
-        public long CuSec { get; private set; }
+        public long CuSec { get; }
 
-        public DateTimeOffset CTime { get; private set; }
+        public DateTimeOffset CTime { get; }
 
-        public byte[] Subkey { get; private set; }
+        [Obsolete]
+        public byte[] Subkey { get { return SubSessionKey?.RawKey; } }
 
-        public long SequenceNumber { get; private set; }
+        public EncryptionKey SubSessionKey { get; }
+
+        public long SequenceNumber { get; }
 
         private List<AuthorizationData> authorizations;
 
