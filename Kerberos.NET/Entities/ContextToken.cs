@@ -89,12 +89,12 @@ namespace Kerberos.NET.Entities
 
             if (string.IsNullOrWhiteSpace(mechType))
             {
-                throw new InvalidDataException();
+                throw new UnknownMechTypeException();
             }
 
             if (!KnownMessageTypes.TryGetValue(mechType, out Func<Asn1Element, ContextToken> tokenFunc))
             {
-                throw new InvalidDataException();
+                throw new UnknownMechTypeException(mechType);
             }
 
             return tokenFunc(element);

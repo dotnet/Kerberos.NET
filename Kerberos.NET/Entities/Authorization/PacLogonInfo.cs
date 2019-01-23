@@ -141,7 +141,7 @@ namespace Kerberos.NET.Entities.Authorization
 
             if (UserFlags.HasFlag(UserFlags.LOGON_EXTRA_SIDS))
             {
-                ExtraSids = ParseExtraSids(Stream, extraSidCount, extraSidPointer).Select(e => e.AppendTo(DomainSid)).ToList();
+                ExtraSids = ParseExtraSids(Stream, extraSidCount, extraSidPointer).ToList();
             }
 
             if (resourceDomainIdPointer != 0)
@@ -155,7 +155,7 @@ namespace Kerberos.NET.Entities.Authorization
                     Stream,
                     resourceGroupCount,
                     resourceGroupPointer
-                ).Select(g => g.AppendTo(DomainSid)).ToList();
+                ).Select(g => g.AppendTo(ResourceDomainSid)).ToList();
             }
         }
 
