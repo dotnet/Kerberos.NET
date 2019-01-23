@@ -28,10 +28,5 @@ namespace Kerberos.NET.Entities
             : base(message, innerException)
         {
         }
-
-        protected UnknownMechTypeException(SerializationInfo info, StreamingContext context) 
-            : base(info, context)
-        {
-        }
     }
 }
