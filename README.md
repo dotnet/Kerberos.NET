@@ -45,6 +45,382 @@ Assert.IsFalse(string.IsNullOrWhitespace(name));
 
 Note that the constructor parameter for the authenticator is a `KeyTable`. The `KeyTable` is a common format used to store keys on other platforms. You can either use a file created by a tool like `ktpass`, or you can just pass a `KerberosKey` during instantiation and it'll have the same effect.
 
+# KerbDump Tool
+
+This library comes with an optional utility to decode service tickets. It's easy to use. Just copy the Base64 encoded copy of the ticket into the left textbox. It will decode the unencrypted message if you don't provide a key. It will attempt to decrypt the message if you provide a key. You won't need to provide a host value if the ticket was encrypted using RC4, but it will need a host value if it's encrypted with AES (to derive the salt). Alternatively you could also include a keytab file if you happen to have that too.
+
+![](kerbDump.png?raw=true)
+
+Here's a sample of what a sample ticket looks like:
+
+```js
+{
+  "Request": {
+    "MechType": {
+      "Mechanism": "SPNEGO",
+      "Oid": "1.3.6.1.5.5.2"
+    },
+    "NegotiationRequest": {
+      "MechToken": {
+        "NegotiateExtension": null,
+        "ThisMech": {
+          "Mechanism": "Kerberos V5",
+          "Oid": "1.2.840.113554.1.2.2"
+        },
+        "InnerContextToken": {
+          "ProtocolVersionNumber": 5,
+          "MessageType": [
+            "KRB_AP_REQ"
+          ],
+          "APOptions": [
+            "MUTUAL_REQUIRED"
+          ],
+          "Ticket": {
+            "TicketVersionNumber": 5,
+            "Realm": "CORP.IDENTITYINTERVENTION.COM",
+            "SName": {
+              "Realm": "CORP.IDENTITYINTERVENTION.COM",
+              "NameType": [
+                "NT_SRV_INST"
+              ],
+              "Names": [
+                "host/delegated.identityintervention.com"
+              ]
+            },
+            "EncPart": {
+              "EType": [
+                "RC4_HMAC_NT"
+              ],
+              "KeyVersionNumber": 3,
+              "Cipher": "...snip..."
+            }
+          },
+          "Authenticator": {
+            "EType": [
+              "RC4_HMAC_NT"
+            ],
+            "KeyVersionNumber": null,
+            "Cipher": "...snip..."
+          }
+        },
+        "NtlmNegotiate": null
+      },
+      "MechTypes": [
+        {
+          "Mechanism": "Kerberos V5 Legacy",
+          "Oid": "1.2.840.48018.1.2.2"
+        },
+        {
+          "Mechanism": "Kerberos V5",
+          "Oid": "1.2.840.113554.1.2.2"
+        },
+        {
+          "Mechanism": "NegoEx",
+          "Oid": "1.3.6.1.4.1.311.2.2.30"
+        },
+        {
+          "Mechanism": "NTLM",
+          "Oid": "1.3.6.1.4.1.311.2.2.10"
+        }
+      ]
+    },
+    "Request": null
+  },
+  "Decrypted": {
+    "EType": [
+      "RC4_HMAC_NT"
+    ],
+    "Authenticator": {
+      "VersionNumber": 5,
+      "Realm": "CORP.IDENTITYINTERVENTION.COM",
+      "CName": {
+        "Realm": "CORP.IDENTITYINTERVENTION.COM",
+        "NameType": [
+          "NT_ENTERPRISE"
+        ],
+        "Names": [
+          "tests4u"
+        ]
+      },
+      "Checksum": "oAUCAwCAA6EaBBgQAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAA=",
+      "CuSec": 73,
+      "CTime": "2019-02-23T03:26:00+00:00",
+      "SubSessionKey": {
+        "KeyType": [
+          "RC4_HMAC_NT"
+        ],
+        "RawKey": "xG8Kpugq38doJ1I911iMCw=="
+      },
+      "SequenceNumber": 2122637123,
+      "Subkey": "xG8Kpugq38doJ1I911iMCw==",
+      "Authorizations": [
+        {
+          "Type": [
+            "AdIfRelevant"
+          ],
+          "Authorizations": [
+            {
+              "Type": [
+                "AD_ETYPE_NEGOTIATION"
+              ],
+              "ETypes": [
+                [
+                  "AES256_CTS_HMAC_SHA1_96"
+                ],
+                [
+                  "AES128_CTS_HMAC_SHA1_96"
+                ],
+                [
+                  "RC4_HMAC_NT"
+                ]
+              ]
+            },
+            {
+              "RestrictionType": 0,
+              "Restriction": {
+                "Flags": [
+                  "Full"
+                ],
+                "TokenIntegrityLevel": [
+                  "Medium"
+                ],
+                "MachineId": "LkMHyrZTnvXuZfgAixO7o5JMZ1AXqiMsbEnsE2a2UsY="
+              },
+              "Type": [
+                "KERB_AUTH_DATA_TOKEN_RESTRICTIONS"
+              ]
+            },
+            {
+              "Type": [
+                "KERB_LOCAL"
+              ],
+              "Value": "EINby2wBAACoCPQAAAAAAA=="
+            },
+            {
+              "Type": [
+                "KERB_AP_OPTIONS"
+              ],
+              "Options": [
+                "CHANNEL_BINDING_SUPPORTED"
+              ]
+            },
+            {
+              "Type": [
+                "KERB_SERVICE_TARGET"
+              ],
+              "ServiceName": "host/delegated.identityintervention.com@CORP.IDENTITYINTERVENTION.COM"
+            }
+          ]
+        }
+      ]
+    },
+    "Ticket": {
+      "TicketFlags": [
+        "EncryptedPreAuthentication",
+        "PreAuthenticated",
+        "Renewable",
+        "Forwardable"
+      ],
+      "Key": {
+        "KeyType": [
+          "RC4_HMAC_NT"
+        ],
+        "RawKey": "6ZBHsIubiNYuW/klY+IKhw=="
+      },
+      "CRealm": "CORP.IDENTITYINTERVENTION.COM",
+      "CName": {
+        "Realm": "CORP.IDENTITYINTERVENTION.COM",
+        "NameType": [
+          "NT_ENTERPRISE"
+        ],
+        "Names": [
+          "tests4u"
+        ]
+      },
+      "AuthTime": "2019-02-23T03:25:44+00:00",
+      "StartTime": "2019-02-23T03:26:00+00:00",
+      "EndTime": "2019-02-23T03:41:00+00:00",
+      "RenewTill": "2019-03-02T03:25:44+00:00",
+      "HostAddresses": 0,
+      "AuthorizationData": [
+        {
+          "Type": [
+            "AdIfRelevant"
+          ],
+          "Authorizations": [
+            {
+              "Type": [
+                "AD_WIN2K_PAC"
+              ],
+              "Certificate": {
+                "DecodingErrors": [],
+                "Version": 0,
+                "LogonInfo": {
+                  "LogonTime": "1601-01-01T00:00:00+00:00",
+                  "LogoffTime": "0001-01-01T00:00:00+00:00",
+                  "KickOffTime": "0001-01-01T00:00:00+00:00",
+                  "PwdLastChangeTime": "1601-01-01T00:05:11.1506395+00:00",
+                  "PwdCanChangeTime": "1601-01-01T00:06:22.30801+00:00",
+                  "PwdMustChangeTime": "1601-01-01T00:04:53.283094+00:00",
+                  "LogonCount": 0,
+                  "BadPasswordCount": 0,
+                  "UserName": "tests4u",
+                  "UserDisplayName": "Test S4U",
+                  "LogonScript": "",
+                  "ProfilePath": "",
+                  "HomeDirectory": "",
+                  "HomeDrive": "",
+                  "ServerName": "DC01",
+                  "DomainName": "corp",
+                  "UserSid": {
+                    "Attributes": [
+                      "0"
+                    ],
+                    "Value": "S-1-5-21-1450222856-612051446-931472078-1107"
+                  },
+                  "GroupSid": {
+                    "Attributes": [
+                      "0"
+                    ],
+                    "Value": "S-1-5-21-1450222856-612051446-931472078-513"
+                  },
+                  "GroupSids": [
+                    {
+                      "Attributes": [
+                        "SE_GROUP_MANDATORY",
+                        "SE_GROUP_ENABLED_BY_DEFAULT",
+                        "SE_GROUP_ENABLED"
+                      ],
+                      "Value": "S-1-5-21-1450222856-612051446-931472078-513"
+                    }
+                  ],
+                  "ExtraSids": [
+                    {
+                      "Attributes": [
+                        "SE_GROUP_MANDATORY",
+                        "SE_GROUP_ENABLED_BY_DEFAULT",
+                        "SE_GROUP_ENABLED"
+                      ],
+                      "Value": "S-1-18-2"
+                    }
+                  ],
+                  "UserAccountControl": [
+                    "ADS_UF_LOCKOUT",
+                    "ADS_UF_MNS_LOGON_ACCOUNT"
+                  ],
+                  "UserFlags": [
+                    "LOGON_EXTRA_SIDS"
+                  ],
+                  "FailedILogonCount": 0,
+                  "LastFailedILogon": "1601-01-01T00:00:00+00:00",
+                  "LastSuccessfulILogon": "1601-01-01T00:00:00+00:00",
+                  "SubAuthStatus": 0,
+                  "ResourceDomainSid": null,
+                  "ResourceGroups": null,
+                  "DomainSid": {
+                    "Attributes": [
+                      "0"
+                    ],
+                    "Value": "S-1-5-21-1450222856-612051446-931472078"
+                  }
+                },
+                "ServerSignature": {
+                  "Type": [
+                    "KERB_CHECKSUM_HMAC_MD5"
+                  ],
+                  "Signature": "HeigjZh19Odn+5L76bHJwA==",
+                  "RODCIdentifier": 0
+                },
+                "CredentialType": null,
+                "KdcSignature": {
+                  "Type": [
+                    "HMAC_SHA1_96_AES256"
+                  ],
+                  "Signature": "G4Ph1DqTxZPuhlQo",
+                  "RODCIdentifier": 0
+                },
+                "ClientClaims": null,
+                "DeviceClaims": null,
+                "ClientInformation": {
+                  "ClientId": "1601-01-01T00:03:20.5972775+00:00",
+                  "Name": "tests4u"
+                },
+                "UpnDomainInformation": {
+                  "Upn": "tests4u@corp.identityintervention.com",
+                  "Domain": "CORP.IDENTITYINTERVENTION.COM",
+                  "Flags": [
+                    "0"
+                  ]
+                },
+                "DelegationInformation": {
+                  "S4U2ProxyTarget": "host/delegated.identityintervention.com",
+                  "S4UTransitedServices": [
+                    "appsvc@CORP.IDENTITYINTERVENTION.COM"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Type": [
+            "AdIfRelevant"
+          ],
+          "Authorizations": [
+            {
+              "RestrictionType": 0,
+              "Restriction": {
+                "Flags": [
+                  "Full"
+                ],
+                "TokenIntegrityLevel": [
+                  "Medium"
+                ],
+                "MachineId": "LkMHyrZTnvXuZfgAixO7o5JMZ1AXqiMsbEnsE2a2UsY="
+              },
+              "Type": [
+                "KERB_AUTH_DATA_TOKEN_RESTRICTIONS"
+              ]
+            },
+            {
+              "Type": [
+                "KERB_LOCAL"
+              ],
+              "Value": "EINby2wBAACYCPQAAAAAAA=="
+            }
+          ]
+        }
+      ],
+      "EncryptionKey": "6ZBHsIubiNYuW/klY+IKhw==",
+      "Transited": [
+        {
+          "Type": [
+            "DomainX500Compress"
+          ],
+          "Contents": ""
+        }
+      ]
+    },
+    "Skew": "00:05:00"
+  },
+  "KeyTable": {
+    "FileVersion": 2,
+    "KerberosVersion": 5,
+    "Entries": [
+      {
+        "EncryptionType": null,
+        "Length": 0,
+        "Timestamp": "0001-01-01T00:00:00+00:00",
+        "Version": 0,
+        "Host": null,
+        "PasswordBytes": "UABAAHMAcwB3ADAAcgBkACEA",
+        "Key": null
+      }
+    ]
+  }
+}
+```
+
 ## .NET Core
 
 Hey, it works! Just add the nuget package as a reference and go. 
