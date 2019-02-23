@@ -21,7 +21,7 @@ namespace Kerberos.NET.Entities
                     case 1: // reqFlags
                         break;
                     case 2:
-                        MechToken = new MechToken().Decode(element.AsEncapsulatedElement(), MechTypes);
+                        MechToken = new MechToken().Decode(element, MechTypes);
                         break;
                     case 3: // mecListMIC
                         break;

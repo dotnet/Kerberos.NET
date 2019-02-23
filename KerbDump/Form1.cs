@@ -256,11 +256,36 @@ namespace KerbDump
             var settings = new JsonSerializerSettings
             {
                 Formatting = Formatting.Indented,
-                Converters = new[] { new StringEnumConverter() },
+                Converters = new[] { new StringEnumArrayConverter() },
                 ContractResolver = new KerberosIgnoreResolver()
             };
 
             return JsonConvert.SerializeObject(obj, settings);
+        }
+
+        private class StringEnumArrayConverter : StringEnumConverter
+        {
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                if (value == null)
+                {
+                    writer.WriteNull();
+                    return;
+                }
+
+                Enum e = (Enum)value;
+
+                var enumVal = e.ToString().Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+
+                writer.WriteStartArray();
+
+                foreach (var en in enumVal)
+                {
+                    writer.WriteValue(en);
+                }
+
+                writer.WriteEndArray();
+            }
         }
 
         private string Decode(string ticket)
@@ -507,6 +532,64 @@ namespace KerbDump
             {
                 ShowError(ex);
             }
+        }
+
+        private void btnExport_Click(object sender, EventArgs e)
+        {
+            var dialog = new SaveFileDialog();
+
+            dialog.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
+            dialog.FilterIndex = 2;
+            dialog.RestoreDirectory = true;
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                using (var stream = dialog.OpenFile())
+                {
+                    ExportFile(stream);
+                }
+            }
+        }
+
+        private void ExportFile(Stream stream)
+        {
+            var header = new StringBuilder();
+
+            header.AppendLine("GET http://fakeserver/fakenegotiate HTTP/1.1");
+            header.AppendLine("User-Agent: kerberos/net");
+            header.AppendLine("Pragma: no-cache");
+            header.AppendLine("Host: fakeserver");
+            header.AppendFormat("WWW-Authenticate: Negotiate {0}\r\n", txtTicket.Text);
+            header.AppendLine("Accept-Language: en-US");
+            header.AppendLine("Accept-Encoding: gzip, deflate");
+            header.AppendLine("Connection: close");
+            header.AppendLine();
+
+            var writer = new StreamWriter(stream);
+
+            writer.Write(HexDump(Encoding.ASCII.GetBytes(header.ToString())));
+            writer.Flush();
+        }
+
+        public static string HexDump(byte[] bytes, int bytesPerLine = 16)
+        {
+            var sb = new StringBuilder();
+
+            for (int line = 0; line < bytes.Length; line += bytesPerLine)
+            {
+                var lineBytes = bytes.Skip(line).Take(bytesPerLine).ToArray();
+
+                sb.AppendFormat("{0:x8} ", line);
+
+                sb.Append(string.Join(" ", lineBytes.Select(b => b.ToString("x2")).ToArray()).PadRight((bytesPerLine * 3)));
+
+                sb.Append(" ");
+
+                sb.Append(new string(lineBytes.Select(b => b < 32 ? '.' : (char)b).ToArray()));
+                sb.AppendLine();
+            }
+
+            return sb.ToString();
         }
     }
 

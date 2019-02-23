@@ -36,9 +36,9 @@ namespace Kerberos.NET
         {
             get
             {
-                var negToken = negotiate as NegotiateContextToken;
+                var negToken = negotiate as KerberosContextToken;
 
-                return negToken?.NegotiationToken?.MechToken?.InnerContextToken;
+                return negToken?.KrbApReq;
             }
         }
 

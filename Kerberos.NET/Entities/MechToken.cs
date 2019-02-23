@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Kerberos.NET.Crypto;
 using System.Linq;
+using System.IO;
 
 namespace Kerberos.NET.Entities
 {
@@ -8,11 +9,54 @@ namespace Kerberos.NET.Entities
     {
         public MechToken Decode(Asn1Element sequence, IEnumerable<MechType> mechTypes)
         {
-            if (sequence.Count <= 0 && mechTypes.Any(a => a.Oid == MechType.NEGOEX))
+            var firstMech = mechTypes.FirstOrDefault();
+
+            if (ProcessedAsNegoEx(sequence, firstMech))
             {
-                NegotiateExtension = new NegotiateExtension(sequence.Value);
+                return this;
             }
 
+            sequence = sequence.AsEncapsulatedElement();
+
+            if (ProcessedAsNtlm(sequence, firstMech))
+            {
+                return this;
+            }
+
+            ProcessedAsKerberos(sequence, firstMech);
+
+            return this;
+        }
+
+        public NegotiateExtension NegotiateExtension;
+
+        public MechType ThisMech;
+
+        public KrbApReq InnerContextToken;
+
+        public NtlmNegotiate NtlmNegotiate;
+
+        private bool ProcessedAsNtlm(Asn1Element sequence, MechType firstMech)
+        {
+            if (firstMech == null || firstMech.Oid != MechType.NTLM)
+            {
+                return false;
+            }
+
+            DecodeNtlm(sequence);
+
+            return true;
+        }
+
+        public MechToken DecodeNtlm(Asn1Element sequence)
+        {
+            NtlmNegotiate = new NtlmNegotiate(new BinaryReader(new MemoryStream(sequence.Value)));
+
+            return this;
+        }
+
+        private void ProcessedAsKerberos(Asn1Element sequence, MechType firstMech)
+        {
             for (var i = 0; i < sequence.Count; i++)
             {
                 var node = sequence[i];
@@ -41,14 +85,18 @@ namespace Kerberos.NET.Entities
                         break;
                 }
             }
-
-            return this;
         }
 
-        public NegotiateExtension NegotiateExtension;
+        private bool ProcessedAsNegoEx(Asn1Element sequence, MechType firstMech)
+        {
+            if (firstMech == null || firstMech.Oid != MechType.NEGOEX)
+            {
+                return false;
+            }
 
-        public MechType ThisMech;
+            NegotiateExtension = new NegotiateExtension(sequence.Value);
 
-        public KrbApReq InnerContextToken;
+            return true;
+        }
     }
 }

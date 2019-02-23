@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Crypto.AES;
@@ -48,10 +49,11 @@ namespace Kerberos.NET.Entities
         private static readonly Dictionary<string, Func<Asn1Element, ContextToken>> KnownMessageTypes
             = new Dictionary<string, Func<Asn1Element, ContextToken>>
             {
-                { MechType.SPNEGO, e=> new NegotiateContextToken(e) },
-                { MechType.NEGOEX, e=> new NegotiateContextToken(e) },
-                { MechType.KerberosV5, e=> new KerberosContextToken(e) },
-                { MechType.KerberosV5Legacy, e=> new KerberosContextToken(e) }
+                { MechType.SPNEGO, e => new NegotiateContextToken(e, MechType.SPNEGO) },
+                { MechType.NEGOEX, e => new NegotiateContextToken(e, MechType.NEGOEX) },
+                { MechType.KerberosV5, e => new KerberosContextToken(e) },
+                { MechType.KerberosV5Legacy, e => new KerberosContextToken(e) },
+                { MechType.NTLM, e => new NegotiateContextToken(e, MechType.NTLM) }
             };
 
         public static void RegisterDecryptor(EncryptionType type, Func<KrbApReq, DecryptedData> func)
@@ -69,7 +71,7 @@ namespace Kerberos.NET.Entities
             }
 
             DecryptedData decryptor = null;
-            
+
             if (Decryptors.TryGetValue(token.Ticket.EncPart.EType, out Func<KrbApReq, DecryptedData> func) && func != null)
             {
                 decryptor = func(token);
@@ -100,11 +102,37 @@ namespace Kerberos.NET.Entities
             return tokenFunc(element);
         }
 
+        private static string TryDiscoverNtlm(byte[] rawData)
+        {
+            var ntlmSig = new byte[NtlmNegotiate.MessageSignature.Length];
+
+            if (rawData.Length < ntlmSig.Length)
+            {
+                return null;
+            }
+
+            Buffer.BlockCopy(rawData, 0, ntlmSig, 0, ntlmSig.Length);
+
+            if (!NtlmNegotiate.MessageSignature.SequenceEqual(ntlmSig))
+            {
+                return null;
+            }
+
+            return MechType.NTLM;
+        }
+
         private static string TryDiscoverMechType(Asn1Element element)
         {
             var mechType = element.Find(e => e.Class == TagClass.Universal && e.UniversalTag == MechType.UniversalTag);
 
-            return mechType?.AsString();
+            var mechTypeStr = mechType?.AsString();
+
+            if (string.IsNullOrWhiteSpace(mechTypeStr))
+            {
+                mechTypeStr = TryDiscoverNtlm(element.RawData);
+            }
+
+            return mechTypeStr;
         }
 
         protected virtual void ParseUniversal(Asn1Element element)

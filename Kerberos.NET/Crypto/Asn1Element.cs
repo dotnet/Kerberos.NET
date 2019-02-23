@@ -64,6 +64,12 @@ namespace Kerberos.NET.Crypto
                 }
             }
 
+            if (valueLength > RawData.Length)
+            {
+                valueLength = RawData.Length;
+                valuePosition = 0;
+            }
+
             if (IsConstructed && (valueLength != 0))
             {
                 children = DecodeChildren(RawData, valuePosition, valueLength);
