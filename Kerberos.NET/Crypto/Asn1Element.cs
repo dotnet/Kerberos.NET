@@ -78,7 +78,7 @@ namespace Kerberos.NET.Crypto
                 {
                     int childLength = 0;
 
-                    if (children != null && children.Count > 0)
+                    if (children.Count > 0)
                     {
                         foreach (var child in children)
                         {
