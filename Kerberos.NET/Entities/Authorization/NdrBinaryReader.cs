@@ -96,7 +96,7 @@ namespace Kerberos.NET.Entities.Authorization
 
             if (low != 0xffffffffL && high != 0x7fffffffL)
             {
-                var fileTime = (high << 32) + low;
+                var fileTime = ((long)high << 32) + low;
 
                 var universalTicks = fileTime + FileTimeOffset;
 
