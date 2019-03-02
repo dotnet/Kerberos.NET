@@ -90,9 +90,10 @@ namespace Kerberos.NET.Crypto
 
         private static byte[] PBKDF2(byte[] passwordBytes, byte[] salt, int iterations, int keySize)
         {
-            var derive = new Rfc2898DeriveBytes(passwordBytes, salt, iterations);
-
-            return derive.GetBytes(keySize);
+            using (var derive = new Rfc2898DeriveBytes(passwordBytes, salt, iterations))
+            {
+                return derive.GetBytes(keySize);
+            }
         }
 
         protected static int GetIterations(byte[] param, int defCount)
