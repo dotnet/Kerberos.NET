@@ -60,10 +60,18 @@ namespace Kerberos.NET
                     if (authz.Type == AuthorizationDataValueType.AD_WIN2K_PAC)
                     {
                         var pac = (PacElement)authz;
+
+                        if (validator.ValidateAfterDecrypt.HasFlag(ValidationActions.Pac))
+                        {
+                            validator.Validate(pac, data.SName);
+                        }
+
                         MergeAttributes(ticket, pac.Certificate, claims);
                     }
                 }
             }
+
+            claims.Add(new Claim("Validated", validator.ValidateAfterDecrypt.ToString().Replace(", ", " ")));
 
             return new ClaimsIdentity(claims, "Kerberos", ClaimTypes.NameIdentifier, ClaimTypes.Role);
         }

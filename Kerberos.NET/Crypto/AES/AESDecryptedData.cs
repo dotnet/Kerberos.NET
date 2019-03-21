@@ -19,13 +19,17 @@ namespace Kerberos.NET.Crypto
 
         public override void Decrypt(KeyTable keytab)
         {
+            SName = Token.Ticket.SName;
+
             var key = keytab.GetKey(Token);
+
+            var kerbKey = key.WithPrincipalName(
+                Token.Ticket.SName
+            );
 
             var decrypted = Decryptor.Decrypt(
                 Token.Ticket.EncPart.Cipher,
-                key.WithPrincipalName(
-                    Token.Ticket.SName
-                ),
+                kerbKey,
                 KeyUsage.KU_TICKET
             );
 

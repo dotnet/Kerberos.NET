@@ -64,6 +64,13 @@
         AES256_CTS_HMAC_SHA1_96_PLAIN = -149
     }
 
+    public enum ChecksumType
+    {
+        KERB_CHECKSUM_HMAC_MD5 = -138,
+        HMAC_SHA1_96_AES128 = 15,
+        HMAC_SHA1_96_AES256 = 16
+    }
+
     public enum APOptions : uint
     {
         // X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X

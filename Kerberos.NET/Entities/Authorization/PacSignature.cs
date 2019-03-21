@@ -1,29 +1,30 @@
-﻿
+﻿using Kerberos.NET.Crypto;
+
 namespace Kerberos.NET.Entities.Authorization
 {
-    public enum SignatureType : uint
-    {
-        KERB_CHECKSUM_HMAC_MD5 = 0xFFFFFF76,
-        HMAC_SHA1_96_AES128 = 0x0000000F,
-        HMAC_SHA1_96_AES256 = 0x00000010
-    }
-
     public class PacSignature
     {
-        public PacSignature(byte[] data)
+        public PacSignature(byte[] infoBuffer, ref byte[] signatureData)
         {
-            var pacStream = new NdrBinaryReader(data);
+            var pacStream = new NdrBinaryReader(infoBuffer);
 
-            Type = (SignatureType)pacStream.ReadUnsignedInt();
+            Type = (ChecksumType)pacStream.ReadUnsignedInt();
+
+            SignaturePosition = (int)pacStream.Position;
 
             switch (Type)
             {
-                case SignatureType.KERB_CHECKSUM_HMAC_MD5:
+                case ChecksumType.KERB_CHECKSUM_HMAC_MD5:
                     Signature = pacStream.Read(16);
+                    Validator = new HmacMd5PacValidator(Signature, ref signatureData);
                     break;
-                case SignatureType.HMAC_SHA1_96_AES128:
-                case SignatureType.HMAC_SHA1_96_AES256:
+                case ChecksumType.HMAC_SHA1_96_AES128:
                     Signature = pacStream.Read(12);
+                    Validator = new HmacAes128PacValidator(Signature, ref signatureData);
+                    break;
+                case ChecksumType.HMAC_SHA1_96_AES256:
+                    Signature = pacStream.Read(12);
+                    Validator = new HmacAes256PacValidator(Signature, ref signatureData);
                     break;
             }
 
@@ -33,10 +34,21 @@ namespace Kerberos.NET.Entities.Authorization
             }
         }
 
-        public SignatureType Type { get; }
+        public PacValidator Validator { get; }
+
+        public ChecksumType Type { get; }
 
         public byte[] Signature { get; }
 
         public short RODCIdentifier { get; }
+
+        public int SignaturePosition { get; }
+
+        internal void Validate(KeyTable keytab, PrincipalName sname)
+        {
+            var key = keytab.GetKey(Type, sname);
+
+            Validator.Validate(key);  
+        }
     }
 }

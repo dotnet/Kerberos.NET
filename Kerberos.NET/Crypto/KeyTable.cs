@@ -56,16 +56,46 @@ namespace Kerberos.NET.Crypto
             var type = token.Ticket.EncPart.EType;
             var sname = token.Ticket.SName;
 
+            return GetKey(type, sname);
+        }
+
+        public KerberosKey GetKey(ChecksumType type, PrincipalName sname)
+        {
+            EncryptionType etype;
+
+            switch (type)
+            {
+                case ChecksumType.HMAC_SHA1_96_AES128:
+                    etype = EncryptionType.AES128_CTS_HMAC_SHA1_96;
+                    break;
+                case ChecksumType.HMAC_SHA1_96_AES256:
+                    etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
+                    break;
+
+                case ChecksumType.KERB_CHECKSUM_HMAC_MD5:
+                default:
+                    etype = EncryptionType.RC4_HMAC_NT;
+                    break;
+            }
+
+            return GetKey(etype, sname);
+        }
+
+        public KerberosKey GetKey(EncryptionType type, PrincipalName sname)
+        {
             // Match on type (e.g. RC4_HMAC_NT) and name (Realm + Name)
+
             var entry = Entries.FirstOrDefault(e => e.EncryptionType == type && sname.Matches(e.Principal));
 
             // Fall back to first entry with matching type (RC4_HMAC_NT)
+
             if (entry == null)
             {
                 entry = Entries.FirstOrDefault(e => e.EncryptionType == type);
             }
 
             // Fall back to first entry
+
             if (entry == null)
             {
                 entry = Entries.FirstOrDefault();

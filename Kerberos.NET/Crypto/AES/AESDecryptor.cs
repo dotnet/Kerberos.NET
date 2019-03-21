@@ -26,7 +26,7 @@ namespace Kerberos.NET.Crypto.AES
 
             var constant = new byte[5];
 
-            ConvertBytes((int)usage, constant, 0);
+            KerberosHash.ConvertToBigEndian((int)usage, constant, 0);
 
             constant[4] = 170;
 
@@ -49,7 +49,7 @@ namespace Kerberos.NET.Crypto.AES
 
             var newChecksum = MakeChecksum(Ki, tmpEnc, checksumLen);
 
-            if (!SlowCompare(checksum, newChecksum))
+            if (!KerberosHash.AreEqualSlow(checksum, newChecksum))
             {
                 throw new SecurityException("Invalid checksum");
             }
@@ -77,14 +77,6 @@ namespace Kerberos.NET.Crypto.AES
             var lengths = new int[] { confounderLen, checksumLen, dataLen };
 
             return DecryptWith(cipher, lengths, key, iv, usage);
-        }
-
-        private static void ConvertBytes(int val, byte[] bytes, int offset)
-        {
-            bytes[offset + 0] = (byte)((val >> 24) & 0xff);
-            bytes[offset + 1] = (byte)((val >> 16) & 0xff);
-            bytes[offset + 2] = (byte)((val >> 8) & 0xff);
-            bytes[offset + 3] = (byte)((val) & 0xff);
         }
     }
 }

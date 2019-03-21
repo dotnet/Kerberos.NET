@@ -1,7 +1,7 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Entities;
 using System;
 
-namespace Kerberos.NET.Entities
+namespace Kerberos.NET.Crypto
 {
     public abstract class DecryptedData
     {
@@ -10,6 +10,8 @@ namespace Kerberos.NET.Entities
         public Authenticator Authenticator { get; protected set; }
 
         public EncTicketPart Ticket { get; protected set; }
+
+        public PrincipalName SName { get; protected set; }
 
         private Func<DateTimeOffset> nowFunc;
 

@@ -1,9 +1,9 @@
 using System;
-using Kerberos.NET.Entities;
 using Kerberos.NET.Crypto;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Text;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET
 {
@@ -71,6 +71,11 @@ namespace Kerberos.NET
             }
 
             return decryptedToken;
+        }
+
+        public void Validate(PacElement pac, PrincipalName sname)
+        {
+            pac.Certificate.ServerSignature.Validate(keytab, sname);
         }
 
         protected virtual async Task Validate(DecryptedData decryptedToken)

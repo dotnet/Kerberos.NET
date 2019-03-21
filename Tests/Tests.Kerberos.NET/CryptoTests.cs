@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Crypto;
 
 namespace Tests.Kerberos.NET
 {
@@ -66,7 +67,7 @@ namespace Tests.Kerberos.NET
 
         private static async Task TestDecode(byte[] data, byte[] key, EncryptionType etype)
         {
-            var validator = new IntrospectiveValidator(key) { ValidateAfterDecrypt = ValidationActions.Replay };
+            var validator = new IntrospectiveValidator(key) { ValidateAfterDecrypt = DefaultActions };
 
             var authenticator = new KerberosAuthenticator(validator);
 

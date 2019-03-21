@@ -7,6 +7,7 @@ using System.Security;
 using System.Threading.Tasks;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Authorization;
+using Kerberos.NET.Crypto;
 
 namespace Tests.Kerberos.NET
 {
@@ -19,7 +20,7 @@ namespace Tests.Kerberos.NET
             var data = ReadFile("rc4-kerberos-data");
             var key = ReadFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.Replay };
+            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = DefaultActions };
 
             var result = await validator.Validate(data);
 
@@ -60,9 +61,120 @@ namespace Tests.Kerberos.NET
             var data = ReadFile("aes128-kerberos-data");
             var key = ReadFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key);
+            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = DefaultActions };
 
             await validator.Validate(data);
+        }
+
+        [TestMethod, ExpectedException(typeof(SecurityException))]
+        public void TestKerberosValidatorAes128ModifiedPac()
+        {
+            var key = ReadFile("aes128-key-data");
+
+            var infoBuffer = "DwAAAKPYyDLq7MP4qie/GQ==";
+
+            var pac = "BQAAAAAAAAABAAAAIAMAAFgAAAAAAAAACgAAABwAAAB4AwAAAAAAAAwAAABQAAAAmAMAAAAAAAAGAAAAEAAAAOgDAAAAAAAA" +
+                      "BwAAABQAAAD4AwAAAAAAAAEQCADMzMzMEAMAAAAAAAAAAAIAwAycyX9yyQH/////////f/////////9/4Cg/sn9yyQHg6KjcS" +
+                      "HPJAf////////9/EgASAAQAAgASABIACAACAAAAAAAMAAIAAAAAABAAAgAAAAAAFAACAAAAAAAYAAIAMgAAAFIEAAABAgAACw" +
+                      "AAABwAAgAgAAAAAAAAAAAAAAAAAAAAAAAAAAwADgAgAAIADAAOACQAAgAoAAIAAAAAAAAAAAAQAgAAAAAAAAAAAAAAAAAAAAA" +
+                      "AAAAAAAAAAAAAAAAAAAcAAAAsAAIAAAAAAAAAAAAAAAAACQAAAAAAAAAJAAAAdQBzAGUAcgAuAHQAZQBzAHQAAAAJAAAAAAAA" +
+                      "AAkAAABVAHMAZQByACAAVABlAHMAdAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+                      "AsAAAACAgAABwAAAFAEAAAHAAAAAQIAAAcAAAAEAgAABwAAAAMCAAAHAAAACAIAAAcAAAAAAgAABwAAAAkCAAAHAAAABgIAAA" +
+                      "cAAAAHAgAABwAAAPIBAAAHAAAABwAAAAAAAAAGAAAAVwBTADIAMAAwADgABwAAAAAAAAAGAAAARABPAE0AQQBJAE4ABAAAAAE" +
+                      "EAAAAAAAFFQAAAELcI/DfA8DDi6apKQcAAAAwAAIABwAAIDQAAgAHAAAgOAACAAcAACA8AAIABwAAIEAAAgAHAAAgRAACAAcA" +
+                      "ACBIAAIABwAAIAUAAAABBQAAAAAABRUAAABC3CPw3wPAw4umqSk8AgAABQAAAAEFAAAAAAAFFQAAAELcI/DfA8DDi6apKTsCA" +
+                      "AAFAAAAAQUAAAAAAAUVAAAAQtwj8N8DwMOLpqkp6QMAAAUAAAABBQAAAAAABRUAAABC3CPw3wPAw4umqSnoAwAABQAAAAEFAA" +
+                      "AAAAAFFQAAAELcI / DfA8DDi6apKQUCAAAFAAAAAQUAAAAAAAUVAAAAQtwj8N8DwMOLpqkpTwQAAAUAAAABBQAAAAAABRUAA" +
+                      "ABC3CPw3wPAw4umqSkpAgAAgEkh / X9yyQESAHUAcwBlAHIALgB0AGUAcwB0AAAAAAAoABAAFAA4AAAAAAAAAAAAdQBzAGUA" +
+                      "cgAuAHQAZQBzAHQAQABkAG8AbQBhAGkAbgAuAGMAbwBtAEQATwBNAEEASQBOAC4AQwBPAE0AAAAAAA8AAAAAAAAAAAAAAAAAA" +
+                      "AB2////AAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+
+            var infoBufferBytes = Convert.FromBase64String(infoBuffer);
+            var pacBytes = Convert.FromBase64String(pac);
+
+            var rand = new Random();
+
+            for (var i = 20; i < 50; i++)
+            {
+                pacBytes[i] = (byte)rand.Next(0, 254);
+            }
+
+            var pacSign = new PacSignature(infoBufferBytes, ref pacBytes);
+
+            pacSign.Validator.Validate(new KerberosKey(key));
+        }
+
+        [TestMethod, ExpectedException(typeof(SecurityException))]
+        public void TestKerberosValidatorAes256ModifiedPac()
+        {
+            var key = ReadFile("aes256-key-data");
+
+            var infoBuffer = "EAAAAHcQyvz922ZFzfua7A==";
+            var pac = "BQAAAAAAAAABAAAAIAMAAFgAAAAAAAAACgAAABwAAAB4AwAAAAAAAAwAAABQAAAAmAMAAAAAAAAGAAAAEAAAAOgDAAAAAAAAB" +
+                "wAAABQAAAD4AwAAAAAAAAEQCADMzMzMEAMAAAAAAAAAAAIAsITafH9yyQH/////////f/////////9/4Cg/sn9yyQHg6KjcSHPJAf//" +
+                "//////9/EgASAAQAAgASABIACAACAAAAAAAMAAIAAAAAABAAAgAAAAAAFAACAAAAAAAYAAIAMQAAAFIEAAABAgAACwAAABwAAgAgAAA" +
+                "AAAAAAAAAAAAAAAAAAAAAAAwADgAgAAIADAAOACQAAgAoAAIAAAAAAAAAAAAQAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+                "cAAAAsAAIAAAAAAAAAAAAAAAAACQAAAAAAAAAJAAAAdQBzAGUAcgAuAHQAZQBzAHQAAAAJAAAAAAAAAAkAAABVAHMAZQByACAAVABlA" +
+                "HMAdAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAACAgAABwAAAFAEAAAHAAAAAQIA" +
+                "AAcAAAAEAgAABwAAAAMCAAAHAAAACAIAAAcAAAAAAgAABwAAAAkCAAAHAAAABgIAAAcAAAAHAgAABwAAAPIBAAAHAAAABwAAAAAAAAA" +
+                "GAAAAVwBTADIAMAAwADgABwAAAAAAAAAGAAAARABPAE0AQQBJAE4ABAAAAAEEAAAAAAAFFQAAAELcI/DfA8DDi6apKQcAAAAwAAIABw" +
+                "AAIDQAAgAHAAAgOAACAAcAACA8AAIABwAAIEAAAgAHAAAgRAACAAcAACBIAAIABwAAIAUAAAABBQAAAAAABRUAAABC3CPw3wPAw4umq" +
+                "Sk8AgAABQAAAAEFAAAAAAAFFQAAAELcI/DfA8DDi6apKTsCAAAFAAAAAQUAAAAAAAUVAAAAQtwj8N8DwMOLpqkp6QMAAAUAAAABBQAA" +
+                "AAAABRUAAABC3CPw3wPAw4umqSnoAwAABQAAAAEFAAAAAAAFFQAAAELcI / DfA8DDi6apKQUCAAAFAAAAAQUAAAAAAAUVAAAAQtwj8" +
+                "N8DwMOLpqkpTwQAAAUAAAABBQAAAAAABRUAAABC3CPw3wPAw4umqSkpAgAAACRGyX9yyQESAHUAcwBlAHIALgB0AGUAcwB0AAAAAAAo" +
+                "ABAAFAA4AAAAAAAAAAAAdQBzAGUAcgAuAHQAZQBzAHQAQABkAG8AbQBhAGkAbgAuAGMAbwBtAEQATwBNAEEASQBOAC4AQwBPAE0AAAA" +
+                "AABAAAAAAAAAAAAAAAAAAAAB2////AAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+            var infoBufferBytes = Convert.FromBase64String(infoBuffer);
+            var pacBytes = Convert.FromBase64String(pac);
+
+            var rand = new Random();
+
+            for (var i = 20; i < 50; i++)
+            {
+                pacBytes[i] = (byte)rand.Next(0, 254);
+            }
+
+            var pacSign = new PacSignature(infoBufferBytes, ref pacBytes);
+
+            pacSign.Validator.Validate(new KerberosKey(key));
+        }
+
+        [TestMethod, ExpectedException(typeof(SecurityException))]
+        public void TestKerberosValidatorRC4ModifiedPac()
+        {
+            var key = ReadFile("rc4-key-data");
+
+            var infoBuffer = "dv///9uwIJUdzAWaCdn16YcrrEk=";
+            var pac = "BQAAAAAAAAABAAAAIAMAAFgAAAAAAAAACgAAABwAAAB4AwAAAAAAAAwAAABQAAAAmAMAAAAAAAAGAAAAFAAAAOgDAAAAAAAABwAA" +
+                "ABQAAAAABAAAAAAAAAEQCADMzMzMEAMAAAAAAAAAAAIAYE1z2X1yyQH/////////f/////////9/sFbR+dRwyQGwFjsknnHJAf////////" +
+                "9/EgASAAQAAgASABIACAACAAAAAAAMAAIAAAAAABAAAgAAAAAAFAACAAAAAAAYAAIALgAAAFIEAAABAgAACwAAABwAAgAgAAAAAAAAAAAA" +
+                "AAAAAAAAAAAAAAwADgAgAAIADAAOACQAAgAoAAIAAAAAAAAAAAAQAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAAAsAAIAAA" +
+                "AAAAAAAAAAAAAACQAAAAAAAAAJAAAAdQBzAGUAcgAuAHQAZQBzAHQAAAAJAAAAAAAAAAkAAABVAHMAZQByACAAVABlAHMAdAAAAAAAAAAA" +
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAACAgAABwAAAFAEAAAHAAAAAQIAAAcAAAAEAgAABwAAAA" +
+                "MCAAAHAAAACAIAAAcAAAAAAgAABwAAAAkCAAAHAAAABgIAAAcAAAAHAgAABwAAAPIBAAAHAAAABwAAAAAAAAAGAAAAVwBTADIAMAAwADgA" +
+                "BwAAAAAAAAAGAAAARABPAE0AQQBJAE4ABAAAAAEEAAAAAAAFFQAAAELcI/DfA8DDi6apKQcAAAAwAAIABwAAIDQAAgAHAAAgOAACAAcAAC" +
+                "A8AAIABwAAIEAAAgAHAAAgRAACAAcAACBIAAIABwAAIAUAAAABBQAAAAAABRUAAABC3CPw3wPAw4umqSk8AgAABQAAAAEFAAAAAAAFFQAA" +
+                "AELcI/DfA8DDi6apKTsCAAAFAAAAAQUAAAAAAAUVAAAAQtwj8N8DwMOLpqkp6QMAAAUAAAABBQAAAAAABRUAAABC3CPw3wPAw4umqSnoAw" +
+                "AABQAAAAEFAAAAAAAFFQAAAELcI / DfA8DDi6apKQUCAAAFAAAAAQUAAAAAAAUVAAAAQtwj8N8DwMOLpqkpTwQAAAUAAAABBQAAAAAABR" +
+                "UAAABC3CPw3wPAw4umqSkpAgAAAL9Len5yyQESAHUAcwBlAHIALgB0AGUAcwB0AAAAAAAoABAAFAA4AAAAAAAAAAAAdQBzAGUAcgAuAHQA" +
+                "ZQBzAHQAQABkAG8AbQBhAGkAbgAuAGMAbwBtAEQATwBNAEEASQBOAC4AQwBPAE0AAAAAAHb///8AAAAAAAAAAAAAAAAAAAAAAAAAAHb//" +
+                "/8AAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+
+            var infoBufferBytes = Convert.FromBase64String(infoBuffer);
+            var pacBytes = Convert.FromBase64String(pac);
+
+            var rand = new Random();
+
+            for (var i = 20; i < 50; i++)
+            {
+                pacBytes[i] = (byte)rand.Next(0, 254);
+            }
+
+            var pacSign = new PacSignature(infoBufferBytes, ref pacBytes);
+
+            pacSign.Validator.Validate(new KerberosKey(key));
         }
 
         [TestMethod, ExpectedException(typeof(KerberosValidationException))]
@@ -97,7 +209,8 @@ namespace Tests.Kerberos.NET
         {
             var replay = new TicketReplayValidator();
 
-            var entry = new TicketCacheEntry {
+            var entry = new TicketCacheEntry
+            {
                 Key = "blargh",
                 Expires = DateTimeOffset.UtcNow.AddHours(1)
             };
@@ -139,7 +252,7 @@ namespace Tests.Kerberos.NET
             var data = ReadFile("rc4-kerberos-data");
             var key = ReadFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.Replay };
+            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = DefaultActions };
             var result = await validator.Validate(data);
             var pac = (PacElement)result.Ticket.AuthorizationData
                 .Select(d => d.Authorizations.First(a => a.Type == AuthorizationDataValueType.AD_WIN2K_PAC))

@@ -13,7 +13,8 @@ namespace Kerberos.NET
         StartTime = 1 << 3,
         EndTime = 1 << 4,
         Replay = 1 << 5,
+        Pac = 1 << 6,
 
-        All = ClientPrincipalIdentifier | Realm | TokenWindow | StartTime | EndTime | Replay
+        All = ClientPrincipalIdentifier | Realm | TokenWindow | StartTime | EndTime | Replay | Pac
     }
 }

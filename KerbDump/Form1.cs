@@ -203,7 +203,7 @@ namespace KerbDump
 
         private async Task<string> Decode(string ticket, KeyTable key)
         {
-            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.None };
+            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.Pac };
 
             var ticketBytes = Convert.FromBase64String(ticket);
 
@@ -213,7 +213,15 @@ namespace KerbDump
 
             var keytableFormat = GenerateFormattedKeyTable(key);
 
-            return FormatSerialize(new { Request = request, Decrypted = decrypted, KeyTable = keytableFormat });
+            var authenticated = await new KerberosAuthenticator(validator).Authenticate(ticketBytes);
+
+            return FormatSerialize(new
+            {
+                Request = request,
+                Decrypted = decrypted,
+                Identity = authenticated.Claims.Select(c => new { c.Type, c.Value }),
+                KeyTable = keytableFormat
+            });
         }
 
         private readonly IEncryptor NoOpEncryptor = new NoOpEncryptor();

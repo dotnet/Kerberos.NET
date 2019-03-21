@@ -1,8 +1,8 @@
-using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 using System;
 using System.Security;
 
-namespace Kerberos.NET.Entities
+namespace Kerberos.NET.Crypto
 {
     public class RC4DecryptedData : DecryptedData
     {
@@ -48,11 +48,15 @@ namespace Kerberos.NET.Entities
 
         public override void Decrypt(KeyTable keytab)
         {
+            SName = token.Ticket.SName;
+
             var ciphertext = token.Ticket.EncPart.Cipher;
 
             var key = keytab.GetKey(token);
 
-            var decryptedTicket = Decrypt(key.GetKey(MD4Encryptor), ciphertext, KeyUsage.KU_TICKET);
+            var kerbKey = key.GetKey(MD4Encryptor);
+
+            var decryptedTicket = Decrypt(kerbKey, ciphertext, KeyUsage.KU_TICKET);
 
             Ticket = new EncTicketPart().Decode(new Asn1Element(decryptedTicket));
 
@@ -85,20 +89,7 @@ namespace Kerberos.NET.Entities
 
             var calculatedHmac = KerberosHash.HMACMD5(k2, plaintext);
 
-            var invalidChecksum = false;
-
-            if (calculatedHmac.Length >= HashSize)
-            {
-                for (var i = 0; i < HashSize; i++)
-                {
-                    if (calculatedHmac[i] != ciphertext[i])
-                    {
-                        invalidChecksum = true;
-                    }
-                }
-            }
-
-            if (invalidChecksum)
+            if (!KerberosHash.AreEqualSlow(calculatedHmac, ciphertext, calculatedHmac.Length))
             {
                 throw new SecurityException("Invalid Checksum");
             }

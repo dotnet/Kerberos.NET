@@ -16,7 +16,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task TestParseClaims()
         {
-            var validator = new KerberosValidator(new KeyTable(ReadFile("sample.keytab"))) { ValidateAfterDecrypt = ValidationActions.Replay };
+            var validator = new KerberosValidator(new KeyTable(ReadFile("sample.keytab"))) { ValidateAfterDecrypt = DefaultActions };
 
             var authenticator = new KerberosAuthenticator(validator);
 
@@ -29,6 +29,24 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(result.Claims.Any(c=>c.Type == "ad://ext/employeeType:88d4d68c56082042" && c.Value == "lazy"));
 
             Assert.AreEqual(2, result.Claims.Count(c=>c.Type == "ad://ext/localeID:88d4d68c6aa51687"));
+        }
+
+        [TestMethod]
+        public async Task TestValidatorClaimsPresent()
+        {
+            var validator = new KerberosValidator(new KeyTable(ReadFile("sample.keytab"))) { ValidateAfterDecrypt = DefaultActions };
+
+            var authenticator = new KerberosAuthenticator(validator);
+
+            var result = await authenticator.Authenticate(RC4Ticket);
+
+            Assert.IsNotNull(result);
+
+            Assert.IsTrue(result.Claims.Count() > 0);
+
+            var validation = result.Claims.First(c => c.Type == "Validated");
+
+            Assert.AreEqual("ClientPrincipalIdentifier Realm Replay Pac", validation.Value);
         }
     }
 }

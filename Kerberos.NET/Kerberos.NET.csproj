@@ -5,10 +5,10 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Kerberos.NET</PackageId>
     <!-- Assembly version stays fixed until the next major version -->
-    <AssemblyVersion>2.4.0.0</AssemblyVersion>
+    <AssemblyVersion>2.6.0.0</AssemblyVersion>
     <!-- File version and version prefix shows the correct version -->
-    <FileVersion>2.4.0</FileVersion>
-    <VersionPrefix>2.4.0</VersionPrefix>
+    <FileVersion>2.6.0</FileVersion>
+    <VersionPrefix>2.6.0</VersionPrefix>
     <AssemblyOriginatorKeyFile>../key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
@@ -20,7 +20,7 @@
     <PackageLicenseUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageProjectUrl>
     <PackageTags>security kerberos</PackageTags>
-    <PackageReleaseNotes>Added support for delegation info in PAC and fixed an issue parsing authorization data in the authenticator.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added PAC validation</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/SteveSyfuhs/Kerberos.NET</RepositoryUrl>
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>

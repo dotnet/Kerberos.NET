@@ -1,4 +1,6 @@
-﻿using System.Security.Cryptography;
+﻿using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Kerberos.NET.Crypto
@@ -26,14 +28,48 @@ namespace Kerberos.NET.Crypto
             }
         }
 
+        public static byte[] KerbChecksumHmacMd5(byte[] key, int messageType, byte[] data)
+        {
+            var ksign = HMACMD5(key, Encoding.ASCII.GetBytes("signaturekey\0"));
+
+            var tmp = MD5(ConvertToLittleEndian(messageType).Concat(data).ToArray());
+
+            return HMACMD5(ksign, tmp);
+        }
+
+        public static void ConvertToBigEndian(int val, byte[] bytes, int offset)
+        {
+            bytes[offset + 0] = (byte)((val >> 24) & 0xff);
+            bytes[offset + 1] = (byte)((val >> 16) & 0xff);
+            bytes[offset + 2] = (byte)((val >> 8) & 0xff);
+            bytes[offset + 3] = (byte)((val) & 0xff);
+        }
+
+        public static void ConvertToLittleEndian(int val, byte[] bytes, int offset)
+        {
+            bytes[offset + 0] = (byte)(val & 0xFF);
+            bytes[offset + 1] = (byte)((val >> 8) & 0xFF);
+            bytes[offset + 2] = (byte)((val >> 16) & 0xFF);
+            bytes[offset + 3] = (byte)((val >> 24) & 0xFF);
+        }
+
+        private static byte[] ConvertToLittleEndian(int thing)
+        {
+            byte[] bytes = new byte[4];
+
+            ConvertToLittleEndian(thing, bytes, 0);
+
+            return bytes;
+        }
+
         public static byte[] MD4(byte[] key)
         {
             return new MD4().ComputeHash(key);
         }
 
-        public static byte[] MD4(string password)
+        public static byte[] MD5(byte[] data)
         {
-            return MD4(Encoding.Unicode.GetBytes(password));
+            return System.Security.Cryptography.MD5.Create().ComputeHash(data);
         }
 
         public static byte[] KerberosHMAC(IHasher hashProvider, byte[] key, byte[] data)
@@ -80,6 +116,24 @@ namespace Kerberos.NET.Crypto
             {
                 array[i] = value;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        public static bool AreEqualSlow(byte[] left, byte[] right, int rightLength = 0)
+        {
+            if (rightLength <= 0)
+            {
+                rightLength = right.Length;
+            }
+
+            var diff = left.Length ^ rightLength;
+
+            for (var i = 0; i < left.Length; i++)
+            {
+                diff |= (left[i] ^ right[i]);
+            }
+
+            return diff == 0;
         }
     }
 }
