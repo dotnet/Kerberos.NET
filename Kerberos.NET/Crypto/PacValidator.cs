@@ -30,7 +30,7 @@ namespace Kerberos.NET.Crypto
     public class HmacAes256PacValidator : AesPacValidator
     {
         public HmacAes256PacValidator(byte[] signature, ref byte[] pac)
-            : base(new AES256Decryptor(), new AES256Encryptor(), signature, ref pac)
+            : base(new AES256Transformer(), new AES256Encryptor(), signature, ref pac)
         {
         }
     }
@@ -38,17 +38,17 @@ namespace Kerberos.NET.Crypto
     public class HmacAes128PacValidator : AesPacValidator
     {
         public HmacAes128PacValidator(byte[] signature, ref byte[] pac)
-            : base(new AES128Decryptor(), new AES128Encryptor(), signature, ref pac)
+            : base(new AES128Transformer(), new AES128Encryptor(), signature, ref pac)
         {
         }
     }
 
     public abstract class AesPacValidator : PacValidator
     {
-        private readonly AESDecryptor decryptor;
+        private readonly AESTransformer decryptor;
         private readonly AESEncryptor encryptor;
 
-        protected AesPacValidator(AESDecryptor decryptor, AESEncryptor encryptor, byte[] signature, ref byte[] pac)
+        protected AesPacValidator(AESTransformer decryptor, AESEncryptor encryptor, byte[] signature, ref byte[] pac)
             : base(signature, ref pac)
         {
             this.decryptor = decryptor;
@@ -59,7 +59,7 @@ namespace Kerberos.NET.Crypto
         {
             var constant = new byte[5];
 
-            KerberosHash.ConvertToBigEndian((int)KeyUsage.KU_PA_FOR_USER_ENC_CKSUM, constant, 0);
+            Endian.ConvertToBigEndian((int)KeyUsage.KU_PA_FOR_USER_ENC_CKSUM, constant, 0);
 
             constant[4] = 0x99;
 
@@ -67,7 +67,7 @@ namespace Kerberos.NET.Crypto
 
             var actualChecksum = decryptor.MakeChecksum(Ki, Pac, decryptor.ChecksumSize);
 
-            return KerberosHash.AreEqualSlow(actualChecksum, Signature);
+            return KerberosCryptoTransformer.AreEqualSlow(actualChecksum, Signature);
         }
     }
 
@@ -80,13 +80,16 @@ namespace Kerberos.NET.Crypto
 
         protected override bool ValidateInternal(KerberosKey key)
         {
-            var actualChecksum = KerberosHash.KerbChecksumHmacMd5(
-               key.GetKey(new MD4Encryptor()),
-               (int)KeyUsage.KU_PA_FOR_USER_ENC_CKSUM,
-               Pac
-           );
+            var crypto = new RC4Transformer(new MD4Encryptor());
 
-            return KerberosHash.AreEqualSlow(actualChecksum, Signature);
+            var actualChecksum = crypto.MakeChecksum(
+                key.GetKey(new MD4Encryptor()), 
+                Pac, 
+                0, 
+                (int)KeyUsage.KU_PA_FOR_USER_ENC_CKSUM
+            );
+
+            return KerberosCryptoTransformer.AreEqualSlow(actualChecksum, Signature);
         }
     }
 }

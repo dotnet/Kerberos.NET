@@ -6,11 +6,15 @@ using System.Security;
 
 namespace Kerberos.NET.Crypto.AES
 {
-    public abstract class AESDecryptor : KerberosEncryptor
+    public abstract class AESTransformer : KerberosCryptoTransformer
     {
-        protected AESDecryptor(IEncryptor encryptor, IHasher hasher)
-            : base(encryptor, hasher)
+        private readonly AESEncryptor encryptor;
+        private readonly IHasher hasher;
+
+        protected AESTransformer(AESEncryptor encryptor, IHasher hasher)
         {
+            this.encryptor = encryptor;
+            this.hasher = hasher;
         }
 
         public override int ChecksumSize { get { return 96 / 8; } }
@@ -26,11 +30,9 @@ namespace Kerberos.NET.Crypto.AES
 
             var constant = new byte[5];
 
-            KerberosHash.ConvertToBigEndian((int)usage, constant, 0);
+            Endian.ConvertToBigEndian((int)usage, constant, 0);
 
             constant[4] = 170;
-
-            var encryptor = (AESEncryptor)Encryptor;
 
             Ke = encryptor.DK(key, constant);
 
@@ -47,9 +49,9 @@ namespace Kerberos.NET.Crypto.AES
 
             encryptor.Decrypt(Ke, iv, tmpEnc);
 
-            var newChecksum = MakeChecksum(Ki, tmpEnc, checksumLen);
+            var newChecksum = MakeChecksum(Ki, tmpEnc, checksumLen, 0);
 
-            if (!KerberosHash.AreEqualSlow(checksum, newChecksum))
+            if (!AreEqualSlow(checksum, newChecksum))
             {
                 throw new SecurityException("Invalid checksum");
             }
@@ -63,14 +65,25 @@ namespace Kerberos.NET.Crypto.AES
 
         public override byte[] Decrypt(byte[] cipher, KerberosKey key, KeyUsage usage)
         {
-            var iv = new byte[Encryptor.BlockSize];
-            return Decrypt(cipher, key.GetKey(Encryptor), iv, usage);
+            var iv = new byte[encryptor.BlockSize];
+            return Decrypt(cipher, key.GetKey(encryptor), iv, usage);
+        }
+
+        public override byte[] MakeChecksum(byte[] key, byte[] data, int hashSize, int keyUsage = 0)
+        {
+            var hash = hasher.Hmac(key, data);
+
+            var output = new byte[hashSize];
+
+            Buffer.BlockCopy(hash, 0, output, 0, hashSize);
+
+            return output;
         }
 
         private byte[] Decrypt(byte[] cipher, byte[] key, byte[] iv, KeyUsage usage)
         {
             var totalLen = cipher.Length;
-            var confounderLen = Encryptor.BlockSize;
+            var confounderLen = encryptor.BlockSize;
             var checksumLen = ChecksumSize;
             var dataLen = totalLen - (confounderLen + checksumLen);
 

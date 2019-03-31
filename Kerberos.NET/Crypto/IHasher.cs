@@ -2,12 +2,6 @@
 {
     public interface IHasher
     {
-        int BlockSize { get; }
-
-        byte[] CalculateDigest();
-
-        void Hash(byte[] data);
-
-        void Hash(byte[] data, int start, int len);
+        byte[] Hmac(byte[] key, byte[] data);
     }
 }

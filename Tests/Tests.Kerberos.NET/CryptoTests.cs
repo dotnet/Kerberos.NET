@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Crypto.AES;
+using System.Security.Cryptography;
 
 namespace Tests.Kerberos.NET
 {

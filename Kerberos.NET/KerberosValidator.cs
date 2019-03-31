@@ -127,9 +127,17 @@ namespace Kerberos.NET
 
         private static string Hash(string value)
         {
-            var hash = KerberosHash.SHA256(value);
+            var hash = SHA256(value);
 
             return ToBase64UrlString(hash);
+        }
+
+        private static byte[] SHA256(string value)
+        {
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            {
+                return sha.ComputeHash(Encoding.UTF8.GetBytes(value));
+            }
         }
 
         private static string ToBase64UrlString(byte[] input)

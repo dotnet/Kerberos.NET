@@ -206,11 +206,10 @@ namespace Kerberos.NET.Crypto
 
             var a = outBytesNum;
             var b = inBytesNum;
-            var c = 0;
 
             while (b != 0)
             {
-                c = b;
+                var c = b;
                 b = a % b;
                 a = c;
             }
@@ -219,7 +218,7 @@ namespace Kerberos.NET.Crypto
 
             var outBytes = new byte[outBytesNum];
 
-            KerberosHash.Fill(outBytes, (byte)0);
+            Fill(outBytes, 0);
 
             var tmpByte = 0;
 
@@ -256,6 +255,14 @@ namespace Kerberos.NET.Crypto
             }
 
             return outBytes;
+        }
+
+        private static void Fill(byte[] array, byte value)
+        {
+            for (var i = 0; i < array.Length; i++)
+            {
+                array[i] = value;
+            }
         }
     }
 }

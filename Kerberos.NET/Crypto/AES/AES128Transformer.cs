@@ -4,11 +4,11 @@
 
 namespace Kerberos.NET.Crypto
 {
-    internal class AES128Decryptor : AESDecryptor
+    internal class AES128Transformer : AESTransformer
     {
-        private static readonly IEncryptor encryptor = new AES128Encryptor();
+        private static readonly AESEncryptor encryptor = new AES128Encryptor();
 
-        public AES128Decryptor()
+        public AES128Transformer()
             : base(encryptor, new SHA1Hasher())
         {
         }

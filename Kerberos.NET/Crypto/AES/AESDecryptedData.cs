@@ -13,7 +13,7 @@ namespace Kerberos.NET.Crypto
 
         public override EncryptionType EType => Token?.Ticket?.EncPart?.EType ?? EncryptionType.NULL;
 
-        protected abstract KerberosEncryptor Decryptor { get; }
+        protected abstract KerberosCryptoTransformer Transformer { get; }
 
         protected KrbApReq Token { get; }
 
@@ -27,7 +27,7 @@ namespace Kerberos.NET.Crypto
                 Token.Ticket.SName
             );
 
-            var decrypted = Decryptor.Decrypt(
+            var decrypted = Transformer.Decrypt(
                 Token.Ticket.EncPart.Cipher,
                 kerbKey,
                 KeyUsage.KU_TICKET
@@ -40,7 +40,7 @@ namespace Kerberos.NET.Crypto
         {
             Ticket = new EncTicketPart().Decode(new Asn1Element(decryptedTicket));
 
-            var decryptedAuthenticator = Decryptor.Decrypt(
+            var decryptedAuthenticator = Transformer.Decrypt(
                 Token.Authenticator.Cipher,
                 new KerberosKey(
                     Ticket.Key.RawKey

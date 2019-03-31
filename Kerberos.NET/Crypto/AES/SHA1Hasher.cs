@@ -1,11 +1,17 @@
 ﻿#pragma warning disable S101 // Types should be named in camel case
 
+using System.Security.Cryptography;
+
 namespace Kerberos.NET.Crypto.AES
 {
-    internal class SHA1Hasher : Hasher
+    public class SHA1Hasher : IHasher
     {
-        public SHA1Hasher()
-            : base(64, new Sha1Digest())
-        { }
+        public byte[] Hmac(byte[] key, byte[] data)
+        {
+            using (var hmac = new HMACSHA1(key))
+            {
+                return hmac.ComputeHash(data);
+            }
+        }
     }
 }
