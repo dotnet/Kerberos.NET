@@ -78,12 +78,14 @@ namespace Kerberos.NET.Crypto
         {
         }
 
+        private readonly MD4Encryptor encryptor = new MD4Encryptor();
+
         protected override bool ValidateInternal(KerberosKey key)
         {
-            var crypto = new RC4Transformer(new MD4Encryptor());
+            var crypto = new RC4Transformer(encryptor);
 
             var actualChecksum = crypto.MakeChecksum(
-                key.GetKey(new MD4Encryptor()), 
+                key.GetKey(encryptor), 
                 Pac, 
                 0, 
                 (int)KeyUsage.KU_PA_FOR_USER_ENC_CKSUM

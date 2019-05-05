@@ -7,11 +7,8 @@ namespace Kerberos.NET.Crypto.AES
     public class AES128DecryptedData : AESDecryptedData
     {
         public AES128DecryptedData(KrbApReq token)
-            : base(token)
+            : base(token, new AES128Transformer())
         {
-            Transformer = new AES128Transformer();
         }
-
-        protected override KerberosCryptoTransformer Transformer { get; }
     }
 }

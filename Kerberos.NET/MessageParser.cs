@@ -8,7 +8,14 @@ namespace Kerberos.NET
     {
         public static ContextToken ParseContext(byte[] data)
         {
-            return Parse<ContextToken>(data);
+            var context = Parse<object>(data);
+
+            if (context is NegTokenTarg)
+            {
+                return ((NegTokenTarg)context).ResponseToken;
+            }
+
+            return (ContextToken)context;
         }
 
         public static NegotiateContextToken ParseNegotiate(byte[] data)

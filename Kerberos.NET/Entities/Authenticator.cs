@@ -26,7 +26,7 @@ namespace Kerberos.NET.Entities
                         CName = new PrincipalName().Decode(node[0], Realm);
                         break;
                     case 3:
-                        Checksum = node[0].Value;
+                        Checksum = new Checksum().Decode(node[0]);
                         break;
                     case 4:
                         CuSec = node[0].AsLong();
@@ -46,7 +46,7 @@ namespace Kerberos.NET.Entities
                         for (var p = 0; p < parent.Count; p++)
                         {
                             var azElements = AuthorizationDataElement.ParseElements(parent[p]);
-                            
+
                             Authorizations.AddRange(azElements);
                         }
                         break;
@@ -62,7 +62,7 @@ namespace Kerberos.NET.Entities
 
         public PrincipalName CName;
 
-        public byte[] Checksum;
+        public Checksum Checksum;
 
         public long CuSec;
 

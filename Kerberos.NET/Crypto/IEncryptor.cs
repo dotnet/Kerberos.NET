@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Entities;
-
+﻿
 namespace Kerberos.NET.Crypto
 {
     public interface IEncryptor

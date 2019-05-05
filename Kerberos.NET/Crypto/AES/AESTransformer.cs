@@ -41,7 +41,7 @@ namespace Kerberos.NET.Crypto.AES
             Ki = encryptor.DK(key, constant);
 
             var tmpEnc = new byte[confounderLen + dataLen];
-            Buffer.BlockCopy(workBuffer, 0, tmpEnc, 0, (confounderLen + dataLen));
+            Buffer.BlockCopy(workBuffer, 0, tmpEnc, 0, confounderLen + dataLen);
 
             var checksum = new byte[checksumLen];
 

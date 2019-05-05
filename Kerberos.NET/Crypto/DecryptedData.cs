@@ -5,7 +5,15 @@ namespace Kerberos.NET.Crypto
 {
     public abstract class DecryptedData
     {
-        public abstract EncryptionType EType { get; }
+        protected DecryptedData(KrbApReq token, KerberosCryptoTransformer transformer)
+        {
+            this.token = token;
+            this.Transformer = transformer;
+        }
+
+        protected KerberosCryptoTransformer Transformer { get; }
+
+        public EncryptionType EType => token?.Ticket?.EncPart?.EType ?? EncryptionType.NULL;
 
         public Authenticator Authenticator { get; protected set; }
 
@@ -15,6 +23,8 @@ namespace Kerberos.NET.Crypto
 
         private Func<DateTimeOffset> nowFunc;
 
+        private readonly KrbApReq token;
+
         [KerberosIgnore]
         public Func<DateTimeOffset> Now
         {
@@ -22,7 +32,44 @@ namespace Kerberos.NET.Crypto
             set { nowFunc = value; }
         }
 
-        public abstract void Decrypt(KeyTable keytab);
+        public virtual void Decrypt(KeyTable keytab)
+        {
+            SName = token.Ticket.SName;
+
+            var ciphertext = token.Ticket.EncPart.Cipher;
+
+            var key = keytab.GetKey(token);
+
+            var decryptedTicket = Decrypt(key, ciphertext, KeyUsage.KU_TICKET);
+
+            Ticket = new EncTicketPart().Decode(new Asn1Element(decryptedTicket));
+
+            var decryptedAuthenticator = Decrypt(
+                new KerberosKey(Ticket.Key.RawKey),
+                token.Authenticator.Cipher,
+                KeyUsage.KU_AP_REQ_AUTHENTICATOR
+            );
+
+            Authenticator = new Authenticator().Decode(new Asn1Element(decryptedAuthenticator));
+
+            var delegation = Authenticator?.Checksum?.Delegation?.DelegationTicket;
+
+            if (delegation != null)
+            {
+                var decryptedDelegationTicket = Decrypt(
+                    new KerberosKey(Ticket.Key.RawKey),
+                    delegation.Credential.EncryptedData.Cipher,
+                    KeyUsage.KU_ENC_KRB_CRED_PART
+                );
+
+                delegation.Credential.CredentialPart = new EncKrbCredPart().Decode(new Asn1Element(decryptedDelegationTicket));
+            }
+        }
+
+        private byte[] Decrypt(KerberosKey key, byte[] ciphertext, KeyUsage keyType)
+        {
+            return Transformer.Decrypt(ciphertext, key, keyType);
+        }
 
         public virtual TimeSpan Skew { get; protected set; } = TimeSpan.FromMinutes(5);
 

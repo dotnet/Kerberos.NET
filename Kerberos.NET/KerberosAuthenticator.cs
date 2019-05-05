@@ -116,7 +116,7 @@ namespace Kerberos.NET
             }
         }
 
-        private string GetTypeId(ClaimType type)
+        private static string GetTypeId(ClaimType type)
         {
             switch (type)
             {

@@ -120,6 +120,9 @@ namespace Kerberos.NET.Entities
                             elements.Add(rel);
                         }
                         break;
+                    default:
+                        Debug.WriteLine($"Unknown restriction: {restrictions[i].ContextSpecificTag}");
+                        break;
                 }
 
             }
@@ -160,6 +163,7 @@ namespace Kerberos.NET.Entities
                 case AuthorizationDataValueType.KERB_SERVICE_TARGET:
                     return new KerbServiceName(restriction[0].Value);
                 default:
+                    Debug.WriteLine($"Unknown AdIfRelevant type: {type}");
                     return null;
             }
         }
@@ -245,6 +249,9 @@ namespace Kerberos.NET.Entities
                         break;
                     case 1:
                         Restriction = new LsapTokenInfoIntegrity(entry[0].Value);
+                        break;
+                    default:
+                        Debug.WriteLine($"Unknown restriction {entry.ContextSpecificTag}");
                         break;
                 }
             }

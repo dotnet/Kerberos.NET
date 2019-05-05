@@ -99,7 +99,7 @@ namespace Kerberos.NET
                 decryptedToken.Validate(ValidateAfterDecrypt);
                 replayDetected = false;
             }
-            else if (!(await TokenCache.Contains(entry)))
+            else if (!await TokenCache.Contains(entry))
             {
                 decryptedToken.Validate(ValidateAfterDecrypt);
 
@@ -127,16 +127,11 @@ namespace Kerberos.NET
 
         private static string Hash(string value)
         {
-            var hash = SHA256(value);
-
-            return ToBase64UrlString(hash);
-        }
-
-        private static byte[] SHA256(string value)
-        {
             using (var sha = System.Security.Cryptography.SHA256.Create())
             {
-                return sha.ComputeHash(Encoding.UTF8.GetBytes(value));
+                return ToBase64UrlString(
+                    sha.ComputeHash(Encoding.UTF8.GetBytes(value))
+                );
             }
         }
 

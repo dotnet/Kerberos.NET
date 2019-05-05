@@ -75,7 +75,7 @@ namespace Kerberos.NET.Crypto
             var iterations = GetIterations(param, 4096);
 
             var saltBytes = GetSaltBytes(salt, null);
-            
+
             var random = PBKDF2(passwordBytes, saltBytes, iterations, KeySize);
 
             var tmpKey = Random2Key(random);
@@ -201,11 +201,11 @@ namespace Kerberos.NET.Crypto
 
         public static byte[] NFold(byte[] inBytes, int size)
         {
-            var inBytesNum = inBytes.Length;
-            var outBytesNum = size;
+            var inBytesSize = inBytes.Length;
+            var outBytesSize = size;
 
-            var a = outBytesNum;
-            var b = inBytesNum;
+            var a = outBytesSize;
+            var b = inBytesSize;
 
             while (b != 0)
             {
@@ -214,9 +214,9 @@ namespace Kerberos.NET.Crypto
                 a = c;
             }
 
-            var lcm = (outBytesNum * inBytesNum) / a;
+            var lcm = (outBytesSize * inBytesSize) / a;
 
-            var outBytes = new byte[outBytesNum];
+            var outBytes = new byte[outBytesSize];
 
             Fill(outBytes, 0);
 
@@ -224,30 +224,31 @@ namespace Kerberos.NET.Crypto
 
             for (var i = lcm - 1; i >= 0; i--)
             {
-                var tmp = ((inBytesNum << 3) - 1);
-                tmp += (((inBytesNum << 3) + 13) * (i / inBytesNum));
-                tmp += ((inBytesNum - (i % inBytesNum)) << 3);
+                var msbit = (inBytesSize << 3) - 1;
 
-                var msbit = tmp % (inBytesNum << 3);
+                msbit += ((inBytesSize << 3) + 13) * (i / inBytesSize);
+                msbit += (inBytesSize - (i % inBytesSize)) << 3;
+                msbit %= inBytesSize << 3;
 
-                tmp = ((((inBytes[((inBytesNum - 1) - (msbit >> 3)) % inBytesNum] & 0xff) << 8) |
-                    (inBytes[((inBytesNum) - (msbit >> 3)) % inBytesNum] & 0xff))
-                    >> ((msbit & 7) + 1)) & 0xff;
+                var rst = inBytes[(inBytesSize - 1 - (msbit >> 3)) % inBytesSize] & 0xff;
+                var rst2 = inBytes[(inBytesSize - (msbit >> 3)) % inBytesSize] & 0xff;
 
-                tmpByte += tmp;
-                tmp = outBytes[i % outBytesNum] & 0xff;
-                tmpByte += tmp;
+                msbit = (((rst << 8) | (rst2)) >> ((msbit & 7) + 1)) & 0xff;
 
-                outBytes[i % outBytesNum] = (byte)(tmpByte & 0xff);
+                tmpByte += msbit;
+                msbit = outBytes[i % outBytesSize] & 0xff;
+                tmpByte += msbit;
+
+                outBytes[i % outBytesSize] = (byte)(tmpByte & 0xff);
 
                 tmpByte >>= 8;
             }
 
             if (tmpByte != 0)
             {
-                for (var i = outBytesNum - 1; i >= 0; i--)
+                for (var i = outBytesSize - 1; i >= 0; i--)
                 {
-                    tmpByte += (outBytes[i] & 0xff);
+                    tmpByte += outBytes[i] & 0xff;
                     outBytes[i] = (byte)(tmpByte & 0xff);
 
                     tmpByte >>= 8;
