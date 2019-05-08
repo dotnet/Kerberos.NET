@@ -13,6 +13,8 @@ namespace Kerberos.NET
     {
         private readonly IKerberosValidator validator;
 
+        public UserNameFormat UserNameFormat { get; set; } = UserNameFormat.UserPrincipalName;
+        
         public KerberosAuthenticator(KeyTable keytab)
             : this(new KerberosValidator(keytab))
         { }
@@ -153,10 +155,19 @@ namespace Kerberos.NET
                 claims.Add(new Claim(ClaimTypes.GivenName, pac.LogonInfo.UserDisplayName));
             }
 
-            var names = ticket.CName.Names.Select(n => $"{n}@{ticket.CRealm.ToLowerInvariant()}");
+            if (this.UserNameFormat == UserNameFormat.UserPrincipalName)
+            {
+                var names = ticket.CName.Names.Select(n => $"{n}@{ticket.CRealm.ToLowerInvariant()}");
 
-            claims.AddRange(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)));
+                claims.AddRange(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)));
+            }
+            else
+            {
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, $"{pac.LogonInfo.DomainName}\\{pac.LogonInfo.UserName}"));
+            }
         }
+
+        
 
         protected virtual void AddGroups(PrivilegedAttributeCertificate pac, ICollection<Claim> claims)
         {
