@@ -49,6 +49,11 @@ namespace Kerberos.NET.Crypto
 
         private static string GenerateSalt(KerberosKey key)
         {
+            if (!string.IsNullOrWhiteSpace(key.Salt))
+            {
+                return key.Salt;
+            }
+
             var salt = new StringBuilder();
 
             if (key.PrincipalName == null)
@@ -56,7 +61,7 @@ namespace Kerberos.NET.Crypto
                 return salt.ToString();
             }
 
-            salt.Append(key.PrincipalName.Realm);
+            salt.Append(key.PrincipalName.Realm.ToUpperInvariant());
 
             salt.Append("host");
             salt.Append(key.Host);

@@ -1,6 +1,7 @@
 ﻿using KerbDump.Properties;
 using Kerberos.NET;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -116,17 +117,31 @@ namespace KerbDump
             {
                 var key = table;
 
+                var domain = Environment.GetEnvironmentVariable("USERDNSDOMAIN");
+
                 if (key == null)
                 {
                     if (chkEncodedKey.Checked)
                     {
                         var bytes = Convert.FromBase64String(txtKey.Text);
 
-                        key = new KeyTable(new KerberosKey(password: bytes, host: txtHost.Text));
+                        key = new KeyTable(
+                            new KerberosKey(
+                                password: bytes, 
+                                principal: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }), 
+                                host: txtHost.Text
+                            )
+                        );
                     }
                     else
                     {
-                        key = new KeyTable(new KerberosKey(txtKey.Text, host: string.IsNullOrWhiteSpace(txtHost.Text) ? null : txtHost.Text));
+                        key = new KeyTable(
+                            new KerberosKey(
+                                txtKey.Text, 
+                                principalName: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }), 
+                                host: string.IsNullOrWhiteSpace(txtHost.Text) ? null : txtHost.Text
+                            )
+                        );
                     }
                 }
 

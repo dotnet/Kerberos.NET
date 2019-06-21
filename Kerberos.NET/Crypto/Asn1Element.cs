@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -147,7 +148,7 @@ namespace Kerberos.NET.Crypto
         {
             var octet = this[0];
 
-            if (octet.Class != TagClass.Universal && octet.UniversalTag != 4)
+            if (octet.Class != TagClass.Universal)
             {
                 throw new InvalidDataException();
             }
@@ -399,127 +400,21 @@ namespace Kerberos.NET.Crypto
 
         public DateTimeOffset AsDateTimeOffset()
         {
-            // TODO: this is probably wrong 
+            // TODO: this is still probably wrong 
 
-            var generalized = Tag == 24;
+            var stringVal = AsString();
 
-            var s = AsString();
-
-            var tzHours = 0;
-            var tzMinutes = 0;
-
-            var negativeOffset = false;
-            var hasTimeZone = true;
-
-            if (s.EndsWith("Z"))
-            {
-                s = s.Substring(0, s.Length - 1);
-            }
-            else
-            {
-                var offsetter = s.IndexOf('+');
-
-                if (offsetter < 0)
-                {
-                    offsetter = s.IndexOf('-');
-                    negativeOffset = true;
-                }
-                if (offsetter < 0)
-                {
-                    hasTimeZone = false;
-                }
-                else
-                {
-                    var t = s.Substring(offsetter + 1);
-
-                    s = s.Substring(0, offsetter);
-
-                    tzHours = ParseInt(t, 0);
-                    tzMinutes = ParseInt(t, 2);
-                }
-            }
-
-            var year = ParseInt(s, 0);
-
-            if (generalized)
-            {
-                year = year * 100 + ParseInt(s, 2);
-                s = s.Substring(4);
-            }
-            else
-            {
-                if (year < 50)
-                {
-                    year += 100;
-                }
-
-                year += 1900;
-                s = s.Substring(2);
-            }
-
-            var month = ParseInt(s, 0);
-            var day = ParseInt(s, 2);
-            var hour = ParseInt(s, 4);
-            var minute = ParseInt(s, 6);
-
-            var second = 0;
-            var millisecond = 0;
-
-            if (generalized)
-            {
-                second = ParseInt(s, 8);
-
-                if (s.Length >= 12 && s[10] == '.')
-                {
-                    s = s.Substring(11);
-
-                    s += "0000";
-
-                    millisecond = 10 * ParseInt(s, 0) + ParseInt(s, 2) / 10;
-                }
-            }
-            else
-            {
-                switch (s.Length)
-                {
-                    case 8:
-                        break;
-                    case 10:
-                        second = ParseInt(s, 8);
-                        break;
-                }
-            }
-
-            if (second == 60)
-            {
-                second = 59;
-            }
-
-            if (!hasTimeZone)
-            {
-                var dt = new DateTimeOffset(year, month, day, hour, minute, second, millisecond, DateTimeOffset.Now.Offset);
-
-                return dt.ToUniversalTime();
-            }
-
-            var offset = new TimeSpan(tzHours, tzMinutes, 0);
-
-            if (negativeOffset)
-            {
-                offset = offset.Negate();
-            }
-
-            var dto = new DateTimeOffset(year, month, day, hour, minute, second, millisecond, offset);
-
-            return dto;
-        }
-
-        private static int ParseInt(string s, int off)
-        {
-            char c1 = s[off];
-            char c2 = s[off + 1];
-
-            return 10 * (c1 - '0') + (c2 - '0');
+            return DateTimeOffset.ParseExact(
+                stringVal, 
+                new[] {
+                    "yyyyMMddHHmmssZ",
+                    "yyyyMMddHHmmsszzz",
+                    "yyMMddHHmmssZ",
+                    "yyMMddHHmmsszzz"
+                }, 
+                CultureInfo.InvariantCulture, 
+                DateTimeStyles.None
+            );
         }
     }
 }
