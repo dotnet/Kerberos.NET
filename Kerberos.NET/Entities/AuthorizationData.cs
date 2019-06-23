@@ -130,22 +130,6 @@ namespace Kerberos.NET.Entities
             return elements;
         }
 
-        private static AuthorizationDataElement ParseIfRelevant(Asn1Element restriction)
-        {
-            AuthorizationDataValueType type = 0;
-
-            switch (restriction.ContextSpecificTag)
-            {
-                case 0:
-                    type = (AuthorizationDataValueType)restriction[0].AsInt();
-                    break;
-                case 1:
-                    return ParseAdIfRelevant(restriction, type);
-            }
-
-            throw new InvalidDataException();
-        }
-
         private static AuthorizationDataElement ParseAdIfRelevant(Asn1Element restriction, AuthorizationDataValueType type)
         {
             switch (type)

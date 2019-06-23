@@ -63,15 +63,9 @@ namespace Kerberos.NET
             var ticketEType = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.EncPart?.EType;
             var nameType = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.SName?.NameType;
 
-            var names = "";
-            var snames = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.SName?.Names;
+            var snames = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.SName?.FullyQualifiedName;
 
-            if (snames?.Any() ?? false)
-            {
-                names = string.Join(",", snames);
-            }
-
-            return $"Mechanism: {mech} | MessageType: {messageType} | SName: {nameType}, {names} | Realm: {realm} | Ticket EType: {ticketEType} | Auth EType: {authEType}";
+            return $"Mechanism: {mech} | MessageType: {messageType} | SName: {nameType}, {snames} | Realm: {realm} | Ticket EType: {ticketEType} | Auth EType: {authEType}";
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Kerberos.NET
         private readonly IKerberosValidator validator;
 
         public UserNameFormat UserNameFormat { get; set; } = UserNameFormat.UserPrincipalName;
-        
+
         public KerberosAuthenticator(KeyTable keytab)
             : this(new KerberosValidator(keytab))
         { }
@@ -65,7 +65,7 @@ namespace Kerberos.NET
 
                         if (validator.ValidateAfterDecrypt.HasFlag(ValidationActions.Pac))
                         {
-                            validator.Validate(pac, data.SName);
+                            ValidatePacSignature(pac, data.SName);
                         }
 
                         MergeAttributes(ticket, pac.Certificate, claims);
@@ -78,20 +78,29 @@ namespace Kerberos.NET
             return new ClaimsIdentity(claims, "Kerberos", ClaimTypes.NameIdentifier, ClaimTypes.Role);
         }
 
+        protected virtual void ValidatePacSignature(PacElement pac, PrincipalName name)
+        {
+            validator.Validate(pac, name);
+        }
+
         private void MergeAttributes(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
         {
             AddUser(ticket, pac, claims);
 
             AddGroups(pac, claims);
 
-            if (pac?.ClientClaims?.ClaimsSet?.ClaimsArray != null)
+            var clientClaims = pac?.ClientClaims?.ClaimsSet?.ClaimsArray;
+
+            if (clientClaims != null)
             {
-                AddClaims(pac.ClientClaims.ClaimsSet.ClaimsArray, claims);
+                AddClaims(clientClaims, claims);
             }
 
-            if (pac?.DeviceClaims?.ClaimsSet?.ClaimsArray != null)
+            var deviceClaims = pac?.DeviceClaims?.ClaimsSet?.ClaimsArray;
+
+            if (deviceClaims != null)
             {
-                AddClaims(pac.DeviceClaims.ClaimsSet.ClaimsArray, claims);
+                AddClaims(deviceClaims, claims);
             }
         }
 
@@ -167,7 +176,7 @@ namespace Kerberos.NET
             }
         }
 
-        
+
 
         protected virtual void AddGroups(PrivilegedAttributeCertificate pac, ICollection<Claim> claims)
         {

@@ -260,7 +260,8 @@ namespace KerbDump
                     k.Version,
                     key.Host,
                     key.PasswordBytes,
-                    Key = key.PrincipalName
+                    KeyPrincipalName = key.PrincipalName,
+                    key.Salt
                 };
             });
 

@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Kerberos.NET.Crypto
 {
-    [DebuggerDisplay("Kerbers V{KerberosVersion} File V{FileVersion} Count = {Entries.Count}")]
+    [DebuggerDisplay("Kerberos V{KerberosVersion} File V{FileVersion} Count = {Entries.Count}")]
     public class KeyTable
     {
         public KeyTable(params KerberosKey[] keys)
@@ -40,6 +40,17 @@ namespace Kerberos.NET.Crypto
             while (reader.BytesAvailable() > 0)
             {
                 Entries.Add(new KeyEntry(reader, KerberosVersion));
+            }
+        }
+
+        public void Write(BinaryWriter writer)
+        {
+            writer.Write((byte)KerberosVersion);
+            writer.Write((byte)FileVersion);
+
+            foreach (var entry in Entries)
+            {
+                entry.WriteKeyEntry(writer);
             }
         }
 
@@ -105,9 +116,16 @@ namespace Kerberos.NET.Crypto
         }
     }
 
-    [DebuggerDisplay("{Version} {EncryptionType} {Principal?.Realm}")]
     public class KeyEntry
     {
+        public KeyEntry(KerberosKey key)
+        {
+            this.Key = key;
+            this.Principal = key.PrincipalName;
+            this.EncryptionType = key.EncryptionType;
+            this.Timestamp = DateTimeOffset.UtcNow;
+        }
+
         public KeyEntry(BinaryReader reader, int version)
         {
             Length = ReadInt32(reader);
@@ -152,10 +170,21 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public KeyEntry(KerberosKey key)
+        public void WriteKeyEntry(BinaryWriter finalWriter)
         {
-            Key = key;
-            Principal = key.PrincipalName;
+            var buffer = new MemoryStream();
+            var writer = new BinaryWriter(buffer);
+
+            var key = this;
+
+            WritePrincipal(writer, key.Principal);
+            WriteDateTime(writer, key.Timestamp);
+            writer.Write(new byte[] { (byte)key.Version });
+            WriteKey(writer, key.Key);
+
+            WriteInt32(finalWriter, (int)writer.BaseStream.Length);
+
+            finalWriter.Write(buffer.ToArray());
         }
 
         public PrincipalName Principal { get; private set; }
@@ -166,9 +195,57 @@ namespace Kerberos.NET.Crypto
 
         public EncryptionType? EncryptionType { get; private set; }
 
-        public int Version { get; private set; }
+        public int Version { get; private set; } = 5;
 
         public int Length { get; private set; }
+
+        private KerberosKey ReadKey(BinaryReader reader)
+        {
+            EncryptionType = (EncryptionType)ReadInt16(reader);
+
+            var key = ReadBytes(reader);
+
+            return new KerberosKey(key, etype: EncryptionType ?? Entities.EncryptionType.NULL);
+        }
+
+        private DateTimeOffset ReadDateTime(BinaryReader reader)
+        {
+            var time = ReadInt32(reader);
+
+            var ts = TimeSpan.FromSeconds(time);
+
+            return UNIX_EPOCH_BASE.Add(ts);
+        }
+
+        private string ReadString(BinaryReader reader)
+        {
+            return Encoding.UTF8.GetString(ReadBytes(reader));
+        }
+
+        private byte[] ReadBytes(BinaryReader reader)
+        {
+            var length = ReadInt16(reader);
+
+            return reader.ReadBytes(length);
+        }
+
+        private static int ReadInt32(BinaryReader reader)
+        {
+            var bytes = reader.ReadBytes(4);
+
+            Array.Reverse(bytes);
+
+            return BitConverter.ToInt32(bytes, 0);
+        }
+
+        private static short ReadInt16(BinaryReader reader)
+        {
+            var bytes = reader.ReadBytes(2);
+
+            Array.Reverse(bytes);
+
+            return BitConverter.ToInt16(bytes, 0);
+        }
 
         private PrincipalName ReadPrincipal(BinaryReader reader, int version)
         {
@@ -202,52 +279,110 @@ namespace Kerberos.NET.Crypto
             return new PrincipalName(nameType, realm, names);
         }
 
-        private KerberosKey ReadKey(BinaryReader reader)
+        private static void WritePrincipal(BinaryWriter writer, PrincipalName principal)
         {
-            EncryptionType = (EncryptionType)ReadInt16(reader);
+            var components = principal.Names.SelectMany(s => s.Split('/'));
 
-            var key = ReadBytes(reader);
+            WriteInt16(writer, (short)components.Count());
 
-            return new KerberosKey(key);
+            WriteString(writer, principal.Realm);
+
+            foreach (var component in components)
+            {
+                WriteString(writer, component);
+            }
+
+            WriteInt32(writer, (int)principal.NameType);
         }
 
-        private DateTimeOffset ReadDateTime(BinaryReader reader)
+        private static void WriteKey(BinaryWriter writer, KerberosKey key)
         {
-            var time = ReadInt32(reader);
+            WriteInt16(writer, (short)key.EncryptionType);
 
-            var ts = TimeSpan.FromSeconds(time);
-
-            return DateTimeOffset.MinValue.Add(ts);
+            WriteBytes(writer, key.GetKey());
         }
 
-        private string ReadString(BinaryReader reader)
+        private static void WriteString(BinaryWriter writer, string val)
         {
-            return Encoding.UTF8.GetString(ReadBytes(reader));
+            var bytes = Encoding.UTF8.GetBytes(val);
+
+            WriteBytes(writer, bytes);
         }
 
-        private byte[] ReadBytes(BinaryReader reader)
-        {
-            var length = ReadInt16(reader);
+        private static readonly DateTimeOffset UNIX_EPOCH_BASE = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-            return reader.ReadBytes(length);
+        private static void WriteDateTime(BinaryWriter writer, DateTimeOffset dt)
+        {
+            WriteInt32(writer, GetEpoch(dt));
         }
 
-        private static int ReadInt32(BinaryReader reader)
+        private static void WriteBytes(BinaryWriter writer, byte[] val)
         {
-            var bytes = reader.ReadBytes(4);
+            WriteInt16(writer, (short)val.Length);
+
+            writer.Write(val);
+        }
+
+        private static void WriteInt16(BinaryWriter writer, short val)
+        {
+            var bytes = BitConverter.GetBytes(val);
 
             Array.Reverse(bytes);
 
-            return BitConverter.ToInt32(bytes, 0);
+            writer.Write(bytes);
         }
 
-        private static short ReadInt16(BinaryReader reader)
+        private static void WriteInt32(BinaryWriter writer, int val)
         {
-            var bytes = reader.ReadBytes(2);
+            var bytes = BitConverter.GetBytes(val);
 
             Array.Reverse(bytes);
 
-            return BitConverter.ToInt16(bytes, 0);
+            writer.Write(bytes);
+        }
+
+        public override int GetHashCode()
+        {
+            return (this.EncryptionType ?? Entities.EncryptionType.NULL).GetHashCode() ^
+                    Key.GetHashCode() ^
+                    Principal.GetHashCode() ^
+                    Timestamp.GetHashCode() ^
+                    Version.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is KeyEntry key))
+            {
+                return base.Equals(obj);
+            }
+
+            return key.EncryptionType == this.EncryptionType &&
+                   key.Key.Equals(this.Key) &&
+                   key.Principal.Equals(this.Principal) &&
+                   GetEpoch(key.Timestamp) == GetEpoch(this.Timestamp) &&
+                   key.Version == this.Version;
+        }
+
+        private static int GetEpoch(DateTimeOffset dt)
+        {
+            TimeSpan ts;
+
+            if (dt == DateTimeOffset.MinValue)
+            {
+                ts = TimeSpan.Zero;
+            }
+            else
+            {
+                ts = dt.Subtract(UNIX_EPOCH_BASE);
+            }
+
+            return (int)ts.TotalSeconds;
+        }
+
+        public override string ToString()
+        {
+            return $"V{Version} {EncryptionType} {Principal?.Realm}";
         }
     }
 }

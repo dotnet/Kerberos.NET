@@ -1,10 +1,12 @@
 ﻿using Kerberos.NET.Crypto;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
 namespace Kerberos.NET.Entities
 {
+    [DebuggerDisplay("{NameType} {FullyQualifiedName}@{Realm}")]
     public class PrincipalName
     {
         public PrincipalName() { }
@@ -59,6 +61,8 @@ namespace Kerberos.NET.Entities
         private List<string> names;
 
         public List<string> Names { get { return names ?? (names = new List<string>()); } }
+
+        public string FullyQualifiedName => string.Join("/", Names);
 
         public PrincipalNameType NameType;
 

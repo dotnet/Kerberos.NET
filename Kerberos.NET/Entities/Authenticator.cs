@@ -1,6 +1,8 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Kerberos.NET.Entities
 {
@@ -49,6 +51,17 @@ namespace Kerberos.NET.Entities
 
                             Authorizations.AddRange(azElements);
                         }
+
+                        authzMap = new Dictionary<AuthorizationDataValueType, AuthorizationDataElement>();
+
+                        foreach (var authz in Authorizations)
+                        {
+                            foreach (var authzVal in authz.Authorizations)
+                            {
+                                authzMap[authzVal.Type] = authzVal;
+                            }
+                        }
+
                         break;
                 }
             }
@@ -77,7 +90,15 @@ namespace Kerberos.NET.Entities
 
         private List<AuthorizationData> authorizations;
 
-        public List<AuthorizationData> Authorizations { get { return authorizations ?? (authorizations = new List<AuthorizationData>()); } }
+        [KerberosIgnore]
+        public List<AuthorizationData> Authorizations
+        {
+            get { return authorizations ?? (authorizations = new List<AuthorizationData>()); }
+        }
+
+        private Dictionary<AuthorizationDataValueType, AuthorizationDataElement> authzMap;
+
+        public IDictionary<AuthorizationDataValueType, AuthorizationDataElement> AuthorizationMap { get { return authzMap; } }
 
         public override string ToString()
         {

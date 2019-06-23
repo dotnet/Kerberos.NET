@@ -163,9 +163,9 @@ namespace Kerberos.NET.Crypto
             {
                 throw new KerberosValidationException(
                     "Ticket CName " +
-                    $"({Ticket.CName.NameType}: {string.Join(",", Ticket.CName.Names)})" +
+                    $"({Ticket.CName.NameType}: {Ticket.CName.FullyQualifiedName})" +
                     " does not match Authenticator CName " +
-                    $"({Authenticator.CName.NameType}: {string.Join(",", Authenticator.CName.Names)})"
+                    $"({Authenticator.CName.NameType}: {Authenticator.CName.FullyQualifiedName})"
                 );
             }
         }

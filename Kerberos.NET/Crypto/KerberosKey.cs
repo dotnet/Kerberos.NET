@@ -10,18 +10,24 @@ namespace Kerberos.NET.Crypto
             string password,
             PrincipalName principalName = null,
             string host = null,
-            string salt = null
-        ) : this(null, password, null, principalName, host, salt)
+            string salt = null,
+            EncryptionType etype = 0,
+            SaltType saltType = SaltType.ActiveDirectoryService,
+            byte[] iterationParams = null
+        ) : this(null, password, null, principalName, host, salt, etype, saltType, iterationParams)
         {
         }
-        
+
         public KerberosKey(
             byte[] key = null,
             byte[] password = null,
             PrincipalName principal = null,
             string host = null,
-            string salt = null
-            ) : this(key, null, password, principal, host, salt)
+            string salt = null,
+            EncryptionType etype = 0,
+            SaltType saltType = SaltType.ActiveDirectoryService,
+            byte[] iterationParams = null
+            ) : this(key, null, password, principal, host, salt, etype, saltType, iterationParams)
         {
         }
 
@@ -31,7 +37,10 @@ namespace Kerberos.NET.Crypto
             byte[] passwordBytes = null,
             PrincipalName principalName = null,
             string host = null,
-            string salt = null
+            string salt = null,
+            EncryptionType etype = 0,
+            SaltType saltFormat = SaltType.ActiveDirectoryService,
+            byte[] iterationParams = null
         )
         {
             this.key = key;
@@ -40,11 +49,24 @@ namespace Kerberos.NET.Crypto
             this.PrincipalName = principalName;
             this.Host = host;
             this.Salt = salt;
+            this.EncryptionType = etype;
+            this.SaltFormat = saltFormat;
+            IterationParameter = iterationParams;
         }
+
+        public EncryptionType EncryptionType { get; }
+
+        public string Host { get; }
+
+        public PrincipalName PrincipalName { get; }
+
+        public string Salt { get; }
 
         private readonly byte[] key;
 
         public string Password { get; }
+
+        public byte[] IterationParameter { get; }
 
         private byte[] passwordBytes;
 
@@ -61,17 +83,34 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public string Host { get; }
+        public SaltType SaltFormat { get; }
 
-        public PrincipalName PrincipalName { get; }
+        private static IEncryptor TryCreateEncryptor(EncryptionType encryptionType)
+        {
+            switch (encryptionType)
+            {
+                case EncryptionType.RC4_HMAC_NT:
+                case EncryptionType.RC4_HMAC_NT_EXP:
+                    return new MD4Encryptor();
+                case EncryptionType.AES128_CTS_HMAC_SHA1_96:
+                    return new AES128Encryptor();
+                case EncryptionType.AES256_CTS_HMAC_SHA1_96:
+                    return new AES256Encryptor();
+            }
 
-        public string Salt { get; }
+            return null;
+        }
 
-        public byte[] GetKey(IEncryptor encryptor)
+        public byte[] GetKey(IEncryptor encryptor = null)
         {
             if (key != null && key.Length > 0)
             {
                 return key;
+            }
+
+            if (encryptor == null)
+            {
+                encryptor = TryCreateEncryptor(EncryptionType);
             }
 
             if (encryptor == null)
@@ -82,14 +121,26 @@ namespace Kerberos.NET.Crypto
             return encryptor.String2Key(this);
         }
 
-        internal KerberosKey WithPrincipalName(PrincipalName sName)
+        public override bool Equals(object obj)
         {
-            if (passwordBytes != null && passwordBytes.Length > 0)
+            var key = obj as KerberosKey;
+
+            if (key == null)
             {
-                return new KerberosKey(null, Password, passwordBytes, sName, Host, Salt);
+                return base.Equals(obj);
             }
 
-            return new KerberosKey(key, Password, null, sName, Host, Salt);
+            return KerberosCryptoTransformer.AreEqualSlow(this.GetKey(), key.GetKey()) &&
+                   this.EncryptionType == key.EncryptionType;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode() ^
+                  (key ?? new byte[0]).GetHashCode() ^
+                   PasswordBytes.GetHashCode() ^
+                  (Host ?? "").GetHashCode() ^
+                  (PrincipalName ?? new PrincipalName()).GetHashCode();
         }
     }
 }

@@ -153,9 +153,7 @@ namespace Kerberos.NET.Entities
 
         public override string ToString()
         {
-            var cname = string.Join(",", CName.Names);
-
-            return $"Flags: {TicketFlags} | CName: {CName.NameType}, {cname} | CRealm: {CRealm};";
+            return $"Flags: {TicketFlags} | CName: {CName.NameType}, {CName.FullyQualifiedName} | CRealm: {CRealm};";
         }
     }
 }

@@ -1,5 +1,12 @@
 ﻿namespace Kerberos.NET.Entities
 {
+    public enum SaltType
+    {
+        ActiveDirectoryService,
+        ActiveDirectoryUser,
+        Rfc4120
+    }
+
     public enum KeyUsage
     {
         KU_UNKNOWN = 0,                     // Cannot be 0
