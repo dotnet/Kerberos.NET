@@ -85,40 +85,24 @@ namespace Kerberos.NET.Crypto
 
         public SaltType SaltFormat { get; }
 
-        private static IEncryptor TryCreateEncryptor(EncryptionType encryptionType)
-        {
-            switch (encryptionType)
-            {
-                case EncryptionType.RC4_HMAC_NT:
-                case EncryptionType.RC4_HMAC_NT_EXP:
-                    return new MD4Encryptor();
-                case EncryptionType.AES128_CTS_HMAC_SHA1_96:
-                    return new AES128Encryptor();
-                case EncryptionType.AES256_CTS_HMAC_SHA1_96:
-                    return new AES256Encryptor();
-            }
-
-            return null;
-        }
-
-        public byte[] GetKey(IEncryptor encryptor = null)
+        public byte[] GetKey(KerberosCryptoTransformer transformer = null)
         {
             if (key != null && key.Length > 0)
             {
                 return key;
             }
 
-            if (encryptor == null)
+            if (transformer == null)
             {
-                encryptor = TryCreateEncryptor(EncryptionType);
+                transformer = CryptographyService.CreateDecryptor(EncryptionType);
             }
 
-            if (encryptor == null)
+            if (transformer == null)
             {
                 throw new NotSupportedException();
             }
 
-            return encryptor.String2Key(this);
+            return transformer.String2Key(this);
         }
 
         public override bool Equals(object obj)

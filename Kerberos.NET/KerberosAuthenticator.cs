@@ -49,7 +49,7 @@ namespace Kerberos.NET
             return ConvertTicket(data);
         }
 
-        protected virtual ClaimsIdentity ConvertTicket(DecryptedData data)
+        protected virtual ClaimsIdentity ConvertTicket(DecryptedKrbApReq data)
         {
             var ticket = data.Ticket;
 

@@ -18,7 +18,7 @@ namespace Kerberos.NET.Entities
 
         public NegTokenTarg? SubsequentContextToken;
 
-        public override DecryptedData Decrypt(KeyTable keys)
+        public override DecryptedKrbApReq DecryptApReq(KeyTable keys)
         {
             if (NegotiationToken?.MechToken?.NtlmNegotiate != null)
             {
@@ -27,7 +27,7 @@ namespace Kerberos.NET.Entities
 
             var token = NegotiationToken?.MechToken?.InnerContextToken;
 
-            return Decrypt(token, keys);
+            return DecryptApReq(token, keys);
         }
 
         protected override void ParseContextSpecific(Asn1Element element)

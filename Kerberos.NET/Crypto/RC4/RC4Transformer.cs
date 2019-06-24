@@ -12,18 +12,28 @@ namespace Kerberos.NET.Crypto
         private const int HashSize = 16;
         private const int ConfounderSize = 8;
 
-        private readonly IEncryptor encryptor;
+        public override int ChecksumSize => HashSize;
 
-        public RC4Transformer(IEncryptor encryptor)
+        public override int BlockSize => HashSize;
+
+        public override int KeySize => HashSize;
+
+        public override byte[] String2Key(KerberosKey key)
         {
-            this.encryptor = encryptor;
+            return MD4(key.PasswordBytes);
         }
 
-        public override int ChecksumSize => HashSize;
+        private static byte[] MD4(byte[] key)
+        {
+            using (var md4 = new MD4())
+            {
+                return md4.ComputeHash(key);
+            }
+        }
 
         public override byte[] Decrypt(byte[] ciphertext, KerberosKey key, KeyUsage usage)
         {
-            var k1 = key.GetKey(encryptor);
+            var k1 = key.GetKey(this);
 
             var salt = GetSalt((int)usage);
 
@@ -39,7 +49,7 @@ namespace Kerberos.NET.Crypto
 
             Buffer.BlockCopy(ciphertext, HashSize, ciphertextOffset, 0, ciphertextOffset.Length);
 
-            var plaintext = RC4.Decrypt(k3, ciphertextOffset);
+            var plaintext = RC4.Transform(k3, ciphertextOffset);
 
             var calculatedHmac = HMACMD5(k2, plaintext);
 
@@ -55,11 +65,11 @@ namespace Kerberos.NET.Crypto
             return output;
         }
 
-        public override byte[] MakeChecksum(byte[] key, byte[] data, int hashSize, int messageType = 0)
+        public override byte[] MakeChecksum(byte[] key, byte[] data, KeyUsage keyUsage)
         {
             var ksign = HMACMD5(key, Encoding.ASCII.GetBytes("signaturekey\0"));
 
-            var tmp = MD5(ConvertToLittleEndian(messageType).Concat(data).ToArray());
+            var tmp = MD5(ConvertToLittleEndian((int)keyUsage).Concat(data).ToArray());
 
             return HMACMD5(ksign, tmp);
         }
@@ -75,7 +85,10 @@ namespace Kerberos.NET.Crypto
 
         private static byte[] MD5(byte[] data)
         {
-            return System.Security.Cryptography.MD5.Create().ComputeHash(data);
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                return md5.ComputeHash(data);
+            }
         }
 
         private static byte[] GetSalt(int usage)

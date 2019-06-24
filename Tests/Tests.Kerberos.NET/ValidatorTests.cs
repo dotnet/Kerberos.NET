@@ -2,10 +2,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Globalization;
-using System.Linq;
 using System.Threading.Tasks;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Entities.Authorization;
+using System.Collections.Generic;
 
 namespace Tests.Kerberos.NET
 {
@@ -80,10 +78,32 @@ namespace Tests.Kerberos.NET
             await validator.Validate(data);
         }
 
+        private class TestLogger : ILogger
+        {
+            public TestLogger()
+            {
+                Logs = new List<string>();
+            }
+
+            public List<string> Logs { get; }
+
+            public void WriteLine(KerberosLogSource source, string value)
+            {
+                Logs.Add($"[{source}] {value}");
+            }
+
+            public void WriteLine(KerberosLogSource source, string value, Exception ex)
+            {
+                Logs.Add($"[{source}] {value} {ex}");
+            }
+        }
+
         [TestMethod]
         public async Task TestValidatorMemoryCacheExpiration()
         {
-            var replay = new TicketReplayValidator();
+            var logger = new TestLogger();
+
+            var replay = new TicketReplayValidator(logger);
 
             var entry = new TicketCacheEntry
             {
@@ -95,6 +115,8 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(added);
 
+            Assert.AreEqual(1, logger.Logs.Count);
+
             added = await replay.Add(entry);
 
             Assert.IsFalse(added);
@@ -103,7 +125,9 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task TestValidatorMemoryCacheExpirationExpired()
         {
-            var replay = new TicketReplayValidator();
+            var logger = new TestLogger();
+
+            var replay = new TicketReplayValidator(logger);
 
             var entry = new TicketCacheEntry
             {
@@ -120,6 +144,8 @@ namespace Tests.Kerberos.NET
             added = await replay.Add(entry);
 
             Assert.IsTrue(added);
+
+            Assert.AreEqual(2, logger.Logs.Count);
         }
     }
 }

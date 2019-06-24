@@ -54,14 +54,14 @@ namespace Kerberos.NET.Entities
     {
         private const int PAC_VERSION = 0;
 
-        private byte[] signatureData;
+        private readonly byte[] pacData;
 
         public PrivilegedAttributeCertificate(byte[] pac)
             : base(pac)
         {
-            signatureData = new byte[pac.Length];
+            pacData = new byte[pac.Length];
 
-            Buffer.BlockCopy(pac, 0, signatureData, 0, pac.Length);
+            Buffer.BlockCopy(pac, 0, pacData, 0, pac.Length);
 
             var count = Stream.ReadInt();
             var version = Stream.ReadInt();
@@ -79,37 +79,37 @@ namespace Kerberos.NET.Entities
                 var size = Stream.ReadInt();
 
                 var offset = Stream.ReadLong();
-                var infoBuffer = new byte[size];
+                var pacInfoBuffer = new byte[size];
 
-                Buffer.BlockCopy(pac, (int)offset, infoBuffer, 0, size);
+                Buffer.BlockCopy(pac, (int)offset, pacInfoBuffer, 0, size);
 
                 int exclusionStart = 0;
                 int exclusionLength = 0;
 
                 try
                 {
-                    ParsePacType(type, infoBuffer, out exclusionStart, out exclusionLength);
+                    ParsePacType(type, pacInfoBuffer, out exclusionStart, out exclusionLength);
                 }
                 catch (Exception ex)
                 {
                     errors.Add(new PacDecodeError()
                     {
                         Type = type,
-                        Data = infoBuffer,
+                        Data = pacInfoBuffer,
                         Exception = ex
                     });
                 }
 
                 if (exclusionStart > 0 && exclusionLength > 0)
                 {
-                    ZeroArray(ref signatureData, offset + exclusionStart, exclusionLength);
+                    ZeroArray(pacData, offset + exclusionStart, exclusionLength);
                 }
             }
 
             DecodingErrors = errors;
         }
 
-        private static void ZeroArray(ref byte[] signatureData, long start, int exclusionEnd)
+        private static void ZeroArray(byte[] signatureData, long start, int exclusionEnd)
         {
             for (var i = start; i < start + exclusionEnd; i++)
             {
@@ -119,7 +119,7 @@ namespace Kerberos.NET.Entities
 
         public IEnumerable<PacDecodeError> DecodingErrors { get; }
 
-        private void ParsePacType(PacType type, byte[] infoBuffer, out int exclusionStart, out int exclusionLength)
+        private void ParsePacType(PacType type, byte[] pacInfoBuffer, out int exclusionStart, out int exclusionLength)
         {
             exclusionStart = 0;
             exclusionLength = 0;
@@ -127,39 +127,39 @@ namespace Kerberos.NET.Entities
             switch (type)
             {
                 case PacType.LOGON_INFO:
-                    LogonInfo = new PacLogonInfo(infoBuffer);
+                    LogonInfo = new PacLogonInfo(pacInfoBuffer);
                     break;
                 case PacType.CREDENTIAL_TYPE:
-                    CredentialType = new PacCredentialInfo(infoBuffer);
+                    CredentialType = new PacCredentialInfo(pacInfoBuffer);
                     break;
                 case PacType.SERVER_CHECKSUM:
-                    ServerSignature = new PacSignature(infoBuffer, ref signatureData);
+                    ServerSignature = new PacSignature(pacInfoBuffer, pacData);
 
                     exclusionStart = ServerSignature.SignaturePosition;
                     exclusionLength = ServerSignature.Signature.Length;
                     break;
                 case PacType.PRIVILEGE_SERVER_CHECKSUM:
-                    KdcSignature = new PacSignature(infoBuffer, ref signatureData);
+                    KdcSignature = new PacSignature(pacInfoBuffer, pacData);
 
                     exclusionStart = KdcSignature.SignaturePosition;
                     exclusionLength = KdcSignature.Signature.Length;
                     break;
                 case PacType.CLIENT_NAME_TICKET_INFO:
-                    ClientInformation = new PacClientInfo(infoBuffer);
+                    ClientInformation = new PacClientInfo(pacInfoBuffer);
                     break;
                 case PacType.CONSTRAINED_DELEGATION_INFO:
-                    DelegationInformation = new PacDelegationInfo(infoBuffer);
+                    DelegationInformation = new PacDelegationInfo(pacInfoBuffer);
                     break;
                 case PacType.UPN_DOMAIN_INFO:
-                    UpnDomainInformation = new UpnDomainInfo(infoBuffer);
+                    UpnDomainInformation = new UpnDomainInfo(pacInfoBuffer);
                     break;
                 case PacType.CLIENT_CLAIMS:
-                    ClientClaims = new ClaimsSetMetadata(infoBuffer);
+                    ClientClaims = new ClaimsSetMetadata(pacInfoBuffer);
                     break;
                 case PacType.DEVICE_INFO:
                     break;
                 case PacType.DEVICE_CLAIMS:
-                    DeviceClaims = new ClaimsSetMetadata(infoBuffer);
+                    DeviceClaims = new ClaimsSetMetadata(pacInfoBuffer);
                     break;
             }
         }

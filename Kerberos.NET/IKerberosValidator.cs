@@ -8,7 +8,7 @@ namespace Kerberos.NET
     {
         ValidationActions ValidateAfterDecrypt { get; set; }
 
-        Task<DecryptedData> Validate(byte[] requestBytes);
+        Task<DecryptedKrbApReq> Validate(byte[] requestBytes);
 
         void Validate(PacElement pac, PrincipalName sname);
     }

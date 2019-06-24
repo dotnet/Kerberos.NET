@@ -1,6 +1,5 @@
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using System.Linq;
 using System;
 
 namespace Kerberos.NET
@@ -8,11 +7,6 @@ namespace Kerberos.NET
     [Obsolete("Switch to MessageParser.Parse*()")]
     public class KerberosRequest
     {
-        public static void RegisterDecryptor(EncryptionType type, Func<KrbApReq, DecryptedData> func)
-        {
-            ContextToken.RegisterDecryptor(type, func);
-        }
-
         private readonly ContextToken negotiate;
 
         public KerberosRequest(byte[] data)
@@ -49,9 +43,9 @@ namespace Kerberos.NET
             return ticket;
         }
 
-        public DecryptedData Decrypt(KeyTable keytab)
+        public DecryptedKrbApReq Decrypt(KeyTable keytab)
         {
-            return negotiate.Decrypt(keytab);
+            return negotiate.DecryptApReq(keytab);
         }
 
         public override string ToString()

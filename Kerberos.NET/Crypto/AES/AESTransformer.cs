@@ -1,6 +1,9 @@
 ﻿using Kerberos.NET.Entities;
 using System;
+using System.Runtime.CompilerServices;
 using System.Security;
+using System.Security.Cryptography;
+using System.Text;
 
 #pragma warning disable S101 // Types should be named in camel case
 
@@ -8,70 +11,65 @@ namespace Kerberos.NET.Crypto.AES
 {
     public abstract class AESTransformer : KerberosCryptoTransformer
     {
-        private readonly AESEncryptor encryptor;
-        private readonly IHasher hasher;
+        private const int AesBlockSize = 16;
 
-        protected AESTransformer(AESEncryptor encryptor, IHasher hasher)
+        private static readonly byte[] AllZerosInitVector = new byte[AesBlockSize];
+
+        private static readonly byte[] KerberosConstant = Encoding.UTF8.GetBytes("kerberos");
+
+        protected AESTransformer(int keySize)
         {
-            this.encryptor = encryptor;
-            this.hasher = hasher;
+            KeySize = keySize;
         }
 
-        public override int ChecksumSize { get { return 96 / 8; } }
+        public override int ChecksumSize => 96 / 8;
 
-        protected virtual byte[] DecryptWith(byte[] workBuffer, int[] workLens, byte[] key, byte[] iv, KeyUsage usage)
+        public override int BlockSize => AesBlockSize;
+
+        public int ConfounderSize => BlockSize;
+
+        public override int KeySize { get; }
+
+        public override byte[] String2Key(KerberosKey key)
         {
-            var confounderLen = workLens[0];
-            var checksumLen = workLens[1];
-            var dataLen = workLens[2];
+            return String2Key(
+                key.PasswordBytes,
+                AesSalts.GenerateSalt(key),
+                key.IterationParameter
+            );
+        }
 
-            byte[] Ki;
-            byte[] Ke;
+        public override byte[] Decrypt(byte[] cipher, KerberosKey kerberosKey, KeyUsage usage)
+        {
+            var key = kerberosKey.GetKey(this);
 
-            var constant = new byte[5];
+            var cipherLength = cipher.Length - ChecksumSize;
 
-            Endian.ConvertToBigEndian((int)usage, constant, 0);
+            var Ke = DK(key, usage, KeyDerivationMode.Ke);
 
-            constant[4] = 170;
+            var decrypted = AESCTS.Decrypt(
+                BlockCopy(cipher, 0, 0, cipherLength), 
+                Ke, 
+                AllZerosInitVector
+            );
 
-            Ke = encryptor.DK(key, constant);
+            var actualChecksum = MakeChecksum(key, usage, KeyDerivationMode.Ki, decrypted, ChecksumSize);
 
-            constant[4] = 85;
-
-            Ki = encryptor.DK(key, constant);
-
-            var tmpEnc = new byte[confounderLen + dataLen];
-            Buffer.BlockCopy(workBuffer, 0, tmpEnc, 0, confounderLen + dataLen);
-
-            var checksum = new byte[checksumLen];
-
-            Buffer.BlockCopy(workBuffer, confounderLen + dataLen, checksum, 0, checksumLen);
-
-            encryptor.Decrypt(Ke, iv, tmpEnc);
-
-            var newChecksum = MakeChecksum(Ki, tmpEnc, checksumLen, 0);
-
-            if (!AreEqualSlow(checksum, newChecksum))
+            var expectedChecksum = BlockCopy(cipher, cipherLength, 0, ChecksumSize);
+            
+            if (!AreEqualSlow(expectedChecksum, actualChecksum))
             {
                 throw new SecurityException("Invalid checksum");
             }
 
-            var data = new byte[dataLen];
-
-            Buffer.BlockCopy(tmpEnc, confounderLen, data, 0, dataLen);
-
-            return data;
+            return BlockCopy(decrypted, ConfounderSize, 0, cipherLength - ConfounderSize);
         }
 
-        public override byte[] Decrypt(byte[] cipher, KerberosKey key, KeyUsage usage)
+        public override byte[] MakeChecksum(byte[] key, KeyUsage usage, KeyDerivationMode kdf, byte[] data, int hashSize)
         {
-            var iv = new byte[encryptor.BlockSize];
-            return Decrypt(cipher, key.GetKey(encryptor), iv, usage);
-        }
+            var ki = DK(key, usage, kdf);
 
-        public override byte[] MakeChecksum(byte[] key, byte[] data, int hashSize, int keyUsage = 0)
-        {
-            var hash = hasher.Hmac(key, data);
+            var hash = Hmac(ki, data);
 
             var output = new byte[hashSize];
 
@@ -80,16 +78,224 @@ namespace Kerberos.NET.Crypto.AES
             return output;
         }
 
-        private byte[] Decrypt(byte[] cipher, byte[] key, byte[] iv, KeyUsage usage)
+        private static byte[] BlockCopy(byte[] src, int srcOffset, int dstOffset, int len)
         {
-            var totalLen = cipher.Length;
-            var confounderLen = encryptor.BlockSize;
-            var checksumLen = ChecksumSize;
-            var dataLen = totalLen - (confounderLen + checksumLen);
+            var tmpEnc = new byte[len];
 
-            var lengths = new int[] { confounderLen, checksumLen, dataLen };
+            Buffer.BlockCopy(src, srcOffset, tmpEnc, dstOffset, len);
 
-            return DecryptWith(cipher, lengths, key, iv, usage);
+            return tmpEnc;
+        }
+
+        private byte[] DK(byte[] key, KeyUsage usage, KeyDerivationMode kdf)
+        {
+            var constant = new byte[5];
+
+            Endian.ConvertToBigEndian((int)usage, constant, 0);
+
+            constant[4] = (byte)kdf;
+
+            return DK(key, constant);
+        }
+
+        private byte[] DK(byte[] key, byte[] constant)
+        {
+            return Random2Key(
+                DR(key, constant)
+            );
+        }
+
+        private byte[] String2Key(byte[] password, string salt, byte[] param)
+        {
+            var passwordBytes = UnicodeBytesToUtf8(password);
+
+            var iterations = GetIterations(param, 4096);
+
+            var saltBytes = GetSaltBytes(salt, null);
+
+            var random = PBKDF2(passwordBytes, saltBytes, iterations, KeySize);
+
+            var tmpKey = Random2Key(random);
+
+            return DK(tmpKey, KerberosConstant);
+        }
+
+        private static byte[] UnicodeBytesToUtf8(byte[] str)
+        {
+            return Encoding.Convert(Encoding.Unicode, Encoding.UTF8, str, 0, str.Length);
+        }
+
+        private static byte[] UnicodeStringToUtf8(string salt)
+        {
+            return UnicodeBytesToUtf8(Encoding.Unicode.GetBytes(salt));
+        }
+
+        private static byte[] PBKDF2(byte[] passwordBytes, byte[] salt, int iterations, int keySize)
+        {
+            using (var derive = new Rfc2898DeriveBytes(passwordBytes, salt, iterations))
+            {
+                return derive.GetBytes(keySize);
+            }
+        }
+
+        private static int GetIterations(byte[] param, int defCount)
+        {
+            int iterCount = defCount;
+
+            if (param != null)
+            {
+                if (param.Length % 4 != 0)
+                {
+                    throw new ArgumentException("Invalid param to str2Key");
+                }
+
+                iterCount = ConvertInt(param, param.Length - 4);
+            }
+
+            if (iterCount == 0)
+            {
+                iterCount = int.MaxValue;
+            }
+
+            return iterCount;
+        }
+
+        private static int ConvertInt(byte[] bytes, int offset)
+        {
+            var val = 0;
+
+            val += (bytes[offset + 0] & 0xff) << 24;
+            val += (bytes[offset + 1] & 0xff) << 16;
+            val += (bytes[offset + 2] & 0xff) << 8;
+            val += (bytes[offset + 3] & 0xff);
+
+            return val;
+        }
+
+        private static byte[] GetSaltBytes(string salt, string pepper)
+        {
+            var saltBytes = UnicodeStringToUtf8(salt);
+
+            if (string.IsNullOrWhiteSpace(pepper))
+            {
+                return saltBytes;
+            }
+
+            var pepperBytes = UnicodeStringToUtf8(pepper);
+
+            var length = saltBytes.Length + 1 + pepperBytes.Length;
+
+            var results = new byte[length];
+
+            Buffer.BlockCopy(pepperBytes, 0, results, 0, pepperBytes.Length);
+
+            results[pepperBytes.Length] = 0;
+
+            Buffer.BlockCopy(saltBytes, 0, results, pepperBytes.Length + 1, saltBytes.Length);
+
+            return results;
+        }
+
+        private byte[] DR(byte[] key, byte[] constant)
+        {
+            var keyBytes = new byte[KeySize];
+
+            byte[] Ki;
+
+            if (constant.Length != BlockSize)
+            {
+                Ki = NFold(constant, BlockSize);
+            }
+            else
+            {
+                Ki = new byte[constant.Length];
+                Buffer.BlockCopy(constant, 0, Ki, 0, constant.Length);
+            }
+
+            var n = 0;
+
+            do
+            {
+                Ki = AESCTS.Encrypt(Ki, key, AllZerosInitVector);
+
+                if (n + BlockSize >= KeySize)
+                {
+                    Buffer.BlockCopy(Ki, 0, keyBytes, n, KeySize - n);
+                    break;
+                }
+
+                Buffer.BlockCopy(Ki, 0, keyBytes, n, BlockSize);
+
+                n += BlockSize;
+            }
+            while (n < KeySize);
+
+            return keyBytes;
+        }
+
+        private static byte[] NFold(byte[] inBytes, int size)
+        {
+            var inBytesSize = inBytes.Length;
+            var outBytesSize = size;
+
+            var a = outBytesSize;
+            var b = inBytesSize;
+
+            while (b != 0)
+            {
+                var c = b;
+                b = a % b;
+                a = c;
+            }
+
+            var lcm = (outBytesSize * inBytesSize) / a;
+
+            var outBytes = new byte[outBytesSize];
+
+            var tmpByte = 0;
+
+            for (var i = lcm - 1; i >= 0; i--)
+            {
+                var msbit = (inBytesSize << 3) - 1;
+
+                msbit += ((inBytesSize << 3) + 13) * (i / inBytesSize);
+                msbit += (inBytesSize - (i % inBytesSize)) << 3;
+                msbit %= inBytesSize << 3;
+
+                var rst = inBytes[(inBytesSize - 1 - (msbit >> 3)) % inBytesSize] & 0xff;
+                var rst2 = inBytes[(inBytesSize - (msbit >> 3)) % inBytesSize] & 0xff;
+
+                msbit = (((rst << 8) | (rst2)) >> ((msbit & 7) + 1)) & 0xff;
+
+                tmpByte += msbit;
+                msbit = outBytes[i % outBytesSize] & 0xff;
+                tmpByte += msbit;
+
+                outBytes[i % outBytesSize] = (byte)(tmpByte & 0xff);
+
+                tmpByte >>= 8;
+            }
+
+            if (tmpByte != 0)
+            {
+                for (var i = outBytesSize - 1; i >= 0; i--)
+                {
+                    tmpByte += outBytes[i] & 0xff;
+                    outBytes[i] = (byte)(tmpByte & 0xff);
+
+                    tmpByte >>= 8;
+                }
+            }
+
+            return outBytes;
+        }
+
+        private static byte[] Hmac(byte[] key, byte[] data)
+        {
+            using (var hmac = new HMACSHA1(key))
+            {
+                return hmac.ComputeHash(data);
+            }
         }
     }
 }

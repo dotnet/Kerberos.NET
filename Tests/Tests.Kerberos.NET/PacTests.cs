@@ -136,7 +136,7 @@ namespace Tests.Kerberos.NET
 
             try
             {
-                new PacSignature(infoBufferBytes, ref pacBytes).Validator.Validate(kerbKey);
+                new PacSignature(infoBufferBytes, pacBytes).Validator.Validate(kerbKey);
                 pacValidated = true;
             }
             catch (Exception)
@@ -159,7 +159,7 @@ namespace Tests.Kerberos.NET
                 pacBytes[i] = (byte)rand.Next(0, 254);
             }
 
-            return new PacSignature(infoBufferBytes, ref pacBytes);
+            return new PacSignature(infoBufferBytes, pacBytes);
         }
 
         [TestMethod]

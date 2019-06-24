@@ -4,7 +4,7 @@ namespace Kerberos.NET.Entities.Authorization
 {
     public class PacSignature
     {
-        public PacSignature(byte[] infoBuffer, ref byte[] signatureData)
+        public PacSignature(byte[] infoBuffer, byte[] signatureData)
         {
             var pacStream = new NdrBinaryReader(infoBuffer);
 
@@ -16,17 +16,16 @@ namespace Kerberos.NET.Entities.Authorization
             {
                 case ChecksumType.KERB_CHECKSUM_HMAC_MD5:
                     Signature = pacStream.Read(16);
-                    Validator = new HmacMd5PacValidator(Signature, ref signatureData);
                     break;
                 case ChecksumType.HMAC_SHA1_96_AES128:
                     Signature = pacStream.Read(12);
-                    Validator = new HmacAes128PacValidator(Signature, ref signatureData);
                     break;
                 case ChecksumType.HMAC_SHA1_96_AES256:
                     Signature = pacStream.Read(12);
-                    Validator = new HmacAes256PacValidator(Signature, ref signatureData);
                     break;
             }
+
+            Validator = CryptographyService.CreateChecksumValidator(Type, Signature, signatureData);
 
             if (pacStream.Position < pacStream.Length)
             {

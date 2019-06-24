@@ -4,10 +4,10 @@
 
 namespace Kerberos.NET.Crypto.AES
 {
-    public class AES256DecryptedData : AESDecryptedData
+    public class AES128DecryptedKrbApReq : DecryptedKrbApReq
     {
-        public AES256DecryptedData(KrbApReq token)
-            : base(token, new AES256Transformer())
+        public AES128DecryptedKrbApReq(KrbApReq token)
+            : base(token, new AES128Transformer())
         {
         }
     }

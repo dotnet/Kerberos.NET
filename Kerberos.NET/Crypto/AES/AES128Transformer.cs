@@ -6,18 +6,11 @@ namespace Kerberos.NET.Crypto
 {
     internal class AES128Transformer : AESTransformer
     {
-        private static readonly AESEncryptor encryptor = new AES128Encryptor();
+        private const int Size = 16;
 
         public AES128Transformer()
-            : base(encryptor, new SHA1Hasher())
+            : base(Size)
         {
         }
-    }
-
-    internal class AES128Encryptor : AESEncryptor
-    {
-        public AES128Encryptor()
-            : base(16, 16, 16)
-        { }
     }
 }

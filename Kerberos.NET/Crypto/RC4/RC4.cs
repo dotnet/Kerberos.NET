@@ -4,7 +4,7 @@
 
     public static class RC4
     {
-        public static byte[] Encrypt(byte[] pwd, byte[] data)
+        public static byte[] Transform(byte[] pwd, byte[] data)
         {
             int a, i, j, k, tmp;
             int[] key, box;
@@ -39,11 +39,6 @@
                 cipher[i] = (byte)(data[i] ^ k);
             }
             return cipher;
-        }
-
-        public static byte[] Decrypt(byte[] pwd, byte[] data)
-        {
-            return Encrypt(pwd, data);
         }
     }
 }

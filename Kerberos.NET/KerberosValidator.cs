@@ -25,7 +25,7 @@ namespace Kerberos.NET
         {
             this.keytab = keytab;
 
-            TokenCache = ticketCache ?? new TicketReplayValidator();
+            TokenCache = ticketCache ?? new TicketReplayValidator(Logger);
 
             ValidateAfterDecrypt = ValidationActions.All;
         }
@@ -48,20 +48,20 @@ namespace Kerberos.NET
             set { nowFunc = value; }
         }
 
-        public async Task<DecryptedData> Validate(byte[] requestBytes)
+        public async Task<DecryptedKrbApReq> Validate(byte[] requestBytes)
         {
             var kerberosRequest = MessageParser.ParseContext(requestBytes);
 
-            Logger.WriteLine(kerberosRequest.ToString());
+            Logger.WriteLine(KerberosLogSource.Validator, kerberosRequest.ToString());
 
-            var decryptedToken = kerberosRequest.Decrypt(keytab);
+            var decryptedToken = kerberosRequest.DecryptApReq(keytab);
 
             if (decryptedToken == null)
             {
                 return null;
             }
 
-            Logger.WriteLine(decryptedToken.ToString());
+            Logger.WriteLine(KerberosLogSource.Validator, decryptedToken.ToString());
 
             decryptedToken.Now = Now;
 
@@ -78,7 +78,7 @@ namespace Kerberos.NET
             pac.Certificate.ServerSignature.Validate(keytab, sname);
         }
 
-        protected virtual async Task Validate(DecryptedData decryptedToken)
+        protected virtual async Task Validate(DecryptedKrbApReq decryptedToken)
         {
             var sequence = ObscureSequence(decryptedToken.Authenticator.SequenceNumber);
             var container = ObscureContainer(decryptedToken.Ticket.CRealm);

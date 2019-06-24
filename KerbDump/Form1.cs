@@ -28,9 +28,11 @@ namespace KerbDump
         public Form1()
         {
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.AutoScaleMode = AutoScaleMode.Dpi;
 
             InitializeComponent();
+
+            CryptographyService.RegisterCryptographicAlgorithm(EncryptionType.NULL, () => new NoopTransform());
 
             SetHost();
 
@@ -239,8 +241,6 @@ namespace KerbDump
             });
         }
 
-        private readonly IEncryptor NoOpEncryptor = new NoOpEncryptor();
-
         private object GenerateFormattedKeyTable(KeyTable keytab)
         {
             if (keytab == null)
@@ -250,7 +250,14 @@ namespace KerbDump
 
             var keys = keytab.Entries.Select(k =>
             {
-                var key = new KerberosKey(Encoding.Unicode.GetString(k.Key.GetKey(NoOpEncryptor)), k.Principal);
+                var key = new KerberosKey(
+                    Encoding.Unicode.GetString(
+                        k.Key.GetKey(
+                            CryptographyService.CreateDecryptor(EncryptionType.NULL)
+                        )
+                    ), 
+                    k.Principal
+                );
 
                 return new
                 {

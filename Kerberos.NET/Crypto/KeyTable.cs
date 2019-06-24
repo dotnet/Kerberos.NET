@@ -61,15 +61,7 @@ namespace Kerberos.NET.Crypto
         private ICollection<KeyEntry> entries;
 
         public ICollection<KeyEntry> Entries { get { return entries ?? (entries = new List<KeyEntry>()); } }
-
-        public KerberosKey GetKey(KrbApReq token)
-        {
-            var type = token.Ticket.EncPart.EType;
-            var sname = token.Ticket.SName;
-
-            return GetKey(type, sname);
-        }
-
+        
         public KerberosKey GetKey(ChecksumType type, PrincipalName sname)
         {
             EncryptionType etype;

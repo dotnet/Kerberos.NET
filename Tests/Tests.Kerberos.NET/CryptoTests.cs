@@ -337,9 +337,9 @@ namespace Tests.Kerberos.NET
             {
             }
 
-            public DecryptedData Data { get; set; }
+            public DecryptedKrbApReq Data { get; set; }
 
-            protected override Task Validate(DecryptedData decryptedToken)
+            protected override Task Validate(DecryptedKrbApReq decryptedToken)
             {
                 Data = decryptedToken;
 

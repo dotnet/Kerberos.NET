@@ -17,9 +17,9 @@ namespace Kerberos.NET.Entities
         //[ExpectedTag(KrbApRep.ApplicationTag), SequenceOf, OptionalValue]
         public KrbApRep KrbApRep;
 
-        public override DecryptedData Decrypt(KeyTable keys)
+        public override DecryptedKrbApReq DecryptApReq(KeyTable keys)
         {
-            return Decrypt(KrbApReq, keys);
+            return DecryptApReq(KrbApReq, keys);
         }
 
         protected override void ParseApplication(Asn1Element element)

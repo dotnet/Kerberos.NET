@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Crypto.AES;
-using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Entities;
 using System.Security;
 
 namespace Kerberos.NET.Crypto
@@ -10,7 +9,7 @@ namespace Kerberos.NET.Crypto
 
         protected byte[] Pac { get; }
 
-        protected PacValidator(byte[] signature, ref byte[] pac)
+        protected PacValidator(byte[] signature, byte[] pac)
         {
             Signature = signature;
             Pac = pac;
@@ -29,43 +28,39 @@ namespace Kerberos.NET.Crypto
 
     public class HmacAes256PacValidator : AesPacValidator
     {
-        public HmacAes256PacValidator(byte[] signature, ref byte[] pac)
-            : base(new AES256Transformer(), new AES256Encryptor(), signature, ref pac)
+        public HmacAes256PacValidator(byte[] signature, byte[] pac)
+            : base(CryptographyService.CreateDecryptor(EncryptionType.AES256_CTS_HMAC_SHA1_96), signature, pac)
         {
         }
     }
 
     public class HmacAes128PacValidator : AesPacValidator
     {
-        public HmacAes128PacValidator(byte[] signature, ref byte[] pac)
-            : base(new AES128Transformer(), new AES128Encryptor(), signature, ref pac)
+        public HmacAes128PacValidator(byte[] signature, byte[] pac)
+            : base(CryptographyService.CreateDecryptor(EncryptionType.AES128_CTS_HMAC_SHA1_96), signature, pac)
         {
         }
     }
 
     public abstract class AesPacValidator : PacValidator
     {
-        private readonly AESTransformer decryptor;
-        private readonly AESEncryptor encryptor;
+        private readonly KerberosCryptoTransformer decryptor;
 
-        protected AesPacValidator(AESTransformer decryptor, AESEncryptor encryptor, byte[] signature, ref byte[] pac)
-            : base(signature, ref pac)
+        protected AesPacValidator(KerberosCryptoTransformer decryptor, byte[] signature, byte[] pac)
+            : base(signature, pac)
         {
             this.decryptor = decryptor;
-            this.encryptor = encryptor;
         }
 
         protected override bool ValidateInternal(KerberosKey key)
         {
-            var constant = new byte[5];
-
-            Endian.ConvertToBigEndian((int)KeyUsage.KU_PA_FOR_USER_ENC_CKSUM, constant, 0);
-
-            constant[4] = 0x99;
-
-            var Ki = encryptor.DK(key.GetKey(encryptor), constant);
-
-            var actualChecksum = decryptor.MakeChecksum(Ki, Pac, decryptor.ChecksumSize);
+            var actualChecksum = decryptor.MakeChecksum(
+                key.GetKey(decryptor), 
+                KeyUsage.KU_PA_FOR_USER_ENC_CKSUM, 
+                KeyDerivationMode.Kc, 
+                Pac, 
+                decryptor.ChecksumSize
+            );
 
             return KerberosCryptoTransformer.AreEqualSlow(actualChecksum, Signature);
         }
@@ -73,22 +68,19 @@ namespace Kerberos.NET.Crypto
 
     public class HmacMd5PacValidator : PacValidator
     {
-        public HmacMd5PacValidator(byte[] signature, ref byte[] pac)
-            : base(signature, ref pac)
+        public HmacMd5PacValidator(byte[] signature, byte[] pac)
+            : base(signature, pac)
         {
         }
 
-        private readonly MD4Encryptor encryptor = new MD4Encryptor();
-
         protected override bool ValidateInternal(KerberosKey key)
         {
-            var crypto = new RC4Transformer(encryptor);
+            var crypto = CryptographyService.CreateDecryptor(EncryptionType.RC4_HMAC_NT);
 
             var actualChecksum = crypto.MakeChecksum(
-                key.GetKey(encryptor), 
+                key.GetKey(crypto), 
                 Pac, 
-                0, 
-                (int)KeyUsage.KU_PA_FOR_USER_ENC_CKSUM
+                KeyUsage.KU_PA_FOR_USER_ENC_CKSUM
             );
 
             return KerberosCryptoTransformer.AreEqualSlow(actualChecksum, Signature);

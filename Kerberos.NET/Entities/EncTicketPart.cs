@@ -126,9 +126,6 @@ namespace Kerberos.NET.Entities
 
         public TicketFlags TicketFlags;
 
-        [Obsolete]
-        public byte[] EncryptionKey { get { return Key?.RawKey; } }
-
         public EncryptionKey Key;
 
         public string CRealm;

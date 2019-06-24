@@ -1,8 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kerberos.NET.Entities
 {
@@ -80,9 +78,6 @@ namespace Kerberos.NET.Entities
         public long CuSec;
 
         public DateTimeOffset CTime;
-
-        [Obsolete]
-        public byte[] Subkey { get { return SubSessionKey?.RawKey; } }
 
         public EncryptionKey SubSessionKey;
 
