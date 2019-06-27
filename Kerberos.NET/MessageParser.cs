@@ -1,4 +1,4 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1;
 using Kerberos.NET.Entities;
 using System.IO;
 
@@ -35,7 +35,7 @@ namespace Kerberos.NET
 
         public static object Parse(byte[] data)
         {
-            var element = new Asn1Element(data);
+            var element = new Asn1Element(data, "PARSER");
 
             switch (element.Class)
             {
@@ -62,7 +62,7 @@ namespace Kerberos.NET
             throw new InvalidDataException();
         }
 
-        private static Asn1Message ParseApplicationMessage(Asn1Element element)
+        private static ContextToken ParseApplicationMessage(Asn1Element element)
         {
             switch (element.ApplicationTag)
             {

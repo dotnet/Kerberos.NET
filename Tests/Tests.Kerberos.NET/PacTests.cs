@@ -1,7 +1,7 @@
 ﻿using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using Kerberos.NET.Entities.Authorization;
+using Kerberos.NET.Entities.Pac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Globalization;

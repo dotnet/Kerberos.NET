@@ -22,7 +22,7 @@
     <PackageTags>security kerberos</PackageTags>
     <PackageReleaseNotes>Internal crypto enhancements. Added delegation parsing if ticket is present.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/SteveSyfuhs/Kerberos.NET</RepositoryUrl>
-    <Configurations>Debug;Release</Configurations>
+    <Configurations>Debug;Release;Debug net452</Configurations>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">

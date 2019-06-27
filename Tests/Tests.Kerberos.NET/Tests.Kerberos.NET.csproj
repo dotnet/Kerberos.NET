@@ -4,6 +4,8 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
 
     <DebugType>Full</DebugType>
+
+    <Configurations>Debug;Release;Debug net452</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,6 +36,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\aes256-spnego-data">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\Messages\as-req">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\rc4-kerberos-data">

@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
+﻿using Kerberos.NET.Asn1;
+using System.Diagnostics;
 using System.Security.Cryptography;
 
 namespace Kerberos.NET.Entities
 {
     [DebuggerDisplay("{Mechanism} {Oid}")]
-    [TreatAsTag(UniversalTag, "ObjectIdentifier")]
+    //[TreatAsTag(UniversalTag, "ObjectIdentifier")]
     public sealed class MechType
     {
         public const string SPNEGO = "1.3.6.1.5.5.2";
@@ -12,8 +13,6 @@ namespace Kerberos.NET.Entities
         public const string KerberosV5 = "1.2.840.113554.1.2.2";
         public const string NTLM = "1.3.6.1.4.1.311.2.2.10";
         public const string NEGOEX = "1.3.6.1.4.1.311.2.2.30";
-
-        public const int UniversalTag = 6;
 
         public string Mechanism { get; }
 

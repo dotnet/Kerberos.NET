@@ -35,6 +35,16 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug net452|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug net452\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Extensions.Caching.Abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Microsoft.Extensions.Caching.Abstractions.2.0.0\lib\netstandard2.0\Microsoft.Extensions.Caching.Abstractions.dll</HintPath>
@@ -195,14 +205,6 @@
     <ProjectReference Include="..\..\Kerberos.NET\Kerberos.NET.csproj">
       <Project>{31D4DECE-BE86-4134-8DE7-8B38C5133124}</Project>
       <Name>Kerberos.NET</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Syfuhs.Security.Kerberos.Aes\Syfuhs.Security.Kerberos.Aes.csproj">
-      <Project>{218511D9-4C8C-4805-B16F-BAE0AEB25B23}</Project>
-      <Name>Syfuhs.Security.Kerberos.Aes</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Syfuhs.Security.Kerberos\Syfuhs.Security.Kerberos.csproj">
-      <Project>{d9cfb745-d5c9-4711-8e3f-781991230fc1}</Project>
-      <Name>Syfuhs.Security.Kerberos</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

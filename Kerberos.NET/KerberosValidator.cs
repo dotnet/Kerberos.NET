@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Text;
 using Kerberos.NET.Entities;
+using System.Security.Cryptography;
 
 namespace Kerberos.NET
 {
@@ -127,22 +128,12 @@ namespace Kerberos.NET
 
         private static string Hash(string value)
         {
-            using (var sha = System.Security.Cryptography.SHA256.Create())
+            using (var sha = SHA256.Create())
             {
-                return ToBase64UrlString(
+                return Hex.Hexify(
                     sha.ComputeHash(Encoding.UTF8.GetBytes(value))
                 );
             }
-        }
-
-        private static string ToBase64UrlString(byte[] input)
-        {
-            StringBuilder result = new StringBuilder(Convert.ToBase64String(input).TrimEnd('='));
-
-            result.Replace('+', '-');
-            result.Replace('/', '_');
-
-            return result.ToString();
         }
     }
 }

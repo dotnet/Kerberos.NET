@@ -51,15 +51,22 @@ namespace Kerberos.NET
         public override string ToString()
         {
             var mech = MechType?.Mechanism;
-            var messageType = NegotiationRequest?.MechToken?.InnerContextToken?.MessageType;
-            var authEType = NegotiationRequest?.MechToken?.InnerContextToken?.Authenticator?.EType;
-            var realm = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.Realm;
-            var ticketEType = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.EncPart?.EType;
-            var nameType = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.SName?.NameType;
+            var token = NegotiationRequest?.MechToken?.InnerContextToken;
 
-            var snames = NegotiationRequest?.MechToken?.InnerContextToken?.Ticket?.SName?.FullyQualifiedName;
+            var messageType = token.MessageType;
+            var authEType = token.Authenticator?.EType;
+            var realm = token.Ticket?.Realm;
+            var ticketEType = token.Ticket?.EncPart?.EType;
+            var nameType = token.Ticket?.SName?.NameType;
 
-            return $"Mechanism: {mech} | MessageType: {messageType} | SName: {nameType}, {snames} | Realm: {realm} | Ticket EType: {ticketEType} | Auth EType: {authEType}";
+            var snames = token.Ticket?.SName?.FullyQualifiedName;
+
+            return $"Mechanism: {mech} | " +
+                   $"MessageType: {messageType} | " +
+                   $"SName: {nameType}, {snames} | " +
+                   $"Realm: {realm} | " +
+                   $"Ticket EType: {ticketEType} | " +
+                   $"Auth EType: {authEType}";
         }
     }
 }
