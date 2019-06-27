@@ -85,6 +85,8 @@ namespace Tests.Kerberos.NET
                 Logs = new List<string>();
             }
 
+            public bool Enabled { get; set; } = true;
+
             public List<string> Logs { get; }
 
             public void WriteLine(KerberosLogSource source, string value)

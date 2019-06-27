@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Entities;
 using System;
 
 namespace Kerberos.NET.Crypto
@@ -29,7 +30,7 @@ namespace Kerberos.NET.Crypto
 
             var decryptedTicket = Decrypt(key, ciphertext, KeyUsage.KU_TICKET);
 
-            Ticket = new EncTicketPart().Decode(new Asn1Element(decryptedTicket));
+            Ticket = new EncTicketPart().Decode(new Asn1Element(decryptedTicket, "EncTicketPart"));
 
             var decryptedAuthenticator = Decrypt(
                 new KerberosKey(Ticket.Key.RawKey),
@@ -37,7 +38,7 @@ namespace Kerberos.NET.Crypto
                 KeyUsage.KU_AP_REQ_AUTHENTICATOR
             );
 
-            Authenticator = new Authenticator().Decode(new Asn1Element(decryptedAuthenticator));
+            Authenticator = new Authenticator().Decode(new Asn1Element(decryptedAuthenticator, "Authenticator"));
 
             var delegation = Authenticator?.Checksum?.Delegation?.DelegationTicket;
 
@@ -50,7 +51,7 @@ namespace Kerberos.NET.Crypto
                 );
 
                 delegation.Credential.CredentialPart = 
-                    new EncKrbCredPart().Decode(new Asn1Element(decryptedDelegationTicket));
+                    new EncKrbCredPart().Decode(new Asn1Element(decryptedDelegationTicket, "Ticket"));
             }
         }
 

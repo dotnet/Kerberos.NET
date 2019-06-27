@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using System.Runtime.InteropServices;
+using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {

@@ -1,6 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using Kerberos.NET.Entities.Authorization;
+using Kerberos.NET.Entities.Pac;
 using System;
 using System.Collections.Generic;
 using System.Linq;

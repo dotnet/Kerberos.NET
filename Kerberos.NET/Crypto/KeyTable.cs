@@ -197,7 +197,7 @@ namespace Kerberos.NET.Crypto
 
             var key = ReadBytes(reader);
 
-            return new KerberosKey(key, etype: EncryptionType ?? Entities.EncryptionType.NULL);
+            return new KerberosKey(key, etype: EncryptionType ?? Crypto.EncryptionType.NULL);
         }
 
         private DateTimeOffset ReadDateTime(BinaryReader reader)
@@ -335,7 +335,7 @@ namespace Kerberos.NET.Crypto
 
         public override int GetHashCode()
         {
-            return (this.EncryptionType ?? Entities.EncryptionType.NULL).GetHashCode() ^
+            return (this.EncryptionType ?? Crypto.EncryptionType.NULL).GetHashCode() ^
                     Key.GetHashCode() ^
                     Principal.GetHashCode() ^
                     Timestamp.GetHashCode() ^

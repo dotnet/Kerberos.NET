@@ -1,10 +1,11 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System;
 using System.IO;
 using System.Text;
 using System.Linq;
+using Kerberos.NET.Crypto;
 
 #pragma warning disable S2346 // Flags enumerations zero-value members should be named "None"
 
@@ -60,7 +61,7 @@ namespace Kerberos.NET.Entities
                         switch (adType)
                         {
                             case AuthorizationDataType.AdIfRelevant:
-                                var relevant = authDataElement.AsEncapsulatedElement();
+                                var relevant = authDataElement.AsEncapsulatedElement("Ad-if-relevant");
 
                                 for (var r = 0; r < relevant.Count; r++)
                                 {
@@ -137,9 +138,9 @@ namespace Kerberos.NET.Entities
                 case AuthorizationDataValueType.AD_WIN2K_PAC:
                     return new PacElement(restriction[0].Value);
                 case AuthorizationDataValueType.AD_ETYPE_NEGOTIATION:
-                    return ParseETypes(restriction.AsEncapsulatedElement());
+                    return ParseETypes(restriction.AsEncapsulatedElement("ad-etype-negotiation"));
                 case AuthorizationDataValueType.KERB_AUTH_DATA_TOKEN_RESTRICTIONS:
-                    return new RestrictionEntry().Decode(restriction.AsEncapsulatedElement());
+                    return new RestrictionEntry().Decode(restriction.AsEncapsulatedElement("krb-auth-data-token-restrictions"));
                 case AuthorizationDataValueType.KERB_AP_OPTIONS:
                     return new KerbApOptions(restriction[0].AsInt(reverse: true));
                 case AuthorizationDataValueType.KERB_LOCAL:
