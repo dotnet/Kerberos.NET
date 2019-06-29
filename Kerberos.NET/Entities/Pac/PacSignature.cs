@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1.Entities;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -43,7 +44,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public int SignaturePosition { get; }
 
-        internal void Validate(KeyTable keytab, PrincipalName sname)
+        internal void Validate(KeyTable keytab, KrbPrincipalName sname)
         {
             var key = keytab.GetKey(Type, sname);
 

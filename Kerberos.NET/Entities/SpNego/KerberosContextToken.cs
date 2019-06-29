@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Crypto;
 using System.Runtime.InteropServices;
 using Kerberos.NET.Asn1;
+using Kerberos.NET.Asn1.Entities;
 
 namespace Kerberos.NET.Entities
 {
@@ -24,11 +25,11 @@ namespace Kerberos.NET.Entities
         {
             switch (element.ApplicationTag)
             {
-                case KrbApReq.ApplicationTag:
-                    KrbApReq = new KrbApReq().Decode(element[0]);
+                case 14: // KrbApReqLegacy.ApplicationTag:
+                    KrbApReq = KrbApReq.Decode(element.Value);
                     break;
-                case KrbApRep.ApplicationTag:
-                    KrbApRep = new KrbApRep().Decode(element[0]);
+                case 15: // KrbApRep.ApplicationTag:
+                    KrbApRep = KrbApRep.Decode(element.Value);
                     break;
             }
         }

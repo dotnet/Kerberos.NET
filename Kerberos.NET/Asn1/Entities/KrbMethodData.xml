@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Choice
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbMethodData"
+  namespace="Kerberos.NET.Asn1.Entities">
+  <!--
+   /*
+      METHOD-DATA     ::= SEQUENCE OF PA-DATA
+
+    */
+  -->
+  <asn:SequenceOf name="MethodData">
+    <asn:AsnType typeName="KrbPaData" />
+  </asn:SequenceOf>
+</asn:Choice>

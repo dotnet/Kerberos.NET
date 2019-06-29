@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1.Entities;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System.Threading.Tasks;
 
@@ -10,6 +11,6 @@ namespace Kerberos.NET
 
         Task<DecryptedKrbApReq> Validate(byte[] requestBytes);
 
-        void Validate(PacElement pac, PrincipalName sname);
+        void Validate(PacElement pac, KrbPrincipalName sname);
     }
 }

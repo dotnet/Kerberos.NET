@@ -1,6 +1,6 @@
 ﻿namespace Kerberos.NET.Crypto
 {
-    public enum EncryptionType
+    public enum EncryptionType : long
     {
         NULL = 0,
         DES_CBC_CRC = 1,

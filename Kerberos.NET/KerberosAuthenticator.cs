@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1.Entities;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Pac;
 using System;
@@ -57,11 +58,15 @@ namespace Kerberos.NET
 
             foreach (var authData in ticket.AuthorizationData)
             {
-                foreach (var authz in authData.Authorizations)
+                // TODO: DEAL WITH PAC
+
+                var adif = authData.DecodeAdIfRelevant();
+
+                foreach (var authz in adif)
                 {
-                    if (authz.Type == AuthorizationDataValueType.AD_WIN2K_PAC)
+                    if (authz.Type == (AuthorizationDataType)AuthorizationDataValueType.AD_WIN2K_PAC)
                     {
-                        var pac = (PacElement)authz;
+                        var pac = new PacElement(authz.Data.ToArray());
 
                         if (validator.ValidateAfterDecrypt.HasFlag(ValidationActions.Pac))
                         {
@@ -78,12 +83,12 @@ namespace Kerberos.NET
             return new ClaimsIdentity(claims, "Kerberos", ClaimTypes.NameIdentifier, ClaimTypes.Role);
         }
 
-        protected virtual void ValidatePacSignature(PacElement pac, PrincipalName name)
+        protected virtual void ValidatePacSignature(PacElement pac, KrbPrincipalName name)
         {
             validator.Validate(pac, name);
         }
 
-        private void MergeAttributes(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
+        private void MergeAttributes(KrbEncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
         {
             AddUser(ticket, pac, claims);
 
@@ -155,7 +160,7 @@ namespace Kerberos.NET
             }
         }
 
-        protected virtual void AddUser(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
+        protected virtual void AddUser(KrbEncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
         {
             claims.Add(new Claim(ClaimTypes.Sid, pac.LogonInfo.UserSid.Value));
 
@@ -166,7 +171,7 @@ namespace Kerberos.NET
 
             if (this.UserNameFormat == UserNameFormat.UserPrincipalName)
             {
-                var names = ticket.CName.Names.Select(n => $"{n}@{ticket.CRealm.ToLowerInvariant()}");
+                var names = ticket.CName.Name.Select(n => $"{n}@{ticket.CRealm.ToLowerInvariant()}");
 
                 claims.AddRange(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)));
             }

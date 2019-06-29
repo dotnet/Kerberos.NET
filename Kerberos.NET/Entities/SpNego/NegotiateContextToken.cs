@@ -28,7 +28,7 @@ namespace Kerberos.NET.Entities
 
             var token = NegotiationToken?.MechToken?.InnerContextToken;
 
-            return DecryptApReq(token, keys);
+            return DecryptApReq(token.Value, keys);
         }
 
         protected override void ParseContextSpecific(Asn1Element element)

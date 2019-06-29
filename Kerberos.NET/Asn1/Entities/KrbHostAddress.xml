@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbHostAddress"
+  namespace="Kerberos.NET.Asn1.Entities" >
+  <!--
+   /*
+HostAddress     ::= SEQUENCE  {
+        addr-type       [0] Int32,
+        address         [1] OCTET STRING
+}
+
+HostAddresses   
+        ::= SEQUENCE OF HostAddress
+        */
+  -->
+
+  <asn:Integer name="AddressType" explicitTag="0" backingType="enum" enumType="AddressType" />
+  <asn:OctetString name="Address" explicitTag="1" />
+</asn:Sequence>

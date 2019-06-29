@@ -40,20 +40,18 @@
     <xsl:apply-templates/>
   </xsl:template>
 
-  <xsl:template match="asn:Sequence">// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
-
+  <xsl:template match="asn:Sequence">
 using System;<xsl:if test="asn:SequenceOf | asn:SetOf">
 using System.Collections.Generic;</xsl:if>
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
+using Kerberos.NET.Crypto;
 
 namespace <xsl:value-of select="@namespace" />
 {
     [StructLayout(LayoutKind.Sequential)]
-    internal partial struct <xsl:value-of select="@name" />
+    public partial struct <xsl:value-of select="@name" />
     {<xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="DefaultFieldDef" /><xsl:apply-templates mode="FieldDef" />
       <xsl:if test="*[@defaultDerInit]">
 #if DEBUG  
@@ -65,6 +63,15 @@ namespace <xsl:value-of select="@namespace" />
         }
 #endif
  </xsl:if>
+        public ReadOnlySpan&lt;byte&gt; Encode()
+        {
+            var writer = new AsnWriter(AsnEncodingRules.DER);
+
+            Encode(writer);
+
+            return writer.EncodeAsSpan();
+        }
+        
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -75,6 +82,11 @@ namespace <xsl:value-of select="@namespace" />
             writer.PushSequence(tag);
             <xsl:apply-templates mode="Encode" />
             writer.PopSequence(tag);
+        }
+        
+        public static <xsl:value-of select="@name" /> Decode(ReadOnlyMemory&lt;byte&gt; data)
+        {
+            return Decode(data, AsnEncodingRules.DER);
         }
 
         internal static <xsl:value-of select="@name" /> Decode(ReadOnlyMemory&lt;byte&gt; encoded, AsnEncodingRules ruleSet)
@@ -130,7 +142,7 @@ using System.Security.Cryptography.Asn1;
 namespace <xsl:value-of select="@namespace" />
 {
     [StructLayout(LayoutKind.Sequential)]
-    internal partial struct <xsl:value-of select="@name" />
+    public partial struct <xsl:value-of select="@name" />
     {<xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="ValidateChoice" /><xsl:apply-templates mode="FieldDef" />
 
 #if DEBUG
@@ -260,7 +272,7 @@ namespace <xsl:value-of select="@namespace" />
 </xsl:template>
 
   <!-- Class OPTIONAL -->
-  <xsl:template match="asn:ObjectIdentifier | asn:UTF8String | asn:SequenceOf | asn:SetOf | asn:PrintableString | asn:T61String | asn:IA5String | asn:VisibleString | asn:BMPString" mode="EncodeOptional">
+  <xsl:template match="asn:ObjectIdentifier | asn:UTF8String | asn:SequenceOf | asn:SetOf | asn:PrintableString | asn:T61String | asn:IA5String | asn:GeneralString | asn:VisibleString | asn:BMPString" mode="EncodeOptional">
 
             if (<xsl:value-of select="@name"/> != null)
             {<xsl:apply-templates select="." mode="EncodeValue"><xsl:with-param name="indent" select="'    '"/></xsl:apply-templates>
@@ -279,7 +291,7 @@ namespace <xsl:value-of select="@namespace" />
 </xsl:template>
 
   <!-- Class CHOICE -->
-  <xsl:template match="asn:ObjectIdentifier | asn:UTF8String | asn:SequenceOf | asn:SetOf | asn:PrintableString | asn:T61String | asn:IA5String | asn:VisibleString | asn:BMPString" mode="EncodeChoice">
+  <xsl:template match="asn:ObjectIdentifier | asn:UTF8String | asn:SequenceOf | asn:SetOf | asn:PrintableString | asn:T61String | asn:IA5String | asn:GeneralString | asn:VisibleString | asn:BMPString" mode="EncodeChoice">
             if (<xsl:value-of select="@name"/> != null)
             {
                 if (wroteValue)
@@ -390,7 +402,7 @@ namespace <xsl:value-of select="@namespace" />
   </xsl:template>
 
   <xsl:template match="asn:AsnType" mode="FieldDef">
-        internal <xsl:value-of select="@typeName"/><xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
+        public <xsl:value-of select="@typeName"/><xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
 
   <xsl:template match="asn:AsnType" mode="CollectionElementType"><xsl:value-of select="@typeName"/></xsl:template>
 
@@ -421,7 +433,7 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:AsnType" mode="DefaultTag">Asn1Tag.Sequence</xsl:template>
 
   <xsl:template match="asn:AnyValue" mode="FieldDef">
-        internal ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
+        public ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
 
   <xsl:template match="asn:AnyValue" mode="CollectionElementType">ReadOnlyMemory&lt;byte&gt;</xsl:template>
 
@@ -468,7 +480,7 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:AnyValue[@universalTagNumber]" mode="DefaultTag">new Asn1Tag((UniversalTagNumber)<xsl:value-of select="@universalTagNumber"/>)</xsl:template>
 
   <xsl:template match="asn:Boolean" mode="FieldDef">
-        internal bool<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
+        pulic bool<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
 
   <xsl:template match="asn:Boolean" mode="CollectionElementType">bool</xsl:template>
 
@@ -492,22 +504,28 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:Boolean" mode="DefaultTag">Asn1Tag.Boolean</xsl:template>
 
   <xsl:template match="asn:Integer[not(@backingType)] | asn:Integer[@backingType = 'BigInteger']" mode="FieldDef">
-        internal System.Numerics.BigInteger<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
+        public System.Numerics.BigInteger<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
   
   <xsl:template match="asn:Integer[@backingType = 'ReadOnlyMemory']" mode="FieldDef">
-        internal ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
+        public ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
 
   <xsl:template match="asn:Integer[@backingType = 'byte']" mode="FieldDef">
-        internal byte<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
+        public byte<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
 
   <xsl:template match="asn:Integer[@backingType = 'int']" mode="FieldDef">
-        internal int<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
+        public int<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
 
+    <xsl:template match="asn:Integer[@backingType = 'enum']" mode="FieldDef">
+        public <xsl:value-of select="@enumType" /><xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name" />;</xsl:template>
+
+  
   <xsl:template match="asn:Integer[not(@backingType)] | asn:Integer[@backingType = 'BigInteger']" mode="CollectionElementType">System.Numerics.BigInteger</xsl:template>
   <xsl:template match="asn:Integer[@backingType = 'ReadOnlyMemory']" mode="CollectionElementType">ReadOnlyMemory&lt;byte&gt;</xsl:template>
   <xsl:template match="asn:Integer[@backingType = 'byte']" mode="CollectionElementType">byte</xsl:template>
   <xsl:template match="asn:Integer[@backingType = 'int']" mode="CollectionElementType">int</xsl:template>
+  <xsl:template match="asn:Integer[@backingType = 'enum']" mode="CollectionElementType"><xsl:value-of select="@enumType" /></xsl:template>
 
+  
   <xsl:template match="asn:Integer[not(@backingType = 'ReadOnlyMemory')]" mode="EncodeSimpleValue" xml:space="default">
     <xsl:param name="writerName"/>
     <xsl:param name="indent" />
@@ -515,6 +533,15 @@ namespace <xsl:value-of select="@namespace" />
     <xsl:variable name="nullable" select="@optional | parent::asn:Choice"/>
     <xsl:if test="1" xml:space="preserve">
             <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteInteger(<xsl:call-template name="MaybeImplicitCallP"/><xsl:value-of select="$name"/><xsl:if test="$nullable">.Value</xsl:if>);</xsl:if>
+  </xsl:template>
+  
+    <xsl:template match="asn:Integer[@backingType = 'enum']" mode="EncodeSimpleValue" xml:space="default">
+    <xsl:param name="writerName"/>
+    <xsl:param name="indent" />
+    <xsl:param name="name" select="@name"/>
+    <xsl:variable name="nullable" select="@optional | parent::asn:Choice"/>
+    <xsl:if test="1" xml:space="preserve">
+            <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteInteger((long)<xsl:call-template name="MaybeImplicitCallP"/><xsl:value-of select="$name"/><xsl:if test="$nullable">.Value</xsl:if>);</xsl:if>
   </xsl:template>
 
   <xsl:template match="asn:Integer[@backingType = 'ReadOnlyMemory']" mode="EncodeSimpleValue" xml:space="default">
@@ -594,10 +621,38 @@ namespace <xsl:value-of select="@namespace" />
     </xsl:choose>
   </xsl:template>
 
+  <xsl:template match="asn:Integer[@backingType = 'enum']" mode="DecodeSimpleValue" xml:space="default">
+    <xsl:param name="readerName" />
+    <xsl:param name="indent" />
+    <xsl:param name="name" select="concat('decoded.', @name)"/>
+    <xsl:param name="enumType" />
+    <xsl:choose>
+      <xsl:when test="@optional | parent::asn:Choice" xml:space="preserve">
+
+            <xsl:value-of select="$indent"/>if (<xsl:value-of select="$readerName"/>.TryReadInt32(<xsl:call-template name="MaybeImplicitCallP"/>out int tmp<xsl:value-of select="@name"/>))
+            <xsl:value-of select="$indent"/>{
+            <xsl:value-of select="$indent"/>    <xsl:value-of select="$name"/> = (<xsl:value-of select="$enumType" />)tmp<xsl:value-of select="@name"/>;
+            <xsl:value-of select="$indent"/>}
+            <xsl:value-of select="$indent"/>else
+            <xsl:value-of select="$indent"/>{
+            <xsl:value-of select="$indent"/>    <xsl:value-of select="$readerName"/>.ThrowIfNotEmpty();
+            <xsl:value-of select="$indent"/>}
+</xsl:when>
+      <xsl:otherwise xml:space="preserve">
+
+            <xsl:value-of select="$indent"/>if (!<xsl:value-of select="$readerName"/>.TryReadInt32(<xsl:call-template name="MaybeImplicitCallP"/>out <xsl:value-of select="$name"/>))
+            <xsl:value-of select="$indent"/>{
+            <xsl:value-of select="$indent"/>    <xsl:value-of select="$readerName"/>.ThrowIfNotEmpty();
+            <xsl:value-of select="$indent"/>}
+</xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+  
   <xsl:template match="asn:Integer" mode="DefaultTag">Asn1Tag.Integer</xsl:template>
 
   <xsl:template match="asn:BitString" mode="FieldDef">
-        internal ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
+    <xsl:if test="@treatAsEnum">    public <xsl:value-of select="@enumType"/> <xsl:value-of select="@name"/>;</xsl:if>
+    <xsl:if test="not(@treatAsEnum)">public ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:if></xsl:template>
 
   <xsl:template match="asn:BitString" mode="CollectionElementType">ReadOnlyMemory&lt;byte&gt;</xsl:template>
 
@@ -607,7 +662,7 @@ namespace <xsl:value-of select="@namespace" />
     <xsl:param name="name" select="@name"/>
     <xsl:variable name="nullable" select="@optional | parent::asn:Choice"/>
     <xsl:if test="1" xml:space="preserve">
-            <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteBitString(<xsl:call-template name="MaybeImplicitCallP"/><xsl:value-of select="$name"/><xsl:if test="$nullable">.Value</xsl:if>.Span);</xsl:if>
+            <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteBitString(<xsl:call-template name="MaybeImplicitCallP"/><xsl:value-of select="$name"/><xsl:if test="$nullable">.Value</xsl:if><xsl:if test="not(@treatAsEnum)">.Span</xsl:if><xsl:if test="@treatAsEnum">.AsReadOnly()</xsl:if>);</xsl:if>
   </xsl:template>
 
   <xsl:template match="asn:BitString" mode="DecodeSimpleValue" xml:space="default">
@@ -618,11 +673,11 @@ namespace <xsl:value-of select="@namespace" />
 
             <xsl:value-of select="$indent"/>if (<xsl:value-of select="$readerName"/>.TryReadPrimitiveBitStringValue(<xsl:call-template name="MaybeImplicitCallP"/>out _, out ReadOnlyMemory&lt;byte&gt; tmp<xsl:value-of select="@name"/>))
             <xsl:value-of select="$indent"/>{
-            <xsl:value-of select="$indent"/>    <xsl:value-of select="$name"/> = tmp<xsl:value-of select="@name"/>;
+            <xsl:value-of select="$indent"/>    <xsl:value-of select="$name"/> = <xsl:if test="@enumType">(<xsl:value-of select="@enumType"/>)</xsl:if>tmp<xsl:value-of select="@name"/><xsl:if test="@treatAsEnum">.AsLong()</xsl:if>;
             <xsl:value-of select="$indent"/>}
             <xsl:value-of select="$indent"/>else
             <xsl:value-of select="$indent"/>{
-            <xsl:value-of select="$indent"/>    <xsl:value-of select="$name"/> = <xsl:value-of select="$readerName"/>.ReadBitString(<xsl:call-template name="MaybeImplicitCallP"/>out _);
+            <xsl:value-of select="$indent"/>    <xsl:value-of select="$name"/> = <xsl:if test="@enumType">(<xsl:value-of select="@enumType"/>)</xsl:if><xsl:value-of select="$readerName"/>.ReadBitString(<xsl:call-template name="MaybeImplicitCallP"/>out _)<xsl:if test="@treatAsEnum">.AsLong()</xsl:if>;
             <xsl:value-of select="$indent"/>}
 </xsl:if>
   </xsl:template>
@@ -630,7 +685,7 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:BitString" mode="DefaultTag">Asn1Tag.PrimitiveBitString</xsl:template>
 
   <xsl:template match="asn:NamedBitList" mode="FieldDef">
-        internal <xsl:value-of select="@backingType"/><xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
+        public <xsl:value-of select="@backingType"/><xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
 
   <xsl:template match="asn:NamedBitList" mode="CollectionElementType"><xsl:value-of select="@backingType"/></xsl:template>
 
@@ -654,7 +709,7 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:NamedBitList" mode="DefaultTag">Asn1Tag.PrimitiveBitString</xsl:template>
 
   <xsl:template match="asn:OctetString" mode="FieldDef">
-        internal ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
+        public ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
 
   <xsl:template match="asn:OctetString" mode="CollectionElementType">ReadOnlyMemory&lt;byte&gt;</xsl:template>
 
@@ -687,9 +742,9 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:OctetString" mode="DefaultTag">Asn1Tag.PrimitiveOctetString</xsl:template>
 
   <xsl:template match="asn:ObjectIdentifier[not(@backingType)] | asn:ObjectIdentifier[@backingType = 'Oid']" mode="FieldDef">
-        internal Oid <xsl:value-of select="@name" />;</xsl:template>
+        public Oid <xsl:value-of select="@name" />;</xsl:template>
   <xsl:template match="asn:ObjectIdentifier[@backingType = 'string']" mode="FieldDef">
-        internal string <xsl:value-of select="@name" />;</xsl:template>
+        public string <xsl:value-of select="@name" />;</xsl:template>
 
   <xsl:template match="asn:ObjectIdentifier[not(@backingType)] | asn:ObjectIdentifier[@backingType = 'Oid']" mode="CollectionElementType">Oid</xsl:template>
   <xsl:template match="asn:ObjectIdentifier[@backingType = 'string']" mode="CollectionElementType">string</xsl:template>
@@ -733,7 +788,7 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:ObjectIdentifier" mode="DefaultTag">Asn1Tag.ObjectIdentifier</xsl:template>
 
   <xsl:template match="asn:Enumerated" mode="FieldDef">
-        internal <xsl:value-of select="@backingType"/><xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
+        public <xsl:value-of select="@backingType"/><xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
 
   <xsl:template match="asn:Enumerated" mode="CollectionElementType"><xsl:value-of select="@backingType"/></xsl:template>
 
@@ -757,12 +812,12 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:Enumerated" mode="DefaultTag">Asn1Tag.Enumerated</xsl:template>
 
   <!-- All character string types -->
-  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:VisibleString | asn:BMPString" mode="FieldDef">
-        internal string <xsl:value-of select="@name"/>;</xsl:template>
+  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:GeneralString | asn:VisibleString | asn:BMPString" mode="FieldDef">
+        public string <xsl:value-of select="@name"/>;</xsl:template>
 
-  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:VisibleString | asn:BMPString" mode="CollectionElementType">string</xsl:template>
+  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:GeneralString | asn:VisibleString | asn:BMPString" mode="CollectionElementType">string</xsl:template>
 
-  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:VisibleString | asn:BMPString" mode="EncodeSimpleValue" xml:space="default">
+  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:GeneralString | asn:VisibleString | asn:BMPString" mode="EncodeSimpleValue" xml:space="default">
     <xsl:param name="writerName"/>
     <xsl:param name="indent" />
     <xsl:param name="name" select="@name"/>
@@ -770,7 +825,7 @@ namespace <xsl:value-of select="@namespace" />
             <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteCharacterString(<xsl:call-template name="MaybeImplicitCallP"/>UniversalTagNumber.<xsl:value-of select="local-name()"/>, <xsl:value-of select="$name"/>);</xsl:if>
   </xsl:template>
   
-  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:VisibleString | asn:BMPString" mode="DecodeSimpleValue" xml:space="default">
+  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:GeneralString | asn:VisibleString | asn:BMPString" mode="DecodeSimpleValue" xml:space="default">
     <xsl:param name="readerName" />
     <xsl:param name="indent" />
     <xsl:param name="name" select="concat('decoded.', @name)"/>
@@ -778,10 +833,10 @@ namespace <xsl:value-of select="@namespace" />
             <xsl:value-of select="$indent"/><xsl:value-of select="$name"/> = <xsl:value-of select="$readerName"/>.ReadCharacterString(<xsl:call-template name="MaybeImplicitCallP"/>UniversalTagNumber.<xsl:value-of select="local-name()"/>);</xsl:if>
   </xsl:template>
   
-  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:VisibleString | asn:BMPString" mode="DefaultTag">new Asn1Tag(UniversalTagNumber.<xsl:value-of select="local-name()"/>)</xsl:template>
+  <xsl:template match="asn:UTF8String | asn:PrintableString | asn:T61String | asn:IA5String | asn:GeneralString | asn:VisibleString | asn:BMPString" mode="DefaultTag">new Asn1Tag(UniversalTagNumber.<xsl:value-of select="local-name()"/>)</xsl:template>
 
   <xsl:template match="asn:SequenceOf | asn:SetOf" mode="FieldDef">
-        internal <xsl:apply-templates mode="CollectionElementType"/>[] <xsl:value-of select="@name"/>;</xsl:template>
+        public <xsl:apply-templates mode="CollectionElementType"/>[] <xsl:value-of select="@name"/>;</xsl:template>
 
   <xsl:template match="asn:SequenceOf | asn:SetOf" mode="EncodeSimpleValue" xml:space="default">
     <xsl:param name="writerName"/>
@@ -834,7 +889,7 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:SetOf" mode="DefaultTag">Asn1Tag.SetOf</xsl:template>
 
   <xsl:template match="asn:UtcTime | asn:GeneralizedTime" mode="FieldDef">
-        internal DateTimeOffset<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
+        public DateTimeOffset<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/>;</xsl:template>
 
   <xsl:template match="asn:UtcTime | asn:GeneralizedTime" mode="CollectionElementType">DateTimeOffset</xsl:template>
 
@@ -889,8 +944,9 @@ namespace <xsl:value-of select="@namespace" />
   <!-- Encode(writer) vs Encode(writer, tag) -->
   <xsl:template name="MaybeImplicitCallS"><xsl:if test="@implicitTag">, <xsl:call-template name="ContextTag"/></xsl:if></xsl:template>
 
-  <xsl:template name="ContextTag">new Asn1Tag(TagClass.ContextSpecific, <xsl:value-of select="@implicitTag | @explicitTag"/>)</xsl:template>
-  
+  <!--<xsl:template name="ContextTag">new Asn1Tag(TagClass.ContextSpecific, <xsl:value-of select="@implicitTag | @explicitTag"/>)</xsl:template>-->
+  <xsl:template name="ContextTag">new Asn1Tag(<xsl:choose><xsl:when test="@tagClass">TagClass.<xsl:value-of select="@tagClass"/></xsl:when><xsl:otherwise>TagClass.ContextSpecific</xsl:otherwise></xsl:choose>, <xsl:value-of select="@implicitTag | @explicitTag"/>)</xsl:template>
+
   <xsl:template name="DefaultValueField">s_default<xsl:value-of select="@name"/></xsl:template>
 
   <xsl:template name="DefaultValueDecoder"><xsl:if test="@defaultDerInit">
