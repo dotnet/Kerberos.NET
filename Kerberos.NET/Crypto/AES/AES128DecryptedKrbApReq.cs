@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Asn1.Entities;
+using Kerberos.NET.Entities;
 
 #pragma warning disable S101 // Types should be named in camel case
 

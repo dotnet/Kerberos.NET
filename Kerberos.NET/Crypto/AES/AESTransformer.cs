@@ -39,7 +39,7 @@ namespace Kerberos.NET.Crypto.AES
             );
         }
 
-        public override byte[] Decrypt(byte[] cipher, KerberosKey kerberosKey, KeyUsage usage)
+        public override byte[] Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey kerberosKey, KeyUsage usage)
         {
             var key = kerberosKey.GetKey(this);
 
@@ -78,11 +78,11 @@ namespace Kerberos.NET.Crypto.AES
             return output;
         }
 
-        private static byte[] BlockCopy(byte[] src, int srcOffset, int dstOffset, int len)
+        private static byte[] BlockCopy(ReadOnlyMemory<byte> src, int srcOffset, int dstOffset, int len)
         {
             var tmpEnc = new byte[len];
-
-            Buffer.BlockCopy(src, srcOffset, tmpEnc, dstOffset, len);
+            
+            Buffer.BlockCopy(src.ToArray(), srcOffset, tmpEnc, dstOffset, len);
 
             return tmpEnc;
         }

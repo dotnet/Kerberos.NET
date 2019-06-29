@@ -39,13 +39,13 @@ namespace Kerberos.NET
 
             switch (element.Class)
             {
-                case TagClass.Application:
+                case LegacyTagClass.Application:
                     return ParseApplicationMessage(element);
 
-                case TagClass.ContextSpecific:
+                case LegacyTagClass.ContextSpecific:
                     return ParseContextMessage(element);
 
-                case TagClass.Universal:
+                case LegacyTagClass.Universal:
                 default:
                     throw new InvalidDataException();
             }

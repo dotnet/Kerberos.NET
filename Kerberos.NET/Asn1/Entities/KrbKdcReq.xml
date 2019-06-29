@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbKdcReq"
+  namespace="Kerberos.NET.Asn1.Entities">
+  <!--
+   /*
+        KDC-REQ         ::= SEQUENCE {
+                pvno            [1] INTEGER (5) ,
+                msg-type        [2] INTEGER,
+                padata          [3] SEQUENCE OF PA-DATA OPTIONAL
+                req-body        [4] KDC-REQ-BODY
+        }
+
+        */
+  -->
+
+  <asn:Integer name="ProtocolVersionNumber" explicitTag="1" backingType="int" />
+  <asn:Integer name="MessageType" explicitTag="2" backingType="enum" enumType="MessageType" />
+  <asn:SequenceOf name="PaData" explicitTag="3">
+    <asn:AsnType typeName="KrbPaData" />
+  </asn:SequenceOf>
+  <asn:AsnType typeName="KrbKdcReqBody" name="Body" explicitTag="4" />
+</asn:Sequence>

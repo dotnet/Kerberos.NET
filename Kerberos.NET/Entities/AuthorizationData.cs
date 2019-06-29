@@ -6,27 +6,12 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Asn1.Entities;
 
 #pragma warning disable S2346 // Flags enumerations zero-value members should be named "None"
 
 namespace Kerberos.NET.Entities
 {
-    public enum AuthorizationDataType : long
-    {
-        AdIfRelevant = 1,
-        AdIntendedForServer = 2,
-        AdIntendedForApplicationClass = 3,
-        AdKdcIssued = 4,
-        AdAndOr = 5,
-        AdMandatoryTicketExtensions = 6,
-        AdInTicketExtensions = 7,
-        AdMandatoryForKdc = 8,
-        OsfDce = 64,
-        Sesame = 65,
-        AdOsfDcePkiCertId = 66,
-        AdWin2kPac = 128
-    }
-
     public enum AuthorizationDataValueType
     {
         AD_WIN2K_PAC = 128,
@@ -185,10 +170,10 @@ namespace Kerberos.NET.Entities
 
         public KerbApOptions(int options)
         {
-            Options = (APOptions)options;
+            Options = (ApOptions)options;
         }
 
-        public APOptions Options { get; }
+        public ApOptions Options { get; }
     }
 
     public class KerbLocal : AuthorizationDataElement

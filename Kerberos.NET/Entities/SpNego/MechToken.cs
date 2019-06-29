@@ -2,6 +2,7 @@
 using Kerberos.NET.Asn1;
 using System.Linq;
 using System.IO;
+using Kerberos.NET.Asn1.Entities;
 
 namespace Kerberos.NET.Entities
 {
@@ -63,7 +64,7 @@ namespace Kerberos.NET.Entities
 
                 switch (node.Class)
                 {
-                    case TagClass.Universal:
+                    case LegacyTagClass.Universal:
                         switch (node.UniversalTag)
                         {
                             case UniversalTag.ObjectIdentifier:
@@ -71,11 +72,11 @@ namespace Kerberos.NET.Entities
                                 break;
                         }
                         break;
-                    case TagClass.Application:
+                    case LegacyTagClass.Application:
                         switch (node.ApplicationTag)
                         {
-                            case KrbApReq.ApplicationTag:
-                                InnerContextToken = new KrbApReq().Decode(node[0]);
+                            case 14:// KrbApReq.ApplicationTag:
+                                InnerContextToken = KrbApReq.Decode(node.Value);
                                 break;
                         }
                         break;

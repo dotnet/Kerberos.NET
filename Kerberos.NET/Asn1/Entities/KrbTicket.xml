@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbTicket"
+  namespace="Kerberos.NET.Asn1.Entities" 
+  >
+  <!--
+   /*
+Ticket          ::= [APPLICATION 1] SEQUENCE {
+        tkt-vno         [0] INTEGER (5),
+        realm           [1] Realm,
+        sname           [2] PrincipalName,
+        enc-part        [3] EncryptedData
+}
+   
+   */
+  -->
+  <asn:Integer name="TicketNumber" explicitTag="0" backingType="int" />
+  <asn:GeneralString name="Realm" explicitTag="1" />
+  <asn:AsnType typeName="KrbPrincipalName" name="SName" explicitTag="2" />
+  <asn:AsnType typeName="KrbEncryptedData" name="EncryptedPart" explicitTag="3" />
+</asn:Sequence>

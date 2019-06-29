@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Asn1;
+using Kerberos.NET.Asn1.Entities;
 
 namespace Kerberos.NET.Entities
 {
@@ -16,13 +17,13 @@ namespace Kerberos.NET.Entities
 
                 switch (element.Class)
                 {
-                    case TagClass.Universal:
+                    case LegacyTagClass.Universal:
                         ParseUniversal(element);
                         break;
-                    case TagClass.ContextSpecific:
+                    case LegacyTagClass.ContextSpecific:
                         ParseContextSpecific(element);
                         break;
-                    case TagClass.Application:
+                    case LegacyTagClass.Application:
                         ParseApplication(element);
                         break;
                 }
@@ -45,14 +46,14 @@ namespace Kerberos.NET.Entities
 
         protected static DecryptedKrbApReq DecryptApReq(KrbApReq token, KeyTable keytab)
         {
-            if (token?.Ticket?.EncPart == null)
+            if (token.Ticket.Application == null)
             {
                 return null;
             }
 
             DecryptedKrbApReq decryptedApReq = null;
 
-            var decryptor = CryptographyService.CreateDecryptor(token.Ticket.EncPart.EType);
+            var decryptor = CryptographyService.CreateDecryptor(token.Ticket.Application.Value.EncryptedPart.EType);
 
             if (decryptor != null)
             {

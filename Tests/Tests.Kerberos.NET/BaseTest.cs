@@ -1,11 +1,13 @@
 ﻿using Kerberos.NET;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Tests.Kerberos.NET
 {
     public abstract class BaseTest
     {
-        public const ValidationActions DefaultActions 
+        public const ValidationActions DefaultActions
             = ValidationActions.All & (~(ValidationActions.EndTime | ValidationActions.StartTime | ValidationActions.TokenWindow));
 
         public const string RC4Header = "Negotiate YIIKbQYGKwYBBQUCoIIKYTCCCl2gMDAuBgkqhkiC9xIBAgIGCSqGSIb3EgECAgYKKw" +
@@ -112,9 +114,18 @@ namespace Tests.Kerberos.NET
             "AFffP2PNqYn95dA4HD/On0QpOkNykZ3JBzSLnEr0+lo7bgZOTAF5m1IBwwEMdMhZRYudg4/MRPgKSzAx2cDfFfqe3c5a/e8IjYdZHI3fmQa1rPXn5XQ03aw9YJNkW1VNb0+n5JGR4Jge" +
             "C12oQyIh4DSu3XGvlXi+swg90=";
 
+        private static readonly string BasePath = $"data{Path.DirectorySeparatorChar}";
+
         protected static byte[] ReadDataFile(string name)
         {
-            return File.ReadAllBytes($"data{Path.DirectorySeparatorChar}{name}");
+            return File.ReadAllBytes($"{BasePath}{name}");
+        }
+
+        protected static Dictionary<string, byte[]> ReadDataFiles(string path)
+        {
+            var files = Directory.GetFiles($"{BasePath}{path}");
+
+            return files.ToDictionary(f => f, f=> File.ReadAllBytes(f));
         }
     }
 }

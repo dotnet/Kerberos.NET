@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Text;
 using Kerberos.NET.Entities;
 using System.Security.Cryptography;
+using Kerberos.NET.Asn1.Entities;
 
 namespace Kerberos.NET
 {
@@ -74,14 +75,14 @@ namespace Kerberos.NET
             return decryptedToken;
         }
 
-        public void Validate(PacElement pac, PrincipalName sname)
+        public void Validate(PacElement pac, KrbPrincipalName sname)
         {
             pac.Certificate.ServerSignature.Validate(keytab, sname);
         }
 
         protected virtual async Task Validate(DecryptedKrbApReq decryptedToken)
         {
-            var sequence = ObscureSequence(decryptedToken.Authenticator.SequenceNumber);
+            var sequence = ObscureSequence(decryptedToken.Authenticator.SequenceNumber ?? 0);
             var container = ObscureContainer(decryptedToken.Ticket.CRealm);
 
             var entry = new TicketCacheEntry
@@ -121,7 +122,7 @@ namespace Kerberos.NET
             return Hash(realm);
         }
 
-        protected virtual string ObscureSequence(long sequenceNumber)
+        protected virtual string ObscureSequence(int sequenceNumber)
         {
             return Hash(sequenceNumber.ToString(CultureInfo.InvariantCulture));
         }

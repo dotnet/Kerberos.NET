@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbTransitedEncoding"
+  namespace="Kerberos.NET.Asn1.Entities">
+  <!--
+   /*
+TransitedEncoding       ::= SEQUENCE {
+        tr-type         [0] Int32,
+        contents        [1] OCTET STRING
+}
+        */
+  -->
+
+  <asn:Integer name="Type" explicitTag="0" backingType="enum" enumType="TransitedEncodingType" />
+  <asn:OctetString name="Contents" explicitTag="1" />
+</asn:Sequence>

@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Asn1.Entities;
+using Kerberos.NET.Entities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -62,7 +63,7 @@ namespace Kerberos.NET.Crypto
 
         public ICollection<KeyEntry> Entries { get { return entries ?? (entries = new List<KeyEntry>()); } }
         
-        public KerberosKey GetKey(ChecksumType type, PrincipalName sname)
+        public KerberosKey GetKey(ChecksumType type, KrbPrincipalName sname)
         {
             EncryptionType etype;
 
@@ -84,7 +85,7 @@ namespace Kerberos.NET.Crypto
             return GetKey(etype, sname);
         }
 
-        public KerberosKey GetKey(EncryptionType type, PrincipalName sname)
+        public KerberosKey GetKey(EncryptionType type, KrbPrincipalName sname)
         {
             // Match on type (e.g. RC4_HMAC_NT) and name (Realm + Name)
 

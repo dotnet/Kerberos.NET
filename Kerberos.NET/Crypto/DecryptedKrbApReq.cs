@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Entities;
+using Kerberos.NET.Asn1.Entities;
 using System;
+using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Crypto
 {
@@ -12,46 +13,51 @@ namespace Kerberos.NET.Crypto
             this.token = token;
         }
 
-        public EncryptionType EType => token?.Ticket?.EncPart?.EType ?? EncryptionType.NULL;
+        public EncryptionType EType => token.Ticket.Application.Value.EncryptedPart.EType;
 
-        public PrincipalName SName => token?.Ticket?.SName;
+        public KrbPrincipalName SName => token.Ticket.Application.Value.SName;
 
-        public Authenticator Authenticator { get; private set; }
+        public KrbAuthenticator Authenticator { get; private set; }
 
-        public EncTicketPart Ticket { get; private set; }
+        public KrbEncTicketPart Ticket { get; private set; }
+
+        public KrbEncKrbCredPart DelegationTicket { get; private set; }
 
         private readonly KrbApReq token;
 
         public override void Decrypt(KeyTable keytab)
         {
-            var ciphertext = token.Ticket.EncPart.Cipher;
+            var ciphertext = token.Ticket.Application.Value.EncryptedPart.Cipher;
 
             var key = keytab.GetKey(EType, SName);
 
             var decryptedTicket = Decrypt(key, ciphertext, KeyUsage.KU_TICKET);
 
-            Ticket = new EncTicketPart().Decode(new Asn1Element(decryptedTicket, "EncTicketPart"));
+            var ticketApp = KrbEncTicketPartApplication.Decode(decryptedTicket, AsnEncodingRules.DER);
+
+            Ticket = ticketApp.Application.Value;
 
             var decryptedAuthenticator = Decrypt(
-                new KerberosKey(Ticket.Key.RawKey),
+                new KerberosKey(Ticket.Key.KeyValue.ToArray()),
                 token.Authenticator.Cipher,
                 KeyUsage.KU_AP_REQ_AUTHENTICATOR
             );
 
-            Authenticator = new Authenticator().Decode(new Asn1Element(decryptedAuthenticator, "Authenticator"));
+            var authenticatorApp = KrbAuthenticatorApplication.Decode(decryptedAuthenticator, AsnEncodingRules.DER);
 
-            var delegation = Authenticator?.Checksum?.Delegation?.DelegationTicket;
+            Authenticator = authenticatorApp.Application.Value;
+
+            var delegation = Authenticator.Checksum?.DecodeDelegation()?.DelegationTicket.Application;
 
             if (delegation != null)
             {
                 var decryptedDelegationTicket = Decrypt(
-                    new KerberosKey(Ticket.Key.RawKey),
-                    delegation.Credential.EncryptedData.Cipher,
+                    new KerberosKey(Ticket.Key.KeyValue.ToArray()),
+                    delegation.Value.EncryptedPart.Cipher,
                     KeyUsage.KU_ENC_KRB_CRED_PART
                 );
 
-                delegation.Credential.CredentialPart = 
-                    new EncKrbCredPart().Decode(new Asn1Element(decryptedDelegationTicket, "Ticket"));
+                DelegationTicket = KrbEncKrbCredPartApplication.Decode(decryptedDelegationTicket, AsnEncodingRules.DER).Application.Value;
             }
         }
 
@@ -60,16 +66,6 @@ namespace Kerberos.NET.Crypto
         public override void Validate(ValidationActions validation)
         {
             // As defined in https://tools.ietf.org/html/rfc1510 A.10 KRB_AP_REQ verification
-
-            if (Ticket == null)
-            {
-                throw new KerberosValidationException("Ticket is null");
-            }
-
-            if (Authenticator == null)
-            {
-                throw new KerberosValidationException("Authenticator is null");
-            }
 
             if (validation.HasFlag(ValidationActions.ClientPrincipalIdentifier))
             {
@@ -83,7 +79,7 @@ namespace Kerberos.NET.Crypto
 
             var now = Now();
 
-            var ctime = Authenticator.CTime.AddTicks(Authenticator.CuSec / 10);
+            var ctime = Authenticator.CTime.AddTicks(Authenticator.Cusec / 10);
 
             if (validation.HasFlag(ValidationActions.TokenWindow))
             {
@@ -92,7 +88,7 @@ namespace Kerberos.NET.Crypto
 
             if (validation.HasFlag(ValidationActions.StartTime))
             {
-                ValidateTicketStart(Ticket.StartTime, now, Skew);
+                ValidateTicketStart(Ticket.StartTime ?? now, now, Skew);
             }
 
             if (validation.HasFlag(ValidationActions.EndTime))

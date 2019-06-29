@@ -27,7 +27,7 @@
         <xs:element name="AnyValue" type="AnyValueType" />
         <xs:element name="Boolean" type="FieldBase" />
         <xs:element name="Integer" type="IntegerType" />
-        <xs:element name="BitString" type="FieldBase" />
+        <xs:element name="BitString" type="BitStringType" />
         <xs:element name="NamedBitList" type="EnumerationType" />
         <xs:element name="OctetString" type="FieldBase" />
         <xs:element name="ObjectIdentifier" type="ObjectIdentifierType" />
@@ -38,6 +38,7 @@
         <xs:element name="PrintableString" type="FieldBase" />
         <xs:element name="T61String" type="FieldBase" />
         <xs:element name="IA5String" type="FieldBase" />
+        <xs:element name="GeneralString" type="FieldBase" />
         <xs:element name="UtcTime" type="UtcTimeType" />
         <xs:element name="GeneralizedTime" type="FieldBase" />
         <xs:element name="VisibleString" type="FieldBase" />
@@ -46,6 +47,8 @@
     </xs:sequence>
     <xs:attribute name="name" use="required" type="xs:NCName" />
     <xs:attribute name="namespace" use="required" type="QualifiedName" />
+    <xs:attribute name="tagClass" use="optional" type="TagClass" />
+    <xs:attribute name="explicitTag" use="optional" type="xs:nonNegativeInteger" />
   </xs:complexType>
 
   <xs:complexType name="FieldBase">
@@ -54,6 +57,7 @@
     <xs:attribute name="implicitTag" use="optional" type="xs:nonNegativeInteger" />
     <xs:attribute name="explicitTag" use="optional" type="xs:nonNegativeInteger" />
     <xs:attribute name="optional" use="optional" type="xs:boolean" default="false" />
+    <xs:attribute name="tagClass" use="optional" type="TagClass" />
   </xs:complexType>
 
   <xs:complexType name="ExternalTypeRef">
@@ -79,6 +83,7 @@
   <xs:complexType name="IntegerType">
     <xs:complexContent>
       <xs:extension base="FieldBase">
+        <xs:attribute name="enumType" type="xs:string" />
         <xs:attribute name="backingType" default="BigInteger">
           <xs:simpleType>
             <xs:restriction base="xs:string">
@@ -86,6 +91,7 @@
               <xs:enumeration value="int" />
               <xs:enumeration value="BigInteger" />
               <xs:enumeration value="ReadOnlyMemory" />
+              <xs:enumeration value="enum" />
             </xs:restriction>
           </xs:simpleType>
         </xs:attribute>
@@ -93,7 +99,17 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <xs:complexType name="BitStringType">
+    <xs:complexContent>
+      <xs:extension base="FieldBase">
+        <xs:attribute name="enumType" type="xs:string" />
+        <xs:attribute name="treatAsEnum" type="xs:boolean" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
   <xs:complexType name="IntegerCollectionType">
+    <xs:attribute name="enumType" type="xs:string" />
     <xs:attribute name="backingType" default="BigInteger">
       <xs:simpleType>
         <xs:restriction base="xs:string">
@@ -101,6 +117,7 @@
           <xs:enumeration value="int" />
           <xs:enumeration value="BigInteger" />
           <xs:enumeration value="ReadOnlyMemory" />
+          <xs:enumeration value="enum" />
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
@@ -162,6 +179,7 @@
             <xs:element name="PrintableString"/>
             <xs:element name="T61String"/>
             <xs:element name="IA5String"/>
+            <xs:element name="GeneralString"/>
             <xs:element name="UtcTime" type="UtcTimeCollectionType" />
             <xs:element name="GeneralizedTime"/>
             <xs:element name="VisibleString"/>
@@ -193,6 +211,15 @@
   <xs:simpleType name="ByteArrayInitializer">
     <xs:restriction base="xs:string">
       <xs:pattern value="(0x[A-Fa-f0-9][A-Fa-f0-9],[\s]*)*0x[A-Fa-f0-9][A-Fa-f0-9]" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TagClass">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Universal" />
+      <xs:enumeration value="Application" />
+      <xs:enumeration value="ContextSpecific" />
+      <xs:enumeration value="Private" />
     </xs:restriction>
   </xs:simpleType>
 </xs:schema>

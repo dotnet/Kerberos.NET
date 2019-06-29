@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbEncKrbCredPart"
+  namespace="Kerberos.NET.Asn1.Entities">
+  <!--
+   /*
+EncKrbCredPart  ::= [APPLICATION 29] SEQUENCE {
+        ticket-info     [0] SEQUENCE OF KrbCredInfo,
+        nonce           [1] UInt32 OPTIONAL,
+        timestamp       [2] KerberosTime OPTIONAL,
+        usec            [3] Microseconds OPTIONAL,
+        s-address       [4] HostAddress OPTIONAL,
+        r-address       [5] HostAddress OPTIONAL
+}
+        */
+  -->
+
+  <asn:SequenceOf name="TicketInfo" explicitTag="0">
+    <asn:AsnType typeName="KrbCredInfo" />
+  </asn:SequenceOf>
+
+  <asn:Integer name="Nonce" explicitTag="1" backingType="int" optional="true" />
+  <asn:GeneralizedTime name="Timestamp" explicitTag="2" optional="true" />
+  <asn:Integer name="USec" explicitTag="3" backingType="int" optional="true" />
+  <asn:AsnType name="SAddress" explicitTag="4" typeName="KrbHostAddress" optional="true" />
+  <asn:AsnType name="RAddress" explicitTag="5" typeName="KrbHostAddress" optional="true" />
+
+</asn:Sequence>
