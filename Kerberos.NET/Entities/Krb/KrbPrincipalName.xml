@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbPrincipalName"
+  namespace="Kerberos.NET.Entities">
+  <!--
+
+    PrincipalName   ::= SEQUENCE {
+          name-type       [0] Int32,
+          name-string     [1] SEQUENCE OF KerberosString
+    }
+    
+  -->
+
+  <asn:Integer name="Type" explicitTag="0" backingType="enum" enumType="PrincipalNameType" />
+
+  <asn:SequenceOf explicitTag="1" name="Name">
+    <asn:GeneralString />
+  </asn:SequenceOf>
+</asn:Sequence>

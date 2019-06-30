@@ -1,6 +1,4 @@
-﻿using Kerberos.NET.Entities;
-using System;
-using System.Runtime.CompilerServices;
+﻿using System;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
@@ -39,7 +37,7 @@ namespace Kerberos.NET.Crypto.AES
             );
         }
 
-        public override byte[] Decrypt(byte[] cipher, KerberosKey kerberosKey, KeyUsage usage)
+        public override byte[] Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey kerberosKey, KeyUsage usage)
         {
             var key = kerberosKey.GetKey(this);
 
@@ -48,15 +46,15 @@ namespace Kerberos.NET.Crypto.AES
             var Ke = DK(key, usage, KeyDerivationMode.Ke);
 
             var decrypted = AESCTS.Decrypt(
-                BlockCopy(cipher, 0, 0, cipherLength), 
-                Ke, 
+                BlockCopy(cipher, 0, 0, cipherLength),
+                Ke,
                 AllZerosInitVector
             );
 
             var actualChecksum = MakeChecksum(key, usage, KeyDerivationMode.Ki, decrypted, ChecksumSize);
 
             var expectedChecksum = BlockCopy(cipher, cipherLength, 0, ChecksumSize);
-            
+
             if (!AreEqualSlow(expectedChecksum, actualChecksum))
             {
                 throw new SecurityException("Invalid checksum");
@@ -78,11 +76,11 @@ namespace Kerberos.NET.Crypto.AES
             return output;
         }
 
-        private static byte[] BlockCopy(byte[] src, int srcOffset, int dstOffset, int len)
+        private static byte[] BlockCopy(ReadOnlyMemory<byte> src, int srcOffset, int dstOffset, int len)
         {
             var tmpEnc = new byte[len];
 
-            Buffer.BlockCopy(src, srcOffset, tmpEnc, dstOffset, len);
+            Buffer.BlockCopy(src.ToArray(), srcOffset, tmpEnc, dstOffset, len);
 
             return tmpEnc;
         }

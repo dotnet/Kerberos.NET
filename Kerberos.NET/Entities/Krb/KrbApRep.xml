@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbApRep"
+  namespace="Kerberos.NET.Entities">
+  <!--
+  
+    AP-REP          ::= [APPLICATION 15] SEQUENCE {
+            pvno            [0] INTEGER (5),
+            msg-type        [1] INTEGER (15),
+            enc-part        [2] EncryptedData 
+    }
+
+    EncAPRepPart    ::= [APPLICATION 27] SEQUENCE {
+            ctime           [0] KerberosTime,
+            cusec           [1] Microseconds,
+            subkey          [2] EncryptionKey OPTIONAL,
+            seq-number      [3] UInt32 OPTIONAL
+    }
+    
+  -->
+
+  <asn:Integer name="ProtocolVersionNumber" explicitTag="0" backingType="int" />
+  <asn:Integer name="MessageType" explicitTag="1" backingType="enum" enumType="MessageType" />
+  <asn:AsnType name="EncryptedPart" explicitTag="2" typeName="KrbEncryptedData" />
+</asn:Sequence>

@@ -61,8 +61,8 @@ namespace Kerberos.NET.Crypto
         private ICollection<KeyEntry> entries;
 
         public ICollection<KeyEntry> Entries { get { return entries ?? (entries = new List<KeyEntry>()); } }
-        
-        public KerberosKey GetKey(ChecksumType type, PrincipalName sname)
+
+        public KerberosKey GetKey(ChecksumType type, KrbPrincipalName sname)
         {
             EncryptionType etype;
 
@@ -84,7 +84,7 @@ namespace Kerberos.NET.Crypto
             return GetKey(etype, sname);
         }
 
-        public KerberosKey GetKey(EncryptionType type, PrincipalName sname)
+        public KerberosKey GetKey(EncryptionType type, KrbPrincipalName sname)
         {
             // Match on type (e.g. RC4_HMAC_NT) and name (Realm + Name)
 
@@ -197,7 +197,7 @@ namespace Kerberos.NET.Crypto
 
             var key = ReadBytes(reader);
 
-            return new KerberosKey(key, etype: EncryptionType ?? Entities.EncryptionType.NULL);
+            return new KerberosKey(key, etype: EncryptionType ?? Crypto.EncryptionType.NULL);
         }
 
         private DateTimeOffset ReadDateTime(BinaryReader reader)
@@ -335,7 +335,7 @@ namespace Kerberos.NET.Crypto
 
         public override int GetHashCode()
         {
-            return (this.EncryptionType ?? Entities.EncryptionType.NULL).GetHashCode() ^
+            return (this.EncryptionType ?? Crypto.EncryptionType.NULL).GetHashCode() ^
                     Key.GetHashCode() ^
                     Principal.GetHashCode() ^
                     Timestamp.GetHashCode() ^

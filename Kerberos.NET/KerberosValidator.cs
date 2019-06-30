@@ -1,9 +1,10 @@
-using System;
 using Kerberos.NET.Crypto;
-using System.Globalization;
-using System.Threading.Tasks;
-using System.Text;
 using Kerberos.NET.Entities;
+using System;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Kerberos.NET
 {
@@ -73,14 +74,14 @@ namespace Kerberos.NET
             return decryptedToken;
         }
 
-        public void Validate(PacElement pac, PrincipalName sname)
+        public void Validate(PrivilegedAttributeCertificate pac, KrbPrincipalName sname)
         {
-            pac.Certificate.ServerSignature.Validate(keytab, sname);
+            pac.ServerSignature.Validate(keytab, sname);
         }
 
         protected virtual async Task Validate(DecryptedKrbApReq decryptedToken)
         {
-            var sequence = ObscureSequence(decryptedToken.Authenticator.SequenceNumber);
+            var sequence = ObscureSequence(decryptedToken.Authenticator.SequenceNumber ?? 0);
             var container = ObscureContainer(decryptedToken.Ticket.CRealm);
 
             var entry = new TicketCacheEntry
@@ -120,29 +121,19 @@ namespace Kerberos.NET
             return Hash(realm);
         }
 
-        protected virtual string ObscureSequence(long sequenceNumber)
+        protected virtual string ObscureSequence(int sequenceNumber)
         {
             return Hash(sequenceNumber.ToString(CultureInfo.InvariantCulture));
         }
 
         private static string Hash(string value)
         {
-            using (var sha = System.Security.Cryptography.SHA256.Create())
+            using (var sha = SHA256.Create())
             {
-                return ToBase64UrlString(
+                return Hex.Hexify(
                     sha.ComputeHash(Encoding.UTF8.GetBytes(value))
                 );
             }
-        }
-
-        private static string ToBase64UrlString(byte[] input)
-        {
-            StringBuilder result = new StringBuilder(Convert.ToBase64String(input).TrimEnd('='));
-
-            result.Replace('+', '-');
-            result.Replace('/', '_');
-
-            return result.ToString();
         }
     }
 }

@@ -1,33 +1,86 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.3;net452</TargetFrameworks>
-    <DebugType>Full</DebugType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>Kerberos.NET</PackageId>
-    <!-- Assembly version stays fixed until the next major version -->
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+
     <AssemblyVersion>3.0.0.0</AssemblyVersion>
-    <!-- File version and version prefix shows the correct version -->
     <FileVersion>3.0.0</FileVersion>
+
     <VersionPrefix>3.0.0</VersionPrefix>
-    <AssemblyOriginatorKeyFile>../key.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
-    <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
+    <VersionSuffix>alpha</VersionSuffix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Kerberos.NET</PackageId>
     <Authors>Steve Syfuhs</Authors>
     <Company>Steve Syfuhs</Company>
     <Product>Kerberos.NET library</Product>
     <Description>A cross-platform, pure managed-code Kerberos Ticket parsing, validation, and authentication library that doesn’t rely on any OS components.</Description>
     <Copyright>Copyright 2019</Copyright>
-    <PackageLicenseUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageProjectUrl>
     <PackageTags>security kerberos</PackageTags>
-    <PackageReleaseNotes>Internal crypto enhancements. Added delegation parsing if ticket is present.</PackageReleaseNotes>
+    <PackageReleaseNotes></PackageReleaseNotes>
     <RepositoryUrl>https://github.com/SteveSyfuhs/Kerberos.NET</RepositoryUrl>
-    <Configurations>Debug;Release</Configurations>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
-    <PackageReference Include="System.Security.Claims" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
+  <ItemGroup>
+    <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
+    <AsnXml Include="Entities\GssApi\GssApiToken.xml" />
+    <AsnXml Include="Entities\Krb\KrbApChoice.xml" />
+    <AsnXml Include="Entities\Krb\KrbApReq.xml" />
+    <AsnXml Include="Entities\Krb\KrbApRep.xml" />
+    <AsnXml Include="Entities\Krb\KrbAsReq.xml" />
+    <AsnXml Include="Entities\Krb\KrbAuthenticator.xml" />
+    <AsnXml Include="Entities\Krb\KrbAuthenticatorApplication.xml" />
+    <AsnXml Include="Entities\Krb\KrbAuthorizationData.xml" />
+    <AsnXml Include="Entities\Krb\KrbAuthorizationDataSequence.xml" />
+    <AsnXml Include="Entities\Krb\KrbChecksum.xml" />
+    <AsnXml Include="Entities\Krb\KrbCred.xml" />
+    <AsnXml Include="Entities\Krb\KrbCredApplication.xml" />
+    <AsnXml Include="Entities\Krb\KrbCredInfo.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncKrbCredPart.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncKrbCredPartApplication.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncryptedData.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncryptionKey.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncTicketPart.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncTicketPartApplication.xml" />
+    <AsnXml Include="Entities\Krb\KrbError.xml" />
+    <AsnXml Include="Entities\Krb\KrbETypeInfo2.xml" />
+    <AsnXml Include="Entities\Krb\KrbETypeInfo2Entry.xml" />
+    <AsnXml Include="Entities\Krb\KrbETypeInfoEntry.xml" />
+    <AsnXml Include="Entities\Krb\KrbHostAddress.xml" />
+    <AsnXml Include="Entities\Krb\KrbKdcRep.xml" />
+    <AsnXml Include="Entities\Krb\KrbKdcReq.xml" />
+    <AsnXml Include="Entities\Krb\KrbKdcReqBody.xml" />
+    <AsnXml Include="Entities\Krb\KrbMethodData.xml" />
+    <AsnXml Include="Entities\Krb\KrbPaData.xml" />
+    <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
+    <AsnXml Include="Entities\Krb\KrbTicket.xml" />
+    <AsnXml Include="Entities\Krb\KrbTicketApplication.xml" />
+    <AsnXml Include="Entities\Krb\KrbTransitedEncoding.xml" />
+    <AsnXml Include="Entities\SpNego\NegotiationToken.xml" />
+    <AsnXml Include="Entities\SpNego\NegTokenInit.xml" />
+    <AsnXml Include="Entities\SpNego\NegTokenResp.xml" />
+
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Asn1\Experimental\AsnResources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AsnResources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Asn1\Experimental\AsnResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>AsnResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Import Project="Asn1\AsnXml.targets" />
 
 </Project>

@@ -3,7 +3,6 @@ using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
-using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto
 {
@@ -31,7 +30,7 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public override byte[] Decrypt(byte[] ciphertext, KerberosKey key, KeyUsage usage)
+        public override byte[] Decrypt(ReadOnlyMemory<byte> ciphertext, KerberosKey key, KeyUsage usage)
         {
             var k1 = key.GetKey(this);
 
@@ -41,19 +40,19 @@ namespace Kerberos.NET.Crypto
 
             var checksum = new byte[HashSize];
 
-            Buffer.BlockCopy(ciphertext, 0, checksum, 0, HashSize);
+            Buffer.BlockCopy(ciphertext.ToArray(), 0, checksum, 0, HashSize);
 
             var k3 = HMACMD5(k2, checksum);
 
             var ciphertextOffset = new byte[ciphertext.Length - HashSize];
 
-            Buffer.BlockCopy(ciphertext, HashSize, ciphertextOffset, 0, ciphertextOffset.Length);
+            Buffer.BlockCopy(ciphertext.ToArray(), HashSize, ciphertextOffset, 0, ciphertextOffset.Length);
 
             var plaintext = RC4.Transform(k3, ciphertextOffset);
 
             var calculatedHmac = HMACMD5(k2, plaintext);
 
-            if (!AreEqualSlow(calculatedHmac, ciphertext, calculatedHmac.Length))
+            if (!AreEqualSlow(calculatedHmac, ciphertext.ToArray(), calculatedHmac.Length))
             {
                 throw new SecurityException("Invalid Checksum");
             }

@@ -1,0 +1,37 @@
+﻿<Project>
+  <PropertyGroup>
+    <AsnXml />
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)asn.xsd">
+      <Link>Asn1\asn.xsd</Link>
+    </None>
+  </ItemGroup>
+
+  <!-- MSBuild for .NET Core doesn't support XslTransform at this time -->
+  <Target Name="CompileAsn" BeforeTargets="CoreCompile"
+    Inputs="@(AsnXml);$(MSBuildThisFileDirectory)asn.xslt"
+    Outputs="%(Identity).cs">
+
+    <MakeDir Directories="$(IntermediateOutputPath)asnxml" />
+
+    <XslTransformation
+      XslInputPath="$(MSBuildThisFileDirectory)asn.xslt"
+      XmlInputPaths="@(AsnXml)"
+      OutputPaths="@(AsnXml -> '$(IntermediateOutputPath)asnxml\%(filename).cs')" />
+
+    <Exec Condition="'$(OS)'=='Windows_NT'"
+      IgnoreExitCode="true"
+      StandardOutputImportance="Low"
+      Command="$(SystemRoot)\System32\fc.exe /a @(AsnXml -> '$(IntermediateOutputPath)asnxml\%(filename).cs') @(AsnXml -> '%(RelativeDir)%(filename).generated.cs')">
+      <Output TaskParameter="ExitCode" ItemName="_AsnXmlDiffCode" />
+    </Exec>
+
+    <Copy
+      Condition="'@(_AsnXmlDiffCode)' != '0'"
+      SourceFiles="@(AsnXml -> '$(IntermediateOutputPath)asnxml\%(filename).cs')" 
+      DestinationFiles="@(AsnXml -> '%(RelativeDir)%(filename).generated.cs')" />
+    
+    <Warning Condition="'@(_AsnXmlDiffCode)' != '0'" Text="AsnXml regenerated files, be sure to check them in: @(AsnXml -> '%(RelativeDir)%(filename).generated.cs')" />
+  </Target>
+</Project>  

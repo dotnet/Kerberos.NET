@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Entities;
 using System;
 
 namespace Kerberos.NET.Crypto
@@ -25,7 +26,7 @@ namespace Kerberos.NET.Crypto
 
         public abstract void Decrypt(KeyTable keytab);
 
-        protected virtual byte[] Decrypt(KerberosKey key, byte[] ciphertext, KeyUsage keyType)
+        protected virtual byte[] Decrypt(KerberosKey key, ReadOnlyMemory<byte> ciphertext, KeyUsage keyType)
         {
             return Transformer.Decrypt(ciphertext, key, keyType);
         }
@@ -70,15 +71,15 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        protected virtual void ValidateClientPrincipalIdentifier(PrincipalName leftName, PrincipalName rightName)
+        protected virtual void ValidateClientPrincipalIdentifier(KrbPrincipalName leftName, KrbPrincipalName rightName)
         {
             if (!leftName.Matches(rightName))
             {
                 throw new KerberosValidationException(
                     "Ticket CName " +
-                    $"({leftName.NameType}: {leftName.FullyQualifiedName})" +
+                    $"({leftName.Type}: {leftName.Type})" +
                     " does not match Authenticator CName " +
-                    $"({rightName.NameType}: {rightName.FullyQualifiedName})"
+                    $"({rightName.Type}: {rightName.Name})"
                 );
             }
         }

@@ -1,8 +1,9 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using Kerberos.NET.Entities.Authorization;
+using Kerberos.NET.Entities.Pac;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -49,41 +50,97 @@ namespace Kerberos.NET
             return ConvertTicket(data);
         }
 
-        protected virtual ClaimsIdentity ConvertTicket(DecryptedKrbApReq data)
+        protected virtual ClaimsIdentity ConvertTicket(DecryptedKrbApReq krbApReq)
         {
-            var ticket = data.Ticket;
-
             var claims = new List<Claim>();
+            var restrictions = new List<Restriction>();
 
-            foreach (var authData in ticket.AuthorizationData)
-            {
-                foreach (var authz in authData.Authorizations)
-                {
-                    if (authz.Type == AuthorizationDataValueType.AD_WIN2K_PAC)
-                    {
-                        var pac = (PacElement)authz;
+            DecodeRestrictions(krbApReq, claims, restrictions);
 
-                        if (validator.ValidateAfterDecrypt.HasFlag(ValidationActions.Pac))
-                        {
-                            ValidatePacSignature(pac, data.SName);
-                        }
-
-                        MergeAttributes(ticket, pac.Certificate, claims);
-                    }
-                }
-            }
-
-            claims.Add(new Claim("Validated", validator.ValidateAfterDecrypt.ToString().Replace(", ", " ")));
-
-            return new ClaimsIdentity(claims, "Kerberos", ClaimTypes.NameIdentifier, ClaimTypes.Role);
+            return new KerberosIdentity(
+                claims,
+                "Kerberos",
+                ClaimTypes.NameIdentifier,
+                ClaimTypes.Role,
+                restrictions,
+                validator.ValidateAfterDecrypt
+            );
         }
 
-        protected virtual void ValidatePacSignature(PacElement pac, PrincipalName name)
+        private void DecodeRestrictions(
+            DecryptedKrbApReq krbApReq,
+            List<Claim> claims,
+            List<Restriction> restrictions
+        )
+        {
+            var authz = krbApReq.Authenticator.AuthorizationData.Concat(krbApReq.Ticket.AuthorizationData);
+
+            foreach (var authData in authz)
+            {
+                if (authData.Type == AuthorizationDataType.AdIfRelevant)
+                {
+                    DecodeAdIfRelevant(krbApReq, claims, authData, restrictions);
+                }
+                else
+                {
+                    Debug.WriteLine($"Unknown authorization-data type {authData.Type}");
+                }
+            }
+        }
+
+        private void DecodeAdIfRelevant(
+            DecryptedKrbApReq krbApReq,
+            List<Claim> claims,
+            KrbAuthorizationData authData,
+            List<Restriction> restrictions
+        )
+        {
+            var adif = authData.DecodeAdIfRelevant();
+
+            foreach (var authz in adif)
+            {
+                switch (authz.Type)
+                {
+                    case AuthorizationDataType.AdWin2kPac:
+                        DecodePac(krbApReq, claims, authz);
+                        break;
+                    case AuthorizationDataType.AdETypeNegotiation:
+                        restrictions.Add(new ETypeNegotiationRestriction(authz));
+                        break;
+                    case AuthorizationDataType.KerbAuthDataTokenRestrictions:
+                        restrictions.Add(new KerbAuthDataTokenRestriction(authz));
+                        break;
+                    case AuthorizationDataType.KerbApOptions:
+                        restrictions.Add(new KerbApOptionsRestriction(authz));
+                        break;
+                    case AuthorizationDataType.KerbLocal:
+                        restrictions.Add(new KerbLocalRestriction(authz));
+                        break;
+                    case AuthorizationDataType.KerbServiceTarget:
+                        restrictions.Add(new KerbServiceTargetRestriction(authz));
+                        break;
+                }
+            }
+        }
+
+        private void DecodePac(DecryptedKrbApReq krbApReq, List<Claim> claims, KrbAuthorizationData authz)
+        {
+            var pac = new PrivilegedAttributeCertificate(authz.Data.ToArray());
+
+            if (validator.ValidateAfterDecrypt.HasFlag(ValidationActions.Pac))
+            {
+                ValidatePacSignature(pac, krbApReq.SName);
+            }
+
+            MergeAttributes(krbApReq.Ticket, pac, claims);
+        }
+
+        protected virtual void ValidatePacSignature(PrivilegedAttributeCertificate pac, KrbPrincipalName name)
         {
             validator.Validate(pac, name);
         }
 
-        private void MergeAttributes(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
+        private void MergeAttributes(KrbEncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
         {
             AddUser(ticket, pac, claims);
 
@@ -117,7 +174,7 @@ namespace Kerberos.NET
             }
         }
 
-        private void AddClaim(ClaimEntry entry, string issuer, ICollection<Claim> claims)
+        private static void AddClaim(ClaimEntry entry, string issuer, ICollection<Claim> claims)
         {
             foreach (var value in entry.GetValues<string>())
             {
@@ -155,7 +212,7 @@ namespace Kerberos.NET
             }
         }
 
-        protected virtual void AddUser(EncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
+        protected virtual void AddUser(KrbEncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
         {
             claims.Add(new Claim(ClaimTypes.Sid, pac.LogonInfo.UserSid.Value));
 
@@ -166,7 +223,7 @@ namespace Kerberos.NET
 
             if (this.UserNameFormat == UserNameFormat.UserPrincipalName)
             {
-                var names = ticket.CName.Names.Select(n => $"{n}@{ticket.CRealm.ToLowerInvariant()}");
+                var names = ticket.CName.Name.Select(n => $"{n}@{ticket.CRealm.ToLowerInvariant()}");
 
                 claims.AddRange(names.Select(n => new Claim(ClaimTypes.NameIdentifier, n)));
             }
@@ -176,23 +233,21 @@ namespace Kerberos.NET
             }
         }
 
-
-
         protected virtual void AddGroups(PrivilegedAttributeCertificate pac, ICollection<Claim> claims)
         {
-            var domainSddl = pac.LogonInfo.DomainSid.Value;
+            var domainSid = pac.LogonInfo.DomainSid.Value;
 
             foreach (var g in pac.LogonInfo.GroupSids)
             {
-                var sddl = g.Value;
+                var sid = g.Value;
 
-                claims.Add(new Claim(ClaimTypes.GroupSid, sddl));
+                claims.Add(new Claim(ClaimTypes.GroupSid, sid));
 
-                if (sddl.StartsWith(domainSddl))
+                if (sid.StartsWith(domainSid))
                 {
-                    var friendly = SecurityIdentifierNames.GetFriendlyName(sddl, domainSddl);
+                    var friendly = SecurityIdentifierNames.GetFriendlyName(sid, domainSid);
 
-                    if (!sddl.Equals(friendly, StringComparison.OrdinalIgnoreCase))
+                    if (!sid.Equals(friendly, StringComparison.OrdinalIgnoreCase))
                     {
                         claims.Add(new Claim(ClaimTypes.Role, friendly));
                     }

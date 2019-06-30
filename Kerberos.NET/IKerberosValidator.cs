@@ -10,6 +10,6 @@ namespace Kerberos.NET
 
         Task<DecryptedKrbApReq> Validate(byte[] requestBytes);
 
-        void Validate(PacElement pac, PrincipalName sname);
+        void Validate(PrivilegedAttributeCertificate pac, KrbPrincipalName sname);
     }
 }
