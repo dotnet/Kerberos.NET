@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="NegTokenInit"
+  namespace="Kerberos.NET.Asn1.Entities">
+  <!--
+   /*
+NegTokenInit ::= SEQUENCE {
+    mechTypes       [0] MechTypeList,
+    reqFlags        [1] ContextFlags  OPTIONAL,
+    mechToken       [2] OCTET STRING  OPTIONAL,
+    mechListMIC     [3] OCTET STRING  OPTIONAL,
+    ...
+}
+        */
+  -->
+
+  <asn:SequenceOf name="MechTypes" explicitTag="0">
+    <asn:ObjectIdentifier />
+  </asn:SequenceOf>
+  
+  <asn:BitString name="RequestFlags" explicitTag="1" optional="true" />
+  <asn:OctetString name="MechToken" explicitTag="2" optional="true" />
+  <asn:OctetString name="MechListMic" explicitTag="3" optional="true" />
+</asn:Sequence>

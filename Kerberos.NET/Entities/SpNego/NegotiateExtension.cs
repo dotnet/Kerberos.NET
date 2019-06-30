@@ -8,10 +8,15 @@ namespace Kerberos.NET.Entities
     {
         public NegotiateExtension(byte[] data)
         {
-            Message = new NegotiateMessage(new BinaryReader(new MemoryStream(data)));
+            Message = new NegotiateMessage(data);
         }
 
         public NegotiateMessage Message { get; }
+
+        internal static bool CanDecode(byte[] data)
+        {
+            return NegotiateMessageHeader.HasHeader(data);
+        }
     }
 
     public class NegotiateMessage
@@ -26,9 +31,9 @@ namespace Kerberos.NET.Entities
 
         public ExtensionVector Extensions { get; }
 
-        public NegotiateMessage(BinaryReader reader)
+        public NegotiateMessage(byte[] data)
         {
-            Header = new NegotiateMessageHeader(reader);
+            Header = new NegotiateMessageHeader(data, out BinaryReader reader);
 
             Random = reader.ReadBytes(32);
             ProtocolVersion = reader.ReadUInt64();
@@ -62,7 +67,9 @@ namespace Kerberos.NET.Entities
 
             for (var i = 0; i < AuthSchemeCount; i++)
             {
-                Schemes[i] = new Guid(reader.ReadBytes(16));
+                var scheme = reader.ReadBytes(16);
+
+                Schemes[i] = new Guid(scheme);
             }
 
             reader.BaseStream.Seek(offset, SeekOrigin.Begin);
@@ -126,7 +133,7 @@ namespace Kerberos.NET.Entities
 
     public class NegotiateMessageHeader
     {
-        public ulong Signature { get; }
+        public ulong Signature;
 
         public NegotiateMessageType MessageType { get; }
 
@@ -142,11 +149,23 @@ namespace Kerberos.NET.Entities
 
         private const ulong HeaderSignature = 0x535458454f47454e;
 
-        public NegotiateMessageHeader(BinaryReader reader)
+        public static bool HasHeader(byte[] data)
         {
-            Signature = reader.ReadUInt64();
+            return HasHeader(data, out _, out _);
+        }
 
-            if (Signature != HeaderSignature)
+        private static bool HasHeader(byte[] data, out BinaryReader reader, out ulong actualSignature)
+        {
+            reader = new BinaryReader(new MemoryStream(data));
+
+            actualSignature = reader.ReadUInt64();
+
+            return actualSignature == HeaderSignature;
+        }
+
+        public NegotiateMessageHeader(byte[] data, out BinaryReader reader)
+        {
+            if (!HasHeader(data, out reader, out Signature))
             {
                 throw new InvalidDataException($"Unknown Negotiate Extension Signature. Actual: 0x{Signature:X}; Expected: 0x{HeaderSignature:X}");
             }

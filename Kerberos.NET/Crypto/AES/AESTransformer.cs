@@ -1,6 +1,4 @@
-﻿using Kerberos.NET.Entities;
-using System;
-using System.Runtime.CompilerServices;
+﻿using System;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
@@ -48,15 +46,15 @@ namespace Kerberos.NET.Crypto.AES
             var Ke = DK(key, usage, KeyDerivationMode.Ke);
 
             var decrypted = AESCTS.Decrypt(
-                BlockCopy(cipher, 0, 0, cipherLength), 
-                Ke, 
+                BlockCopy(cipher, 0, 0, cipherLength),
+                Ke,
                 AllZerosInitVector
             );
 
             var actualChecksum = MakeChecksum(key, usage, KeyDerivationMode.Ki, decrypted, ChecksumSize);
 
             var expectedChecksum = BlockCopy(cipher, cipherLength, 0, ChecksumSize);
-            
+
             if (!AreEqualSlow(expectedChecksum, actualChecksum))
             {
                 throw new SecurityException("Invalid checksum");
@@ -81,7 +79,7 @@ namespace Kerberos.NET.Crypto.AES
         private static byte[] BlockCopy(ReadOnlyMemory<byte> src, int srcOffset, int dstOffset, int len)
         {
             var tmpEnc = new byte[len];
-            
+
             Buffer.BlockCopy(src.ToArray(), srcOffset, tmpEnc, dstOffset, len);
 
             return tmpEnc;

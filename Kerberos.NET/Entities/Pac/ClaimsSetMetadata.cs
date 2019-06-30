@@ -1,6 +1,5 @@
 ﻿using Kerberos.NET.Asn1;
 using Kerberos.NET.Entities.Pac;
-using System;
 using System.IO;
 
 namespace Kerberos.NET.Entities
@@ -29,7 +28,7 @@ namespace Kerberos.NET.Entities
             }
 
             var claimSet = Stream.Read(ClaimSetSize);
-            
+
             if (CompressionFormat != CompressionFormat.COMPRESSION_FORMAT_NONE)
             {
                 claimSet = Compressions.Decompress(claimSet, UncompressedClaimSetSize, CompressionFormat);

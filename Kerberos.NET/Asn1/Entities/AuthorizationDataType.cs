@@ -13,6 +13,11 @@
         OsfDce = 64,
         Sesame = 65,
         AdOsfDcePkiCertId = 66,
-        AdWin2kPac = 128
+        AdWin2kPac = 128,
+        AdETypeNegotiation = 129,
+        KerbAuthDataTokenRestrictions = 141,
+        KerbLocal = 142,
+        KerbApOptions = 143,
+        KerbServiceTarget = 144
     }
 }

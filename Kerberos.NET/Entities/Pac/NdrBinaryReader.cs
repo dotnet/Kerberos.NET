@@ -135,7 +135,7 @@ namespace Kerberos.NET.Entities.Pac
             }
 
             reader.BaseStream.Seek(unused, SeekOrigin.Current);
-            
+
             var chars = reader.ReadBytes(used);
 
             var readTo = chars.Length;

@@ -10,7 +10,7 @@ namespace Kerberos.NET.Entities.Pac
         private readonly int[] subAuthorities;
 
         private string sddl;
-        
+
         public SecurityIdentifier(IdentifierAuthority authority, int[] subs, SidAttributes attributes)
         {
             this.authority = authority;
@@ -76,7 +76,7 @@ namespace Kerberos.NET.Entities.Pac
 
             return new SecurityIdentifier(sidId.authority, subs, this.Attributes);
         }
-        
+
         private static long BytesToLong(byte[] binary, int offset, int max)
         {
             long val = 0;

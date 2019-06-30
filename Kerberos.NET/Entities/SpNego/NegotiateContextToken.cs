@@ -1,47 +1,35 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1.Entities;
+using Kerberos.NET.Crypto;
 using System;
-using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
     public sealed class NegotiateContextToken : ContextToken
     {
-        public NegotiateContextToken(Asn1Element sequence, string mechType)
-            : base(sequence)
+        private readonly NegotiationToken token;
+
+        public NegotiateContextToken(GssApiToken? gssToken = null)
         {
-            if (MechType.NTLM == mechType)
-            {
-                NegotiationToken = new NegTokenInit() { MechToken = new MechToken().DecodeNtlm(sequence) };
-            }
+            // SPNego tokens optimistically include a token of the first MechType
+            // so if mechType[0] == Ntlm process as ntlm, == kerb process as kerb, etc.
+
+            token = NegotiationToken.Decode(gssToken.Value.Field1.Value);
         }
-
-        public NegTokenInit NegotiationToken;
-
-        public NegTokenTarg? SubsequentContextToken;
 
         public override DecryptedKrbApReq DecryptApReq(KeyTable keys)
         {
-            if (NegotiationToken?.MechToken?.NtlmNegotiate != null)
+            var mechToken = token.InitialToken.Value.MechToken.Value;
+
+            var apReq = MessageParser.Parse<ContextToken>(mechToken.ToArray());
+
+            if (apReq is NegotiateContextToken)
             {
-                throw new NotSupportedException("NTLM is not supported");
+                throw new InvalidOperationException(
+                    "Negotiated ContextToken is another negotiated token. Failing to prevent stack overflow."
+                );
             }
 
-            var token = NegotiationToken?.MechToken?.InnerContextToken;
-
-            return DecryptApReq(token.Value, keys);
-        }
-
-        protected override void ParseContextSpecific(Asn1Element element)
-        {
-            switch (element.ContextSpecificTag)
-            {
-                case 0:
-                    NegotiationToken = new NegTokenInit().Decode(element[0]);
-                    break;
-                case 1:
-                    SubsequentContextToken = new NegTokenTarg().Decode(element[0]);
-                    break;
-            }
+            return apReq.DecryptApReq(keys);
         }
     }
 }

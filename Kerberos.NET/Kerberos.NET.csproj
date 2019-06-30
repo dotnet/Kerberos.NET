@@ -26,6 +26,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AsnXml Include="Asn1\Entities\ETypeList.xml" />
+    <AsnXml Include="Asn1\Entities\GssApiToken.xml" />
+    <AsnXml Include="Asn1\Entities\KrbApChoice.xml" />
     <AsnXml Include="Asn1\Entities\KrbApReq.xml" />
     <AsnXml Include="Asn1\Entities\KrbApRep.xml" />
     <AsnXml Include="Asn1\Entities\KrbAsReq.xml" />
@@ -57,6 +60,9 @@
     <AsnXml Include="Asn1\Entities\KrbTicket.xml" />
     <AsnXml Include="Asn1\Entities\KrbTicketApplication.xml" />
     <AsnXml Include="Asn1\Entities\KrbTransitedEncoding.xml" />
+    <AsnXml Include="Asn1\Entities\NegotiationToken.xml" />
+    <AsnXml Include="Asn1\Entities\NegTokenInit.xml" />
+    <AsnXml Include="Asn1\Entities\NegTokenResp.xml" />
 
   </ItemGroup>
 

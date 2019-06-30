@@ -35,9 +35,14 @@ namespace Kerberos.NET.Asn1
             return AsLong((ReadOnlyMemory<byte>)val);
         }
 
-        public static long AsLong(this ReadOnlyMemory<byte> val)
+        public static long AsLong(this ReadOnlyMemory<byte> val, bool littleEndian = false)
         {
-            var bytes = val.Span;
+            var bytes = val.Span.ToArray();
+
+            if (littleEndian)
+            {
+                Array.Reverse(bytes);
+            }
 
             long num = 0;
 

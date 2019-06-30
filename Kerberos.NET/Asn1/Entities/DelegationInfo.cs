@@ -1,7 +1,6 @@
 ﻿using Kerberos.NET.Entities;
 using System;
 using System.IO;
-using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Asn1.Entities
 {
@@ -57,7 +56,7 @@ namespace Kerberos.NET.Asn1.Entities
 
             if (delegationTicket != null && delegationTicket.Length > 0)
             {
-                DelegationTicket = Asn1.Entities.KrbCredApplication.Decode(delegationTicket, AsnEncodingRules.DER);
+                DelegationTicket = KrbCredApplication.Decode(delegationTicket);
             }
 
             if (reader.BytesAvailable() > 0)

@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using Kerberos.NET.Asn1;
 using System.Buffers.Text;
 using System.Diagnostics;
 
@@ -363,7 +362,7 @@ namespace System.Security.Cryptography.Asn1
                 {
                     // This will throw a CryptographicException if the length exceeds our bounds.
                     ReadOnlyMemory<byte> tlv = Slice(tmpReader._data, 0, bytesRead + length.Value);
-                    
+
                     // No exception? Then slice the data and continue.
                     tmpReader._data = tmpReader._data.Slice(tlv.Length);
                     totalLen += tlv.Length;

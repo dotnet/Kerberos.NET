@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Entities;
-using System.Security;
+﻿using System.Security;
 
 namespace Kerberos.NET.Crypto
 {
@@ -55,10 +54,10 @@ namespace Kerberos.NET.Crypto
         protected override bool ValidateInternal(KerberosKey key)
         {
             var actualChecksum = decryptor.MakeChecksum(
-                key.GetKey(decryptor), 
-                KeyUsage.KU_PA_FOR_USER_ENC_CKSUM, 
-                KeyDerivationMode.Kc, 
-                Pac, 
+                key.GetKey(decryptor),
+                KeyUsage.KU_PA_FOR_USER_ENC_CKSUM,
+                KeyDerivationMode.Kc,
+                Pac,
                 decryptor.ChecksumSize
             );
 
@@ -78,8 +77,8 @@ namespace Kerberos.NET.Crypto
             var crypto = CryptographyService.CreateDecryptor(EncryptionType.RC4_HMAC_NT);
 
             var actualChecksum = crypto.MakeChecksum(
-                key.GetKey(crypto), 
-                Pac, 
+                key.GetKey(crypto),
+                Pac,
                 KeyUsage.KU_PA_FOR_USER_ENC_CKSUM
             );
 

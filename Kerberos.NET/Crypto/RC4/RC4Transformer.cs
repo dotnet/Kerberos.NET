@@ -3,7 +3,6 @@ using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
-using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto
 {

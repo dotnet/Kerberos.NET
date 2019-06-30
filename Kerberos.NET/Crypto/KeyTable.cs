@@ -62,7 +62,7 @@ namespace Kerberos.NET.Crypto
         private ICollection<KeyEntry> entries;
 
         public ICollection<KeyEntry> Entries { get { return entries ?? (entries = new List<KeyEntry>()); } }
-        
+
         public KerberosKey GetKey(ChecksumType type, KrbPrincipalName sname)
         {
             EncryptionType etype;

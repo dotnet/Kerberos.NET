@@ -48,7 +48,7 @@ namespace Kerberos.NET.Entities.Pac
         {
             var key = keytab.GetKey(Type, sname);
 
-            Validator.Validate(key);  
+            Validator.Validate(key);
         }
     }
 }
