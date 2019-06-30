@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1.Entities;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 

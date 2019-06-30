@@ -23,9 +23,9 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(result.Claims.Count() > 0);
 
-            Assert.IsTrue(result.Claims.Any(c=>c.Type == "ad://ext/employeeType:88d4d68c56082042" && c.Value == "lazy"));
+            Assert.IsTrue(result.Claims.Any(c => c.Type == "ad://ext/employeeType:88d4d68c56082042" && c.Value == "lazy"));
 
-            Assert.AreEqual(2, result.Claims.Count(c=>c.Type == "ad://ext/localeID:88d4d68c6aa51687"));
+            Assert.AreEqual(2, result.Claims.Count(c => c.Type == "ad://ext/localeID:88d4d68c6aa51687"));
         }
 
         [TestMethod]

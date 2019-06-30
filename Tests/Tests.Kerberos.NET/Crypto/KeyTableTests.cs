@@ -1,11 +1,10 @@
-﻿using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Kerberos.NET;
-using Kerberos.NET.Asn1.Entities;
+﻿using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 {
@@ -105,7 +104,7 @@ namespace Tests.Kerberos.NET
         {
             var keys = new[] {
                 new KerberosKey(
-                    "password", 
+                    "password",
                     new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "REALM.COM", new[] { "host/appservice" }),
                     host: "appservice",
                     etype: EncryptionType.AES256_CTS_HMAC_SHA1_96
@@ -127,12 +126,12 @@ namespace Tests.Kerberos.NET
         public async Task TestAuthenticator_SerializedKeytab()
         {
             var key = new KerberosKey(
-                password: "P@ssw0rd!", 
+                password: "P@ssw0rd!",
                 principalName: new PrincipalName(
-                    PrincipalNameType.NT_SRV_INST, 
-                    "IDENTITYINTERVENTION.COM", 
+                    PrincipalNameType.NT_SRV_INST,
+                    "IDENTITYINTERVENTION.COM",
                     new[] { "host", "aadg.windows.net.nsatc.net" }
-                ), 
+                ),
                 etype: EncryptionType.RC4_HMAC_NT
             );
 

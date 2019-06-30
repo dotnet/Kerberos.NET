@@ -1,11 +1,7 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Asn1.Entities;
-using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Tests.Kerberos.NET
 {

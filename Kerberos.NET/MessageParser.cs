@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1.Entities;
-using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.SpNego;
 using System.Security.Cryptography.Asn1;
 

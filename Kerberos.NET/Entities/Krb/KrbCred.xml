@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbCred"
+  namespace="Kerberos.NET.Entities">
+  <!--
+
+    KRB-CRED        ::= [APPLICATION 22] SEQUENCE {
+            pvno            [0] INTEGER (5),
+            msg-type        [1] INTEGER (22),
+            tickets         [2] SEQUENCE OF Ticket,
+            enc-part        [3] EncryptedData
+    }
+
+  -->
+
+  <asn:Integer name="ProtocolVersionNumber" explicitTag="0" backingType="int" />
+  <asn:Integer name="MessageType" explicitTag="1" backingType="enum" enumType="MessageType" />
+  <asn:SequenceOf name="Tickets" explicitTag="2">
+    <asn:AsnType typeName="KrbTicketApplication" />
+  </asn:SequenceOf>
+  <asn:AsnType name="EncryptedPart" explicitTag="3" typeName="KrbEncryptedData" />
+</asn:Sequence>

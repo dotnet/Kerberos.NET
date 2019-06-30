@@ -47,6 +47,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Asn1;
 
 namespace <xsl:value-of select="@namespace" />
 {
@@ -145,6 +146,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Asn1;
 
 namespace <xsl:value-of select="@namespace" />
 {

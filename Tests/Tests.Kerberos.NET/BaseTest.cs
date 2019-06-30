@@ -125,7 +125,7 @@ namespace Tests.Kerberos.NET
         {
             var files = Directory.GetFiles($"{BasePath}{path}");
 
-            return files.ToDictionary(f => f, f=> File.ReadAllBytes(f));
+            return files.ToDictionary(f => f, f => File.ReadAllBytes(f));
         }
     }
 }

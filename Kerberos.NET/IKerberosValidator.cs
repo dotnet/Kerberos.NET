@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1.Entities;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System.Threading.Tasks;
 

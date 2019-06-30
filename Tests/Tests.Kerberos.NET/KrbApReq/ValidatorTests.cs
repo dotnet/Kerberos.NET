@@ -1,9 +1,9 @@
 ﻿using Kerberos.NET;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace Tests.Kerberos.NET
 {
