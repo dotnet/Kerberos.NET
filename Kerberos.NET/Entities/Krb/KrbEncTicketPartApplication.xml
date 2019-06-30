@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Choice
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbEncTicketPartApplication"
+  namespace="Kerberos.NET.Entities">
+  <!--
+
+    EncTicketPart   ::= [APPLICATION 3] SEQUENCE {
+            flags                   [0] TicketFlags,
+            key                     [1] EncryptionKey,
+            crealm                  [2] Realm,
+            cname                   [3] PrincipalName,
+            transited               [4] TransitedEncoding,
+            authtime                [5] KerberosTime,
+            starttime               [6] KerberosTime OPTIONAL,
+            endtime                 [7] KerberosTime,
+            renew-till              [8] KerberosTime OPTIONAL,
+            caddr                   [9] HostAddresses OPTIONAL,
+            authorization-data      [10] AuthorizationData OPTIONAL
+    }
+
+  -->
+  <asn:AsnType name="Application" explicitTag="3" tagClass="Application" typeName="KrbEncTicketPart" />
+</asn:Choice>

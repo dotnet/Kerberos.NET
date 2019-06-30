@@ -1,4 +1,4 @@
-﻿using Kerberos.NET.Asn1.Entities;
+﻿using Kerberos.NET.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;

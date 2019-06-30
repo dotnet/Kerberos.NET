@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Choice
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbTicketApplication"
+  namespace="Kerberos.NET.Entities">
+  <!--
+
+    Ticket          ::= [APPLICATION 1] SEQUENCE {
+            tkt-vno         [0] INTEGER (5),
+            realm           [1] Realm,
+            sname           [2] PrincipalName,
+            enc-part        [3] EncryptedData
+    }
+
+  -->
+  <asn:AsnType name="Application" explicitTag="1" tagClass="Application" typeName="KrbTicket" />
+</asn:Choice>

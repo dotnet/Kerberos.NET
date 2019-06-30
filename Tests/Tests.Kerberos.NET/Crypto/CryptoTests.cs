@@ -1,11 +1,10 @@
 using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Crypto;
-using System;
-using Kerberos.NET.Asn1.Entities;
 
 namespace Tests.Kerberos.NET
 {
@@ -222,11 +221,11 @@ namespace Tests.Kerberos.NET
         public void TestRfc4120Iteration1()
         {
             Rfc4120TestCase(
-                iterationCount: 1, 
-                password: "password", 
+                iterationCount: 1,
+                password: "password",
                 salt: "ATHENA.MIT.EDUraeburn",
                 principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "ATHENA.MIT.EDU", new[] { "raeburn" }),
-                aes128key: new byte[] { 0x42, 0x26, 0x3c, 0x6e, 0x89, 0xf4, 0xfc, 0x28, 0xb8, 0xdf, 0x68, 0xee, 0x09, 0x79, 0x9f, 0x15 }, 
+                aes128key: new byte[] { 0x42, 0x26, 0x3c, 0x6e, 0x89, 0xf4, 0xfc, 0x28, 0xb8, 0xdf, 0x68, 0xee, 0x09, 0x79, 0x9f, 0x15 },
                 aes256key: new byte[] { 0xfe, 0x69, 0x7b, 0x52, 0xbc, 0x0d, 0x3c, 0xe1, 0x44, 0x32, 0xba, 0x03, 0x6a, 0x92, 0xe6, 0x5b,
                                         0xbb, 0x52, 0x28, 0x09, 0x90, 0xa2, 0xfa, 0x27, 0x88, 0x39, 0x98, 0xd7, 0x2a, 0xf3, 0x01, 0x61 }
             );
@@ -261,11 +260,11 @@ namespace Tests.Kerberos.NET
         }
 
         private static void Rfc4120TestCase(
-            int iterationCount, 
-            string password, 
-            string salt, 
+            int iterationCount,
+            string password,
+            string salt,
             PrincipalName principal,
-            byte[] aes128key, 
+            byte[] aes128key,
             byte[] aes256key
         )
         {
@@ -274,11 +273,11 @@ namespace Tests.Kerberos.NET
         }
 
         private static void TestRfc4120TestCase(
-            int iterationCount, 
-            string password, 
-            string salt, 
+            int iterationCount,
+            string password,
+            string salt,
             PrincipalName principal,
-            byte[] expectedKey, 
+            byte[] expectedKey,
             EncryptionType etype
         )
         {

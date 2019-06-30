@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbETypeInfoEntry"
+  namespace="Kerberos.NET.Entities">
+  <!--
+  
+    ETYPE-INFO-ENTRY        ::= SEQUENCE {
+            etype           [0] Int32,
+            salt            [1] OCTET STRING OPTIONAL
+    }
+
+    ETYPE-INFO              ::= SEQUENCE OF ETYPE-INFO-ENTRY
+    
+    -->
+
+  <asn:Integer name="EType" explicitTag="0" backingType="enum" enumType="EncryptionType" />
+  <asn:OctetString name="SaltBytes" explicitTag="1" optional="true" />
+</asn:Sequence>

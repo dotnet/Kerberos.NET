@@ -450,7 +450,7 @@ namespace System.Security.Cryptography.Asn1
 
             if (expectedTag.TagClass != tag.TagClass || expectedTag.TagValue != tag.TagValue)
             {
-                throw new CryptographicException(SR.Resource("Cryptography_Der_Invalid_Encoding", expectedTag, tag));
+                throw new CryptographicException(SR.Resource("Cryptography_Der_Invalid_Encoding_Expected_Encoding", expectedTag, tag));
             }
         }
     }
