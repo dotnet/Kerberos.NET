@@ -93,7 +93,16 @@ namespace <xsl:value-of select="@namespace" />
         {
             return Decode(Asn1Tag.Sequence, encoded, ruleSet);
         }
-        
+
+        internal static <xsl:value-of select="@name" /> Decode(Asn1Tag expectedTag, ReadOnlyMemory&lt;byte&gt; encoded)
+        {
+            AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
+            
+            Decode(reader, expectedTag, out <xsl:value-of select="@name" /> decoded);
+            reader.ThrowIfNotEmpty();
+            return decoded;
+        }
+
         internal static <xsl:value-of select="@name" /> Decode(Asn1Tag expectedTag, ReadOnlyMemory&lt;byte&gt; encoded, AsnEncodingRules ruleSet)
         {
             AsnReader reader = new AsnReader(encoded, ruleSet);
@@ -129,15 +138,13 @@ namespace <xsl:value-of select="@namespace" />
 }
 </xsl:template>
 
-    <xsl:template match="asn:Choice">// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
-
+    <xsl:template match="asn:Choice">
 using System;<xsl:if test="asn:SequenceOf | asn:SetOf">
 using System.Collections.Generic;</xsl:if>
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
+using Kerberos.NET.Crypto;
 
 namespace <xsl:value-of select="@namespace" />
 {
@@ -170,6 +177,11 @@ namespace <xsl:value-of select="@namespace" />
             {
                 throw new CryptographicException();
             }
+        }
+        
+        public static <xsl:value-of select="@name" /> Decode(ReadOnlyMemory&lt;byte&gt; data)
+        {
+            return Decode(data, AsnEncodingRules.DER);
         }
 
         internal static <xsl:value-of select="@name" /> Decode(ReadOnlyMemory&lt;byte&gt; encoded, AsnEncodingRules ruleSet)

@@ -39,11 +39,15 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(result);
 
+            var kerbIdentity = result as KerberosIdentity;
+
+            Assert.IsNotNull(kerbIdentity);
+
             Assert.IsTrue(result.Claims.Count() > 0);
 
-            var validation = result.Claims.First(c => c.Type == "Validated");
+            Assert.IsFalse(result.Claims.Any(c => c.Type == "Validated"));
 
-            Assert.AreEqual("ClientPrincipalIdentifier Realm Replay Pac", validation.Value);
+            Assert.AreEqual(DefaultActions, kerbIdentity.ValidationMode);
         }
     }
 }

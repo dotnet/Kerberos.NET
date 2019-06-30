@@ -5,17 +5,23 @@ namespace Kerberos.NET.Entities.Pac
     public static class SecurityIdentifierNames
     {
         private const string DomainPrefix = "S-1-5-21-<domain>";
+        private const string MachinePrefix = "S-1-5-21-<machine>";
 
-        public static string GetFriendlyName(string sddl, string domainSddl)
+        public static string GetFriendlyName(string sid, string domainSid, string machineSid = null)
         {
-            var template = sddl.Replace(domainSddl, DomainPrefix);
+            var template = sid.Replace(domainSid, DomainPrefix);
+
+            if (!string.IsNullOrWhiteSpace(machineSid))
+            {
+                template = template.Replace(machineSid, MachinePrefix);
+            }
 
             if (WellKnownSids.TryGetValue(template, out string name))
             {
                 return name;
             }
 
-            return sddl;
+            return sid;
         }
 
         private static readonly Dictionary<string, string> WellKnownSids = new Dictionary<string, string>

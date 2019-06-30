@@ -39,6 +39,7 @@ namespace System.Security.Cryptography.Asn1
         /// </remarks>
         public int TagValue { get; private set; }
 
+        [DebuggerStepThrough]
         private Asn1Tag(byte controlFlags, int tagValue)
         {
             _controlFlags = (byte)(controlFlags & ControlMask);

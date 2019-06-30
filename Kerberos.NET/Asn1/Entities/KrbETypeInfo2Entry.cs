@@ -1,6 +1,4 @@
-﻿
-using Kerberos.NET.Crypto;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Kerberos.NET.Asn1.Entities
 {

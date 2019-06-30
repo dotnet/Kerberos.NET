@@ -98,7 +98,16 @@ namespace Kerberos.NET.Asn1.Entities
         {
             return Decode(Asn1Tag.Sequence, encoded, ruleSet);
         }
-        
+
+        internal static KrbEncKrbCredPart Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded)
+        {
+            AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
+            
+            Decode(reader, expectedTag, out KrbEncKrbCredPart decoded);
+            reader.ThrowIfNotEmpty();
+            return decoded;
+        }
+
         internal static KrbEncKrbCredPart Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
             AsnReader reader = new AsnReader(encoded, ruleSet);

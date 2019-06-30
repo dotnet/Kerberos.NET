@@ -1,7 +1,5 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Asn1.Entities;
+﻿using Kerberos.NET.Asn1.Entities;
 using System;
-using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Crypto
 {
@@ -33,7 +31,7 @@ namespace Kerberos.NET.Crypto
 
             var decryptedTicket = Decrypt(key, ciphertext, KeyUsage.KU_TICKET);
 
-            var ticketApp = KrbEncTicketPartApplication.Decode(decryptedTicket, AsnEncodingRules.DER);
+            var ticketApp = KrbEncTicketPartApplication.Decode(decryptedTicket);
 
             Ticket = ticketApp.Application.Value;
 
@@ -43,7 +41,7 @@ namespace Kerberos.NET.Crypto
                 KeyUsage.KU_AP_REQ_AUTHENTICATOR
             );
 
-            var authenticatorApp = KrbAuthenticatorApplication.Decode(decryptedAuthenticator, AsnEncodingRules.DER);
+            var authenticatorApp = KrbAuthenticatorApplication.Decode(decryptedAuthenticator);
 
             Authenticator = authenticatorApp.Application.Value;
 
@@ -57,7 +55,7 @@ namespace Kerberos.NET.Crypto
                     KeyUsage.KU_ENC_KRB_CRED_PART
                 );
 
-                DelegationTicket = KrbEncKrbCredPartApplication.Decode(decryptedDelegationTicket, AsnEncodingRules.DER).Application.Value;
+                DelegationTicket = KrbEncKrbCredPartApplication.Decode(decryptedDelegationTicket).Application.Value;
             }
         }
 
@@ -65,7 +63,7 @@ namespace Kerberos.NET.Crypto
 
         public override void Validate(ValidationActions validation)
         {
-            // As defined in https://tools.ietf.org/html/rfc1510 A.10 KRB_AP_REQ verification
+            // As defined in https://tools.ietf.org/html/rfc4120 KRB_AP_REQ verification
 
             if (validation.HasFlag(ValidationActions.ClientPrincipalIdentifier))
             {

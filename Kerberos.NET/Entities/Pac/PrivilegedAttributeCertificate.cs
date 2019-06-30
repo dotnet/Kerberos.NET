@@ -20,18 +20,6 @@ namespace Kerberos.NET.Entities
         DEVICE_CLAIMS = 0x0000000F
     }
 
-    public class PacElement : AuthorizationDataElement
-    {
-        public override AuthorizationDataValueType Type => AuthorizationDataValueType.AD_WIN2K_PAC;
-
-        public PacElement(byte[] pacData)
-        {
-            Certificate = new PrivilegedAttributeCertificate(pacData);
-        }
-
-        public PrivilegedAttributeCertificate Certificate { get; }
-    }
-
     public class PacCredentialInfo : NdrObject
     {
         public PacCredentialInfo(byte[] info)

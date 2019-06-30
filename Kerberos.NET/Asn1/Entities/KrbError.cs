@@ -1,8 +1,5 @@
-﻿using Kerberos.NET.Entities;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Asn1.Entities

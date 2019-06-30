@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Entities;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 
 namespace Kerberos.NET.Crypto

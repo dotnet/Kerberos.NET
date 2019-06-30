@@ -17,13 +17,13 @@ namespace Kerberos.NET.Entities
             MechType = mechType;
         }
 
-        public UnknownMechTypeException(string mechType, string message) 
+        public UnknownMechTypeException(string mechType, string message)
             : base(message)
         {
             MechType = mechType;
         }
 
-        public UnknownMechTypeException(string message, Exception innerException) 
+        public UnknownMechTypeException(string message, Exception innerException)
             : base(message, innerException)
         {
         }

@@ -1,21 +1,33 @@
-﻿using System.Linq;
+﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
-using System;
 
 namespace Kerberos.NET.Entities
 {
-    public class NtlmNegotiate
+    public class NtlmMessage
     {
         internal static readonly byte[] MessageSignature = Encoding.ASCII.GetBytes("NTLMSSP\0");
 
-        public NtlmNegotiate(BinaryReader reader)
+        public static bool CanReadNtlmMessage(byte[] ntlm)
         {
-            var sig = reader.ReadBytes(MessageSignature.Length);
+            return CanReadNtlmMessage(ntlm, out _, out _);
+        }
 
-            if (!sig.SequenceEqual(MessageSignature))
+        public static bool CanReadNtlmMessage(byte[] ntlm, out byte[] actualSignature, out BinaryReader reader)
+        {
+            reader = new BinaryReader(new MemoryStream(ntlm));
+
+            actualSignature = reader.ReadBytes(MessageSignature.Length);
+
+            return actualSignature.SequenceEqual(MessageSignature);
+        }
+
+        public NtlmMessage(byte[] ntlm)
+        {
+            if (!CanReadNtlmMessage(ntlm, out byte[] actualSignature, out BinaryReader reader))
             {
-                throw new InvalidDataException($"Unknown NTLM message signature. Actual: 0x{sig:X}; Expected: 0x{MessageSignature:X}");
+                throw new InvalidDataException($"Unknown NTLM message signature. Actual: 0x{actualSignature:X}; Expected: 0x{MessageSignature:X}");
             }
 
             MessageType = (NtlmMessageType)reader.ReadInt32();
@@ -44,6 +56,8 @@ namespace Kerberos.NET.Entities
 
                 Workstation = Encoding.ASCII.GetString(reader.ReadBytes(workstationLength));
             }
+
+            reader.Dispose();
         }
 
         public NtlmMessageType MessageType { get; }

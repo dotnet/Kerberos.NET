@@ -1,8 +1,5 @@
-﻿
-using Kerberos.NET.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Asn1.Entities
 {
@@ -15,19 +12,9 @@ namespace Kerberos.NET.Asn1.Entities
                 throw new InvalidOperationException($"Cannot decode AdIfRelevant because type is {Type}");
             }
 
-            var adIfRelevant = KrbAuthorizationDataSequence.Decode(this.Data, AsnEncodingRules.DER);
+            var adIfRelevant = KrbAuthorizationDataSequence.Decode(Data);
 
             return adIfRelevant.AuthorizationData;
-        }
-
-        public KrbAuthorizationData DecodePac()
-        {
-            if ((AuthorizationDataValueType)Type != AuthorizationDataValueType.AD_WIN2K_PAC)
-            {
-                throw new InvalidOperationException($"Cannot decode PAC because type is {Type}");
-            }
-
-            return this;
         }
     }
 }

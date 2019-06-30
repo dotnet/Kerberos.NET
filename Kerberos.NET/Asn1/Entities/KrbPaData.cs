@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Asn1.Entities

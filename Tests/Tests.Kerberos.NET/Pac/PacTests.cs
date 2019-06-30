@@ -259,8 +259,7 @@ namespace Tests.Kerberos.NET
             var pac = result.Ticket.AuthorizationData
                 .Where(d => d.Type == AuthorizationDataType.AdIfRelevant)
                 .Select(d => d.DecodeAdIfRelevant()
-                    .Where(a => a.Type == (AuthorizationDataType)AuthorizationDataValueType.AD_WIN2K_PAC)
-                    .Select(a => a.DecodePac())
+                    .Where(a => a.Type == AuthorizationDataType.AdWin2kPac)
                 ).First();
 
             return new PrivilegedAttributeCertificate(pac.First().Data.ToArray());

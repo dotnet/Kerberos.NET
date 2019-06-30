@@ -1,11 +1,11 @@
-using System;
-using Kerberos.NET.Crypto;
-using System.Globalization;
-using System.Threading.Tasks;
-using System.Text;
-using Kerberos.NET.Entities;
-using System.Security.Cryptography;
 using Kerberos.NET.Asn1.Entities;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using System;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Kerberos.NET
 {
@@ -75,9 +75,9 @@ namespace Kerberos.NET
             return decryptedToken;
         }
 
-        public void Validate(PacElement pac, KrbPrincipalName sname)
+        public void Validate(PrivilegedAttributeCertificate pac, KrbPrincipalName sname)
         {
-            pac.Certificate.ServerSignature.Validate(keytab, sname);
+            pac.ServerSignature.Validate(keytab, sname);
         }
 
         protected virtual async Task Validate(DecryptedKrbApReq decryptedToken)
