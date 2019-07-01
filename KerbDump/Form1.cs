@@ -2,22 +2,22 @@
 using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IdentityModel.Selectors;
-using System.IdentityModel.Tokens;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+
+#pragma warning disable IDE1006 // Naming Styles
 
 namespace KerbDump
 {
@@ -129,8 +129,8 @@ namespace KerbDump
 
                         key = new KeyTable(
                             new KerberosKey(
-                                password: bytes, 
-                                principal: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }), 
+                                password: bytes,
+                                principal: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
                                 host: txtHost.Text
                             )
                         );
@@ -139,8 +139,8 @@ namespace KerbDump
                     {
                         key = new KeyTable(
                             new KerberosKey(
-                                txtKey.Text, 
-                                principalName: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }), 
+                                txtKey.Text,
+                                principalName: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
                                 host: string.IsNullOrWhiteSpace(txtHost.Text) ? null : txtHost.Text
                             )
                         );
@@ -220,6 +220,8 @@ namespace KerbDump
 
         private async Task<string> Decode(string ticket, KeyTable key)
         {
+            ticket = StripWhitespace(ticket);
+
             var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.Pac };
 
             validator.Logger.Enabled = false;
@@ -228,19 +230,30 @@ namespace KerbDump
 
             var decrypted = await validator.Validate(ticketBytes);
 
-            var request = KerberosRequest.Parse(ticketBytes);
+            var request = MessageParser.Parse(ticketBytes);
 
             var keytableFormat = GenerateFormattedKeyTable(key);
 
-            var authenticated = await new KerberosAuthenticator(validator).Authenticate(ticketBytes);
+            var authenticated = await new KerberosAuthenticator(validator).Authenticate(ticketBytes) as KerberosIdentity;
 
             return FormatSerialize(new
             {
                 Request = request,
                 Decrypted = decrypted,
-                Identity = authenticated.Claims.Select(c => new { c.Type, c.Value }),
+                Identity = new
+                {
+                    authenticated.Name,
+                    authenticated.Restrictions,
+                    authenticated.ValidationMode,
+                    Claims = authenticated.Claims.Select(c => new { c.Type, c.Value })
+                },
                 KeyTable = keytableFormat
             });
+        }
+
+        private static string StripWhitespace(string ticket)
+        {
+            return ticket.Replace("\r", "").Replace("\n", "").Replace("\t", "").Replace(" ", "");
         }
 
         private object GenerateFormattedKeyTable(KeyTable keytab)
@@ -257,7 +270,7 @@ namespace KerbDump
                         k.Key.GetKey(
                             CryptographyService.CreateDecryptor(EncryptionType.NULL)
                         )
-                    ), 
+                    ),
                     k.Principal
                 );
 
@@ -323,9 +336,11 @@ namespace KerbDump
 
         private string Decode(string ticket)
         {
+            ticket = StripWhitespace(ticket);
+
             var ticketBytes = Convert.FromBase64String(ticket);
 
-            KerberosRequest request = KerberosRequest.Parse(ticketBytes);
+            var request = MessageParser.Parse(ticketBytes);
 
             var keytab = GenerateFormattedKeyTable(table);
 
@@ -385,14 +400,11 @@ namespace KerbDump
                 txtHost.Text = hostName;
             }
 
-            var tokenProvider = new KerberosSecurityTokenProvider(
-                hostName,
-                TokenImpersonationLevel.Identification
-            );
+            SspiContext context = new SspiContext(spn: hostName);
 
-            var securityToken = tokenProvider.GetToken(TimeSpan.FromMinutes(1)) as KerberosRequestorSecurityToken;
+            byte[] tokenBytes = context.RequestToken();
 
-            txtTicket.Text = Convert.ToBase64String(securityToken.GetRequest());
+            txtTicket.Text = Convert.ToBase64String(tokenBytes);
         }
 
         private void CreateTreeView(string json, string label)
@@ -501,13 +513,14 @@ namespace KerbDump
 
         private void btnLoadKeytab_Click(object sender, EventArgs e)
         {
-            var dialog = new OpenFileDialog();
-
-            var result = dialog.ShowDialog(this);
-
-            if (result == DialogResult.OK)
+            using (var dialog = new OpenFileDialog())
             {
-                LoadKeytab(dialog.FileName);
+                var result = dialog.ShowDialog(this);
+
+                if (result == DialogResult.OK)
+                {
+                    LoadKeytab(dialog.FileName);
+                }
             }
         }
 
@@ -569,17 +582,19 @@ namespace KerbDump
 
         private void btnExport_Click(object sender, EventArgs e)
         {
-            var dialog = new SaveFileDialog();
-
-            dialog.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
-            dialog.FilterIndex = 2;
-            dialog.RestoreDirectory = true;
-
-            if (dialog.ShowDialog() == DialogResult.OK)
+            using (var dialog = new SaveFileDialog
             {
-                using (var stream = dialog.OpenFile())
+                Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*",
+                FilterIndex = 2,
+                RestoreDirectory = true
+            })
+            {
+                if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    ExportFile(stream);
+                    using (var stream = dialog.OpenFile())
+                    {
+                        ExportFile(stream);
+                    }
                 }
             }
         }
@@ -598,10 +613,11 @@ namespace KerbDump
             header.AppendLine("Connection: close");
             header.AppendLine();
 
-            var writer = new StreamWriter(stream);
-
-            writer.Write(HexDump(Encoding.ASCII.GetBytes(header.ToString())));
-            writer.Flush();
+            using (var writer = new StreamWriter(stream))
+            {
+                writer.Write(HexDump(Encoding.ASCII.GetBytes(header.ToString())));
+                writer.Flush();
+            }
         }
 
         public static string HexDump(byte[] bytes, int bytesPerLine = 16)
@@ -717,10 +733,8 @@ namespace KerbDump
 
         public string GetSecret(out byte[] data)
         {
-            var privateData = IntPtr.Zero;
-
             var winErrorCode = LsaNtStatusToWinError(
-                LsaRetrievePrivateData(lsaPolicyHandle, ref secretName, out privateData)
+                LsaRetrievePrivateData(lsaPolicyHandle, ref secretName, out IntPtr privateData)
             );
 
             if (winErrorCode != 0)
