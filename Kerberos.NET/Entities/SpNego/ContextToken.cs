@@ -12,7 +12,8 @@ namespace Kerberos.NET.Entities
                 { MechType.SPNEGO, e => new NegotiateContextToken(e) },
                 { MechType.NEGOEX, e => new NegotiateContextToken(e) },
                 { MechType.KerberosV5, e => new KerberosContextToken(e) },
-                { MechType.KerberosV5Legacy, e => new KerberosContextToken(e) }
+                { MechType.KerberosV5Legacy, e => new KerberosContextToken(e) },
+                { MechType.KerberosUser2User, e => new KerberosUser2UserContextToken(e) }
             };
 
         public abstract DecryptedKrbApReq DecryptApReq(KeyTable keys);
