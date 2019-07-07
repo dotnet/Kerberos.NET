@@ -54,10 +54,10 @@ namespace Kerberos.NET.Crypto
         protected override bool ValidateInternal(KerberosKey key)
         {
             var actualChecksum = decryptor.MakeChecksum(
+                Pac,
                 key.GetKey(decryptor),
                 KeyUsage.KU_PA_FOR_USER_ENC_CKSUM,
                 KeyDerivationMode.Kc,
-                Pac,
                 decryptor.ChecksumSize
             );
 

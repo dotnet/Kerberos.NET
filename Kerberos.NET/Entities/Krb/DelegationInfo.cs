@@ -25,9 +25,9 @@ namespace Kerberos.NET.Entities
     {
         public const int GSS_C_AF_NETBIOS = 0x14;
 
-        public DelegationInfo Decode(byte[] value)
+        public DelegationInfo Decode(ReadOnlyMemory<byte> value)
         {
-            var reader = new BinaryReader(new MemoryStream(value));
+            var reader = new BinaryReader(new MemoryStream(value.ToArray()));
 
             Length = reader.ReadInt32();
 

@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.SpNego;
+using System;
 using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET
@@ -36,27 +37,27 @@ namespace Kerberos.NET
         // }
         //
 
-        public static ContextToken ParseContext(byte[] data)
+        public static ContextToken ParseContext(ReadOnlyMemory<byte> data)
         {
             return Parse<ContextToken>(data);
         }
 
-        public static NegotiateContextToken ParseNegotiate(byte[] data)
+        public static NegotiateContextToken ParseNegotiate(ReadOnlyMemory<byte> data)
         {
             return Parse<NegotiateContextToken>(data);
         }
 
-        public static KerberosContextToken ParseKerberos(byte[] data)
+        public static KerberosContextToken ParseKerberos(ReadOnlyMemory<byte> data)
         {
             return Parse<KerberosContextToken>(data);
         }
 
-        public static T Parse<T>(byte[] data)
+        public static T Parse<T>(ReadOnlyMemory<byte> data)
         {
             return (T)Parse(data);
         }
 
-        public static object Parse(byte[] data)
+        public static object Parse(ReadOnlyMemory<byte> data)
         {
             if (ParsedNonGssApiToken(data, out ContextToken token))
             {
@@ -68,7 +69,7 @@ namespace Kerberos.NET
             return ContextToken.Parse(gss);
         }
 
-        private static bool ParsedNonGssApiToken(byte[] data, out ContextToken token)
+        private static bool ParsedNonGssApiToken(ReadOnlyMemory<byte> data, out ContextToken token)
         {
             //
             // A caller may try and pass a token that isn't wrapped by GSS-API semantics

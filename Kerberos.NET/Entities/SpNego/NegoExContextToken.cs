@@ -5,7 +5,7 @@ namespace Kerberos.NET.Entities.SpNego
 {
     public class NegoExContextToken : ContextToken
     {
-        public NegoExContextToken(byte[] data)
+        public NegoExContextToken(ReadOnlyMemory<byte> data)
         {
             Token = new NegotiateExtension(data);
         }

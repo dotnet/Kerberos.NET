@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kerberos.NET.Asn1;
+using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
@@ -25,18 +26,18 @@ namespace Kerberos.NET.Crypto
 
         public abstract byte[] Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage);
 
-        public abstract ReadOnlyMemory<byte> Encrypt(ReadOnlySpan<byte> data, KerberosKey key, KeyUsage usage);
+        public abstract ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage);
 
-        public virtual ReadOnlySpan<byte> GenerateRandomBytes(int size)
+        public virtual ReadOnlyMemory<byte> GenerateRandomBytes(int size)
         {
-            var bytes = new Span<byte>(new byte[size]);
+            var span = new Span<byte>(new byte[size]);
 
-            RandomNumberGenerator.Fill(bytes);
+            RandomNumberGenerator.Fill(span);
 
-            return bytes;
+            return span.AsMemory();
         }
 
-        public virtual byte[] MakeChecksum(byte[] key, KeyUsage usage, KeyDerivationMode kdf, byte[] data, int hashSize)
+        public virtual byte[] MakeChecksum(byte[] data, byte[] key, KeyUsage usage, KeyDerivationMode kdf, int hashSize)
         {
             throw new NotImplementedException();
         }

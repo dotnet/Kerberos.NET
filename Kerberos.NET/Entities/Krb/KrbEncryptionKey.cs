@@ -6,7 +6,7 @@ namespace Kerberos.NET.Entities
     {
         public KerberosKey AsKey()
         {
-            return new KerberosKey(this.KeyValue.ToArray(), etype: this.EType);
+            return new KerberosKey(this);
         }
     }
 }

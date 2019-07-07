@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
+using System;
 using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
@@ -15,17 +17,46 @@ namespace Kerberos.NET.Entities
 
         public ReadOnlyMemory<byte> EncodeAsApplication()
         {
-            var writer = new AsnWriter(AsnEncodingRules.DER);
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
+            {
+                writer.PushSequence(ApplicationTag);
 
-            writer.PushSequence(ApplicationTag);
+                this.Encode(writer);
 
-            this.Encode(writer);
+                writer.PopSequence(ApplicationTag);
 
-            writer.PopSequence(ApplicationTag);
+                var span = writer.EncodeAsSpan();
 
-            var span = writer.EncodeAsSpan();
+                return span.AsMemory();
+            }
+        }
 
-            return new ReadOnlyMemory<byte>(span.ToArray());
+        public static KrbApReq CreateAsReq(KrbKdcRep tgsRep, KerberosKey authenticatorKey)
+        {
+            var ticket = tgsRep.Ticket;
+
+            var authenticator = new KrbAuthenticator
+            {
+                CName = tgsRep.CName,
+                CTime = DateTimeOffset.UtcNow,
+                Cusec = 0,
+                Realm = ticket.Application.Realm,
+                SequenceNumber = KerberosConstants.GetNonce(),
+                Subkey = null,
+                AuthenticatorVersionNumber = 5
+            };
+
+            var apReq = new KrbApReq
+            {
+                Ticket = ticket,
+                Authenticator = KrbEncryptedData.Encrypt(
+                    authenticator.EncodeAsApplication(),
+                    authenticatorKey,
+                    KeyUsage.KU_AP_REQ_AUTHENTICATOR
+                )
+            };
+
+            return apReq;
         }
     }
 }

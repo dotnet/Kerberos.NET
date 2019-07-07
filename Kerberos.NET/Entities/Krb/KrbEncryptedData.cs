@@ -14,16 +14,16 @@ namespace Kerberos.NET.Entities
             return func(decrypted);
         }
 
-        public static KrbEncryptedData Encrypt(ReadOnlySpan<byte> data, KerberosKey key, EncryptionType etype, KeyUsage usage)
+        public static KrbEncryptedData Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)
         {
-            var crypto = CryptographyService.CreateTransform(etype);
+            var crypto = CryptographyService.CreateTransform(key.EncryptionType);
 
             ReadOnlyMemory<byte> cipher = crypto.Encrypt(data, key, usage);
 
             return new KrbEncryptedData
             {
                 Cipher = cipher,
-                EType = etype,
+                EType = key.EncryptionType,
                 KeyVersionNumber = key.Version
             };
         }

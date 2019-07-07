@@ -49,8 +49,6 @@ namespace Kerberos.NET.Client
             transport = new KerberosTransportSelector(transports);
         }
 
-
-
         private KrbKdcRep tgt;
         private KrbEncryptionKey tgtSessionKey;
 
@@ -64,7 +62,7 @@ namespace Kerberos.NET.Client
             {
                 try
                 {
-                    await RequestTicket(credential, options);
+                    await RequestTgt(credential, options);
 
                     return AuthenticationResult.Accepted;
                 }
@@ -83,18 +81,18 @@ namespace Kerberos.NET.Client
             while (true);
         }
 
-        public async Task<KrbApReq> GetTicket(string spn)
+        public async Task<KrbApReq> GetServiceTicket(string spn)
         {
-            KrbTgsReq tgs = KrbTgsReq.CreateTgsReq(spn, tgtSessionKey, tgt);
-
-            var tgtTicket = tgt.Ticket.Application;
+            var tgs = KrbTgsReq.CreateTgsReq(spn, tgtSessionKey, tgt);
 
             var choice = await transport.SendMessage<KrbTgsRep>(
-                tgtTicket.Realm,
+                tgs.TgsReq.Body.Realm,
                 tgs.EncodeAsApplication()
             );
 
-            var encKdcRepPart = choice.Response?.EncPart.Decrypt(
+            var tgsRep = choice.Response;
+
+            var encKdcRepPart = tgsRep.EncPart.Decrypt(
                 d => KrbEncTgsRepPart.Decode(d),
                 tgtSessionKey.AsKey(),
                 KeyUsage.KU_ENC_TGS_REP_PART_SUBKEY
@@ -102,34 +100,10 @@ namespace Kerberos.NET.Client
 
             var authenticatorKey = encKdcRepPart.EncTgsRepPart.Key.AsKey();
 
-            var ticket = choice.Response.Ticket;
-
-            var authenticator = new KrbAuthenticator
-            {
-                CName = choice.Response.CName,
-                CTime = DateTimeOffset.UtcNow,
-                Cusec = 0,
-                Realm = ticket.Application.Realm,
-                SequenceNumber = KerberosConstants.GetNonce(),
-                Subkey = null,
-                AuthenticatorVersionNumber = 5
-            };
-
-            var apReq = new KrbApReq
-            {
-                Ticket = choice.Response.Ticket,
-                Authenticator = KrbEncryptedData.Encrypt(
-                    authenticator.EncodeAsApplication().ToArray(),
-                    authenticatorKey,
-                    authenticatorKey.EncryptionType,
-                    KeyUsage.KU_AP_REQ_AUTHENTICATOR
-                )
-            };
-
-            return apReq;
+            return KrbApReq.CreateAsReq(tgsRep, authenticatorKey);
         }
 
-        private async Task RequestTicket(KerberosCredential credential, AuthenticationOptions options)
+        private async Task RequestTgt(KerberosCredential credential, AuthenticationOptions options)
         {
             var asReq = KrbAsReq.CreateAsReq(options, credential);
 

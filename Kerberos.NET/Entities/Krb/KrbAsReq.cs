@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Client;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using System;
@@ -28,7 +29,7 @@ namespace Kerberos.NET.Entities
 
             var span = writer.EncodeAsSpan();
 
-            return new ReadOnlyMemory<byte>(span.ToArray());
+            return span.AsMemory();
         }
 
         public DateTimeOffset DecryptTimestamp(KerberosKey key)
@@ -89,19 +90,18 @@ namespace Kerberos.NET.Entities
                     PaUSec = (int)usec
                 };
 
-                var tsEncoded = ts.Encode();
+                var tsEncoded = ts.Encode().AsMemory();
 
                 KrbEncryptedData encData = KrbEncryptedData.Encrypt(
                     tsEncoded,
                     credential.CreateKey(),
-                    EncryptionType.AES256_CTS_HMAC_SHA1_96,
                     KeyUsage.KU_PA_ENC_TS
                 );
 
                 padata.Add(new KrbPaData
                 {
                     Type = PaDataType.PA_ENC_TIMESTAMP,
-                    Value = new ReadOnlyMemory<byte>(encData.Encode().ToArray())
+                    Value = encData.Encode().AsMemory()
                 });
             }
 

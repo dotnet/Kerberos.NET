@@ -1,4 +1,4 @@
-﻿using Kerberos.NET.Logging;
+﻿using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -140,7 +140,6 @@ namespace Kerberos.NET.Dns
     internal unsafe static class DnsQueryWin32
     {
         private const string DNSAPI = "dnsapi.dll";
-        private const int ERR_DNS_RECORD_NOT_FOUND = 9003;
 
         [DllImport(DNSAPI, EntryPoint = "DnsQuery_W", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern int DnsQuery(
@@ -159,6 +158,11 @@ namespace Kerberos.NET.Dns
 
         public static bool Debug { get; set; }
 
+        private static readonly HashSet<int> IgnoredErrors = new HashSet<int>() {
+            9002, // server not found
+            9003, // record not found
+        };
+
         public static IEnumerable<DnsRecord> QuerySrvRecord(string query, DnsQueryOptions options = DefaultOptions)
         {
             var error = DnsQuery(
@@ -170,18 +174,20 @@ namespace Kerberos.NET.Dns
                 IntPtr.Zero
             );
 
-            if (Debug)
+            if (Debug && ppQueryResults != IntPtr.Zero)
             {
-                // var size = IntPtr.Size + 2 + 2 + 2 + 4 + 4 + 4;
+                // IntPtr.Size + 2 + 2 + 2 + 4 + 4 + 4;
 
-                System.Diagnostics.Debug.WriteLine(ppQueryResults.DumpHex((uint)Marshal.SizeOf<Win32DnsRecord>()));
+                var dump = ppQueryResults.DumpHex((uint)Marshal.SizeOf<Win32DnsRecord>());
+
+                System.Diagnostics.Debug.WriteLine(dump);
             }
 
             var records = new List<DnsRecord>();
 
             try
             {
-                if (error == ERR_DNS_RECORD_NOT_FOUND)
+                if (IgnoredErrors.Contains(error))
                 {
                     return records;
                 }
@@ -249,11 +255,12 @@ namespace Kerberos.NET.Dns
             DnsFreeParsedMessageFields
         }
 
-        [DebuggerDisplay("{wType} {wDataLength}")]
+        [DebuggerDisplay("{wType} {pName} {wDataLength}")]
         [StructLayout(LayoutKind.Sequential)]
         private struct Win32DnsRecord
         {
             public IntPtr pNext;
+            [MarshalAs(UnmanagedType.LPWStr)]
             public string pName;
             public DnsRecordType wType;
             public ushort wDataLength;
@@ -268,6 +275,7 @@ namespace Kerberos.NET.Dns
         private struct Win32ARecord
         {
             public IntPtr pNext;
+            [MarshalAs(UnmanagedType.LPWStr)]
             public string pName;
             public DnsRecordType wType;
             public ushort wDataLength;
@@ -284,6 +292,7 @@ namespace Kerberos.NET.Dns
         private struct Win32AAAARecord
         {
             public IntPtr pNext;
+            [MarshalAs(UnmanagedType.LPWStr)]
             public string pName;
             public DnsRecordType wType;
             public ushort wDataLength;
@@ -301,6 +310,7 @@ namespace Kerberos.NET.Dns
         private struct Win32SrvRecord
         {
             public IntPtr pNext;
+            [MarshalAs(UnmanagedType.LPWStr)]
             public string pName;
             public DnsRecordType wType;
             public ushort wDataLength;

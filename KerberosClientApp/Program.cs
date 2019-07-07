@@ -25,7 +25,7 @@ namespace KerberosClientApp
 
             var result = await client.Authenticate(kerbCred);
 
-            var ticket = await client.GetTicket("host/appservice.corp.identityintervention.com");
+            var ticket = await client.GetServiceTicket("host/appservice.corp.identityintervention.com");
 
             var encoded = ticket.EncodeAsApplication().ToArray();
 

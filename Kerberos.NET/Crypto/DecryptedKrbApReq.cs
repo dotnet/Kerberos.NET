@@ -36,7 +36,7 @@ namespace Kerberos.NET.Crypto
             Ticket = ticketApp.Application;
 
             var decryptedAuthenticator = Decrypt(
-                new KerberosKey(Ticket.Key.KeyValue.ToArray()),
+                Ticket.Key.AsKey(),
                 token.Authenticator.Cipher,
                 KeyUsage.KU_AP_REQ_AUTHENTICATOR
             );
@@ -52,7 +52,7 @@ namespace Kerberos.NET.Crypto
             if (delegation != null)
             {
                 var decryptedDelegationTicket = Decrypt(
-                    new KerberosKey(Ticket.Key.KeyValue.ToArray()),
+                    Ticket.Key.AsKey(),
                     delegation.EncryptedPart.Cipher,
                     KeyUsage.KU_ENC_KRB_CRED_PART
                 );
