@@ -11,6 +11,11 @@ namespace KerbDump
 
         public override int KeySize => throw new NotImplementedException();
 
+        public override ReadOnlyMemory<byte> Encrypt(ReadOnlySpan<byte> data, KerberosKey key, KeyUsage usage)
+        {
+            return new ReadOnlyMemory<byte>(data.ToArray());
+        }
+
         public override byte[] Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage)
         {
             return cipher.ToArray();

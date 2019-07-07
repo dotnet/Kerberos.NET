@@ -8,8 +8,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbEncryptedData
+    public partial class KrbEncryptedData : IAsn1Encoder
     {
         public EncryptionType EType;
         public int? KeyVersionNumber;
@@ -37,7 +36,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)EType);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (KeyVersionNumber.HasValue)
+            if (HasValue(KeyVersionNumber))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteInteger(KeyVersionNumber.Value);
@@ -68,6 +67,11 @@ namespace Kerberos.NET.Entities
             reader.ThrowIfNotEmpty();
             return decoded;
         }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
+        }
 
         internal static KrbEncryptedData Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
@@ -91,7 +95,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbEncryptedData();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
@@ -138,6 +142,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

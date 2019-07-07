@@ -32,6 +32,7 @@
     <AsnXml Include="Entities\Krb\KrbApReq.xml" />
     <AsnXml Include="Entities\Krb\KrbApRep.xml" />
     <AsnXml Include="Entities\Krb\KrbAsReq.xml" />
+    <AsnXml Include="Entities\Krb\KrbAsRep.xml" />
     <AsnXml Include="Entities\Krb\KrbAuthenticator.xml" />
     <AsnXml Include="Entities\Krb\KrbAuthenticatorApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbAuthorizationData.xml" />
@@ -44,9 +45,13 @@
     <AsnXml Include="Entities\Krb\KrbEncKrbCredPartApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbEncryptedData.xml" />
     <AsnXml Include="Entities\Krb\KrbEncryptionKey.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncAsRepPart.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncKdcRepPart.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncTgsRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncTicketPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncTicketPartApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbError.xml" />
+    <AsnXml Include="Entities\Krb\KrbErrorChoice.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2Entry.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfoEntry.xml" />
@@ -54,9 +59,15 @@
     <AsnXml Include="Entities\Krb\KrbKdcRep.xml" />
     <AsnXml Include="Entities\Krb\KrbKdcReq.xml" />
     <AsnXml Include="Entities\Krb\KrbKdcReqBody.xml" />
+    <AsnXml Include="Entities\Krb\KrbLastReq.xml" />
     <AsnXml Include="Entities\Krb\KrbMethodData.xml" />
     <AsnXml Include="Entities\Krb\KrbPaData.xml" />
+    <AsnXml Include="Entities\Krb\KrbPaEncTsEnc.xml" />
+    <AsnXml Include="Entities\Krb\KrbPaPacOptions.xml" />
+    <AsnXml Include="Entities\Krb\KrbPaPacRequest.xml" />
     <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
+    <AsnXml Include="Entities\Krb\KrbTgsReq.xml" />
+    <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
     <AsnXml Include="Entities\Krb\KrbTicket.xml" />
     <AsnXml Include="Entities\Krb\KrbTicketApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbTransitedEncoding.xml" />
@@ -67,17 +78,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Asn1\Experimental\AsnResources.Designer.cs">
+    <Compile Update="Strings.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
-      <DependentUpon>AsnResources.resx</DependentUpon>
+      <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Asn1\Experimental\AsnResources.resx">
+    <EmbeddedResource Update="Strings.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>AsnResources.Designer.cs</LastGenOutput>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

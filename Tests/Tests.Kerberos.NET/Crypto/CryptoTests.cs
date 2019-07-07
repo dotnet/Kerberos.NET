@@ -11,6 +11,63 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class CryptoTests : BaseTest
     {
+        private static KerberosKey CreateKey()
+        {
+            var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "CORP.IDENTITYINTERVENTION.COM", new[] { "testuser" });
+            var host = "";
+
+            var key = new KerberosKey("P@ssw0rd!", principalName: principalName, host: host, saltType: SaltType.ActiveDirectoryUser);
+            return key;
+        }
+
+        [TestMethod]
+        public void TestAes128Roundtrip()
+        {
+            var data = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+            var key = CreateKey();
+
+            var aesTransformer = CryptographyService.CreateTransform(EncryptionType.AES128_CTS_HMAC_SHA1_96);
+
+            var encrypted = aesTransformer.Encrypt(data, key, KeyUsage.KU_PA_ENC_TS);
+
+            var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.KU_PA_ENC_TS);
+
+            Assert.IsTrue(data.SequenceEqual(decrypted));
+        }
+
+        [TestMethod]
+        public void TestAes256Roundtrip()
+        {
+            var data = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+            var key = CreateKey();
+
+            var aesTransformer = CryptographyService.CreateTransform(EncryptionType.AES256_CTS_HMAC_SHA1_96);
+
+            var encrypted = aesTransformer.Encrypt(data, key, KeyUsage.KU_PA_ENC_TS);
+
+            var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.KU_PA_ENC_TS);
+
+            Assert.IsTrue(data.SequenceEqual(decrypted));
+        }
+
+        [TestMethod]
+        public void TestRC4Roundtrip()
+        {
+            var data = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+            var key = CreateKey();
+
+            var rc4Transformer = CryptographyService.CreateTransform(EncryptionType.RC4_HMAC_NT);
+
+            var encrypted = rc4Transformer.Encrypt(data, key, KeyUsage.KU_PA_ENC_TS);
+
+            var decrypted = rc4Transformer.Decrypt(encrypted, key, KeyUsage.KU_PA_ENC_TS);
+
+            Assert.IsTrue(data.SequenceEqual(decrypted));
+        }
+
         [TestMethod]
         public async Task TestRC4Kerberos()
         {

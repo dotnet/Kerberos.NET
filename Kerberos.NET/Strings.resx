@@ -183,4 +183,205 @@
   <data name="Cryptography_Der_Invalid_Encoding_Expected_Encoding" xml:space="preserve">
     <value>ASN1 corrupted data. Expected {0}; Actual: {1}</value>
   </data>
+  <data name="KRB_ERROR_KDC_ERROR_CLIENT_NOT_TRUSTED" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERROR_INVALID_SIG" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERROR_KDC_NOT_TRUSTED" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_BADOPTION" xml:space="preserve">
+    <value>KDC cannot accommodate requested option</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_BAD_PVNO" xml:space="preserve">
+    <value>Requested protocol version number not supported</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_CANNOT_POSTDATE" xml:space="preserve">
+    <value>Ticket not eligible for postdating</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_CANT_VERIFY_CERTIFICATE" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_CERTIFICATE_MISMATCH" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_CLIENT_NAME_MISMATCH" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_CLIENT_NOTYET" xml:space="preserve">
+    <value>Client not yet valid; try again later</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_CLIENT_REVOKED" xml:space="preserve">
+    <value>Clients credentials have been revoked</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_C_OLD_MAST_KVNO" xml:space="preserve">
+    <value>Client's key encrypted in old master key</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_C_PRINCIPAL_UNKNOWN" xml:space="preserve">
+    <value>Client not found in Kerberos database</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_ETYPE_NOSUPP" xml:space="preserve">
+    <value>KDC has no support for encryption type</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_INVALID_CERTIFICATE" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_KDC_NAME_MISMATCH" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_KEY_EXPIRED" xml:space="preserve">
+    <value>Password has expired; change password to reset</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_KEY_TOO_WEAK" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_MUST_USE_USER2USER" xml:space="preserve">
+    <value>Server principal valid for user2user only</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_NAME_EXP" xml:space="preserve">
+    <value>Client's entry in database has expired</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_NEVER_VALID" xml:space="preserve">
+    <value>Requested starttime is later than end time</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_NULL_KEY" xml:space="preserve">
+    <value>The client or server has a null key</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_PADATA_TYPE_NOSUPP" xml:space="preserve">
+    <value>KDC has no support for padata type</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_PATH_NOT_ACCEPTED" xml:space="preserve">
+    <value>KDC Policy rejects transited path</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_POLICY" xml:space="preserve">
+    <value>KDC policy rejects request</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_PREAUTH_FAILED" xml:space="preserve">
+    <value>Pre-authentication information was invalid</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_PREAUTH_REQUIRED" xml:space="preserve">
+    <value>Additional pre- authentication required</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_PRINCIPAL_NOT_UNIQUE" xml:space="preserve">
+    <value>Multiple principal entries in database</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_REVOCATION_STATUS_UNAVAILABLE" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_REVOCATION_STATUS_UNKNOWN" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_REVOKED_CERTIFICATE" xml:space="preserve">
+    <value>Reserved for PKINIT</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_SERVER_NOMATCH" xml:space="preserve">
+    <value>Requested server and ticket don't match</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_SERVICE_EXP" xml:space="preserve">
+    <value>Server's entry in database has expired</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_SERVICE_NOTYET" xml:space="preserve">
+    <value>Server not yet valid; try again later</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_SERVICE_REVOKED" xml:space="preserve">
+    <value>Credentials for server have been revoked</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_SUMTYPE_NOSUPP" xml:space="preserve">
+    <value>KDC has no support for checksum type</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_SVC_UNAVAILABLE" xml:space="preserve">
+    <value>A service is not available</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_S_OLD_MAST_KVNO" xml:space="preserve">
+    <value>Server's key encrypted in old master key</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_S_PRINCIPAL_UNKNOWN" xml:space="preserve">
+    <value>Server not found in Kerberos database</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_TGT_REVOKED" xml:space="preserve">
+    <value>TGT has been revoked</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_TRTYPE_NOSUPP" xml:space="preserve">
+    <value>KDC has no support for transited type</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_WRONG_REALM" xml:space="preserve">
+    <value>Reserved for future use</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_BADADDR" xml:space="preserve">
+    <value>Incorrect net address</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_BADDIRECTION" xml:space="preserve">
+    <value>Incorrect message direction</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_BADKEYVER" xml:space="preserve">
+    <value>Specified version of key is not available</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_BADMATCH" xml:space="preserve">
+    <value>Ticket and authenticator don't match</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_BADORDER" xml:space="preserve">
+    <value>Message out of order</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_BADSEQ" xml:space="preserve">
+    <value>Incorrect sequence number in message</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_BADVERSION" xml:space="preserve">
+    <value>Protocol version mismatch</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_BAD_INTEGRITY" xml:space="preserve">
+    <value>Integrity check on decrypted field failed</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_INAPP_CKSUM" xml:space="preserve">
+    <value>Inappropriate type of checksum in message</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_METHOD" xml:space="preserve">
+    <value>Alternative authentication method required</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_MODIFIED" xml:space="preserve">
+    <value>Message stream modified</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_MSG_TYPE" xml:space="preserve">
+    <value>Invalid msg type</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_MUT_FAIL" xml:space="preserve">
+    <value>Mutual authentication failed</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_NOKEY" xml:space="preserve">
+    <value>Service key not available</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_NOT_US" xml:space="preserve">
+    <value>The ticket isn't for us</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_NO_TGT" xml:space="preserve">
+    <value>No TGT available to validate USER-TO-USER</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_REPEAT" xml:space="preserve">
+    <value>Request is a replay</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_SKEW" xml:space="preserve">
+    <value>Clock skew too great</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_TKT_EXPIRED" xml:space="preserve">
+    <value>Ticket expired</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_TKT_NYV" xml:space="preserve">
+    <value>Ticket not yet valid</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_ERR_USER_TO_USER_REQUIRED" xml:space="preserve">
+    <value>Ticket must be for USER-TO-USER</value>
+  </data>
+  <data name="KRB_ERROR_KRB_AP_PATH_NOT_ACCEPTED" xml:space="preserve">
+    <value>Policy rejects transited path</value>
+  </data>
+  <data name="KRB_ERROR_KRB_ERR_FIELD_TOOLONG" xml:space="preserve">
+    <value>Field is too long for this implementation</value>
+  </data>
+  <data name="KRB_ERROR_KRB_ERR_GENERIC" xml:space="preserve">
+    <value>Generic error (description in e-text)</value>
+  </data>
+  <data name="KRB_ERROR_KRB_ERR_RESPONSE_TOO_BIG" xml:space="preserve">
+    <value>Response too big for UDP; retry with TCP</value>
+  </data>
 </root>

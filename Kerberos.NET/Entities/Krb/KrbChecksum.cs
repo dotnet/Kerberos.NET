@@ -4,7 +4,7 @@ using System;
 
 namespace Kerberos.NET.Entities
 {
-    public partial struct KrbChecksum
+    public partial class KrbChecksum
     {
         private const int ChecksumContainsDelegationType = 0x8003;
 

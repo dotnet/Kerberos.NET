@@ -8,11 +8,10 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbApChoice
+    public partial class KrbApChoice : IAsn1Encoder
     {
-        public KrbApReq? ApReq;
-        public KrbApRep? ApRep;
+        public KrbApReq ApReq;
+        public KrbApRep ApRep;
 
 #if DEBUG
         static KrbApChoice()
@@ -32,29 +31,37 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(new Asn1Tag(TagClass.Application, 15), "ApRep");
         }
 #endif
+        public ReadOnlySpan<byte> Encode()
+        {
+            var writer = new AsnWriter(AsnEncodingRules.DER);
+
+            Encode(writer);
+
+            return writer.EncodeAsSpan();
+        }
 
         internal void Encode(AsnWriter writer)
         {
             bool wroteValue = false; 
             
-            if (ApReq.HasValue)
+            if (HasValue(ApReq))
             {
                 if (wroteValue)
                     throw new CryptographicException();
                 
                 writer.PushSequence(new Asn1Tag(TagClass.Application, 14));
-                ApReq.Value.Encode(writer);
+                ApReq?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.Application, 14));
                 wroteValue = true;
             }
 
-            if (ApRep.HasValue)
+            if (HasValue(ApRep))
             {
                 if (wroteValue)
                     throw new CryptographicException();
                 
                 writer.PushSequence(new Asn1Tag(TagClass.Application, 15));
-                ApRep.Value.Encode(writer);
+                ApRep?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.Application, 15));
                 wroteValue = true;
             }
@@ -63,6 +70,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
         }
         
         public static KrbApChoice Decode(ReadOnlyMemory<byte> data)
@@ -84,7 +96,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbApChoice();
             Asn1Tag tag = reader.PeekTag();
             AsnReader explicitReader;
             
@@ -110,6 +122,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

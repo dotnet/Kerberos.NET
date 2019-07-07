@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using System;
+﻿using System;
 using System.IO;
 
 namespace Kerberos.NET.Entities

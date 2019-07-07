@@ -9,16 +9,15 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbAuthenticator
+    public partial class KrbAuthenticator : IAsn1Encoder
     {
         public int AuthenticatorVersionNumber;
         public string Realm;
         public KrbPrincipalName CName;
-        public KrbChecksum? Checksum;
+        public KrbChecksum Checksum;
         public int Cusec;
         public DateTimeOffset CTime;
-        public KrbEncryptionKey? Subkey;
+        public KrbEncryptionKey Subkey;
         public int? SequenceNumber;
         public KrbAuthorizationData[] AuthorizationData;
       
@@ -47,13 +46,13 @@ namespace Kerberos.NET.Entities
             writer.WriteCharacterString(UniversalTagNumber.GeneralString, Realm);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
-            CName.Encode(writer);
+            CName?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
 
-            if (Checksum.HasValue)
+            if (HasValue(Checksum))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
-                Checksum.Value.Encode(writer);
+                Checksum?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             }
 
@@ -64,15 +63,15 @@ namespace Kerberos.NET.Entities
             writer.WriteGeneralizedTime(CTime);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
 
-            if (Subkey.HasValue)
+            if (HasValue(Subkey))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
-                Subkey.Value.Encode(writer);
+                Subkey?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
             }
 
 
-            if (SequenceNumber.HasValue)
+            if (HasValue(SequenceNumber))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 7));
                 writer.WriteInteger(SequenceNumber.Value);
@@ -80,14 +79,14 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (AuthorizationData != null)
+            if (HasValue(AuthorizationData))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
 
                 writer.PushSequence();
                 for (int i = 0; i < AuthorizationData.Length; i++)
                 {
-                    AuthorizationData[i].Encode(writer); 
+                    AuthorizationData[i]?.Encode(writer); 
                 }
                 writer.PopSequence();
 
@@ -115,6 +114,11 @@ namespace Kerberos.NET.Entities
             reader.ThrowIfNotEmpty();
             return decoded;
         }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
+        }
 
         internal static KrbAuthenticator Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
@@ -138,7 +142,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbAuthenticator();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
@@ -242,6 +246,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

@@ -3,7 +3,7 @@
 namespace Kerberos.NET.Entities
 {
     [DebuggerDisplay("{EType} {Salt}")]
-    public partial struct KrbETypeInfo2Entry
+    public partial class KrbETypeInfo2Entry
     {
     }
 }

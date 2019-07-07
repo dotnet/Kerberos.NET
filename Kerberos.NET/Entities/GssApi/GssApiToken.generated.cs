@@ -8,8 +8,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct GssApiToken
+    public partial class GssApiToken : IAsn1Encoder
     {
         public Oid ThisMech;
         public ReadOnlyMemory<byte>? Field1;
@@ -35,13 +34,13 @@ namespace Kerberos.NET.Entities
             
             writer.WriteObjectIdentifier(ThisMech);
 
-            if (Field1.HasValue)
+            if (HasValue(Field1))
             {
                 writer.WriteEncodedValue(Field1.Value.Span);
             }
 
 
-            if (Field2.HasValue)
+            if (HasValue(Field2))
             {
                 writer.WriteEncodedValue(Field2.Value.Span);
             }
@@ -67,6 +66,11 @@ namespace Kerberos.NET.Entities
             reader.ThrowIfNotEmpty();
             return decoded;
         }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
+        }
 
         internal static GssApiToken Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
@@ -90,7 +94,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new GssApiToken();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             
             decoded.ThisMech = sequenceReader.ReadObjectIdentifier();
@@ -108,6 +112,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

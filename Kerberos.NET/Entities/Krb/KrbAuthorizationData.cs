@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Kerberos.NET.Entities
 {
-    public partial struct KrbAuthorizationData
+    public partial class KrbAuthorizationData
     {
         public IEnumerable<KrbAuthorizationData> DecodeAdIfRelevant()
         {

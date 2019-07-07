@@ -8,8 +8,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbETypeInfo2Entry
+    public partial class KrbETypeInfo2Entry : IAsn1Encoder
     {
         public EncryptionType EType;
         public string Salt;
@@ -37,7 +36,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)EType);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (Salt != null)
+            if (HasValue(Salt))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, Salt);
@@ -45,7 +44,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (S2kParams.HasValue)
+            if (HasValue(S2kParams))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 writer.WriteOctetString(S2kParams.Value.Span);
@@ -73,6 +72,11 @@ namespace Kerberos.NET.Entities
             reader.ThrowIfNotEmpty();
             return decoded;
         }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
+        }
 
         internal static KrbETypeInfo2Entry Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
@@ -96,7 +100,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbETypeInfo2Entry();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
@@ -137,6 +141,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

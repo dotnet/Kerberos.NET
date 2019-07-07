@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET
 {
-    internal sealed class MemoryTicketCache
+    internal sealed class MemoryTicketCache : ITicketCache
     {
         private readonly ILogger logger;
 
@@ -49,11 +49,11 @@ namespace Kerberos.NET
             {
                 if (ex == null)
                 {
-                    logger.WriteLine(KerberosLogSource.ReplayCache, log);
+                    logger.WriteLine(KerberosLogSource.Cache, log);
                 }
                 else
                 {
-                    logger.WriteLine(KerberosLogSource.ReplayCache, log, ex);
+                    logger.WriteLine(KerberosLogSource.Cache, log, ex);
                 }
             }
 
@@ -77,7 +77,7 @@ namespace Kerberos.NET
         {
             bool added = false;
 
-            var cacheEntry = new CacheEntry(cache, entry.Computed, null, logger);
+            var cacheEntry = new CacheEntry(cache, entry.Computed, entry.Value, logger);
 
             if (cache.TryAdd(cacheEntry.Key, cacheEntry))
             {
@@ -99,6 +99,18 @@ namespace Kerberos.NET
             var exists = cache.ContainsKey(entry.Computed);
 
             return Task.FromResult(exists);
+        }
+
+        public Task<object> Get(string v)
+        {
+            if (cache.TryGetValue(v, out CacheEntry entry))
+            {
+                var value = (CacheEntry)entry.Value;
+
+                return Task.FromResult(value.Value);
+            }
+
+            return Task.FromResult<object>(null);
         }
     }
 }

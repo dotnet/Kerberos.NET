@@ -9,8 +9,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbMethodData
+    public partial class KrbMethodData : IAsn1Encoder
     {
         public KrbPaData[] MethodData;
 
@@ -31,6 +30,14 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(Asn1Tag.Sequence, "MethodData");
         }
 #endif
+        public ReadOnlySpan<byte> Encode()
+        {
+            var writer = new AsnWriter(AsnEncodingRules.DER);
+
+            Encode(writer);
+
+            return writer.EncodeAsSpan();
+        }
 
         internal void Encode(AsnWriter writer)
         {
@@ -45,7 +52,7 @@ namespace Kerberos.NET.Entities
                 writer.PushSequence();
                 for (int i = 0; i < MethodData.Length; i++)
                 {
-                    MethodData[i].Encode(writer); 
+                    MethodData[i]?.Encode(writer); 
                 }
                 writer.PopSequence();
 
@@ -56,6 +63,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
         }
         
         public static KrbMethodData Decode(ReadOnlyMemory<byte> data)
@@ -77,7 +89,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbMethodData();
             Asn1Tag tag = reader.PeekTag();
             AsnReader collectionReader;
             
@@ -104,6 +116,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

@@ -9,8 +9,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbKdcRep
+    public partial class KrbKdcRep : IAsn1Encoder
     {
         public int ProtocolVersionNumber;
         public MessageType MessageType;
@@ -45,14 +44,14 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)MessageType);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
 
-            if (PaData != null)
+            if (HasValue(PaData))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
 
                 writer.PushSequence();
                 for (int i = 0; i < PaData.Length; i++)
                 {
-                    PaData[i].Encode(writer); 
+                    PaData[i]?.Encode(writer); 
                 }
                 writer.PopSequence();
 
@@ -63,13 +62,13 @@ namespace Kerberos.NET.Entities
             writer.WriteCharacterString(UniversalTagNumber.GeneralString, CRealm);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
-            CName.Encode(writer);
+            CName?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
-            Ticket.Encode(writer);
+            Ticket?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
-            EncPart.Encode(writer);
+            EncPart?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
             writer.PopSequence(tag);
         }
@@ -91,6 +90,11 @@ namespace Kerberos.NET.Entities
             Decode(reader, expectedTag, out KrbKdcRep decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
+        }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
         }
 
         internal static KrbKdcRep Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
@@ -115,7 +119,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbKdcRep();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
@@ -185,6 +189,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

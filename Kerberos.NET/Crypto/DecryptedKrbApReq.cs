@@ -11,9 +11,9 @@ namespace Kerberos.NET.Crypto
             this.token = token;
         }
 
-        public EncryptionType EType => token.Ticket.Application.Value.EncryptedPart.EType;
+        public EncryptionType EType => token.Ticket.Application.EncryptedPart.EType;
 
-        public KrbPrincipalName SName => token.Ticket.Application.Value.SName;
+        public KrbPrincipalName SName => token.Ticket.Application.SName;
 
         public KrbAuthenticator Authenticator { get; private set; }
 
@@ -25,7 +25,7 @@ namespace Kerberos.NET.Crypto
 
         public override void Decrypt(KeyTable keytab)
         {
-            var ciphertext = token.Ticket.Application.Value.EncryptedPart.Cipher;
+            var ciphertext = token.Ticket.Application.EncryptedPart.Cipher;
 
             var key = keytab.GetKey(EType, SName);
 
@@ -33,7 +33,7 @@ namespace Kerberos.NET.Crypto
 
             var ticketApp = KrbEncTicketPartApplication.Decode(decryptedTicket);
 
-            Ticket = ticketApp.Application.Value;
+            Ticket = ticketApp.Application;
 
             var decryptedAuthenticator = Decrypt(
                 new KerberosKey(Ticket.Key.KeyValue.ToArray()),
@@ -43,19 +43,21 @@ namespace Kerberos.NET.Crypto
 
             var authenticatorApp = KrbAuthenticatorApplication.Decode(decryptedAuthenticator);
 
-            Authenticator = authenticatorApp.Application.Value;
+            Authenticator = authenticatorApp.Application;
 
-            var delegation = Authenticator.Checksum?.DecodeDelegation()?.DelegationTicket.Application;
+            var delegationInfo = Authenticator.Checksum?.DecodeDelegation();
+
+            var delegation = delegationInfo?.DelegationTicket?.Application;
 
             if (delegation != null)
             {
                 var decryptedDelegationTicket = Decrypt(
                     new KerberosKey(Ticket.Key.KeyValue.ToArray()),
-                    delegation.Value.EncryptedPart.Cipher,
+                    delegation.EncryptedPart.Cipher,
                     KeyUsage.KU_ENC_KRB_CRED_PART
                 );
 
-                DelegationTicket = KrbEncKrbCredPartApplication.Decode(decryptedDelegationTicket).Application.Value;
+                DelegationTicket = KrbEncKrbCredPartApplication.Decode(decryptedDelegationTicket).Application;
             }
         }
 

@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbEncKdcRepPart"
+  namespace="Kerberos.NET.Entities">
+  <!--
+
+    EncKDCRepPart   ::= SEQUENCE {
+            key             [0] EncryptionKey,
+            last-req        [1] LastReq,
+            nonce           [2] UInt32,
+            key-expiration  [3] KerberosTime OPTIONAL,
+            flags           [4] TicketFlags,
+            authtime        [5] KerberosTime,
+            starttime       [6] KerberosTime OPTIONAL,
+            endtime         [7] KerberosTime,
+            renew-till      [8] KerberosTime OPTIONAL,
+            srealm          [9] Realm,
+            sname           [10] PrincipalName,
+            caddr           [11] HostAddresses OPTIONAL
+    }
+        
+  -->
+
+  <asn:AsnType explicitTag="0" name="Key" typeName="KrbEncryptionKey" />
+
+  <asn:SequenceOf name="LastReq" explicitTag="1">
+    <asn:AsnType typeName="KrbLastReq" />
+  </asn:SequenceOf>
+
+  <asn:Integer name="Nonce" explicitTag="2" backingType="int" />
+  <asn:GeneralizedTime name="KeyExpiration" explicitTag="3" optional="true" />
+  <asn:BitString explicitTag="4" name="Flags" enumType="TicketFlags" treatAsEnum="true" />
+  <asn:GeneralizedTime name="AuthTime" explicitTag="5" />
+  <asn:GeneralizedTime name="StartTime" explicitTag="6" optional="true" />
+  <asn:GeneralizedTime name="EndTime" explicitTag="7" />
+  <asn:GeneralizedTime name="RenewTill" explicitTag="8" optional="true" />
+  <asn:GeneralString explicitTag="9" name="Realm" />
+  <asn:AsnType explicitTag="10" name="SName" typeName="KrbPrincipalName" />
+  <asn:SequenceOf explicitTag="11" name="CAddr" optional="true">
+    <asn:AsnType typeName="KrbHostAddress" />
+  </asn:SequenceOf>
+  <asn:AsnType explicitTag="12" name="EncryptedPaData" typeName="KrbMethodData" optional="true" />
+</asn:Sequence>

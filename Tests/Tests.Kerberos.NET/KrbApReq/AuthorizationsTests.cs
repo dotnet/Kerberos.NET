@@ -33,9 +33,9 @@ namespace Tests.Kerberos.NET
         private static IEnumerable<T> AssertAllAreRestrictionType<T>(KerberosIdentity identity, AuthorizationDataType type, int expectedCount)
             where T : Restriction
         {
-            if (!identity.Restrictions.TryGetValue(type, out IEnumerable<Restriction> restrictions))
+            if (identity.Restrictions.TryGetValue(type, out IEnumerable<Restriction> restrictions))
             {
-                Assert.Fail();
+                Assert.IsNotNull(restrictions);
             }
 
             Assert.AreEqual(expectedCount, restrictions.Count());

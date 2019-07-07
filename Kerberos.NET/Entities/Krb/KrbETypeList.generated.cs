@@ -9,8 +9,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbETypeList
+    public partial class KrbETypeList : IAsn1Encoder
     {
         public EncryptionType[] List;
 
@@ -31,6 +30,14 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(Asn1Tag.Sequence, "List");
         }
 #endif
+        public ReadOnlySpan<byte> Encode()
+        {
+            var writer = new AsnWriter(AsnEncodingRules.DER);
+
+            Encode(writer);
+
+            return writer.EncodeAsSpan();
+        }
 
         internal void Encode(AsnWriter writer)
         {
@@ -58,6 +65,11 @@ namespace Kerberos.NET.Entities
             }
         }
         
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
+        }
+        
         public static KrbETypeList Decode(ReadOnlyMemory<byte> data)
         {
             return Decode(data, AsnEncodingRules.DER);
@@ -77,7 +89,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbETypeList();
             Asn1Tag tag = reader.PeekTag();
             AsnReader collectionReader;
             
@@ -109,6 +121,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

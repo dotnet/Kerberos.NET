@@ -8,10 +8,9 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct NegTokenResp
+    public partial class NegTokenResp : IAsn1Encoder
     {
-        public NegotiateState? State;
+        public NegotiateState State;
         public Oid SupportedMech;
         public ReadOnlyMemory<byte>? ResponseToken;
         public ReadOnlyMemory<byte>? MechListMic;
@@ -35,15 +34,15 @@ namespace Kerberos.NET.Entities
             writer.PushSequence(tag);
             
 
-            if (State.HasValue)
+            if (HasValue(State))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
-                writer.WriteEnumeratedValue(State.Value);
+                writer.WriteEnumeratedValue(State);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             }
 
 
-            if (SupportedMech != null)
+            if (HasValue(SupportedMech))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteObjectIdentifier(SupportedMech);
@@ -51,7 +50,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (ResponseToken.HasValue)
+            if (HasValue(ResponseToken))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 writer.WriteOctetString(ResponseToken.Value.Span);
@@ -59,7 +58,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (MechListMic.HasValue)
+            if (HasValue(MechListMic))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 writer.WriteOctetString(MechListMic.Value.Span);
@@ -87,6 +86,11 @@ namespace Kerberos.NET.Entities
             reader.ThrowIfNotEmpty();
             return decoded;
         }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
+        }
 
         internal static NegTokenResp Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
@@ -110,7 +114,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new NegTokenResp();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
@@ -166,6 +170,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

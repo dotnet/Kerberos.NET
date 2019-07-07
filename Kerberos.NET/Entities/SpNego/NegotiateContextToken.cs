@@ -7,19 +7,19 @@ namespace Kerberos.NET.Entities
     {
         private readonly NegotiationToken token;
 
-        public NegotiateContextToken(GssApiToken? gssToken = null)
+        public NegotiateContextToken(GssApiToken gssToken = null)
         {
             // SPNego tokens optimistically include a token of the first MechType
             // so if mechType[0] == Ntlm process as ntlm, == kerb process as kerb, etc.
 
-            token = NegotiationToken.Decode(gssToken.Value.Field1.Value);
+            token = NegotiationToken.Decode(gssToken.Field1.Value);
         }
 
         public override DecryptedKrbApReq DecryptApReq(KeyTable keys)
         {
-            var mechToken = token.InitialToken.Value.MechToken.Value;
+            var mechToken = token.InitialToken.MechToken;
 
-            var apReq = MessageParser.Parse<ContextToken>(mechToken.ToArray());
+            var apReq = MessageParser.Parse<ContextToken>(mechToken?.ToArray());
 
             if (apReq is NegotiateContextToken)
             {

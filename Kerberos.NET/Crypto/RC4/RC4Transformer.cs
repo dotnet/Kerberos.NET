@@ -30,6 +30,30 @@ namespace Kerberos.NET.Crypto
             }
         }
 
+        public override ReadOnlyMemory<byte> Encrypt(ReadOnlySpan<byte> data, KerberosKey key, KeyUsage usage)
+        {
+            var k1 = key.GetKey(this);
+
+            var salt = GetSalt((int)usage);
+
+            var k2 = HMACMD5(k1, salt);
+
+            var confounder = GenerateRandomBytes(ConfounderSize);
+
+            var plaintext = new byte[data.Length + confounder.Length];
+
+            Buffer.BlockCopy(confounder.ToArray(), 0, plaintext, 0, confounder.Length);
+            Buffer.BlockCopy(data.ToArray(), 0, plaintext, confounder.Length, data.Length);
+
+            var checksum = HMACMD5(k2, plaintext);
+
+            var k3 = HMACMD5(k2, checksum);
+
+            var ciphertext = RC4.Transform(k3, plaintext);
+
+            return new ReadOnlyMemory<byte>(checksum.Concat(ciphertext).ToArray());
+        }
+
         public override byte[] Decrypt(ReadOnlyMemory<byte> ciphertext, KerberosKey key, KeyUsage usage)
         {
             var k1 = key.GetKey(this);
@@ -50,9 +74,9 @@ namespace Kerberos.NET.Crypto
 
             var plaintext = RC4.Transform(k3, ciphertextOffset);
 
-            var calculatedHmac = HMACMD5(k2, plaintext);
+            var actualChecksum = HMACMD5(k2, plaintext);
 
-            if (!AreEqualSlow(calculatedHmac, ciphertext.ToArray(), calculatedHmac.Length))
+            if (!AreEqualSlow(checksum, ciphertext.ToArray(), actualChecksum.Length))
             {
                 throw new SecurityException("Invalid Checksum");
             }

@@ -8,10 +8,9 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbAuthenticatorApplication
+    public partial class KrbAuthenticatorApplication : IAsn1Encoder
     {
-        public KrbAuthenticator? Application;
+        public KrbAuthenticator Application;
 
 #if DEBUG
         static KrbAuthenticatorApplication()
@@ -30,18 +29,26 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(new Asn1Tag(TagClass.Application, 2), "Application");
         }
 #endif
+        public ReadOnlySpan<byte> Encode()
+        {
+            var writer = new AsnWriter(AsnEncodingRules.DER);
+
+            Encode(writer);
+
+            return writer.EncodeAsSpan();
+        }
 
         internal void Encode(AsnWriter writer)
         {
             bool wroteValue = false; 
             
-            if (Application.HasValue)
+            if (HasValue(Application))
             {
                 if (wroteValue)
                     throw new CryptographicException();
                 
                 writer.PushSequence(new Asn1Tag(TagClass.Application, 2));
-                Application.Value.Encode(writer);
+                Application?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.Application, 2));
                 wroteValue = true;
             }
@@ -50,6 +57,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
         }
         
         public static KrbAuthenticatorApplication Decode(ReadOnlyMemory<byte> data)
@@ -71,7 +83,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbAuthenticatorApplication();
             Asn1Tag tag = reader.PeekTag();
             AsnReader explicitReader;
             
@@ -88,6 +100,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

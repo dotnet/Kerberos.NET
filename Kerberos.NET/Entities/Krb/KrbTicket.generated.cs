@@ -8,8 +8,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbTicket
+    public partial class KrbTicket : IAsn1Encoder
     {
         public int TicketNumber;
         public string Realm;
@@ -41,10 +40,10 @@ namespace Kerberos.NET.Entities
             writer.WriteCharacterString(UniversalTagNumber.GeneralString, Realm);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
-            SName.Encode(writer);
+            SName?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
-            EncryptedPart.Encode(writer);
+            EncryptedPart?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             writer.PopSequence(tag);
         }
@@ -66,6 +65,11 @@ namespace Kerberos.NET.Entities
             Decode(reader, expectedTag, out KrbTicket decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
+        }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
         }
 
         internal static KrbTicket Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
@@ -90,7 +94,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbTicket();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
@@ -121,6 +125,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

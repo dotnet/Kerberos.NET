@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 
-<asn:Sequence
+<asn:Choice
   xmlns:asn="http://schemas.dot.net/asnxml/201808/"
   name="KrbAsReq"
   namespace="Kerberos.NET.Entities">
@@ -11,4 +11,4 @@
   -->
 
   <asn:AsnType name="AsReq" typeName="KrbKdcReq" />
-</asn:Sequence>
+</asn:Choice>

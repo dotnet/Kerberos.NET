@@ -28,7 +28,7 @@ namespace Kerberos.NET.Crypto
     public class HmacAes256PacValidator : AesPacValidator
     {
         public HmacAes256PacValidator(byte[] signature, byte[] pac)
-            : base(CryptographyService.CreateDecryptor(EncryptionType.AES256_CTS_HMAC_SHA1_96), signature, pac)
+            : base(CryptographyService.CreateTransform(EncryptionType.AES256_CTS_HMAC_SHA1_96), signature, pac)
         {
         }
     }
@@ -36,7 +36,7 @@ namespace Kerberos.NET.Crypto
     public class HmacAes128PacValidator : AesPacValidator
     {
         public HmacAes128PacValidator(byte[] signature, byte[] pac)
-            : base(CryptographyService.CreateDecryptor(EncryptionType.AES128_CTS_HMAC_SHA1_96), signature, pac)
+            : base(CryptographyService.CreateTransform(EncryptionType.AES128_CTS_HMAC_SHA1_96), signature, pac)
         {
         }
     }
@@ -74,7 +74,7 @@ namespace Kerberos.NET.Crypto
 
         protected override bool ValidateInternal(KerberosKey key)
         {
-            var crypto = CryptographyService.CreateDecryptor(EncryptionType.RC4_HMAC_NT);
+            var crypto = CryptographyService.CreateTransform(EncryptionType.RC4_HMAC_NT);
 
             var actualChecksum = crypto.MakeChecksum(
                 key.GetKey(crypto),

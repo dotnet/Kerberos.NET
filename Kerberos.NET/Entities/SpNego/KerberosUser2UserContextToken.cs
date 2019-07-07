@@ -1,11 +1,11 @@
-﻿using System;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
+using System;
 
 namespace Kerberos.NET.Entities
 {
     public class KerberosUser2UserContextToken : ContextToken
     {
-        public KerberosUser2UserContextToken(GssApiToken? _)
+        public KerberosUser2UserContextToken(GssApiToken _)
         {
 
         }

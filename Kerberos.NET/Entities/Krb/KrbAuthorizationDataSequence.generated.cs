@@ -9,8 +9,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbAuthorizationDataSequence
+    public partial class KrbAuthorizationDataSequence : IAsn1Encoder
     {
         public KrbAuthorizationData[] AuthorizationData;
 
@@ -31,6 +30,14 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(Asn1Tag.Sequence, "AuthorizationData");
         }
 #endif
+        public ReadOnlySpan<byte> Encode()
+        {
+            var writer = new AsnWriter(AsnEncodingRules.DER);
+
+            Encode(writer);
+
+            return writer.EncodeAsSpan();
+        }
 
         internal void Encode(AsnWriter writer)
         {
@@ -45,7 +52,7 @@ namespace Kerberos.NET.Entities
                 writer.PushSequence();
                 for (int i = 0; i < AuthorizationData.Length; i++)
                 {
-                    AuthorizationData[i].Encode(writer); 
+                    AuthorizationData[i]?.Encode(writer); 
                 }
                 writer.PopSequence();
 
@@ -56,6 +63,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
         }
         
         public static KrbAuthorizationDataSequence Decode(ReadOnlyMemory<byte> data)
@@ -77,7 +89,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbAuthorizationDataSequence();
             Asn1Tag tag = reader.PeekTag();
             AsnReader collectionReader;
             
@@ -104,6 +116,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

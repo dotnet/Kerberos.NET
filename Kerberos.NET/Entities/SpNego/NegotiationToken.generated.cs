@@ -8,11 +8,10 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct NegotiationToken
+    public partial class NegotiationToken : IAsn1Encoder
     {
-        public NegTokenInit? InitialToken;
-        public NegTokenResp? ResponseToken;
+        public NegTokenInit InitialToken;
+        public NegTokenResp ResponseToken;
 
 #if DEBUG
         static NegotiationToken()
@@ -32,29 +31,37 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(new Asn1Tag(TagClass.ContextSpecific, 1), "ResponseToken");
         }
 #endif
+        public ReadOnlySpan<byte> Encode()
+        {
+            var writer = new AsnWriter(AsnEncodingRules.DER);
+
+            Encode(writer);
+
+            return writer.EncodeAsSpan();
+        }
 
         internal void Encode(AsnWriter writer)
         {
             bool wroteValue = false; 
             
-            if (InitialToken.HasValue)
+            if (HasValue(InitialToken))
             {
                 if (wroteValue)
                     throw new CryptographicException();
                 
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
-                InitialToken.Value.Encode(writer);
+                InitialToken?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
                 wroteValue = true;
             }
 
-            if (ResponseToken.HasValue)
+            if (HasValue(ResponseToken))
             {
                 if (wroteValue)
                     throw new CryptographicException();
                 
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-                ResponseToken.Value.Encode(writer);
+                ResponseToken?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 wroteValue = true;
             }
@@ -63,6 +70,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
         }
         
         public static NegotiationToken Decode(ReadOnlyMemory<byte> data)
@@ -84,7 +96,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new NegotiationToken();
             Asn1Tag tag = reader.PeekTag();
             AsnReader explicitReader;
             
@@ -110,6 +122,11 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

@@ -85,6 +85,8 @@ namespace Kerberos.NET.Crypto
 
         public SaltType SaltFormat { get; }
 
+        public int? Version { get; set; }
+
         public byte[] GetKey(KerberosCryptoTransformer transformer = null)
         {
             if (key != null && key.Length > 0)
@@ -94,7 +96,7 @@ namespace Kerberos.NET.Crypto
 
             if (transformer == null)
             {
-                transformer = CryptographyService.CreateDecryptor(EncryptionType);
+                transformer = CryptographyService.CreateTransform(EncryptionType);
             }
 
             if (transformer == null)
