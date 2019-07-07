@@ -23,11 +23,6 @@ namespace Tests.Kerberos.NET.Messages
                 var newNum = BitOperation.AsInt(bytes.ToArray());
 
                 Assert.AreEqual(i, newNum);
-
-                if (i == 0)
-                {
-                    i++;
-                }
             }
         }
 

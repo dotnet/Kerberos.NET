@@ -39,10 +39,5 @@ namespace Kerberos.NET.Transport
 
             throw LastError ?? new KerberosTransportException("No transport could be used to send the message");
         }
-
-        internal Task SendMessage<T>(string realm, ReadOnlySpan<byte> readOnlySpan)
-        {
-            throw new NotImplementedException();
-        }
     }
 }
