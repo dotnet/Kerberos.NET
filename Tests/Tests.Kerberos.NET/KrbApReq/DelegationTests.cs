@@ -27,8 +27,8 @@ namespace Tests.Kerberos.NET
 
             var ticket = cred.TicketInfo.First();
 
-            Assert.AreEqual("Administrator", ticket.PName.Value.Name.First());
-            Assert.AreEqual("krbtgt/CORP.IDENTITYINTERVENTION.COM", ticket.SName.Value.FullyQualifiedName);
+            Assert.AreEqual("Administrator", ticket.PName.Name.First());
+            Assert.AreEqual("krbtgt/CORP.IDENTITYINTERVENTION.COM", ticket.SName.FullyQualifiedName);
 
             Assert.IsNotNull(ticket.Key);
             Assert.IsNotNull(ticket.Key.KeyValue);

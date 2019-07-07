@@ -213,7 +213,7 @@ namespace Kerberos.NET.Win32
                 {
                     pOutput = new SecBufferDesc(tokenSize);
 
-                   // ContextDebugger.WriteLine($"[SecurityContext] [ASC] Server context: {securityContext.dwLower} {securityContext.dwUpper}");
+                    // ContextDebugger.WriteLine($"[SecurityContext] [ASC] Server context: {securityContext.dwLower} {securityContext.dwUpper}");
 
                     if (!securityContext.IsSet)
                     {

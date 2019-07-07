@@ -3,15 +3,20 @@ using System;
 
 namespace Kerberos.NET.Asn1
 {
-    internal static class BitOperation
+    public static class BitOperation
     {
         public static ReadOnlySpan<byte> AsReadOnly(this Enum val)
         {
-            var bytes = new byte[4];
-
             var longVal = (object)val;
 
-            Endian.ConvertToBigEndian((int)((long)longVal), bytes, 0);
+            return AsReadOnly((long)longVal);
+        }
+
+        public static ReadOnlySpan<byte> AsReadOnly(long longVal)
+        {
+            var bytes = new byte[4];
+
+            Endian.ConvertToBigEndian((int)longVal, bytes, 0);
 
             return new ReadOnlySpan<byte>(bytes);
         }

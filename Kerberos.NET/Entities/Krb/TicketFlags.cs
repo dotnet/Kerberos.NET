@@ -23,5 +23,5 @@ namespace Kerberos.NET.Entities
 
         EncryptedPreAuthentication = 1 << 16,
         Anonymous = 1 << 15
-   }
+    }
 }

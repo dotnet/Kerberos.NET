@@ -25,7 +25,7 @@ namespace Kerberos.NET.Crypto
             CryptoAlgorithms[type] = transformerFunc;
         }
 
-        public static KerberosCryptoTransformer CreateDecryptor(EncryptionType etype)
+        public static KerberosCryptoTransformer CreateTransform(EncryptionType etype)
         {
             if (CryptoAlgorithms.TryGetValue(etype, out Func<KerberosCryptoTransformer> func) && func != null)
             {

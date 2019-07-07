@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
@@ -37,6 +38,30 @@ namespace Kerberos.NET.Crypto.AES
             );
         }
 
+        public override ReadOnlyMemory<byte> Encrypt(ReadOnlySpan<byte> data, KerberosKey kerberosKey, KeyUsage usage)
+        {
+            var key = kerberosKey.GetKey(this);
+
+            var Ke = DK(key, usage, KeyDerivationMode.Ke);
+
+            var cleartext = new Span<byte>(new byte[ConfounderSize + data.Length]);
+
+            var confounder = GenerateRandomBytes(ConfounderSize);
+
+            confounder.CopyTo(cleartext.Slice(0, ConfounderSize));
+            data.CopyTo(cleartext.Slice(ConfounderSize, data.Length));
+
+            var encrypted = AESCTS.Encrypt(
+                cleartext.ToArray(),
+                Ke,
+                AllZerosInitVector
+            );
+
+            var checksum = MakeChecksum(key, usage, KeyDerivationMode.Ki, cleartext.ToArray(), ChecksumSize);
+
+            return new ReadOnlyMemory<byte>(encrypted.Concat(checksum).ToArray());
+        }
+
         public override byte[] Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey kerberosKey, KeyUsage usage)
         {
             var key = kerberosKey.GetKey(this);
@@ -46,21 +71,21 @@ namespace Kerberos.NET.Crypto.AES
             var Ke = DK(key, usage, KeyDerivationMode.Ke);
 
             var decrypted = AESCTS.Decrypt(
-                BlockCopy(cipher, 0, 0, cipherLength),
+                BlockCopy(cipher, 0, cipherLength),
                 Ke,
                 AllZerosInitVector
             );
 
             var actualChecksum = MakeChecksum(key, usage, KeyDerivationMode.Ki, decrypted, ChecksumSize);
 
-            var expectedChecksum = BlockCopy(cipher, cipherLength, 0, ChecksumSize);
+            var expectedChecksum = BlockCopy(cipher, cipherLength, ChecksumSize);
 
             if (!AreEqualSlow(expectedChecksum, actualChecksum))
             {
                 throw new SecurityException("Invalid checksum");
             }
 
-            return BlockCopy(decrypted, ConfounderSize, 0, cipherLength - ConfounderSize);
+            return BlockCopy(decrypted, ConfounderSize, cipherLength - ConfounderSize);
         }
 
         public override byte[] MakeChecksum(byte[] key, KeyUsage usage, KeyDerivationMode kdf, byte[] data, int hashSize)
@@ -76,11 +101,11 @@ namespace Kerberos.NET.Crypto.AES
             return output;
         }
 
-        private static byte[] BlockCopy(ReadOnlyMemory<byte> src, int srcOffset, int dstOffset, int len)
+        private static byte[] BlockCopy(ReadOnlyMemory<byte> src, int srcOffset, int len)
         {
             var tmpEnc = new byte[len];
 
-            Buffer.BlockCopy(src.ToArray(), srcOffset, tmpEnc, dstOffset, len);
+            Buffer.BlockCopy(src.ToArray(), srcOffset, tmpEnc, 0, len);
 
             return tmpEnc;
         }

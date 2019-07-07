@@ -6,7 +6,7 @@ using System.Security.Cryptography.Asn1;
 namespace Kerberos.NET.Entities
 {
     [DebuggerDisplay("{Type} {Value.Length}")]
-    public partial struct KrbPaData
+    public partial class KrbPaData
     {
         public IEnumerable<KrbETypeInfo2Entry> DecodeETypeInfo2()
         {
@@ -60,5 +60,30 @@ namespace Kerberos.NET.Entities
         TD_REQ_SEQ = 108,
         PA_PAC_REQUEST = 128,
 
+        // -- So sayeth Heimdal ¯\_(ツ)_/¯
+
+        PA_FOR_USER = 129,
+        PA_FOR_X509_USER = 130,
+        PA_FOR_CHECK_DUPS = 131,
+        PA_AS_CHECKSUM = 132,
+        PA_PK_AS_09_BINDING = 132,
+        PA_CLIENT_CANONICALIZED = 133,
+        PA_FX_COOKIE = 133,
+        PA_AUTHENTICATION_SET = 134,
+        PA_AUTH_SET_SELECTED = 135,
+        PA_FX_FAST = 136,
+        PA_FX_ERROR = 137,
+        PA_ENCRYPTED_CHALLENGE = 138,
+        PA_OTP_CHALLENGE = 141,
+        PA_OTP_REQUEST = 142,
+        PA_OTP_CONFIRM = 143,
+        PA_OTP_PIN_CHANGE = 144,
+        PA_EPAK_AS_REQ = 145,
+        PA_EPAK_AS_REP = 146,
+        PA_PKINIT_KX = 147,
+        PA_PKU2U_NAME = 148,
+        PA_REQ_ENC_PA_REP = 149,
+        PA_SUPPORTED_ETYPES = 165,
+        PA_PAC_OPTIONS = 167
     }
 }

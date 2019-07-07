@@ -19,5 +19,7 @@ namespace Kerberos.NET
         public string Container { get; set; }
 
         public DateTimeOffset Expires { get; set; }
+
+        public object Value { get; set; }
     }
 }

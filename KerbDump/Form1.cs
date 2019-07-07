@@ -268,7 +268,7 @@ namespace KerbDump
                 var key = new KerberosKey(
                     Encoding.Unicode.GetString(
                         k.Key.GetKey(
-                            CryptographyService.CreateDecryptor(EncryptionType.NULL)
+                            CryptographyService.CreateTransform(EncryptionType.NULL)
                         )
                     ),
                     k.Principal

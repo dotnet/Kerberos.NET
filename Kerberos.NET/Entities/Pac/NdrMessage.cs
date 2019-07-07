@@ -1,6 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-
-namespace Kerberos.NET.Entities.Pac
+﻿namespace Kerberos.NET.Entities.Pac
 {
     public abstract class NdrMessage : NdrObject
     {

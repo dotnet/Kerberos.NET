@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Entities.Pac;
+﻿using Kerberos.NET.Entities.Pac;
 using System.Text;
 
 #pragma warning disable S2344 // Enumeration type names should not have "Flags" or "Enum" suffixes

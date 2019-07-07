@@ -8,8 +8,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbError
+    public partial class KrbError : IAsn1Encoder
     {
         public int ProtocolVersionNumer;
         public MessageType MessageType;
@@ -19,7 +18,7 @@ namespace Kerberos.NET.Entities
         public int Susc;
         public KerberosErrorCode ErrorCode;
         public string CRealm;
-        public KrbPrincipalName? CName;
+        public KrbPrincipalName CName;
         public string Realm;
         public KrbPrincipalName SName;
         public string EText;
@@ -50,7 +49,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)MessageType);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
 
-            if (CTime.HasValue)
+            if (HasValue(CTime))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 writer.WriteGeneralizedTime(CTime.Value);
@@ -58,7 +57,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (Cusec.HasValue)
+            if (HasValue(Cusec))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 writer.WriteInteger(Cusec.Value);
@@ -75,7 +74,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)ErrorCode);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
 
-            if (CRealm != null)
+            if (HasValue(CRealm))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 7));
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, CRealm);
@@ -83,10 +82,10 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (CName.HasValue)
+            if (HasValue(CName))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
-                CName.Value.Encode(writer);
+                CName?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
             }
 
@@ -94,10 +93,10 @@ namespace Kerberos.NET.Entities
             writer.WriteCharacterString(UniversalTagNumber.GeneralString, Realm);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 9));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
-            SName.Encode(writer);
+            SName?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
 
-            if (EText != null)
+            if (HasValue(EText))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 11));
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, EText);
@@ -105,7 +104,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (EData.HasValue)
+            if (HasValue(EData))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 12));
                 writer.WriteOctetString(EData.Value.Span);
@@ -133,6 +132,11 @@ namespace Kerberos.NET.Entities
             reader.ThrowIfNotEmpty();
             return decoded;
         }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
+        }
 
         internal static KrbError Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
@@ -156,7 +160,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbError();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
@@ -286,6 +290,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

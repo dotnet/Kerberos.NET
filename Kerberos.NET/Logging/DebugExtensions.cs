@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Kerberos.NET.Logging
 {
-    internal static class DebugExtensions
+    public static class DebugExtensions
     {
         public static unsafe string DumpHex(this IntPtr pThing, uint length)
         {

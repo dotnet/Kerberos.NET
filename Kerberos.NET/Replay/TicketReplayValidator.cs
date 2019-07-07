@@ -4,13 +4,10 @@ namespace Kerberos.NET
 {
     public class TicketReplayValidator : ITicketReplayValidator
     {
-        private readonly ILogger logger;
         private readonly MemoryTicketCache cache;
 
         public TicketReplayValidator(ILogger logger)
         {
-            this.logger = logger;
-
             this.cache = new MemoryTicketCache(logger);
         }
 

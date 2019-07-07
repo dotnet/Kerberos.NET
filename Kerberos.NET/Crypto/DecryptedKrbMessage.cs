@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Entities;
 using System;
 
 namespace Kerberos.NET.Crypto

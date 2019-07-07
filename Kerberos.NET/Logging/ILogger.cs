@@ -6,7 +6,8 @@ namespace Kerberos.NET
     {
         Authenticator,
         Validator,
-        ReplayCache
+        Cache,
+        Client
     }
 
     public interface ILogger

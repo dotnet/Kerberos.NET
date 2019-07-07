@@ -9,8 +9,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbKdcReq
+    public partial class KrbKdcReq : IAsn1Encoder
     {
         public int ProtocolVersionNumber;
         public MessageType MessageType;
@@ -46,13 +45,13 @@ namespace Kerberos.NET.Entities
             writer.PushSequence();
             for (int i = 0; i < PaData.Length; i++)
             {
-                PaData[i].Encode(writer); 
+                PaData[i]?.Encode(writer); 
             }
             writer.PopSequence();
 
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
-            Body.Encode(writer);
+            Body?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
             writer.PopSequence(tag);
         }
@@ -74,6 +73,11 @@ namespace Kerberos.NET.Entities
             Decode(reader, expectedTag, out KrbKdcReq decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
+        }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
         }
 
         internal static KrbKdcReq Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
@@ -98,7 +102,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbKdcReq();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
@@ -150,6 +154,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

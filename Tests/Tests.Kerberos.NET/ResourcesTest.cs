@@ -17,7 +17,7 @@ namespace Tests.Kerberos.NET
             {
                 KrbError.Decode(asReq);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Assert.IsTrue(ex.Message.Contains("Expected ContextSpecific"));
                 throw;

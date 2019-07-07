@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;

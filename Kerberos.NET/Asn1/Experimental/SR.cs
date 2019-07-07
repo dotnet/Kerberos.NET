@@ -1,4 +1,4 @@
-﻿using Kerberos.NET.Asn1.Experimental;
+﻿using Kerberos.NET;
 using System.Linq;
 
 namespace System.Security.Cryptography.Asn1
@@ -7,7 +7,7 @@ namespace System.Security.Cryptography.Asn1
     {
         public static string Resource(string name, params object[] args)
         {
-            var resource = AsnResources.ResourceManager.GetString(name);
+            var resource = Strings.ResourceManager.GetString(name);
 
             if (string.IsNullOrWhiteSpace(resource))
             {

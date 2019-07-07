@@ -9,8 +9,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct KrbEncTicketPart
+    public partial class KrbEncTicketPart : IAsn1Encoder
     {
         public TicketFlags Flags;
     
@@ -47,22 +46,22 @@ namespace Kerberos.NET.Entities
             writer.WriteBitString(Flags.AsReadOnly());
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-            Key.Encode(writer);
+            Key?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             writer.WriteCharacterString(UniversalTagNumber.GeneralString, CRealm);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
-            CName.Encode(writer);
+            CName?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
-            Transited.Encode(writer);
+            Transited?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
             writer.WriteGeneralizedTime(AuthTime);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
 
-            if (StartTime.HasValue)
+            if (HasValue(StartTime))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
                 writer.WriteGeneralizedTime(StartTime.Value);
@@ -73,7 +72,7 @@ namespace Kerberos.NET.Entities
             writer.WriteGeneralizedTime(EndTime);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 7));
 
-            if (RenewTill.HasValue)
+            if (HasValue(RenewTill))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
                 writer.WriteGeneralizedTime(RenewTill.Value);
@@ -81,14 +80,14 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (CAddr != null)
+            if (HasValue(CAddr))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 9));
 
                 writer.PushSequence();
                 for (int i = 0; i < CAddr.Length; i++)
                 {
-                    CAddr[i].Encode(writer); 
+                    CAddr[i]?.Encode(writer); 
                 }
                 writer.PopSequence();
 
@@ -96,14 +95,14 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (AuthorizationData != null)
+            if (HasValue(AuthorizationData))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
 
                 writer.PushSequence();
                 for (int i = 0; i < AuthorizationData.Length; i++)
                 {
-                    AuthorizationData[i].Encode(writer); 
+                    AuthorizationData[i]?.Encode(writer); 
                 }
                 writer.PopSequence();
 
@@ -131,6 +130,11 @@ namespace Kerberos.NET.Entities
             reader.ThrowIfNotEmpty();
             return decoded;
         }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
+        }
 
         internal static KrbEncTicketPart Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
@@ -154,7 +158,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new KrbEncTicketPart();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
@@ -267,6 +271,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

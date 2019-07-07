@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 
 namespace Kerberos.NET.Crypto
 {
@@ -12,6 +13,8 @@ namespace Kerberos.NET.Crypto
 
     public abstract class KerberosCryptoTransformer
     {
+        private static readonly RandomNumberGenerator RNG = RandomNumberGenerator.Create();
+
         public abstract int ChecksumSize { get; }
 
         public abstract int BlockSize { get; }
@@ -21,6 +24,17 @@ namespace Kerberos.NET.Crypto
         public abstract byte[] String2Key(KerberosKey key);
 
         public abstract byte[] Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage);
+
+        public abstract ReadOnlyMemory<byte> Encrypt(ReadOnlySpan<byte> data, KerberosKey key, KeyUsage usage);
+
+        public virtual ReadOnlySpan<byte> GenerateRandomBytes(int size)
+        {
+            var bytes = new Span<byte>(new byte[size]);
+
+            RandomNumberGenerator.Fill(bytes);
+
+            return bytes;
+        }
 
         public virtual byte[] MakeChecksum(byte[] key, KeyUsage usage, KeyDerivationMode kdf, byte[] data, int hashSize)
         {

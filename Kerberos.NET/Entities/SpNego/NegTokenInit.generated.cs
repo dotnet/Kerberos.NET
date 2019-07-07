@@ -9,8 +9,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public partial struct NegTokenInit
+    public partial class NegTokenInit : IAsn1Encoder
     {
         public Oid[] MechTypes;
     
@@ -47,7 +46,7 @@ namespace Kerberos.NET.Entities
 
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (RequestFlags.HasValue)
+            if (HasValue(RequestFlags))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteBitString(RequestFlags.Value.Span);
@@ -55,7 +54,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (MechToken.HasValue)
+            if (HasValue(MechToken))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 writer.WriteOctetString(MechToken.Value.Span);
@@ -63,7 +62,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (MechListMic.HasValue)
+            if (HasValue(MechListMic))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 writer.WriteOctetString(MechListMic.Value.Span);
@@ -91,6 +90,11 @@ namespace Kerberos.NET.Entities
             reader.ThrowIfNotEmpty();
             return decoded;
         }
+        
+        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+        {
+            return Decode(data);
+        }
 
         internal static NegTokenInit Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
@@ -114,7 +118,7 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = default;
+            decoded = new NegTokenInit();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
@@ -192,6 +196,11 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
+        }
+        
+        private static bool HasValue(object thing) 
+        {
+            return thing != null;
         }
     }
 }

@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Choice
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbTgsRep"
+  namespace="Kerberos.NET.Entities">
+  <!--
+  
+  TGS-REP          ::= [APPLICATION 13] KDC-REQ
+  
+  -->
+
+  <asn:AsnType name="Response" explicitTag="13" tagClass="Application" typeName="KrbKdcRep" />
+</asn:Choice>
