@@ -11,6 +11,8 @@ namespace Kerberos.NET.Crypto
             this.token = token;
         }
 
+        public ApOptions Options { get => token.ApOptions; }
+
         public EncryptionType EType => token.Ticket.Application.EncryptedPart.EType;
 
         public KrbPrincipalName SName => token.Ticket.Application.SName;
@@ -65,7 +67,14 @@ namespace Kerberos.NET.Crypto
 
             Authenticator = authenticatorApp.Application;
 
-            SessionKey = Authenticator.Subkey.AsKey();
+            if (Authenticator.Subkey != null)
+            {
+                SessionKey = Authenticator.Subkey.AsKey();
+            }
+            else
+            {
+                SessionKey = Ticket.Key.AsKey();
+            }
 
             var delegationInfo = Authenticator.Checksum?.DecodeDelegation();
 

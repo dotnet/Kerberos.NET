@@ -15,12 +15,12 @@ namespace Kerberos.NET
             string roleType,
             IEnumerable<Restriction> restrictions,
             ValidationActions validationMode,
-            ReadOnlyMemory<byte>  apRep           
+            string apRep           
         ) : base(userClaims, authenticationType, nameType, roleType)
         {
             Restrictions = restrictions.GroupBy(r => r.Type).ToDictionary(r => r.Key, r => r.ToList().AsEnumerable());
             ValidationMode = validationMode;
-            ApRep = Convert.ToBase64String(apRep.ToArray());
+            ApRep = apRep;
         }
 
         public IDictionary<AuthorizationDataType, IEnumerable<Restriction>> Restrictions { get; }

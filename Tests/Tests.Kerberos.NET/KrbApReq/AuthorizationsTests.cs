@@ -113,7 +113,7 @@ namespace Tests.Kerberos.NET
 
             foreach (var options in restrictionsSet)
             {
-                Assert.AreEqual(ApOptions.CHANNEL_BINDING_SUPPORTED, options.Options);
+                Assert.AreEqual(ApOptions.ChannelBindingSupported, options.Options);
             }
         }
 

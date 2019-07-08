@@ -58,6 +58,15 @@ namespace Kerberos.NET
 
             DecodeRestrictions(krbApReq, claims, restrictions);
 
+            string apRep = null;
+
+            if (krbApReq.Options.HasFlag(ApOptions.MutualRequired))
+            {
+                var apRepEncoded = krbApReq.CreateResponseMessage().EncodeAsApplication();
+
+                apRep = Convert.ToBase64String(apRepEncoded.ToArray());
+            }
+
             return new KerberosIdentity(
                 claims,
                 "Kerberos",
@@ -65,7 +74,7 @@ namespace Kerberos.NET
                 ClaimTypes.Role,
                 restrictions,
                 validator.ValidateAfterDecrypt,
-                krbApReq.CreateResponseMessage().EncodeAsApplication()
+                apRep
             );
         }
 

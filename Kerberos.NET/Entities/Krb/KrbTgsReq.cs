@@ -30,7 +30,7 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public static KrbTgsReq CreateTgsReq(string spn, KrbEncryptionKey tgtSessionKey, KrbKdcRep kdcRep)
+        public static KrbTgsReq CreateTgsReq(string spn, KrbEncryptionKey tgtSessionKey, KrbKdcRep kdcRep, KdcOptions options)
         {
             var tgtApReq = CreateApReq(kdcRep, tgtSessionKey);
 
@@ -63,7 +63,7 @@ namespace Kerberos.NET.Entities
                     Body = new KrbKdcReqBody
                     {
                         EType = KerberosConstants.ETypes.ToArray(),
-                        KdcOptions = KdcOptions.Canonicalize | KdcOptions.Renewable | KdcOptions.Forwardable,
+                        KdcOptions = options,
                         Nonce = KerberosConstants.GetNonce(),
                         Realm = tgt.Realm,
                         SName = new KrbPrincipalName()
