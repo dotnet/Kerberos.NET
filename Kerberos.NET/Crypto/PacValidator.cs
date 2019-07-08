@@ -56,7 +56,7 @@ namespace Kerberos.NET.Crypto
             var actualChecksum = decryptor.MakeChecksum(
                 Pac,
                 key.GetKey(decryptor),
-                KeyUsage.KU_PA_FOR_USER_ENC_CKSUM,
+                KeyUsage.PaForUserChecksum,
                 KeyDerivationMode.Kc,
                 decryptor.ChecksumSize
             );
@@ -79,7 +79,7 @@ namespace Kerberos.NET.Crypto
             var actualChecksum = crypto.MakeChecksum(
                 key.GetKey(crypto),
                 Pac,
-                KeyUsage.KU_PA_FOR_USER_ENC_CKSUM
+                KeyUsage.PaForUserChecksum
             );
 
             return KerberosCryptoTransformer.AreEqualSlow(actualChecksum, Signature);

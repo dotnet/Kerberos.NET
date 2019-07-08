@@ -29,9 +29,9 @@ namespace Tests.Kerberos.NET
 
             var aesTransformer = CryptographyService.CreateTransform(EncryptionType.AES128_CTS_HMAC_SHA1_96);
 
-            var encrypted = aesTransformer.Encrypt(data, key, KeyUsage.KU_PA_ENC_TS);
+            var encrypted = aesTransformer.Encrypt(data, key, KeyUsage.PaEncTs);
 
-            var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.KU_PA_ENC_TS);
+            var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.PaEncTs);
 
             Assert.IsTrue(data.SequenceEqual(decrypted));
         }
@@ -45,9 +45,9 @@ namespace Tests.Kerberos.NET
 
             var aesTransformer = CryptographyService.CreateTransform(EncryptionType.AES256_CTS_HMAC_SHA1_96);
 
-            var encrypted = aesTransformer.Encrypt(data, key, KeyUsage.KU_PA_ENC_TS);
+            var encrypted = aesTransformer.Encrypt(data, key, KeyUsage.PaEncTs);
 
-            var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.KU_PA_ENC_TS);
+            var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.PaEncTs);
 
             Assert.IsTrue(data.SequenceEqual(decrypted));
         }
@@ -61,9 +61,9 @@ namespace Tests.Kerberos.NET
 
             var rc4Transformer = CryptographyService.CreateTransform(EncryptionType.RC4_HMAC_NT);
 
-            var encrypted = rc4Transformer.Encrypt(data, key, KeyUsage.KU_PA_ENC_TS);
+            var encrypted = rc4Transformer.Encrypt(data, key, KeyUsage.PaEncTs);
 
-            var decrypted = rc4Transformer.Decrypt(encrypted, key, KeyUsage.KU_PA_ENC_TS);
+            var decrypted = rc4Transformer.Decrypt(encrypted, key, KeyUsage.PaEncTs);
 
             Assert.IsTrue(data.SequenceEqual(decrypted));
         }

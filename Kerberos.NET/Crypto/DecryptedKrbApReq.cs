@@ -29,7 +29,7 @@ namespace Kerberos.NET.Crypto
 
             var key = keytab.GetKey(EType, SName);
 
-            var decryptedTicket = Decrypt(key, ciphertext, KeyUsage.KU_TICKET);
+            var decryptedTicket = Decrypt(key, ciphertext, KeyUsage.Ticket);
 
             var ticketApp = KrbEncTicketPartApplication.Decode(decryptedTicket);
 
@@ -38,7 +38,7 @@ namespace Kerberos.NET.Crypto
             var decryptedAuthenticator = Decrypt(
                 Ticket.Key.AsKey(),
                 token.Authenticator.Cipher,
-                KeyUsage.KU_AP_REQ_AUTHENTICATOR
+                KeyUsage.ApReqAuthenticator
             );
 
             var authenticatorApp = KrbAuthenticatorApplication.Decode(decryptedAuthenticator);
@@ -54,7 +54,7 @@ namespace Kerberos.NET.Crypto
                 var decryptedDelegationTicket = Decrypt(
                     Ticket.Key.AsKey(),
                     delegation.EncryptedPart.Cipher,
-                    KeyUsage.KU_ENC_KRB_CRED_PART
+                    KeyUsage.EncKrbCredPart
                 );
 
                 DelegationTicket = KrbEncKrbCredPartApplication.Decode(decryptedDelegationTicket).Application;

@@ -5,7 +5,7 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncryptedData
     {
-        public T Decrypt<T>(Func<ReadOnlyMemory<byte>, T> func, KerberosKey key, KeyUsage usage)
+        public T Decrypt<T>(KerberosKey key, KeyUsage usage, Func<ReadOnlyMemory<byte>, T> func)
         {
             var crypto = CryptographyService.CreateTransform(this.EType);
 

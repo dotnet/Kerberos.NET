@@ -52,7 +52,7 @@ namespace Kerberos.NET.Entities
                 Authenticator = KrbEncryptedData.Encrypt(
                     authenticator.EncodeAsApplication(),
                     authenticatorKey,
-                    KeyUsage.KU_AP_REQ_AUTHENTICATOR
+                    KeyUsage.ApReqAuthenticator
                 )
             };
 

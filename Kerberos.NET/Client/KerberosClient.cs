@@ -2,23 +2,10 @@
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
-using System;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Client
 {
-    public enum AuthenticationResult
-    {
-        Accepted
-    }
-
-    [Flags]
-    public enum AuthenticationOptions
-    {
-        PreAuthenticate = 1 << 0,
-        IncludePacRequest = 1 << 2
-    }
-
     public class KerberosClient
     {
         // - transport -> TCP/UDP/injected transport handler
@@ -33,14 +20,17 @@ namespace Kerberos.NET.Client
         //                   -> request ticket for self to get local authz?
         //                   -> cache TGT/cache service ticket?
 
-        //private readonly ITicketCache ticketCache;
-
         public KerberosClient()
             : this(new UdpKerberosTransport(), new TcpKerberosTransport())
         {
         }
 
-        private const AuthenticationOptions DefaultAuthentication = AuthenticationOptions.IncludePacRequest;
+        private const AuthenticationOptions DefaultAuthentication = 
+            AuthenticationOptions.IncludePacRequest |
+            AuthenticationOptions.RenewableOk |
+            AuthenticationOptions.Canonicalize |
+            AuthenticationOptions.Renewable |
+            AuthenticationOptions.Forwardable;
 
         private readonly KerberosTransportSelector transport;
 
@@ -52,19 +42,20 @@ namespace Kerberos.NET.Client
         private KrbKdcRep tgt;
         private KrbEncryptionKey tgtSessionKey;
 
-        public async Task<AuthenticationResult> Authenticate(
-            KerberosCredential credential,
-            AuthenticationOptions options = DefaultAuthentication)
+        public AuthenticationOptions Options { get; set; } = DefaultAuthentication;
+
+        public async Task Authenticate(KerberosCredential credential)
         {
+            credential.Validate();
+
             int preauthAttempts = 0;
 
             do
             {
                 try
                 {
-                    await RequestTgt(credential, options);
-
-                    return AuthenticationResult.Accepted;
+                    await RequestTgt(credential);
+                    break;
                 }
                 catch (KerberosProtocolException pex)
                 {
@@ -75,7 +66,7 @@ namespace Kerberos.NET.Client
 
                     credential.IncludePreAuthenticationHints(pex.Error.DecodePreAuthentication());
 
-                    options |= AuthenticationOptions.PreAuthenticate;
+                    Options |= AuthenticationOptions.PreAuthenticate;
                 }
             }
             while (true);
@@ -93,9 +84,9 @@ namespace Kerberos.NET.Client
             var tgsRep = choice.Response;
 
             var encKdcRepPart = tgsRep.EncPart.Decrypt(
-                d => KrbEncTgsRepPart.Decode(d),
                 tgtSessionKey.AsKey(),
-                KeyUsage.KU_ENC_TGS_REP_PART_SUBKEY
+                KeyUsage.EncTgsRepPartSubSessionKey,
+                d => KrbEncTgsRepPart.Decode(d)
             );
 
             var authenticatorKey = encKdcRepPart.EncTgsRepPart.Key.AsKey();
@@ -103,17 +94,15 @@ namespace Kerberos.NET.Client
             return KrbApReq.CreateAsReq(tgsRep, authenticatorKey);
         }
 
-        private async Task RequestTgt(KerberosCredential credential, AuthenticationOptions options)
+        private async Task RequestTgt(KerberosCredential credential)
         {
-            var asReq = KrbAsReq.CreateAsReq(options, credential);
+            var asReq = KrbAsReq.CreateAsReq(credential, Options).EncodeAsApplication();
 
-            var asRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq.EncodeAsApplication());
+            var asRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq);
 
-            var kdcRep = asRep.Response;
+            var decrypted = DecryptAsRep(asRep.Response, credential);
 
-            var decrypted = DecryptAsRep(kdcRep, credential);
-
-            CacheTgt(kdcRep, decrypted.EncAsRepPart);
+            CacheTgt(asRep.Response, decrypted.EncAsRepPart);
         }
 
         private void CacheTgt(KrbKdcRep kdcRep, KrbEncKdcRepPart decrypted)
@@ -126,7 +115,7 @@ namespace Kerberos.NET.Client
         {
             var key = credential.CreateKey();
 
-            return asRep.EncPart.Decrypt(d => KrbEncAsRepPart.Decode(d), key, Crypto.KeyUsage.KU_ENC_AS_REP_PART);
+            return asRep.EncPart.Decrypt(key, KeyUsage.EncAsRepPart, d => KrbEncAsRepPart.Decode(d));
         }
     }
 }

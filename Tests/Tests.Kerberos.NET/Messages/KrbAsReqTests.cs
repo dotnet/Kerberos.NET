@@ -74,10 +74,10 @@ namespace Tests.Kerberos.NET.Messages
             KrbEncryptedData encData = KrbEncryptedData.Encrypt(
                 tsEncoded.AsMemory(),
                 key,
-                KeyUsage.KU_PA_ENC_TS
+                KeyUsage.PaEncTs
             );
 
-            Assert.IsTrue(tsEncoded.SequenceEqual(encData.Decrypt(d => KrbPaEncTsEnc.Decode(d), key, KeyUsage.KU_PA_ENC_TS).Encode()));
+            Assert.IsTrue(tsEncoded.SequenceEqual(encData.Decrypt(key, KeyUsage.PaEncTs, d => KrbPaEncTsEnc.Decode(d)).Encode()));
 
             var asreq = new KrbAsReq()
             {

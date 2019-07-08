@@ -11,19 +11,19 @@ namespace KerberosClientApp
     {
         static void Main(string[] args)
         {
-            MainAsync().Wait();
+            MainAsync(args).Wait();
         }
 
-        private static async Task MainAsync()
+        private static async Task MainAsync(string[] args)
         {
-            string user = ReadString("UserName", "administrator@corp.identityintervention.com");
-            string password = ReadString("Password", "P@ssw0rd!");
+            string user = ReadString("UserName", "administrator@corp.identityintervention.com", args);
+            string password = ReadString("Password", "P@ssw0rd!", args);
 
             var kerbCred = new KerberosPasswordCredential(user, password);
 
             KerberosClient client = new KerberosClient();
 
-            var result = await client.Authenticate(kerbCred);
+            await client.Authenticate(kerbCred);
 
             var ticket = await client.GetServiceTicket("host/appservice.corp.identityintervention.com");
 
@@ -35,7 +35,7 @@ namespace KerberosClientApp
 
             DumpClaims(validated);
 
-            Write("Press [Enter] to exit...");
+            Write("Press [Any] key to exit...");
 
             ReadKey();
         }
@@ -64,8 +64,21 @@ namespace KerberosClientApp
             }
         }
 
-        private static string ReadString(string label, string defaultVal = null)
+        private static string ReadString(string label, string defaultVal = null, string[] args = null)
         {
+            if (args.Length % 2 == 0)
+            {
+                for (var i = 0; i < args.Length; i += 2)
+                {
+                    var argName = args[i].Replace("-", "").Replace("/", "").Replace(":", "");
+
+                    if (string.Equals(argName, label, System.StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        defaultVal = args[i + 1];
+                    }
+                }
+            }
+
             Write($"{label} ({defaultVal}): ");
 
             var val = ReadLine();

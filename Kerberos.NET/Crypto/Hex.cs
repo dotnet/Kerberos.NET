@@ -7,6 +7,11 @@ namespace Kerberos.NET.Crypto
 {
     public static class Hex
     {
+        public static string DumpHex(this ReadOnlyMemory<byte> bytes, int bytesPerLine = 16)
+        {
+            return HexDump(bytes.ToArray(), bytesPerLine);
+        }
+
         public static unsafe string DumpHex(this IntPtr pThing, uint length)
         {
             var pBytes = (byte*)pThing;

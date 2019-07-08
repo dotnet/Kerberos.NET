@@ -32,7 +32,12 @@ namespace Kerberos.NET.Entities
 
         public static KrbTgsReq CreateTgsReq(string spn, KrbEncryptionKey tgtSessionKey, KrbKdcRep kdcRep)
         {
-            KrbApReq tgtApReq = CreateApReq(kdcRep, tgtSessionKey);
+            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey);
+
+            var pacOptions = new KrbPaPacOptions
+            {
+                Flags = PacOptions.ResourceBasedConstrainedDelegation | PacOptions.Claims | PacOptions.BranchAware
+            }.Encode();
 
             var paData = new List<KrbPaData>() {
                 new KrbPaData {
@@ -41,9 +46,7 @@ namespace Kerberos.NET.Entities
                 },
                 new KrbPaData {
                     Type = PaDataType.PA_PAC_OPTIONS,
-                    Value = new KrbPaPacOptions {
-                        Flags = KerberosFlags.Claims | KerberosFlags.BranchAware
-                    }.Encode().AsMemory()
+                    Value = pacOptions.AsMemory()
                 }
             };
 
@@ -94,7 +97,7 @@ namespace Kerberos.NET.Entities
             var encryptedAuthenticator = KrbEncryptedData.Encrypt(
                 authenticator.EncodeAsApplication(),
                 tgtSessionKey.AsKey(),
-                KeyUsage.KU_PA_TGS_REQ_AUTHENTICATOR
+                KeyUsage.PaTgsReqAuthenticator
             );
 
             var apReq = new KrbApReq

@@ -80,14 +80,7 @@ namespace Kerberos.NET
 
             foreach (var authData in authz)
             {
-                if (authData.Type == AuthorizationDataType.AdIfRelevant)
-                {
-                    DecodeAdIfRelevant(krbApReq, claims, authData, restrictions);
-                }
-                else
-                {
-                    Debug.WriteLine($"Unknown authorization-data type {authData.Type}");
-                }
+                DecodeAdIfRelevant(krbApReq, claims, authData, restrictions);
             }
         }
 
@@ -104,6 +97,10 @@ namespace Kerberos.NET
             {
                 switch (authz.Type)
                 {
+                    case AuthorizationDataType.AdIfRelevant:
+                        DecodeAdIfRelevant(krbApReq, claims, authz, restrictions);
+                        break;
+
                     case AuthorizationDataType.AdWin2kPac:
                         DecodePac(krbApReq, claims, authz);
                         break;
@@ -121,6 +118,9 @@ namespace Kerberos.NET
                         break;
                     case AuthorizationDataType.KerbServiceTarget:
                         restrictions.Add(new KerbServiceTargetRestriction(authz));
+                        break;
+                    default:
+                        Debug.WriteLine($"Unknown authorization-data type {authData.Type} \r\n{authData.Data.DumpHex()}");
                         break;
                 }
             }

@@ -17,5 +17,5 @@
          
   -->
 
-  <asn:BitString name="Flags" enumType="KerberosFlags" treatAsEnum="true" />
+  <asn:BitString name="Flags" explicitTag="0" enumType="PacOptions" treatAsEnum="true" />
 </asn:Sequence>
