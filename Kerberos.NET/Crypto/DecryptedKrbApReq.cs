@@ -21,7 +21,27 @@ namespace Kerberos.NET.Crypto
 
         public KrbEncKrbCredPart DelegationTicket { get; private set; }
 
+        public KerberosKey SessionKey { get; private set; }
+
         private readonly KrbApReq token;
+
+        public KrbApRep CreateResponseMessage()
+        {
+            KerberosConstants.Now(out DateTimeOffset ctime, out int usec);
+
+            var apRepPart = new KrbEncApRepPart
+            {
+                CTime = ctime,
+                CuSec = usec
+            };
+
+            var apRep = new KrbApRep
+            {
+                EncryptedPart = KrbEncryptedData.Encrypt(apRepPart.EncodeAsApplication(), SessionKey, KeyUsage.EncApRepPart)
+            };
+
+            return apRep;
+        }
 
         public override void Decrypt(KeyTable keytab)
         {
@@ -44,6 +64,8 @@ namespace Kerberos.NET.Crypto
             var authenticatorApp = KrbAuthenticatorApplication.Decode(decryptedAuthenticator);
 
             Authenticator = authenticatorApp.Application;
+
+            SessionKey = Authenticator.Subkey.AsKey();
 
             var delegationInfo = Authenticator.Checksum?.DecodeDelegation();
 

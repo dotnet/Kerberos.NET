@@ -24,5 +24,14 @@ namespace Kerberos.NET.Entities
 
             return (int)NonceCounter;
         }
+
+        public static void Now(out DateTimeOffset time, out int usec)
+        {
+            var nowTicks = DateTimeOffset.UtcNow.Ticks;
+
+            usec = (int)nowTicks % 1000000;
+
+            time = new DateTimeOffset(nowTicks - usec, TimeSpan.Zero);
+        }
     }
 }

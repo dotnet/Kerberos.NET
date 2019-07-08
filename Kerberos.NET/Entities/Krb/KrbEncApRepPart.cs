@@ -4,15 +4,9 @@ using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbApRep
+    public partial class KrbEncApRepPart
     {
-        public KrbApRep()
-        {
-            ProtocolVersionNumber = 5;
-            MessageType = MessageType.KRB_AP_REP;
-        }
-
-        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 15);
+        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 27);
 
         public ReadOnlyMemory<byte> EncodeAsApplication()
         {

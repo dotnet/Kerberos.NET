@@ -75,14 +75,12 @@ namespace Kerberos.NET.Entities
 
             if (options.HasFlag(AuthenticationOptions.PreAuthenticate))
             {
-                var nowTicks = DateTimeOffset.UtcNow.Ticks;
-
-                var usec = nowTicks % 1000000;
+                KerberosConstants.Now(out DateTimeOffset timestamp, out int usec);
 
                 var ts = new KrbPaEncTsEnc
                 {
-                    PaTimestamp = new DateTimeOffset(nowTicks - usec, TimeSpan.Zero),
-                    PaUSec = (int)usec
+                    PaTimestamp = timestamp,
+                    PaUSec = usec
                 };
 
                 var tsEncoded = ts.Encode().AsMemory();

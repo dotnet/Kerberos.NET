@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Pac;
 using System;
@@ -63,7 +64,8 @@ namespace Kerberos.NET
                 ClaimTypes.NameIdentifier,
                 ClaimTypes.Role,
                 restrictions,
-                validator.ValidateAfterDecrypt
+                validator.ValidateAfterDecrypt,
+                krbApReq.CreateResponseMessage().EncodeAsApplication()
             );
         }
 
