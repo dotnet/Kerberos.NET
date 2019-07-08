@@ -31,7 +31,7 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public static KrbApReq CreateAsReq(KrbKdcRep tgsRep, KerberosKey authenticatorKey)
+        public static KrbApReq CreateApReq(KrbKdcRep tgsRep, KerberosKey authenticatorKey, ApOptions options)
         {
             var ticket = tgsRep.Ticket;
 
@@ -49,6 +49,7 @@ namespace Kerberos.NET.Entities
             var apReq = new KrbApReq
             {
                 Ticket = ticket,
+                ApOptions = options,
                 Authenticator = KrbEncryptedData.Encrypt(
                     authenticator.EncodeAsApplication(),
                     authenticatorKey,

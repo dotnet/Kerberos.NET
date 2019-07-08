@@ -32,6 +32,8 @@ namespace Kerberos.NET.Client
             AuthenticationOptions.Renewable |
             AuthenticationOptions.Forwardable;
 
+        private const ApOptions DefaultApOptions = 0;
+
         private readonly KerberosTransportSelector transport;
 
         public KerberosClient(params IKerberosTransport[] transports)
@@ -42,7 +44,9 @@ namespace Kerberos.NET.Client
         private KrbKdcRep tgt;
         private KrbEncryptionKey tgtSessionKey;
 
-        public AuthenticationOptions Options { get; set; } = DefaultAuthentication;
+        public AuthenticationOptions AuthenticationOptions { get; set; } = DefaultAuthentication;
+
+        public KdcOptions KdcOptions { get => (KdcOptions)(AuthenticationOptions & ~AuthenticationOptions.AllAuthentication); }
 
         public async Task Authenticate(KerberosCredential credential)
         {
@@ -66,15 +70,15 @@ namespace Kerberos.NET.Client
 
                     credential.IncludePreAuthenticationHints(pex.Error.DecodePreAuthentication());
 
-                    Options |= AuthenticationOptions.PreAuthenticate;
+                    AuthenticationOptions |= AuthenticationOptions.PreAuthenticate;
                 }
             }
             while (true);
         }
 
-        public async Task<KrbApReq> GetServiceTicket(string spn)
+        public async Task<KrbApReq> GetServiceTicket(string spn, ApOptions options = DefaultApOptions)
         {
-            var tgs = KrbTgsReq.CreateTgsReq(spn, tgtSessionKey, tgt);
+            var tgs = KrbTgsReq.CreateTgsReq(spn, tgtSessionKey, tgt, KdcOptions);
 
             var choice = await transport.SendMessage<KrbTgsRep>(
                 tgs.TgsReq.Body.Realm,
@@ -91,12 +95,12 @@ namespace Kerberos.NET.Client
 
             var authenticatorKey = encKdcRepPart.EncTgsRepPart.Key.AsKey();
 
-            return KrbApReq.CreateAsReq(tgsRep, authenticatorKey);
+            return KrbApReq.CreateApReq(tgsRep, authenticatorKey, options);
         }
 
         private async Task RequestTgt(KerberosCredential credential)
         {
-            var asReq = KrbAsReq.CreateAsReq(credential, Options).EncodeAsApplication();
+            var asReq = KrbAsReq.CreateAsReq(credential, AuthenticationOptions).EncodeAsApplication();
 
             var asRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq);
 

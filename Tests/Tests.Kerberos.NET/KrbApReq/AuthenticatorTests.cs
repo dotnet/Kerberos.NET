@@ -1,6 +1,8 @@
 ﻿using Kerberos.NET;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
@@ -8,6 +10,28 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class AuthenticatorTests : BaseTest
     {
+        [TestMethod]
+        public async Task TestAuthenticatorGetsAsRep()
+        {
+            var authenticator = new KerberosAuthenticator(
+                new KerberosValidator(new KeyTable(ReadDataFile("sample.keytab")))
+                {
+                    ValidateAfterDecrypt = DefaultActions
+                });
+
+            Assert.IsNotNull(authenticator);
+
+            var result = await authenticator.Authenticate(RC4Header) as KerberosIdentity;
+
+            Assert.IsNotNull(result);
+
+            Assert.IsNotNull(result.ApRep);
+
+            var apRep = new KerberosContextToken(data: Convert.FromBase64String(result.ApRep));
+
+            Assert.IsNotNull(apRep.KrbApRep);
+        }
+
         [TestMethod]
         public async Task TestAuthenticator_Default()
         {

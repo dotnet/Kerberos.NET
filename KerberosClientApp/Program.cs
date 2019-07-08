@@ -2,6 +2,7 @@
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 using System.Threading.Tasks;
 using static System.Console;
 
@@ -25,7 +26,10 @@ namespace KerberosClientApp
 
             await client.Authenticate(kerbCred);
 
-            var ticket = await client.GetServiceTicket("host/appservice.corp.identityintervention.com");
+            var ticket = await client.GetServiceTicket(
+                "host/appservice.corp.identityintervention.com",
+                ApOptions.MutualRequired
+            );
 
             var encoded = ticket.EncodeAsApplication().ToArray();
 

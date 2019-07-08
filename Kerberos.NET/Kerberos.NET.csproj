@@ -46,6 +46,7 @@
     <AsnXml Include="Entities\Krb\KrbEncryptedData.xml" />
     <AsnXml Include="Entities\Krb\KrbEncryptionKey.xml" />
     <AsnXml Include="Entities\Krb\KrbEncAsRepPart.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncApRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncKdcRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncTgsRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncTicketPart.xml" />

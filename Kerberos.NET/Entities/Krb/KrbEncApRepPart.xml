@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbEncApRepPart"
+  namespace="Kerberos.NET.Entities">
+  <!--
+
+    EncAPRepPart    ::= [APPLICATION 27] SEQUENCE {
+            ctime           [0] KerberosTime,
+            cusec           [1] Microseconds,
+            subkey          [2] EncryptionKey OPTIONAL,
+            seq-number      [3] UInt32 OPTIONAL
+    }
+
+  -->
+
+  <asn:GeneralizedTime name="CTime" explicitTag="0" />
+  <asn:Integer name="CuSec" explicitTag="1" backingType="int" />
+  <asn:AsnType name="SubSessionKey" explicitTag="2" typeName="KrbEncryptionKey" optional="true" />
+  <asn:Integer name="SequenceNumber" explicitTag="3" backingType="int" optional="true" />
+</asn:Sequence>

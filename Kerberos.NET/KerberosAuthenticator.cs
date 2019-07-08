@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Pac;
 using System;
@@ -57,13 +58,23 @@ namespace Kerberos.NET
 
             DecodeRestrictions(krbApReq, claims, restrictions);
 
+            string apRep = null;
+
+            if (krbApReq.Options.HasFlag(ApOptions.MutualRequired))
+            {
+                var apRepEncoded = krbApReq.CreateResponseMessage().EncodeAsApplication();
+
+                apRep = Convert.ToBase64String(apRepEncoded.ToArray());
+            }
+
             return new KerberosIdentity(
                 claims,
                 "Kerberos",
                 ClaimTypes.NameIdentifier,
                 ClaimTypes.Role,
                 restrictions,
-                validator.ValidateAfterDecrypt
+                validator.ValidateAfterDecrypt,
+                apRep
             );
         }
 
