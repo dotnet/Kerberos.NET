@@ -5,6 +5,10 @@ namespace Kerberos.NET.Asn1
 {
     public static class BitOperation
     {
+        public static ReadOnlyMemory<T> AsMemory<T>(this ReadOnlySpan<T> span) => new ReadOnlyMemory<T>(span.ToArray());
+
+        public static Memory<T> AsMemory<T>(this Span<T> span) => new Memory<T>(span.ToArray());
+
         public static ReadOnlySpan<byte> AsReadOnly(this Enum val)
         {
             var longVal = (object)val;

@@ -1,6 +1,6 @@
 ﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using Kerberos.NET.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Diagnostics;

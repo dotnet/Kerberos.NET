@@ -15,7 +15,7 @@ namespace Kerberos.NET.Entities
                 throw new InvalidOperationException($"Cannot decode delegation ticket in checksum because type is {Type}");
             }
 
-            return new DelegationInfo().Decode(this.Checksum.ToArray());
+            return new DelegationInfo().Decode(this.Checksum);
         }
     }
 }

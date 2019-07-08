@@ -9,21 +9,21 @@ namespace Kerberos.NET.Entities
     {
         internal static readonly byte[] MessageSignature = Encoding.ASCII.GetBytes("NTLMSSP\0");
 
-        public static bool CanReadNtlmMessage(byte[] ntlm)
+        public static bool CanReadNtlmMessage(ReadOnlyMemory<byte> ntlm)
         {
             return CanReadNtlmMessage(ntlm, out _, out _);
         }
 
-        public static bool CanReadNtlmMessage(byte[] ntlm, out byte[] actualSignature, out BinaryReader reader)
+        public static bool CanReadNtlmMessage(ReadOnlyMemory<byte> ntlm, out byte[] actualSignature, out BinaryReader reader)
         {
-            reader = new BinaryReader(new MemoryStream(ntlm));
+            reader = new BinaryReader(new MemoryStream(ntlm.ToArray()));
 
             actualSignature = reader.ReadBytes(MessageSignature.Length);
 
             return actualSignature.SequenceEqual(MessageSignature);
         }
 
-        public NtlmMessage(byte[] ntlm)
+        public NtlmMessage(ReadOnlyMemory<byte> ntlm)
         {
             if (!CanReadNtlmMessage(ntlm, out byte[] actualSignature, out BinaryReader reader))
             {

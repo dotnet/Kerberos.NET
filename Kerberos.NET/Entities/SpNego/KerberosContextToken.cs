@@ -1,10 +1,11 @@
 ﻿using Kerberos.NET.Crypto;
+using System;
 
 namespace Kerberos.NET.Entities
 {
     public sealed class KerberosContextToken : ContextToken
     {
-        public KerberosContextToken(GssApiToken gssToken = null, byte[] data = null)
+        public KerberosContextToken(GssApiToken gssToken = null, ReadOnlyMemory<byte>? data = null)
         {
             var kerb = data ?? gssToken?.Field2;
 

@@ -19,7 +19,7 @@ namespace Kerberos.NET.Entities
         {
             var mechToken = token.InitialToken.MechToken;
 
-            var apReq = MessageParser.Parse<ContextToken>(mechToken?.ToArray());
+            var apReq = MessageParser.Parse<ContextToken>(mechToken.Value);
 
             if (apReq is NegotiateContextToken)
             {

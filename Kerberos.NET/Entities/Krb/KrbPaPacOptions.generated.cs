@@ -10,7 +10,7 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaPacOptions : IAsn1Encoder
     {
-        public KerberosFlags Flags;
+        public PacOptions Flags;
     
       
         public ReadOnlySpan<byte> Encode()
@@ -31,7 +31,9 @@ namespace Kerberos.NET.Entities
         {
             writer.PushSequence(tag);
             
+            writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             writer.WriteBitString(Flags.AsReadOnly());
+            writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             writer.PopSequence(tag);
         }
         
@@ -83,16 +85,21 @@ namespace Kerberos.NET.Entities
 
             decoded = new KrbPaPacOptions();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
+            AsnReader explicitReader;
             
 
-            if (sequenceReader.TryReadPrimitiveBitStringValue(out _, out ReadOnlyMemory<byte> tmpFlags))
+            explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
+
+            if (explicitReader.TryReadPrimitiveBitStringValue(out _, out ReadOnlyMemory<byte> tmpFlags))
             {
-                decoded.Flags = (KerberosFlags)tmpFlags.AsLong();
+                decoded.Flags = (PacOptions)tmpFlags.AsLong();
             }
             else
             {
-                decoded.Flags = (KerberosFlags)sequenceReader.ReadBitString(out _).AsLong();
+                decoded.Flags = (PacOptions)explicitReader.ReadBitString(out _).AsLong();
             }
+
+            explicitReader.ThrowIfNotEmpty();
 
 
             sequenceReader.ThrowIfNotEmpty();

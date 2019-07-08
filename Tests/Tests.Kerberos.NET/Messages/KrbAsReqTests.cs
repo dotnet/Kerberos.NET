@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -22,6 +23,7 @@ namespace Tests.Kerberos.NET.Messages
             var addr = asReq.AsReq.Body.Addresses[0].DecodeAddress();
 
             Assert.IsNotNull(addr);
+            Assert.AreEqual("APP03           ", addr);
         }
 
         [TestMethod]
@@ -45,7 +47,14 @@ namespace Tests.Kerberos.NET.Messages
             var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "CORP.IDENTITYINTERVENTION.COM", new[] { "testuser" });
             var host = "";
 
-            var key = new KerberosKey("P@ssw0rd!", principalName: principalName, host: host, saltType: SaltType.ActiveDirectoryUser);
+            var key = new KerberosKey(
+                "P@ssw0rd!", 
+                principalName: principalName, 
+                host: host, 
+                saltType: SaltType.ActiveDirectoryUser, 
+                etype: EncryptionType.AES256_CTS_HMAC_SHA1_96
+            );
+
             return key;
         }
 
@@ -63,13 +72,12 @@ namespace Tests.Kerberos.NET.Messages
             var tsEncoded = ts.Encode();
 
             KrbEncryptedData encData = KrbEncryptedData.Encrypt(
-                tsEncoded,
+                tsEncoded.AsMemory(),
                 key,
-                EncryptionType.AES256_CTS_HMAC_SHA1_96,
-                KeyUsage.KU_PA_ENC_TS
+                KeyUsage.PaEncTs
             );
 
-            Assert.IsTrue(tsEncoded.SequenceEqual(encData.Decrypt(d => KrbPaEncTsEnc.Decode(d), key, KeyUsage.KU_PA_ENC_TS).Encode()));
+            Assert.IsTrue(tsEncoded.SequenceEqual(encData.Decrypt(key, KeyUsage.PaEncTs, d => KrbPaEncTsEnc.Decode(d)).Encode()));
 
             var asreq = new KrbAsReq()
             {

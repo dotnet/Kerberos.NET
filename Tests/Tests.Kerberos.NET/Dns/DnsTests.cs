@@ -32,6 +32,8 @@ namespace Tests.Kerberos.NET.Dns
         [TestMethod]
         public void TestFailedLookup()
         {
+            DnsQuery.Debug = true;
+
             var records = DnsQuery.QuerySrv(UnknownSrvRecord);
 
             Assert.AreEqual(0, records.Count());

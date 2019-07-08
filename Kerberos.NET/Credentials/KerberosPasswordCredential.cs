@@ -32,6 +32,16 @@ namespace Kerberos.NET.Credentials
             }
         }
 
+        public override void Validate()
+        {
+            base.Validate();
+
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                throw new ArgumentException("Password cannot be null or empty", nameof(password));
+            }
+        }
+
         public override KerberosKey CreateKey()
         {
             var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, Domain, new[] { UserName });

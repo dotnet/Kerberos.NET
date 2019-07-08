@@ -54,10 +54,10 @@ namespace Kerberos.NET.Crypto
         protected override bool ValidateInternal(KerberosKey key)
         {
             var actualChecksum = decryptor.MakeChecksum(
-                key.GetKey(decryptor),
-                KeyUsage.KU_PA_FOR_USER_ENC_CKSUM,
-                KeyDerivationMode.Kc,
                 Pac,
+                key.GetKey(decryptor),
+                KeyUsage.PaForUserChecksum,
+                KeyDerivationMode.Kc,
                 decryptor.ChecksumSize
             );
 
@@ -79,7 +79,7 @@ namespace Kerberos.NET.Crypto
             var actualChecksum = crypto.MakeChecksum(
                 key.GetKey(crypto),
                 Pac,
-                KeyUsage.KU_PA_FOR_USER_ENC_CKSUM
+                KeyUsage.PaForUserChecksum
             );
 
             return KerberosCryptoTransformer.AreEqualSlow(actualChecksum, Signature);

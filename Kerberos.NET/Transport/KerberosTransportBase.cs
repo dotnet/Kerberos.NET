@@ -47,7 +47,7 @@ namespace Kerberos.NET.Transport
         public virtual Task<T> SendMessage<T>(string domain, IAsn1Encoder req)
             where T : IAsn1Encoder, new()
         {
-            return SendMessage<T>(domain, req.Encode().ToArray());
+            return SendMessage<T>(domain, req.Encode().AsMemory());
         }
 
         public abstract Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req)

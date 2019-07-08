@@ -5,14 +5,14 @@ namespace Kerberos.NET.Entities
 {
     public class NegotiateExtension
     {
-        public NegotiateExtension(byte[] data)
+        public NegotiateExtension(ReadOnlyMemory<byte> data)
         {
             Message = new NegotiateMessage(data);
         }
 
         public NegotiateMessage Message { get; }
 
-        internal static bool CanDecode(byte[] data)
+        internal static bool CanDecode(ReadOnlyMemory<byte> data)
         {
             return NegotiateMessageHeader.HasHeader(data);
         }
@@ -30,7 +30,7 @@ namespace Kerberos.NET.Entities
 
         public ExtensionVector Extensions { get; }
 
-        public NegotiateMessage(byte[] data)
+        public NegotiateMessage(ReadOnlyMemory<byte> data)
         {
             Header = new NegotiateMessageHeader(data, out BinaryReader reader);
 
@@ -148,21 +148,21 @@ namespace Kerberos.NET.Entities
 
         private const ulong HeaderSignature = 0x535458454f47454e;
 
-        public static bool HasHeader(byte[] data)
+        public static bool HasHeader(ReadOnlyMemory<byte> data)
         {
             return HasHeader(data, out _, out _);
         }
 
-        private static bool HasHeader(byte[] data, out BinaryReader reader, out ulong actualSignature)
+        private static bool HasHeader(ReadOnlyMemory<byte> data, out BinaryReader reader, out ulong actualSignature)
         {
-            reader = new BinaryReader(new MemoryStream(data));
+            reader = new BinaryReader(new MemoryStream(data.ToArray()));
 
             actualSignature = reader.ReadUInt64();
 
             return actualSignature == HeaderSignature;
         }
 
-        public NegotiateMessageHeader(byte[] data, out BinaryReader reader)
+        public NegotiateMessageHeader(ReadOnlyMemory<byte> data, out BinaryReader reader)
         {
             if (!HasHeader(data, out reader, out Signature))
             {

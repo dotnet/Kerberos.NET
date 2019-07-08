@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -44,6 +45,19 @@ namespace Kerberos.NET.Credentials
                 {
                     domain = original.Substring(index + 1, original.Length - username.Length - 1);
                 }
+            }
+        }
+
+        public virtual void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(UserName))
+            {
+                throw new ArgumentException("UserName cannot be null or empty", nameof(UserName));
+            }
+
+            if (string.IsNullOrWhiteSpace(Domain))
+            {
+                throw new ArgumentException("Domain cannot be null or empty", nameof(Domain));
             }
         }
     }

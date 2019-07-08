@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,37 +13,41 @@ namespace Kerberos.NET.Entities
 
         public ReadOnlyMemory<byte> EncodeAsApplication()
         {
-            var writer = new AsnWriter(AsnEncodingRules.DER);
-
-            writer.PushSequence(ApplicationTag);
-
-            if (this.TgsReq != null)
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
             {
-                this.TgsReq?.Encode(writer);
+                writer.PushSequence(ApplicationTag);
+
+                if (this.TgsReq != null)
+                {
+                    this.TgsReq?.Encode(writer);
+                }
+
+                writer.PopSequence(ApplicationTag);
+
+                var span = writer.EncodeAsSpan();
+
+                return span.AsMemory();
             }
-
-            writer.PopSequence(ApplicationTag);
-
-            var span = writer.EncodeAsSpan();
-
-            return new ReadOnlyMemory<byte>(span.ToArray());
         }
 
         public static KrbTgsReq CreateTgsReq(string spn, KrbEncryptionKey tgtSessionKey, KrbKdcRep kdcRep)
         {
-            KrbApReq tgtApReq = CreateApReq(kdcRep, tgtSessionKey);
+            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey);
+
+            var pacOptions = new KrbPaPacOptions
+            {
+                Flags = PacOptions.ResourceBasedConstrainedDelegation | PacOptions.Claims | PacOptions.BranchAware
+            }.Encode();
 
             var paData = new List<KrbPaData>() {
                 new KrbPaData {
                     Type = PaDataType.PA_TGS_REQ,
-                    Value = tgtApReq.EncodeAsApplication().ToArray()
+                    Value = tgtApReq.EncodeAsApplication()
                 },
-                //new KrbPaData {
-                //    Type = PaDataType.PA_PAC_OPTIONS,
-                //    Value = new KrbPaPacOptions {
-                //        Flags = KerberosFlags.Claims
-                //    }.Encode().ToArray()
-                //}
+                new KrbPaData {
+                    Type = PaDataType.PA_PAC_OPTIONS,
+                    Value = pacOptions.AsMemory()
+                }
             };
 
             var tgt = kdcRep.Ticket.Application;
@@ -86,26 +91,14 @@ namespace Kerberos.NET.Entities
                 Realm = tgt.Realm,
                 SequenceNumber = KerberosConstants.GetNonce(),
                 Subkey = tgtSessionKey,
-                AuthenticatorVersionNumber = 5,
-                //Checksum = new KrbChecksum { Type = ChecksumType.HMAC_SHA1_96_AES256 }
+                AuthenticatorVersionNumber = 5
             };
 
             var encryptedAuthenticator = KrbEncryptedData.Encrypt(
-                    authenticator.EncodeAsApplication().ToArray(),
-                    tgtSessionKey.AsKey(),
-                    tgtSessionKey.EType,
-                    KeyUsage.KU_PA_TGS_REQ_AUTHENTICATOR
-                );
-
-            //new KrbEncryptedData
-            //{
-            //    // tgs-req key usage = 7
-            //    // checksum key usage = 6
-
-            //    Cipher = encryptedAuthenticator,
-            //    EType = tgtSessionKey.EType,
-            //    KeyVersionNumber = tgt.EncryptedPart.KeyVersionNumber
-            //}
+                authenticator.EncodeAsApplication(),
+                tgtSessionKey.AsKey(),
+                KeyUsage.PaTgsReqAuthenticator
+            );
 
             var apReq = new KrbApReq
             {

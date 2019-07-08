@@ -5,7 +5,7 @@ namespace Kerberos.NET.Entities.SpNego
 {
     public class NtlmContextToken : ContextToken
     {
-        public NtlmContextToken(byte[] data)
+        public NtlmContextToken(ReadOnlyMemory<byte> data)
         {
             Token = new NtlmMessage(data);
         }

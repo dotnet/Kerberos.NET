@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Client;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using System;
@@ -15,20 +16,21 @@ namespace Kerberos.NET.Entities
 
         public ReadOnlyMemory<byte> EncodeAsApplication()
         {
-            var writer = new AsnWriter(AsnEncodingRules.DER);
-
-            writer.PushSequence(ApplicationTag);
-
-            if (this.AsReq != null)
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
             {
-                this.AsReq?.Encode(writer);
+                writer.PushSequence(ApplicationTag);
+
+                if (this.AsReq != null)
+                {
+                    this.AsReq?.Encode(writer);
+                }
+
+                writer.PopSequence(ApplicationTag);
+
+                var span = writer.EncodeAsSpan();
+
+                return span.AsMemory();
             }
-
-            writer.PopSequence(ApplicationTag);
-
-            var span = writer.EncodeAsSpan();
-
-            return new ReadOnlyMemory<byte>(span.ToArray());
         }
 
         public DateTimeOffset DecryptTimestamp(KerberosKey key)
@@ -42,7 +44,7 @@ namespace Kerberos.NET.Entities
 
             var encryptedTimestamp = KrbEncryptedData.Decode(timestampPaData.Value);
 
-            var tsEnc = encryptedTimestamp.Decrypt(d => KrbPaEncTsEnc.Decode(d), key, KeyUsage.KU_PA_ENC_TS);
+            var tsEnc = encryptedTimestamp.Decrypt(key, KeyUsage.PaEncTs, d => KrbPaEncTsEnc.Decode(d));
 
             var timestamp = tsEnc.PaTimestamp;
 
@@ -54,15 +56,9 @@ namespace Kerberos.NET.Entities
             return timestamp;
         }
 
-        public static KrbAsReq CreateAsReq(
-            AuthenticationOptions options,
-            KerberosCredential credential
-        )
+        public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options)
         {
-            var kdcOptions = KdcOptions.RenewableOk |
-                             KdcOptions.Canonicalize |
-                             KdcOptions.Renewable |
-                             KdcOptions.Forwardable;
+            var kdcOptions = (KdcOptions)(options & ~AuthenticationOptions.AllAuthentication);
 
             var hostAddress = Environment.MachineName;
 
@@ -89,19 +85,18 @@ namespace Kerberos.NET.Entities
                     PaUSec = (int)usec
                 };
 
-                var tsEncoded = ts.Encode();
+                var tsEncoded = ts.Encode().AsMemory();
 
                 KrbEncryptedData encData = KrbEncryptedData.Encrypt(
                     tsEncoded,
                     credential.CreateKey(),
-                    EncryptionType.AES256_CTS_HMAC_SHA1_96,
-                    KeyUsage.KU_PA_ENC_TS
+                    KeyUsage.PaEncTs
                 );
 
                 padata.Add(new KrbPaData
                 {
                     Type = PaDataType.PA_ENC_TIMESTAMP,
-                    Value = new ReadOnlyMemory<byte>(encData.Encode().ToArray())
+                    Value = encData.Encode().AsMemory()
                 });
             }
 

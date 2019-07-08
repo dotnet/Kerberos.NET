@@ -2,23 +2,55 @@
 {
     public enum KeyUsage
     {
-        KU_UNKNOWN = 0,                     // Cannot be 0
-        KU_PA_ENC_TS = 1,                   // KrbAsReq
-        KU_TICKET = 2,                     // KrbApReq (ticket)
-        KU_ENC_AS_REP_PART = 3,             // KrbAsRep
-        KU_TGS_REQ_AUTH_DATA_SESSKEY = 4,    // KrbTgsReq
-        KU_TGS_REQ_AUTH_DATA_SUBKEY = 5,    // KrbTgsReq
-        KU_PA_TGS_REQ_CKSUM = 6,            // KrbTgsReq
-        KU_PA_TGS_REQ_AUTHENTICATOR = 7,    // KrbApReq
-        KU_ENC_TGS_REP_PART_SESSKEY = 8,    // KrbTgsRep
-        KU_ENC_TGS_REP_PART_SUBKEY = 9,     // KrbTgsRep
-        KU_AUTHENTICATOR_CKSUM = 10,
-        KU_AP_REQ_AUTHENTICATOR = 11,       // KrbApReq
-        KU_ENC_AP_REP_PART = 12,            // KrbApRep
-        KU_ENC_KRB_PRIV_PART = 13,          // KrbPriv
-        KU_ENC_KRB_CRED_PART = 14,          // KrbCred
-        KU_KRB_SAFE_CKSUM = 15,             // KrbSafe
-        KU_PA_FOR_USER_ENC_CKSUM = 17,      // S4U2user
-        KU_AD_KDC_ISSUED_CKSUM = 19
+        Unknown = 0,
+        PaEncTs = 1,
+        Ticket = 2,
+        EncAsRepPart = 3,
+        TgsReqAuthDataSessionKey = 4,
+        TgsReqAuthDataSubSessionKey = 5,
+        PaTgsReqChecksum = 6,
+        PaTgsReqAuthenticator = 7,
+        EncTgsRepPartSessionKey = 8,
+        EncTgsRepPartSubSessionKey = 9,
+        AuthenticatorChecksum = 10,
+        ApReqAuthenticator = 11,
+        EncApRepPart = 12,
+        EncKrbPrivPart = 13,
+        EncKrbCredPart = 14,
+        KrbSafeChecksum = 15,
+        OtherEncrypted = 16,
+        PaForUserChecksum = 17,
+        KrbError = 18,
+        AdKdcIssuedChecksum = 19,
+
+        MandatoryTicketExtension = 20,
+        AuthDataTicketExtension = 21,
+        Seal = 22,
+        Sign = 23,
+        Sequence = 24,
+        AcceptorSeal = 22,
+        AcceptorSign = 23,
+        InitiatorSeal = 24,
+        InitiatorSign = 25,
+        PaServerReferralData = 22,
+        SamChecksum = 25,
+        SamEncTrackId = 26,
+        PaServerReferral = 26,
+        SamEncNonceSad = 27,
+        PaPkInitEx = 44,
+        AsReq = 56,
+        FastReqChecksum = 50,
+        FastEnc = 51,
+        FastRep = 52,
+        FastFinished = 53,
+        EncChallengeClient = 54,
+        EncChallengeKdc = 55,
+
+
+        DigestEncrypt = -18,
+        DigestOpaque = -19,
+        Krb5SignedPath = -21,
+        CanonicalizedPath = -23,
+        HslCookie = -25
     }
 }

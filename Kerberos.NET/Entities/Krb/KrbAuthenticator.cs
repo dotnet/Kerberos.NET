@@ -1,4 +1,5 @@
 ﻿
+using Kerberos.NET.Asn1;
 using System;
 using System.Security.Cryptography.Asn1;
 
@@ -20,7 +21,7 @@ namespace Kerberos.NET.Entities
 
             var span = writer.EncodeAsSpan();
 
-            return new ReadOnlyMemory<byte>(span.ToArray());
+            return span.AsMemory();
         }
     }
 }

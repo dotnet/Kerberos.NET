@@ -30,7 +30,7 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public override ReadOnlyMemory<byte> Encrypt(ReadOnlySpan<byte> data, KerberosKey key, KeyUsage usage)
+        public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)
         {
             var k1 = key.GetKey(this);
 

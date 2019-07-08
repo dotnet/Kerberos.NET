@@ -6,6 +6,10 @@ namespace Kerberos.NET.Crypto
 {
     public class KerberosKey
     {
+        public KerberosKey(KrbEncryptionKey key)
+            : this(key: key.KeyValue.ToArray(), etype: key.EType)
+        { }
+
         public KerberosKey(
             string password,
             PrincipalName principalName = null,
