@@ -52,7 +52,6 @@
     <AsnXml Include="Entities\Krb\KrbEncTicketPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncTicketPartApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbError.xml" />
-    <AsnXml Include="Entities\Krb\KrbErrorChoice.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2Entry.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfoEntry.xml" />
@@ -76,6 +75,10 @@
     <AsnXml Include="Entities\SpNego\NegTokenInit.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenResp.xml" />
 
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Pipelines" Version="4.6.0-preview6.19303.8" />
   </ItemGroup>
 
   <ItemGroup>

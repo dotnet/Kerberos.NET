@@ -11,6 +11,10 @@ namespace Kerberos.NET.Transport
     {
         private const string TcpServiceTemplate = "_kerberos._tcp.{0}";
 
+        public TcpKerberosTransport(string kdc = null)
+            : base(kdc)
+        { }
+
         public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> encoded)
         {
             var target = LocateKdc(domain);
@@ -31,7 +35,7 @@ namespace Kerberos.NET.Transport
                 var stream = client.GetStream();
 
                 var messageSize = new byte[4];
-                Endian.ConvertToBigEndian(encoded.Length, messageSize, 0);
+                Endian.ConvertToBigEndian(encoded.Length, messageSize);
 
                 await stream.WriteAsync(messageSize);
                 await stream.WriteAsync(encoded);

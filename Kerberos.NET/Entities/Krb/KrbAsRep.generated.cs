@@ -8,27 +8,10 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbAsRep : IAsn1Encoder
+    public partial class KrbAsRep
     {
         public KrbKdcRep Response;
-
-#if DEBUG
-        static KrbAsRep()
-        {
-            var usedTags = new System.Collections.Generic.Dictionary<Asn1Tag, string>();
-            Action<Asn1Tag, string> ensureUniqueTag = (tag, fieldName) =>
-            {
-                if (usedTags.TryGetValue(tag, out string existing))
-                {
-                    throw new InvalidOperationException($"Tag '{tag}' is in use by both '{existing}' and '{fieldName}'");
-                }
-
-                usedTags.Add(tag, fieldName);
-            };
-            
-            ensureUniqueTag(new Asn1Tag(TagClass.Application, 11), "Response");
-        }
-#endif
+      
         public ReadOnlySpan<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -37,31 +20,18 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsSpan();
         }
-
+        
         internal void Encode(AsnWriter writer)
         {
-            bool wroteValue = false; 
-            
-            if (HasValue(Response))
-            {
-                if (wroteValue)
-                    throw new CryptographicException();
-                
-                writer.PushSequence(new Asn1Tag(TagClass.Application, 11));
-                Response?.Encode(writer);
-                writer.PopSequence(new Asn1Tag(TagClass.Application, 11));
-                wroteValue = true;
-            }
-
-            if (!wroteValue)
-            {
-                throw new CryptographicException();
-            }
+            Encode(writer, Asn1Tag.Sequence);
         }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+    
+        internal void Encode(AsnWriter writer, Asn1Tag tag)
         {
-            return Decode(data);
+            writer.PushSequence(tag);
+            
+            Response?.Encode(writer);
+            writer.PopSequence(tag);
         }
         
         public static KrbAsRep Decode(ReadOnlyMemory<byte> data)
@@ -71,9 +41,23 @@ namespace Kerberos.NET.Entities
 
         internal static KrbAsRep Decode(ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
+            return Decode(Asn1Tag.Sequence, encoded, ruleSet);
+        }
+
+        internal static KrbAsRep Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded)
+        {
+            AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
+            
+            Decode(reader, expectedTag, out KrbAsRep decoded);
+            reader.ThrowIfNotEmpty();
+            return decoded;
+        }
+
+        internal static KrbAsRep Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
+        {
             AsnReader reader = new AsnReader(encoded, ruleSet);
             
-            Decode(reader, out KrbAsRep decoded);
+            Decode(reader, expectedTag, out KrbAsRep decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
         }
@@ -83,23 +67,20 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = new KrbAsRep();
-            Asn1Tag tag = reader.PeekTag();
-            AsnReader explicitReader;
-            
-            if (tag.HasSameClassAndValue(new Asn1Tag(TagClass.Application, 11)))
-            {
-                explicitReader = reader.ReadSequence(new Asn1Tag(TagClass.Application, 11));
-                KrbKdcRep tmpResponse;
-                KrbKdcRep.Decode(explicitReader, out tmpResponse);
-                decoded.Response = tmpResponse;
+            Decode(reader, Asn1Tag.Sequence, out decoded);
+        }
 
-                explicitReader.ThrowIfNotEmpty();
-            }
-            else
-            {
-                throw new CryptographicException();
-            }
+        internal static void Decode(AsnReader reader, Asn1Tag expectedTag, out KrbAsRep decoded)
+        {
+            if (reader == null)
+                throw new ArgumentNullException(nameof(reader));
+
+            decoded = new KrbAsRep();
+            AsnReader sequenceReader = reader.ReadSequence(expectedTag);
+            
+            KrbKdcRep.Decode(sequenceReader, out decoded.Response);
+
+            sequenceReader.ThrowIfNotEmpty();
         }
         
         private static bool HasValue(object thing) 

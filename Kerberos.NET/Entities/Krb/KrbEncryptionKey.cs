@@ -8,5 +8,16 @@ namespace Kerberos.NET.Entities
         {
             return new KerberosKey(this);
         }
+
+        public static KrbEncryptionKey Generate(EncryptionType type)
+        {
+            var crypto = CryptographyService.CreateTransform(type);
+
+            return new KrbEncryptionKey
+            {
+                EType = type,
+                KeyValue = crypto.GenerateKey()
+            };
+        }
     }
 }

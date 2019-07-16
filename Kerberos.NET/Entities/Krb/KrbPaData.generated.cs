@@ -8,7 +8,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbPaData : IAsn1Encoder
+    public partial class KrbPaData
     {
         public PaDataType Type;
         public ReadOnlyMemory<byte> Value;
@@ -57,11 +57,6 @@ namespace Kerberos.NET.Entities
             Decode(reader, expectedTag, out KrbPaData decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
-        {
-            return Decode(data);
         }
 
         internal static KrbPaData Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)

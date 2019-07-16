@@ -40,16 +40,34 @@ namespace Tests.Kerberos.NET.Messages
                 switch (key)
                 {
                     case "as-rep":
-                        //TestSimpleRoundtrip(key, file.Value, v => KrbAsRep.Decode(v), t => t.Encode().ToArray());
+                        var asrep = TestSimpleRoundtrip(
+                             key,
+                             file.Value.Skip(4).ToArray(),
+                             v => new KrbAsRep().DecodeAsApplication(v),
+                             t => t.EncodeAsApplication().ToArray());
+
+                        ;
                         break;
                     case "as-req":
-                        TestSimpleRoundtrip(key, file.Value, v => KrbAsReq.Decode(v), t => t.Encode().ToArray());
+                        TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbAsReq.DecodeAsApplication(v),
+                            t => t.EncodeAsApplication().ToArray());
                         break;
                     case "as-req-preauth":
-                        TestSimpleRoundtrip(key, file.Value, v => KrbAsReq.Decode(v), t => t.Encode().ToArray());
+                        TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbAsReq.DecodeAsApplication(v),
+                            t => t.EncodeAsApplication().ToArray());
                         break;
                     case "krb-error-preauth-required":
-                        TestSimpleRoundtrip(key, file.Value, v => KrbError.Decode(v), t => t.Encode().ToArray());
+                        TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbError.DecodeAsApplication(v),
+                            t => t.EncodeAsApplication().ToArray());
                         break;
                     case "tgs-rep-testuser-host-app03":
                         //TestSimpleRoundtrip(key, file.Value, v => KrbTgsRep.Decode(v), t => t.Encode().ToArray());
@@ -61,16 +79,28 @@ namespace Tests.Kerberos.NET.Messages
                         //TestSimpleRoundtrip(key, file.Value, v => KrbTgsRep.Decode(v), t => t.Encode().ToArray());
                         break;
                     case "tgs-req-testuser-host-app03":
-                        var thing = TestSimpleRoundtrip(key, file.Value, v => KrbTgsReq.Decode(v), t => t.Encode().ToArray());
+                        var thing = TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbTgsReq.DecodeMessageAsApplication(v),
+                            t => t.EncodeAsApplication().ToArray());
 
                         var ap = KrbApChoice.Decode(thing.TgsReq.PaData[0].Value);
 
                         break;
                     case "tgs-req-testuser-host-appservice":
-                        TestSimpleRoundtrip(key, file.Value, v => KrbTgsReq.Decode(v), t => t.Encode().ToArray());
+                        TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbTgsReq.DecodeMessageAsApplication(v),
+                            t => t.EncodeAsApplication().ToArray());
                         break;
                     case "tgs-req-testuser-krbtgt-renew":
-                        TestSimpleRoundtrip(key, file.Value, v => KrbTgsReq.Decode(v), t => t.Encode().ToArray());
+                        TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbTgsReq.DecodeMessageAsApplication(v),
+                            t => t.EncodeAsApplication().ToArray());
                         break;
                     default:
                         Assert.Fail(file.Key);
@@ -84,6 +114,10 @@ namespace Tests.Kerberos.NET.Messages
             var thing = decode(value);
 
             var encoded = encode(thing);
+
+            Debug.WriteLine(value.HexDump());
+
+            Debug.WriteLine(encoded.HexDump());
 
             Assert.IsTrue(value.SequenceEqual(encoded), key);
 

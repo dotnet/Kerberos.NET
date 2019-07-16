@@ -21,15 +21,15 @@
     {
         protected NdrObject(byte[] data)
         {
-            Stream = new NdrBinaryReader(data);
+            Stream = new NdrBinaryStream(data);
         }
 
-        protected NdrObject(NdrBinaryReader stream)
+        protected NdrObject(NdrBinaryStream stream)
         {
             Stream = stream;
         }
 
         [KerberosIgnore]
-        protected NdrBinaryReader Stream { get; }
+        protected NdrBinaryStream Stream { get; }
     }
 }

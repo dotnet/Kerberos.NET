@@ -1,5 +1,4 @@
 ﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Client;
 using Kerberos.NET.Dns;
 using Kerberos.NET.Entities;
 using System;
@@ -14,7 +13,15 @@ namespace Kerberos.NET.Transport
     {
         private const int DefaultKerberosPort = 88;
 
-        private static readonly ConcurrentDictionary<string, DnsRecord> DomainCache = new ConcurrentDictionary<string, DnsRecord>();
+        private readonly string kdc;
+
+        protected KerberosTransportBase(string kdc = null)
+        {
+            this.kdc = kdc;
+        }
+
+        private static readonly ConcurrentDictionary<string, DnsRecord> DomainCache
+            = new ConcurrentDictionary<string, DnsRecord>();
 
         protected ILogger Logger { get; set; }
 
@@ -27,11 +34,11 @@ namespace Kerberos.NET.Transport
             Logger?.WriteLine(KerberosLogSource.Client, log);
         }
 
-        protected static T Decode<T>(byte[] response) where T : IAsn1Encoder, new()
+        protected static T Decode<T>(byte[] response) where T : IAsn1ApplicationEncoder<T>, new()
         {
             if (KrbError.CanDecode(response))
             {
-                var error = KrbErrorChoice.Decode(response).Error;
+                var error = KrbError.DecodeAsApplication(response);
 
                 if (error.ErrorCode == KerberosErrorCode.KRB_ERR_RESPONSE_TOO_BIG)
                 {
@@ -41,20 +48,37 @@ namespace Kerberos.NET.Transport
                 throw new KerberosProtocolException(error);
             }
 
-            return (T)new T().Decode(response);
+            return new T().DecodeAsApplication(response);
         }
 
-        public virtual Task<T> SendMessage<T>(string domain, IAsn1Encoder req)
-            where T : IAsn1Encoder, new()
+        public virtual Task<TResponse> SendMessage<TRequest, TResponse>(string domain, IAsn1ApplicationEncoder<TRequest> req)
+            where TResponse : IAsn1ApplicationEncoder<TResponse>, new()
         {
-            return SendMessage<T>(domain, req.Encode().AsMemory());
+            return SendMessage<TResponse>(domain, req.EncodeAsApplication());
         }
 
         public abstract Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req)
-            where T : IAsn1Encoder, new();
+            where T : IAsn1ApplicationEncoder<T>, new();
 
         protected DnsRecord QueryDomain(string lookup)
         {
+            if (!string.IsNullOrWhiteSpace(kdc))
+            {
+                var split = kdc.Split(':');
+
+                var record = new DnsRecord
+                {
+                    Target = split[0]
+                };
+
+                if (split.Length > 0)
+                {
+                    record.Port = int.Parse(split[1]);
+                }
+
+                return record;
+            }
+
             return DomainCache.GetOrAdd(lookup, d => QueryDns(d));
         }
 
@@ -66,7 +90,7 @@ namespace Kerberos.NET.Transport
 
             if (srv == null)
             {
-                throw new KerberosTransportException($"Cannot locate UDP SRV record for {lookup}");
+                throw new KerberosTransportException($"Cannot locate SRV record for {lookup}");
             }
 
             if (srv.Port <= 0)

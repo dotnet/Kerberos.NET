@@ -9,7 +9,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbAuthenticator : IAsn1Encoder
+    public partial class KrbAuthenticator
     {
         public int AuthenticatorVersionNumber;
         public string Realm;
@@ -113,11 +113,6 @@ namespace Kerberos.NET.Entities
             Decode(reader, expectedTag, out KrbAuthenticator decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
-        {
-            return Decode(data);
         }
 
         internal static KrbAuthenticator Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)

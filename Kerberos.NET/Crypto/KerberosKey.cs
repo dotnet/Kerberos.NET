@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Crypto.AES;
+using Kerberos.NET.Entities;
 using System;
 using System.Text;
 
@@ -52,11 +53,13 @@ namespace Kerberos.NET.Crypto
             this.passwordBytes = passwordBytes;
             this.PrincipalName = principalName;
             this.Host = host;
-            this.Salt = salt;
+            this.salt = salt;
             this.EncryptionType = etype;
             this.SaltFormat = saltFormat;
             IterationParameter = iterationParams;
         }
+
+        private string salt;
 
         public EncryptionType EncryptionType { get; }
 
@@ -64,7 +67,26 @@ namespace Kerberos.NET.Crypto
 
         public PrincipalName PrincipalName { get; }
 
-        public string Salt { get; }
+        public string Salt
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(salt))
+                {
+                    if (EncryptionType == EncryptionType.AES128_CTS_HMAC_SHA1_96 ||
+                        EncryptionType == EncryptionType.AES256_CTS_HMAC_SHA1_96)
+                    {
+                        var sb = new StringBuilder();
+
+                        AesSalts.GenerateSalt(this, sb);
+
+                        salt = sb.ToString();
+                    }
+                }
+
+                return salt;
+            }
+        }
 
         private readonly byte[] key;
 

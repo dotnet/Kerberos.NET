@@ -22,6 +22,11 @@ namespace Kerberos.NET.Crypto
 
         public abstract int KeySize { get; }
 
+        public virtual ReadOnlyMemory<byte> GenerateKey()
+        {
+            return GenerateRandomBytes(KeySize);
+        }
+
         public abstract byte[] String2Key(KerberosKey key);
 
         public abstract byte[] Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage);

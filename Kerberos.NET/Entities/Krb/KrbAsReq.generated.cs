@@ -8,27 +8,10 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbAsReq : IAsn1Encoder
+    public partial class KrbAsReq
     {
         public KrbKdcReq AsReq;
-
-#if DEBUG
-        static KrbAsReq()
-        {
-            var usedTags = new System.Collections.Generic.Dictionary<Asn1Tag, string>();
-            Action<Asn1Tag, string> ensureUniqueTag = (tag, fieldName) =>
-            {
-                if (usedTags.TryGetValue(tag, out string existing))
-                {
-                    throw new InvalidOperationException($"Tag '{tag}' is in use by both '{existing}' and '{fieldName}'");
-                }
-
-                usedTags.Add(tag, fieldName);
-            };
-            
-            ensureUniqueTag(Asn1Tag.Sequence, "AsReq");
-        }
-#endif
+      
         public ReadOnlySpan<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -37,29 +20,18 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsSpan();
         }
-
+        
         internal void Encode(AsnWriter writer)
         {
-            bool wroteValue = false; 
-            
-            if (HasValue(AsReq))
-            {
-                if (wroteValue)
-                    throw new CryptographicException();
-                
-                AsReq?.Encode(writer);
-                wroteValue = true;
-            }
-
-            if (!wroteValue)
-            {
-                throw new CryptographicException();
-            }
+            Encode(writer, Asn1Tag.Sequence);
         }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
+    
+        internal void Encode(AsnWriter writer, Asn1Tag tag)
         {
-            return Decode(data);
+            writer.PushSequence(tag);
+            
+            AsReq?.Encode(writer);
+            writer.PopSequence(tag);
         }
         
         public static KrbAsReq Decode(ReadOnlyMemory<byte> data)
@@ -69,9 +41,23 @@ namespace Kerberos.NET.Entities
 
         internal static KrbAsReq Decode(ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
         {
+            return Decode(Asn1Tag.Sequence, encoded, ruleSet);
+        }
+
+        internal static KrbAsReq Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded)
+        {
+            AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
+            
+            Decode(reader, expectedTag, out KrbAsReq decoded);
+            reader.ThrowIfNotEmpty();
+            return decoded;
+        }
+
+        internal static KrbAsReq Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
+        {
             AsnReader reader = new AsnReader(encoded, ruleSet);
             
-            Decode(reader, out KrbAsReq decoded);
+            Decode(reader, expectedTag, out KrbAsReq decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
         }
@@ -81,20 +67,20 @@ namespace Kerberos.NET.Entities
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = new KrbAsReq();
-            Asn1Tag tag = reader.PeekTag();
-            
-            if (tag.HasSameClassAndValue(Asn1Tag.Sequence))
-            {
-                KrbKdcReq tmpAsReq;
-                KrbKdcReq.Decode(reader, out tmpAsReq);
-                decoded.AsReq = tmpAsReq;
+            Decode(reader, Asn1Tag.Sequence, out decoded);
+        }
 
-            }
-            else
-            {
-                throw new CryptographicException();
-            }
+        internal static void Decode(AsnReader reader, Asn1Tag expectedTag, out KrbAsReq decoded)
+        {
+            if (reader == null)
+                throw new ArgumentNullException(nameof(reader));
+
+            decoded = new KrbAsReq();
+            AsnReader sequenceReader = reader.ReadSequence(expectedTag);
+            
+            KrbKdcReq.Decode(sequenceReader, out decoded.AsReq);
+
+            sequenceReader.ThrowIfNotEmpty();
         }
         
         private static bool HasValue(object thing) 

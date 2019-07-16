@@ -8,7 +8,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbEncryptedData : IAsn1Encoder
+    public partial class KrbEncryptedData
     {
         public EncryptionType EType;
         public int? KeyVersionNumber;
@@ -66,11 +66,6 @@ namespace Kerberos.NET.Entities
             Decode(reader, expectedTag, out KrbEncryptedData decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
-        {
-            return Decode(data);
         }
 
         internal static KrbEncryptedData Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)

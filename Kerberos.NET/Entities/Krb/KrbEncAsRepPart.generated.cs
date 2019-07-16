@@ -8,7 +8,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbEncAsRepPart : IAsn1Encoder
+    public partial class KrbEncAsRepPart
     {
         public KrbEncKdcRepPart EncAsRepPart;
 
@@ -57,11 +57,6 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
-        {
-            return Decode(data);
         }
         
         public static KrbEncAsRepPart Decode(ReadOnlyMemory<byte> data)

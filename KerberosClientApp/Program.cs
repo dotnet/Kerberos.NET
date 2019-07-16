@@ -10,19 +10,16 @@ namespace KerberosClientApp
 {
     class Program
     {
-        static void Main(string[] args)
-        {
-            MainAsync(args).Wait();
-        }
 
-        private static async Task MainAsync(string[] args)
+        static async Task Main(string[] args)
         {
             string user = ReadString("UserName", "administrator@corp.identityintervention.com", args);
             string password = ReadString("Password", "P@ssw0rd!", args);
+            string overrideKdc = ReadString("KDC", null, args);
 
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            KerberosClient client = new KerberosClient();
+            KerberosClient client = new KerberosClient(overrideKdc);
 
             await client.Authenticate(kerbCred);
 

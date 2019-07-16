@@ -9,7 +9,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbETypeInfo2 : IAsn1Encoder
+    public partial class KrbETypeInfo2
     {
         public KrbETypeInfo2Entry[] ETypeInfo;
 
@@ -63,11 +63,6 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
-        {
-            return Decode(data);
         }
         
         public static KrbETypeInfo2 Decode(ReadOnlyMemory<byte> data)

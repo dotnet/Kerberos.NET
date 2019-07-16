@@ -22,7 +22,7 @@ namespace Kerberos.NET.Entities.Pac
             ClaimsArray = ReadClaimsArray(Stream);
         }
 
-        private IEnumerable<ClaimsArray> ReadClaimsArray(NdrBinaryReader stream)
+        private IEnumerable<ClaimsArray> ReadClaimsArray(NdrBinaryStream stream)
         {
             var count = stream.ReadInt();
 

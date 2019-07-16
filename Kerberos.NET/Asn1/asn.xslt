@@ -51,7 +51,7 @@ using Kerberos.NET.Asn1;
 
 namespace <xsl:value-of select="@namespace" />
 {
-    public partial class <xsl:value-of select="@name" /> : IAsn1Encoder
+    public partial class <xsl:value-of select="@name" />
     {<xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="DefaultFieldDef" /><xsl:apply-templates mode="FieldDef" />
       <xsl:if test="*[@defaultDerInit]">
 #if DEBUG  
@@ -101,11 +101,6 @@ namespace <xsl:value-of select="@namespace" />
             Decode(reader, expectedTag, out <xsl:value-of select="@name" /> decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory&lt;byte&gt; data) 
-        {
-            return Decode(data);
         }
 
         internal static <xsl:value-of select="@name" /> Decode(Asn1Tag expectedTag, ReadOnlyMemory&lt;byte&gt; encoded, AsnEncodingRules ruleSet)
@@ -159,7 +154,7 @@ using Kerberos.NET.Asn1;
 
 namespace <xsl:value-of select="@namespace" />
 {
-    public partial class <xsl:value-of select="@name" /> : IAsn1Encoder
+    public partial class <xsl:value-of select="@name" />
     {<xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="ValidateChoice" /><xsl:apply-templates mode="FieldDef" />
 
 #if DEBUG
@@ -195,11 +190,6 @@ namespace <xsl:value-of select="@namespace" />
             {
                 throw new CryptographicException();
             }
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory&lt;byte&gt; data) 
-        {
-            return Decode(data);
         }
         
         public static <xsl:value-of select="@name" /> Decode(ReadOnlyMemory&lt;byte&gt; data)

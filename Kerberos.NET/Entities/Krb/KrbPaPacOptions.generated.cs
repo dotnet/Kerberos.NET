@@ -8,7 +8,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbPaPacOptions : IAsn1Encoder
+    public partial class KrbPaPacOptions
     {
         public PacOptions Flags;
     
@@ -54,11 +54,6 @@ namespace Kerberos.NET.Entities
             Decode(reader, expectedTag, out KrbPaPacOptions decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
-        {
-            return Decode(data);
         }
 
         internal static KrbPaPacOptions Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)

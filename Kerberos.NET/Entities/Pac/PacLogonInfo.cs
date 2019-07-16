@@ -58,9 +58,72 @@ namespace Kerberos.NET.Entities.Pac
 
     public class PacLogonInfo : NdrMessage
     {
+        public ReadOnlyMemory<byte> Encode()
+        {
+            var stream = new NdrBinaryStream();
+
+            stream.WriteFiletime(LogonTime);
+            stream.WriteFiletime(LogoffTime);
+            stream.WriteFiletime(KickOffTime);
+            stream.WriteFiletime(PwdLastChangeTime);
+            stream.WriteFiletime(PwdCanChangeTime);
+            stream.WriteFiletime(PwdMustChangeTime);
+
+            stream.WriteRPCUnicodeString(UserName);
+            stream.WriteRPCUnicodeString(UserDisplayName);
+            stream.WriteRPCUnicodeString(LogonScript);
+            stream.WriteRPCUnicodeString(ProfilePath);
+            stream.WriteRPCUnicodeString(HomeDirectory);
+            stream.WriteRPCUnicodeString(HomeDrive);
+
+            stream.WriteShort((short)LogonCount);
+            stream.WriteShort((short)BadPasswordCount);
+
+            stream.WriteRid(UserSid);
+            stream.WriteRid(GroupSid);
+
+            stream.WriteUnsignedInt(GroupSids.Count());
+            var groupPointer = 0;
+            stream.WriteUnsignedInt(groupPointer);
+
+            stream.WriteUnsignedInt((int)UserFlags);
+
+            stream.WriteBytes(new byte[16]);
+
+            stream.WriteRPCUnicodeString(ServerName);
+            stream.WriteRPCUnicodeString(DomainName);
+
+            var domainIdPointer = 0;
+            stream.WriteUnsignedInt(domainIdPointer);
+
+            stream.WriteBytes(new byte[8]);
+
+            stream.WriteUnsignedInt((int)UserAccountControl);
+            stream.WriteUnsignedInt(SubAuthStatus);
+
+            stream.WriteFiletime(LastSuccessfulILogon);
+            stream.WriteFiletime(LastFailedILogon);
+            stream.WriteUnsignedInt(FailedILogonCount);
+
+            stream.WriteUnsignedInt(0);
+
+            stream.WriteUnsignedInt(ExtraSids.Count());
+            var extraSidsPointer = 0;
+            stream.WriteUnsignedInt(extraSidsPointer);
+
+            var resourceDomainIdPointer = 0;
+            stream.WriteUnsignedInt(resourceDomainIdPointer);
+            stream.WriteUnsignedInt(ResourceGroups.Count());
+            var resourceGroupPointer = 0;
+            stream.WriteUnsignedInt(resourceGroupPointer);
+
+            return stream.Encode();
+        }
+
         public PacLogonInfo(byte[] node)
             : base(node)
         {
+            #region sdf
             LogonTime = Stream.ReadFiletime();
             LogoffTime = Stream.ReadFiletime();
             KickOffTime = Stream.ReadFiletime();
@@ -114,6 +177,7 @@ namespace Kerberos.NET.Entities.Pac
             var resourceDomainIdPointer = Stream.ReadInt();
             var resourceGroupCount = Stream.ReadInt();
             var resourceGroupPointer = Stream.ReadInt();
+            #endregion
 
             UserName = userName.ReadString(Stream);
             UserDisplayName = userDisplayName.ReadString(Stream);
@@ -159,7 +223,7 @@ namespace Kerberos.NET.Entities.Pac
             }
         }
 
-        private static SecurityIdentifier[] ParseExtraSids(NdrBinaryReader Stream, int extraSidCount, int extraSidPointer)
+        private static SecurityIdentifier[] ParseExtraSids(NdrBinaryStream Stream, int extraSidCount, int extraSidPointer)
         {
             if (extraSidPointer == 0)
             {
@@ -199,7 +263,7 @@ namespace Kerberos.NET.Entities.Pac
             return extraSidAtts;
         }
 
-        private static IEnumerable<SecurityIdentifier> ParseAttributes(NdrBinaryReader Stream, int count, int pointer)
+        private static IEnumerable<SecurityIdentifier> ParseAttributes(NdrBinaryStream Stream, int count, int pointer)
         {
             var attributes = new List<SecurityIdentifier>();
 
@@ -227,62 +291,62 @@ namespace Kerberos.NET.Entities.Pac
             return attributes;
         }
 
-        public DateTimeOffset LogonTime { get; }
+        public DateTimeOffset LogonTime { get; set; }
 
-        public DateTimeOffset LogoffTime { get; }
+        public DateTimeOffset LogoffTime { get; set; }
 
-        public DateTimeOffset KickOffTime { get; }
+        public DateTimeOffset KickOffTime { get; set; }
 
-        public DateTimeOffset PwdLastChangeTime { get; }
+        public DateTimeOffset PwdLastChangeTime { get; set; }
 
-        public DateTimeOffset PwdCanChangeTime { get; }
+        public DateTimeOffset PwdCanChangeTime { get; set; }
 
-        public DateTimeOffset PwdMustChangeTime { get; }
+        public DateTimeOffset PwdMustChangeTime { get; set; }
 
-        public long LogonCount { get; }
+        public long LogonCount { get; set; }
 
-        public long BadPasswordCount { get; }
+        public long BadPasswordCount { get; set; }
 
-        public string UserName { get; }
+        public string UserName { get; set; }
 
-        public string UserDisplayName { get; }
+        public string UserDisplayName { get; set; }
 
-        public string LogonScript { get; }
+        public string LogonScript { get; set; }
 
-        public string ProfilePath { get; }
+        public string ProfilePath { get; set; }
 
-        public string HomeDirectory { get; }
+        public string HomeDirectory { get; set; }
 
-        public string HomeDrive { get; }
+        public string HomeDrive { get; set; }
 
-        public string ServerName { get; }
+        public string ServerName { get; set; }
 
-        public string DomainName { get; }
+        public string DomainName { get; set; }
 
-        public SecurityIdentifier UserSid { get; }
+        public SecurityIdentifier UserSid { get; set; }
 
-        public SecurityIdentifier GroupSid { get; }
+        public SecurityIdentifier GroupSid { get; set; }
 
-        public IEnumerable<SecurityIdentifier> GroupSids { get; }
+        public IEnumerable<SecurityIdentifier> GroupSids { get; set; }
 
-        public IEnumerable<SecurityIdentifier> ExtraSids { get; }
+        public IEnumerable<SecurityIdentifier> ExtraSids { get; set; }
 
-        public UserAccountControlFlags UserAccountControl { get; }
+        public UserAccountControlFlags UserAccountControl { get; set; }
 
-        public UserFlags UserFlags { get; }
+        public UserFlags UserFlags { get; set; }
 
-        public int FailedILogonCount { get; }
+        public int FailedILogonCount { get; set; }
 
-        public DateTimeOffset LastFailedILogon { get; }
+        public DateTimeOffset LastFailedILogon { get; set; }
 
-        public DateTimeOffset LastSuccessfulILogon { get; }
+        public DateTimeOffset LastSuccessfulILogon { get; set; }
 
-        public int SubAuthStatus { get; }
+        public int SubAuthStatus { get; set; }
 
-        public SecurityIdentifier ResourceDomainSid { get; }
+        public SecurityIdentifier ResourceDomainSid { get; set; }
 
-        public IEnumerable<SecurityIdentifier> ResourceGroups { get; }
+        public IEnumerable<SecurityIdentifier> ResourceGroups { get; set; }
 
-        public SecurityIdentifier DomainSid { get; }
+        public SecurityIdentifier DomainSid { get; set; }
     }
 }

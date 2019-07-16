@@ -6,6 +6,8 @@ namespace Kerberos.NET
 {
     internal class DebugLogger : ILogger
     {
+        public LogLevel Level { get; set; } = LogLevel.Debug;
+
         public bool Enabled { get; set; } = true;
 
         public void WriteLine(KerberosLogSource source, string value)
@@ -25,6 +27,18 @@ namespace Kerberos.NET
                 return;
             }
 
+            Debug.WriteLine($"[{source}] {value}");
+
+            WriteLine(source, ex);
+        }
+
+        public void WriteLine(KerberosLogSource source, Exception ex)
+        {
+            if (!Enabled)
+            {
+                return;
+            }
+
             var exValue = new StringBuilder();
 
             if (ex is AggregateException agg)
@@ -35,7 +49,7 @@ namespace Kerberos.NET
                 }
             }
 
-            Debug.WriteLine($"[{source}] {value} {exValue}");
+            Debug.WriteLine(exValue);
         }
     }
 }

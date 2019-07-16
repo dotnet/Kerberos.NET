@@ -14,6 +14,13 @@ namespace Kerberos.NET.Crypto.AES
 
             var salt = new StringBuilder();
 
+            GenerateSalt(key, salt);
+
+            return salt.ToString();
+        }
+
+        public static void GenerateSalt(KerberosKey key, StringBuilder salt)
+        {
             if (key.PrincipalName != null)
             {
                 switch (key.SaltFormat)
@@ -29,8 +36,6 @@ namespace Kerberos.NET.Crypto.AES
                         break;
                 }
             }
-
-            return salt.ToString();
         }
 
         private static void GenerateRfc4120Salt(KerberosKey key, StringBuilder salt)

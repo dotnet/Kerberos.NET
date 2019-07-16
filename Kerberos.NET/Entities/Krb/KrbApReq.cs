@@ -5,7 +5,7 @@ using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbApReq
+    public partial class KrbApReq : IAsn1ApplicationEncoder<KrbApReq>
     {
         public KrbApReq()
         {
@@ -13,14 +13,21 @@ namespace Kerberos.NET.Entities
             MessageType = MessageType.KRB_AP_REQ;
         }
 
-        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 14);
+        internal const int ApplicationTagValue = 14;
+
+        public KrbApReq DecodeAsApplication(ReadOnlyMemory<byte> data)
+        {
+            return Decode(ApplicationTag, data);
+        }
+
+        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, ApplicationTagValue);
 
         public ReadOnlyMemory<byte> EncodeAsApplication()
         {
             using (var writer = new AsnWriter(AsnEncodingRules.DER))
             {
                 writer.PushSequence(ApplicationTag);
-
+                
                 this.Encode(writer);
 
                 writer.PopSequence(ApplicationTag);
@@ -35,11 +42,13 @@ namespace Kerberos.NET.Entities
         {
             var ticket = tgsRep.Ticket;
 
+            KerberosConstants.Now(out DateTimeOffset time, out int usec);
+
             var authenticator = new KrbAuthenticator
             {
                 CName = tgsRep.CName,
-                CTime = DateTimeOffset.UtcNow,
-                Cusec = 0,
+                CTime = time,
+                Cusec = usec,
                 Realm = ticket.Application.Realm,
                 SequenceNumber = KerberosConstants.GetNonce(),
                 Subkey = null,

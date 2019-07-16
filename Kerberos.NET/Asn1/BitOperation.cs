@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
+using System.Buffers;
 
 namespace Kerberos.NET.Asn1
 {
@@ -20,9 +21,14 @@ namespace Kerberos.NET.Asn1
         {
             var bytes = new byte[4];
 
-            Endian.ConvertToBigEndian((int)longVal, bytes, 0);
+            Endian.ConvertToBigEndian((int)longVal, bytes);
 
             return new ReadOnlySpan<byte>(bytes);
+        }
+
+        public static long AsLong(this ReadOnlySequence<byte> val)
+        {
+            return val.ToArray().AsLong();
         }
 
         public static int AsInt(this ReadOnlyMemory<byte> val)

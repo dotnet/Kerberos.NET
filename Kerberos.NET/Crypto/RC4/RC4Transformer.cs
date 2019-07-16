@@ -101,7 +101,7 @@ namespace Kerberos.NET.Crypto
         {
             byte[] bytes = new byte[4];
 
-            Endian.ConvertToLittleEndian(thing, bytes, 0);
+            Endian.ConvertToLittleEndian(thing, bytes);
 
             return bytes;
         }
