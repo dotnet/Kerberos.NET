@@ -1,4 +1,6 @@
-﻿
+﻿// This is a generated file.
+// This file is licensed as per the LICENSE file.
+// The generation template has been modified from .NET Foundation implementation
 using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -8,7 +10,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbAuthenticatorApplication : IAsn1Encoder
+    public partial class KrbAuthenticatorApplication
     {
         public KrbAuthenticator Application;
 
@@ -57,11 +59,6 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
-        {
-            return Decode(data);
         }
         
         public static KrbAuthenticatorApplication Decode(ReadOnlyMemory<byte> data)

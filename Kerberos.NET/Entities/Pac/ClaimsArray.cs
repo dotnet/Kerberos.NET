@@ -11,7 +11,7 @@ namespace Kerberos.NET.Entities.Pac
 
     public class ClaimsArray : NdrObject
     {
-        public ClaimsArray(NdrBinaryReader stream)
+        public ClaimsArray(NdrBinaryStream stream)
             : base(stream)
         {
             ClaimSource = (ClaimSourceType)Stream.ReadInt();

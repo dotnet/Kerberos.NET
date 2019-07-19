@@ -114,7 +114,7 @@ namespace Kerberos.NET.Crypto.AES
         {
             var constant = new byte[5];
 
-            Endian.ConvertToBigEndian((int)usage, constant, 0);
+            Endian.ConvertToBigEndian((int)usage, constant);
 
             constant[4] = (byte)kdf;
 

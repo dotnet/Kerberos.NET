@@ -20,12 +20,12 @@ namespace Kerberos.NET.Client
         //                   -> request ticket for self to get local authz?
         //                   -> cache TGT/cache service ticket?
 
-        public KerberosClient()
-            : this(new UdpKerberosTransport(), new TcpKerberosTransport())
+        public KerberosClient(string kdc = null)
+            : this(/*new UdpKerberosTransport(kdc),*/ new TcpKerberosTransport(kdc))
         {
         }
 
-        private const AuthenticationOptions DefaultAuthentication = 
+        private const AuthenticationOptions DefaultAuthentication =
             AuthenticationOptions.IncludePacRequest |
             AuthenticationOptions.RenewableOk |
             AuthenticationOptions.Canonicalize |
@@ -63,12 +63,12 @@ namespace Kerberos.NET.Client
                 }
                 catch (KerberosProtocolException pex)
                 {
-                    if (++preauthAttempts > 3 || pex.Error.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
+                    if (++preauthAttempts > 3 || pex?.Error.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
                     {
                         throw;
                     }
 
-                    credential.IncludePreAuthenticationHints(pex.Error.DecodePreAuthentication());
+                    credential.IncludePreAuthenticationHints(pex?.Error.DecodePreAuthentication());
 
                     AuthenticationOptions |= AuthenticationOptions.PreAuthenticate;
                 }
@@ -80,9 +80,11 @@ namespace Kerberos.NET.Client
         {
             var tgs = KrbTgsReq.CreateTgsReq(spn, tgtSessionKey, tgt, KdcOptions);
 
+            var encodedTgs = tgs.EncodeAsApplication();
+
             var choice = await transport.SendMessage<KrbTgsRep>(
                 tgs.TgsReq.Body.Realm,
-                tgs.EncodeAsApplication()
+                encodedTgs
             );
 
             var tgsRep = choice.Response;

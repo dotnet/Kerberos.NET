@@ -3,7 +3,7 @@ using System;
 using System.Runtime.Serialization;
 using System.Security.Cryptography.Asn1;
 
-namespace Kerberos.NET.Client
+namespace Kerberos.NET
 {
 
     [Serializable]

@@ -13,6 +13,10 @@ namespace Kerberos.NET.Transport
 
         public override KerberosTransportException LastError { get; set; }
 
+        public UdpKerberosTransport(string kdc = null)
+            : base(kdc)
+        {
+        }
 
         public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> encoded)
         {

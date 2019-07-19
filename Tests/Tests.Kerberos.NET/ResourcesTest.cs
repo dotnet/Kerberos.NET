@@ -15,11 +15,11 @@ namespace Tests.Kerberos.NET
 
             try
             {
-                KrbError.Decode(asReq);
+                KrbError.DecodeAsApplication(asReq);
             }
             catch (Exception ex)
             {
-                Assert.IsTrue(ex.Message.Contains("Expected ContextSpecific"));
+                Assert.IsTrue(ex.Message.Contains("Expected Application-30"));
                 throw;
             }
         }

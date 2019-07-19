@@ -13,7 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{E3EE549C-8
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8F0C1D56-CBBB-4B8B-81D1-5D1544AD5C72}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerberosClientApp", "KerberosClientApp\KerberosClientApp.csproj", "{5C180587-DA01-4B03-9726-EEB28D70D480}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KerberosClientApp", "KerberosClientApp\KerberosClientApp.csproj", "{5C180587-DA01-4B03-9726-EEB28D70D480}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerberosKdcHostApp", "KerberosKdcHostApp\KerberosKdcHostApp.csproj", "{6963D3CB-B2F1-452B-9339-18851A1C98C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,6 +39,10 @@ Global
 		{5C180587-DA01-4B03-9726-EEB28D70D480}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C180587-DA01-4B03-9726-EEB28D70D480}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C180587-DA01-4B03-9726-EEB28D70D480}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6963D3CB-B2F1-452B-9339-18851A1C98C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6963D3CB-B2F1-452B-9339-18851A1C98C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6963D3CB-B2F1-452B-9339-18851A1C98C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6963D3CB-B2F1-452B-9339-18851A1C98C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,6 +52,7 @@ Global
 		{0E4F4471-C2E4-4870-A541-11D14A76AC84} = {8F0C1D56-CBBB-4B8B-81D1-5D1544AD5C72}
 		{046122A3-9C6F-42E8-A21E-E4F2CD4DBCF8} = {E3EE549C-8245-45E7-A964-E38C78DC9FD3}
 		{5C180587-DA01-4B03-9726-EEB28D70D480} = {8F0C1D56-CBBB-4B8B-81D1-5D1544AD5C72}
+		{6963D3CB-B2F1-452B-9339-18851A1C98C0} = {8F0C1D56-CBBB-4B8B-81D1-5D1544AD5C72}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {17150968-CFF9-4183-989D-C93E19033096}

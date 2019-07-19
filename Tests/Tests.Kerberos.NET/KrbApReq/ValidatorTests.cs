@@ -85,6 +85,8 @@ namespace Tests.Kerberos.NET
                 Logs = new List<string>();
             }
 
+            public LogLevel Level { get; set; } = LogLevel.Debug;
+
             public bool Enabled { get; set; } = true;
 
             public List<string> Logs { get; }
@@ -97,6 +99,11 @@ namespace Tests.Kerberos.NET
             public void WriteLine(KerberosLogSource source, string value, Exception ex)
             {
                 Logs.Add($"[{source}] {value} {ex}");
+            }
+
+            public void WriteLine(KerberosLogSource source, Exception ex)
+            {
+                Logs.Add($"[{source}] {ex}");
             }
         }
 

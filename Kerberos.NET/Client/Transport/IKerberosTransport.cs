@@ -10,10 +10,10 @@ namespace Kerberos.NET.Transport
 
         KerberosTransportException LastError { get; set; }
 
-        Task<T> SendMessage<T>(string domain, IAsn1Encoder req)
-            where T : IAsn1Encoder, new();
+        Task<TResponse> SendMessage<TRequest, TResponse>(string domain, IAsn1ApplicationEncoder<TRequest> req)
+            where TResponse : IAsn1ApplicationEncoder<TResponse>, new();
 
         Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req)
-            where T : IAsn1Encoder, new();
+            where T : IAsn1ApplicationEncoder<T>, new();
     }
 }

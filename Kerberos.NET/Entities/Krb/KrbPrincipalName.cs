@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
+using Kerberos.NET.Server;
 
 namespace Kerberos.NET.Entities
 {
@@ -27,6 +29,28 @@ namespace Kerberos.NET.Entities
             }
 
             return true;
+        }
+
+        public static KrbPrincipalName FromPrincipal(
+            IKerberosPrincipal principal,
+            PrincipalNameType type = PrincipalNameType.NT_PRINCIPAL,
+            string realm = null
+        )
+        {
+            var nameSplit = principal.PrincipalName.Split('@');
+
+            var name = nameSplit[0];
+
+            if (string.IsNullOrWhiteSpace(realm) && nameSplit.Length > 0)
+            {
+                realm = nameSplit[1];
+            }
+
+            return new KrbPrincipalName
+            {
+                Type = type,
+                Name = new[] { name, realm.ToUpperInvariant() }
+            };
         }
     }
 }

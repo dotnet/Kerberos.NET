@@ -7,20 +7,18 @@ namespace Kerberos.NET.Entities.Pac
     public class SecurityIdentifier
     {
         private readonly IdentifierAuthority authority;
-        private readonly int[] subAuthorities;
-
         private string sddl;
 
         public SecurityIdentifier(IdentifierAuthority authority, int[] subs, SidAttributes attributes)
         {
             this.authority = authority;
-            subAuthorities = subs;
+            SubAuthorities = subs;
 
             Attributes = attributes;
         }
 
         public SecurityIdentifier(SecurityIdentifier sid, SidAttributes attributes)
-            : this(sid.authority, sid.subAuthorities, attributes)
+            : this(sid.authority, sid.SubAuthorities, attributes)
         {
         }
 
@@ -42,14 +40,16 @@ namespace Kerberos.NET.Entities.Pac
                 );
             }
 
-            subAuthorities = new int[subs.Length];
+            SubAuthorities = new int[subs.Length];
 
-            subs.CopyTo(subAuthorities, 0);
+            subs.CopyTo(SubAuthorities, 0);
         }
 
         public SidAttributes Attributes { get; }
 
         public string Value { get { return ToString(); } }
+
+        public int[] SubAuthorities { get; }
 
         public override string ToString()
         {
@@ -59,9 +59,9 @@ namespace Kerberos.NET.Entities.Pac
 
                 result.AppendFormat("S-1-{0}", (long)authority);
 
-                for (int i = 0; i < subAuthorities.Length; i++)
+                for (int i = 0; i < SubAuthorities.Length; i++)
                 {
-                    result.AppendFormat("-{0}", (uint)(subAuthorities[i]));
+                    result.AppendFormat("-{0}", (uint)(SubAuthorities[i]));
                 }
 
                 sddl = result.ToString().ToUpperInvariant();
@@ -72,7 +72,7 @@ namespace Kerberos.NET.Entities.Pac
 
         internal SecurityIdentifier AppendTo(SecurityIdentifier sidId)
         {
-            var subs = sidId.subAuthorities.Union(subAuthorities).ToArray();
+            var subs = sidId.SubAuthorities.Union(SubAuthorities).ToArray();
 
             return new SecurityIdentifier(sidId.authority, subs, this.Attributes);
         }

@@ -17,9 +17,9 @@ namespace Tests.Kerberos.NET
         {
             var transport = new NoopTransport();
 
-            IAsn1Encoder encoded = new KrbApReq { };
+            IAsn1ApplicationEncoder<KrbApReq> encoded = new KrbApReq { };
 
-            var resp = await transport.SendMessage<KrbAsRep>("sdf", encoded);
+            var resp = await transport.SendMessage<KrbApReq, KrbAsRep>("sdf", encoded);
 
             Assert.IsNotNull(resp);
         }
@@ -59,7 +59,7 @@ namespace Tests.Kerberos.NET
                             Cipher = new byte[] { 0x0, 0x0 }
                         }
                     }
-                }.Encode();
+                }.EncodeAsApplication();
 
                 return Task.FromResult(Decode<T>(response.ToArray()));
             }

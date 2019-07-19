@@ -1,22 +1,33 @@
-﻿using System;
+﻿using Kerberos.NET.Crypto;
+using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Kerberos.NET.Entities.Pac
 {
     [DebuggerDisplay("{Position} / {Length}")]
-    public class NdrBinaryReader
+    public class NdrBinaryStream
     {
         private readonly BinaryReader reader;
+        private readonly BinaryWriter writer;
 
-        public NdrBinaryReader(Stream stream)
+        private readonly MemoryStream stream;
+
+        public NdrBinaryStream()
         {
-            reader = new BinaryReader(stream);
+            stream = new MemoryStream();
+            writer = new BinaryWriter(stream);
         }
 
-        public NdrBinaryReader(byte[] bufferData)
-            : this(new MemoryStream(bufferData))
+        private NdrBinaryStream(BinaryReader reader)
+        {
+            this.reader = reader;
+        }
+
+        public NdrBinaryStream(byte[] bufferData)
+            : this(new BinaryReader(new MemoryStream(bufferData)))
         {
         }
 
@@ -59,6 +70,11 @@ namespace Kerberos.NET.Entities.Pac
             return reader.ReadChar();
         }
 
+        public void WriteShort(short value)
+        {
+            writer.Write(value);
+        }
+
         public short ReadShort()
         {
             Align(2);
@@ -89,6 +105,25 @@ namespace Kerberos.NET.Entities.Pac
         private const long DaysTo1601 = 584388;
         private const long FileTimeOffset = DaysTo1601 * TicksPerDay;
 
+        public void WriteFiletime(DateTimeOffset value)
+        {
+            var low = value.UtcTicks & 0xFFFFFFFF;
+            var high = value.UtcTicks >> 32;
+
+            WriteUnsignedInt((int)low);
+            WriteUnsignedInt((int)high);
+        }
+
+        internal void WriteRPCUnicodeString(string userName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void WriteUnsignedInt(int value)
+        {
+            writer.Write(value);
+        }
+
         public DateTimeOffset ReadFiletime()
         {
             var low = ReadUnsignedInt();
@@ -105,6 +140,11 @@ namespace Kerberos.NET.Entities.Pac
             }
 
             return DateTimeOffset.MinValue;
+        }
+
+        internal void WriteBytes(byte[] v)
+        {
+            writer.Write(v);
         }
 
         public PacString ReadRPCUnicodeString()
@@ -148,6 +188,22 @@ namespace Kerberos.NET.Entities.Pac
             }
 
             return Encoding.Unicode.GetString(chars, 0, readTo);
+        }
+
+        internal ReadOnlyMemory<byte> Encode()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void WriteRid(SecurityIdentifier value)
+        {
+            var lastAuthority = value.SubAuthorities.Last();
+
+            var bytes = new byte[4];
+
+            Endian.ConvertToLittleEndian(lastAuthority, bytes);
+
+            writer.Write(bytes);
         }
 
         public SecurityIdentifier ReadRid()

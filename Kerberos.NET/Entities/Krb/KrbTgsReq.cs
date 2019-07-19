@@ -7,9 +7,25 @@ using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbTgsReq
+    public partial class KrbTgsReq : IAsn1ApplicationEncoder<KrbTgsReq>
     {
-        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 12);
+        internal const int ApplicationTagValue = 12;
+
+        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, ApplicationTagValue);
+
+        public KrbTgsReq()
+        {
+        }
+
+        public static KrbTgsReq DecodeMessageAsApplication(ReadOnlyMemory<byte> message)
+        {
+            return Decode(ApplicationTag, message);
+        }
+
+        public KrbTgsReq DecodeAsApplication(ReadOnlyMemory<byte> message)
+        {
+            return Decode(ApplicationTag, message);
+        }
 
         public ReadOnlyMemory<byte> EncodeAsApplication()
         {
@@ -17,9 +33,9 @@ namespace Kerberos.NET.Entities
             {
                 writer.PushSequence(ApplicationTag);
 
-                if (this.TgsReq != null)
+                if (TgsReq != null)
                 {
-                    this.TgsReq?.Encode(writer);
+                    TgsReq.Encode(writer);
                 }
 
                 writer.PopSequence(ApplicationTag);
@@ -83,11 +99,13 @@ namespace Kerberos.NET.Entities
         {
             var tgt = kdcRep.Ticket.Application;
 
+            KerberosConstants.Now(out DateTimeOffset time, out int usec);
+
             var authenticator = new KrbAuthenticator
             {
                 CName = kdcRep.CName,
-                CTime = DateTimeOffset.UtcNow,
-                Cusec = 0,
+                CTime = time,
+                Cusec = usec,
                 Realm = tgt.Realm,
                 SequenceNumber = KerberosConstants.GetNonce(),
                 Subkey = tgtSessionKey,

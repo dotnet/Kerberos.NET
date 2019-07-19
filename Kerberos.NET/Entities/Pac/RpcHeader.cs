@@ -11,7 +11,7 @@ namespace Kerberos.NET.Entities.Pac
             public const int COMMON_HEADER_BYTES = 8;
         }
 
-        public RpcHeader(NdrBinaryReader pacStream)
+        public RpcHeader(NdrBinaryStream pacStream)
         {
             ReadCommonHeader(pacStream);
 
@@ -28,7 +28,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public int Length { get; private set; }
 
-        private void ReadCommonHeader(NdrBinaryReader pacStream)
+        private void ReadCommonHeader(NdrBinaryStream pacStream)
         {
             Version = pacStream.Read(1)[0];
 

@@ -17,7 +17,7 @@ namespace Kerberos.NET.Entities.Pac
     [DebuggerDisplay("{Id}")]
     public class ClaimEntry : NdrObject
     {
-        public ClaimEntry(NdrBinaryReader stream)
+        public ClaimEntry(NdrBinaryStream stream)
             : base(stream)
         {
             Stream.Seek(4);
@@ -47,7 +47,7 @@ namespace Kerberos.NET.Entities.Pac
             return values.Select(v => (T)Convert.ChangeType(v, typeof(T)));
         }
 
-        internal void ReadValue(NdrBinaryReader stream)
+        internal void ReadValue(NdrBinaryStream stream)
         {
             Id = stream.ReadString();
 
@@ -73,7 +73,7 @@ namespace Kerberos.NET.Entities.Pac
             ReadValues(stream);
         }
 
-        private void ReadValues(NdrBinaryReader Stream)
+        private void ReadValues(NdrBinaryStream Stream)
         {
             values = new object[Count];
 

@@ -1,4 +1,7 @@
-﻿
+﻿// This is a generated file.
+// This file is licensed as per the LICENSE file.
+// The generation template has been modified from .NET Foundation implementation
+
 using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -8,7 +11,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbHostAddress : IAsn1Encoder
+    public partial class KrbHostAddress
     {
         public AddressType AddressType;
         public ReadOnlyMemory<byte> Address;
@@ -57,11 +60,6 @@ namespace Kerberos.NET.Entities
             Decode(reader, expectedTag, out KrbHostAddress decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
-        {
-            return Decode(data);
         }
 
         internal static KrbHostAddress Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)

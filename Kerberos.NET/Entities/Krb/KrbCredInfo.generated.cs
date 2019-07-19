@@ -1,4 +1,7 @@
-﻿
+﻿// This is a generated file.
+// This file is licensed as per the LICENSE file.
+// The generation template has been modified from .NET Foundation implementation
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -9,7 +12,7 @@ using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbCredInfo : IAsn1Encoder
+    public partial class KrbCredInfo
     {
         public KrbEncryptionKey Key;
         public string Realm;
@@ -147,11 +150,6 @@ namespace Kerberos.NET.Entities
             Decode(reader, expectedTag, out KrbCredInfo decoded);
             reader.ThrowIfNotEmpty();
             return decoded;
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory<byte> data) 
-        {
-            return Decode(data);
         }
 
         internal static KrbCredInfo Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)

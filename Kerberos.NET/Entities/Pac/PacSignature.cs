@@ -6,7 +6,7 @@ namespace Kerberos.NET.Entities.Pac
     {
         public PacSignature(byte[] infoBuffer, byte[] signatureData)
         {
-            var pacStream = new NdrBinaryReader(infoBuffer);
+            var pacStream = new NdrBinaryStream(infoBuffer);
 
             Type = (ChecksumType)pacStream.ReadUnsignedInt();
 
@@ -33,7 +33,7 @@ namespace Kerberos.NET.Entities.Pac
             }
         }
 
-        public PacValidator Validator { get; }
+        public PacSign Validator { get; }
 
         public ChecksumType Type { get; }
 

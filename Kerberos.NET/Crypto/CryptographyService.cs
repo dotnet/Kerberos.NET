@@ -35,16 +35,16 @@ namespace Kerberos.NET.Crypto
             return null;
         }
 
-        internal static PacValidator CreateChecksumValidator(ChecksumType type, byte[] signature, byte[] signatureData)
+        internal static PacSign CreateChecksumValidator(ChecksumType type, byte[] signature, byte[] signatureData)
         {
             switch (type)
             {
                 case ChecksumType.KERB_CHECKSUM_HMAC_MD5:
-                    return new HmacMd5PacValidator(signature, signatureData);
+                    return new HmacMd5PacSign(signature, signatureData);
                 case ChecksumType.HMAC_SHA1_96_AES128:
-                    return new HmacAes128PacValidator(signature, signatureData);
+                    return new HmacAes128PacSign(signature, signatureData);
                 case ChecksumType.HMAC_SHA1_96_AES256:
-                    return new HmacAes256PacValidator(signature, signatureData);
+                    return new HmacAes256PacSign(signature, signatureData);
             }
 
             return null;

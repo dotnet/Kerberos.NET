@@ -15,7 +15,7 @@ namespace Kerberos.NET.Entities.Pac
             this.pointer = pointer;
         }
 
-        public string ReadString(NdrBinaryReader reader)
+        public string ReadString(NdrBinaryStream reader)
         {
             if (pointer == 0)
             {

@@ -3,6 +3,7 @@ using Kerberos.NET.Entities.Pac;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Kerberos.NET.Entities
 {
@@ -44,6 +45,10 @@ namespace Kerberos.NET.Entities
         private const int PAC_VERSION = 0;
 
         private readonly byte[] pacData;
+
+        public PrivilegedAttributeCertificate()
+            : base(new NdrBinaryStream())
+        { }
 
         public PrivilegedAttributeCertificate(byte[] pac)
             : base(pac)
@@ -172,5 +177,105 @@ namespace Kerberos.NET.Entities
         public UpnDomainInfo UpnDomainInformation { get; private set; }
 
         public PacDelegationInfo DelegationInformation { get; private set; }
+
+        public ReadOnlyMemory<byte> Encode(KerberosKey kdcKey, KerberosKey serverKey)
+        {
+            // pac format
+            // 
+            // int: number of pac elements
+            // int: version = 0
+            // 
+            // for count
+            // {
+            //    int: pac type
+            //    int: element size in bytes
+            //    long: offset
+            // }
+            // 
+            // offset
+            // {
+            // ...
+            // }
+
+            var pacElements = CollectElements();
+
+            var pac = GeneratePac(pacElements);
+
+            SignPac(pacElements, pac, kdcKey, serverKey);
+
+            return pac;
+        }
+
+        private static void SignPac(IEnumerable<IPacElement> pacElements, Memory<byte> pac, KerberosKey kdcKey, KerberosKey serverKey)
+        {
+            foreach (var element in pacElements.Where(e => e.RequiresKdcSignature || e.RequiresServerSignature))
+            {
+                if (element.RequiresServerSignature)
+                {
+                    element.Sign(pac, serverKey);
+                }
+
+                if (element.RequiresKdcSignature)
+                {
+                    element.Sign(pac, kdcKey);
+                }
+            }
+        }
+
+        private static Memory<byte> GeneratePac(IEnumerable<IPacElement> pacElements)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(pacElements.Count());
+                writer.Write(PAC_VERSION);
+
+                var headerLength = 8 + (pacElements.Count() * 16);
+                var offset = headerLength;
+
+                foreach (var element in pacElements)
+                {
+                    writer.Write((int)element.PacType);
+
+                    var encoded = element.Encode();
+
+                    writer.Write(encoded.Length);
+                    writer.Write(offset);
+
+                    offset += encoded.Length;
+                }
+
+                foreach (var element in pacElements)
+                {
+                    var encoded = element.Encode();
+
+                    writer.Write(encoded.ToArray());
+                }
+
+                writer.Flush();
+
+                return stream.ToArray();
+            }
+        }
+
+        private IEnumerable<IPacElement> CollectElements()
+        {
+            var elements = new List<IPacElement>();
+
+            return elements;
+        }
+    }
+
+    internal interface IPacElement
+    {
+        PacType PacType { get; }
+
+        bool RequiresKdcSignature { get; }
+
+        bool RequiresServerSignature { get; }
+
+        ReadOnlyMemory<byte> Encode();
+
+        void Sign(Memory<byte> pac, KerberosKey key);
     }
 }

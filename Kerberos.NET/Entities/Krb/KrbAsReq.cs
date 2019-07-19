@@ -12,7 +12,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAsReq
     {
-        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 10);
+        internal const int ApplicationTagValue = 10;
+        internal static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, ApplicationTagValue);
+
+        public static KrbAsReq DecodeAsApplication(ReadOnlyMemory<byte> data)
+        {
+            return Decode(ApplicationTag, data);
+        }
 
         public ReadOnlyMemory<byte> EncodeAsApplication()
         {
@@ -31,29 +37,6 @@ namespace Kerberos.NET.Entities
 
                 return span.AsMemory();
             }
-        }
-
-        public DateTimeOffset DecryptTimestamp(KerberosKey key)
-        {
-            var timestampPaData = AsReq?.PaData.FirstOrDefault(p => p.Type == PaDataType.PA_ENC_TIMESTAMP);
-
-            if (timestampPaData == null)
-            {
-                return DateTimeOffset.MinValue;
-            }
-
-            var encryptedTimestamp = KrbEncryptedData.Decode(timestampPaData.Value);
-
-            var tsEnc = encryptedTimestamp.Decrypt(key, KeyUsage.PaEncTs, d => KrbPaEncTsEnc.Decode(d));
-
-            var timestamp = tsEnc.PaTimestamp;
-
-            if (tsEnc.PaUSec > 0)
-            {
-                timestamp = timestamp.AddTicks(tsEnc.PaUSec.Value / 10);
-            }
-
-            return timestamp;
         }
 
         public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options)

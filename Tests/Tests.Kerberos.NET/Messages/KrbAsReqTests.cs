@@ -1,4 +1,6 @@
 ﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Client;
+using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -12,11 +14,25 @@ namespace Tests.Kerberos.NET.Messages
     public class KrbAsReqTests : BaseTest
     {
         [TestMethod]
+        public void TestAsReqRoundtripParse()
+        {
+            var creds = new KerberosPasswordCredential("sdfsdfsdf", "sdfsdfsdf", "sdfsdfsdf");
+
+            var asReq = KrbAsReq.CreateAsReq(creds, AuthenticationOptions.AllAuthentication);
+
+            var encoded = asReq.EncodeAsApplication();
+
+            var decoded = KrbAsReq.DecodeAsApplication(encoded);
+
+            Assert.IsNotNull(decoded);
+        }
+
+        [TestMethod]
         public void TestParseAsReqApplicationMessage()
         {
-            var asReqBin = ReadDataFile("messages\\as-req");
-
-            var asReq = KrbAsReq.Decode(asReqBin);
+            var asReqBin = ReadDataFile("messages\\as-req").Skip(4).ToArray();
+            
+            var asReq = KrbAsReq.DecodeAsApplication(asReqBin);
 
             Assert.IsNotNull(asReq);
 
@@ -29,17 +45,17 @@ namespace Tests.Kerberos.NET.Messages
         [TestMethod]
         public void TestDecryptAsReqApplicationMessage()
         {
-            var asReqBin = ReadDataFile("messages\\as-req-preauth");
+            var asReqBin = ReadDataFile("messages\\as-req-preauth").Skip(4).ToArray();
 
-            var asReq = KrbAsReq.Decode(asReqBin);
+            var asReq = KrbAsReq.DecodeAsApplication(asReqBin);
 
             Assert.IsNotNull(asReq);
 
             KerberosKey key = CreateKey();
 
-            var ts = asReq.DecryptTimestamp(key);
+            var ts = asReq.AsReq.DecryptTimestamp(key);
 
-            Assert.AreEqual(636973454050086883L, ts.Ticks);
+            Assert.AreEqual(636985444450060358L, ts.Ticks);
         }
 
         private static KerberosKey CreateKey()

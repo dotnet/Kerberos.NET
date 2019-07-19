@@ -19,10 +19,10 @@ namespace Kerberos.NET.Crypto
 
         public override byte[] String2Key(KerberosKey key)
         {
-            return MD4(key.PasswordBytes);
+            return MD4(key.PasswordBytes).ToArray();
         }
 
-        private static byte[] MD4(byte[] key)
+        private static ReadOnlySpan<byte> MD4(byte[] key)
         {
             using (var md4 = new MD4())
             {
@@ -51,7 +51,7 @@ namespace Kerberos.NET.Crypto
 
             var ciphertext = RC4.Transform(k3, plaintext);
 
-            return new ReadOnlyMemory<byte>(checksum.Concat(ciphertext).ToArray());
+            return new ReadOnlyMemory<byte>(checksum.Concat(ciphertext.ToArray()).ToArray());
         }
 
         public override byte[] Decrypt(ReadOnlyMemory<byte> ciphertext, KerberosKey key, KeyUsage usage)
@@ -74,7 +74,7 @@ namespace Kerberos.NET.Crypto
 
             var plaintext = RC4.Transform(k3, ciphertextOffset);
 
-            var actualChecksum = HMACMD5(k2, plaintext);
+            var actualChecksum = HMACMD5(k2, plaintext.ToArray());
 
             if (!AreEqualSlow(checksum, ciphertext.ToArray(), actualChecksum.Length))
             {
@@ -83,7 +83,7 @@ namespace Kerberos.NET.Crypto
 
             var output = new byte[plaintext.Length - ConfounderSize];
 
-            Buffer.BlockCopy(plaintext, ConfounderSize, output, 0, output.Length);
+            Buffer.BlockCopy(plaintext.ToArray(), ConfounderSize, output, 0, output.Length);
 
             return output;
         }
@@ -101,7 +101,7 @@ namespace Kerberos.NET.Crypto
         {
             byte[] bytes = new byte[4];
 
-            Endian.ConvertToLittleEndian(thing, bytes, 0);
+            Endian.ConvertToLittleEndian(thing, bytes);
 
             return bytes;
         }

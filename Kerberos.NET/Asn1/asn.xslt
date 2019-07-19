@@ -5,6 +5,10 @@
   xmlns:msxsl="urn:schemas-microsoft-com:xslt" exclude-result-prefixes="msxsl"
   xml:space ="preserve"
 >
+  <!--
+    This file is licensed as per the LICENSE file.
+    The generation template has been modified from .NET Foundation implementation 
+  -->
   <xsl:strip-space elements="*"/>
   <xsl:output method="text" indent="no" />
 
@@ -40,7 +44,10 @@
     <xsl:apply-templates/>
   </xsl:template>
 
-  <xsl:template match="asn:Sequence">
+  <xsl:template match="asn:Sequence">// This is a generated file.
+// This file is licensed as per the LICENSE file.
+// The generation template has been modified from .NET Foundation implementation
+
 using System;<xsl:if test="asn:SequenceOf | asn:SetOf">
 using System.Collections.Generic;</xsl:if>
 using System.Runtime.InteropServices;
@@ -51,7 +58,7 @@ using Kerberos.NET.Asn1;
 
 namespace <xsl:value-of select="@namespace" />
 {
-    public partial class <xsl:value-of select="@name" /> : IAsn1Encoder
+    public partial class <xsl:value-of select="@name" />
     {<xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="DefaultFieldDef" /><xsl:apply-templates mode="FieldDef" />
       <xsl:if test="*[@defaultDerInit]">
 #if DEBUG  
@@ -102,11 +109,6 @@ namespace <xsl:value-of select="@namespace" />
             reader.ThrowIfNotEmpty();
             return decoded;
         }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory&lt;byte&gt; data) 
-        {
-            return Decode(data);
-        }
 
         internal static <xsl:value-of select="@name" /> Decode(Asn1Tag expectedTag, ReadOnlyMemory&lt;byte&gt; encoded, AsnEncodingRules ruleSet)
         {
@@ -148,7 +150,9 @@ namespace <xsl:value-of select="@namespace" />
 }
 </xsl:template>
 
-    <xsl:template match="asn:Choice">
+    <xsl:template match="asn:Choice">// This is a generated file.
+// This file is licensed as per the LICENSE file.
+// The generation template has been modified from .NET Foundation implementation
 using System;<xsl:if test="asn:SequenceOf | asn:SetOf">
 using System.Collections.Generic;</xsl:if>
 using System.Runtime.InteropServices;
@@ -159,7 +163,7 @@ using Kerberos.NET.Asn1;
 
 namespace <xsl:value-of select="@namespace" />
 {
-    public partial class <xsl:value-of select="@name" /> : IAsn1Encoder
+    public partial class <xsl:value-of select="@name" />
     {<xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="ValidateChoice" /><xsl:apply-templates mode="FieldDef" />
 
 #if DEBUG
@@ -195,11 +199,6 @@ namespace <xsl:value-of select="@namespace" />
             {
                 throw new CryptographicException();
             }
-        }
-        
-        object IAsn1Encoder.Decode(ReadOnlyMemory&lt;byte&gt; data) 
-        {
-            return Decode(data);
         }
         
         public static <xsl:value-of select="@name" /> Decode(ReadOnlyMemory&lt;byte&gt; data)
