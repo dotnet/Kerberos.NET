@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
 {
-    using MessageHandlerConstructor = Func<ReadOnlySequence<byte>, KdcListenerOptions, KdcMessageHandlerBase>;
+    using MessageHandlerConstructor = Func<ReadOnlySequence<byte>, ListenerOptions, KdcMessageHandlerBase>;
     using PreAuthHandlerConstructor = Func<IRealmService, KdcPreAuthenticationHandlerBase>;
 
     public class KdcServer
     {
-        private readonly KdcListenerOptions options;
+        private readonly ListenerOptions options;
 
-        public KdcServer(KdcListenerOptions options)
+        public KdcServer(ListenerOptions options)
         {
             this.options = options;
 

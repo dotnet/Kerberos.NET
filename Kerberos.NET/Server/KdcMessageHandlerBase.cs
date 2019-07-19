@@ -16,7 +16,7 @@ namespace Kerberos.NET.Server
 
         protected ReadOnlyMemory<byte> Message { get; }
 
-        protected KdcListenerOptions Options { get; }
+        protected ListenerOptions Options { get; }
 
         protected IRealmService RealmService { get; private set; }
 
@@ -25,7 +25,7 @@ namespace Kerberos.NET.Server
             get => preAuthHandlers;
         }
 
-        protected KdcMessageHandlerBase(ReadOnlySequence<byte> message, KdcListenerOptions options)
+        protected KdcMessageHandlerBase(ReadOnlySequence<byte> message, ListenerOptions options)
         {
             Message = new ReadOnlyMemory<byte>(message.ToArray());
             Options = options;
@@ -55,7 +55,7 @@ namespace Kerberos.NET.Server
 
         protected abstract Task<ReadOnlyMemory<byte>> ExecuteCore(ReadOnlyMemory<byte> message);
 
-        internal static ReadOnlyMemory<byte> GenerateGenericError(Exception ex, KdcListenerOptions options)
+        internal static ReadOnlyMemory<byte> GenerateGenericError(Exception ex, ListenerOptions options)
         {
             var krbErr = new KrbError()
             {

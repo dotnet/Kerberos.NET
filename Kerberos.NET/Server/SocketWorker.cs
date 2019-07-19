@@ -1,6 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
-using System;
+﻿using System;
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Net.Sockets;
@@ -9,46 +7,43 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
 {
-    internal class SocketWorker : SocketBase
+    public abstract class SocketWorker : SocketBase
     {
-        private const int Int32Size = 4;
-
         private readonly TaskCompletionSource<object> responseFilledCompletion = new TaskCompletionSource<object>();
 
         private readonly PipeScheduler scheduler = PipeScheduler.ThreadPool;
 
         private readonly Socket socket;
-        private readonly Pipe requestPipe;
-        private readonly Pipe responsePipe;
 
-        private readonly KdcServer kdc;
+        protected Pipe RequestPipe { get; }
 
-        public SocketWorker(Socket socket, KdcListenerOptions options)
+        protected Pipe ResponsePipe { get; }
+
+        public SocketWorker(Socket socket, ListenerOptions options)
             : base(options)
         {
             this.socket = socket;
 
-            kdc = new KdcServer(options);
-
-            var requestOptions = new PipeOptions(
+            RequestPipe = new Pipe(new PipeOptions(
                 readerScheduler: scheduler,
                 writerScheduler: scheduler,
                 pauseWriterThreshold: options.MaxReadBufferSize,
                 resumeWriterThreshold: options.MaxReadBufferSize / 2,
                 useSynchronizationContext: false
-            );
+            ));
 
-            var responseOptions = new PipeOptions(
+            ResponsePipe = new Pipe(new PipeOptions(
                 readerScheduler: scheduler,
                 writerScheduler: scheduler,
                 pauseWriterThreshold: options.MaxWriteBufferSize,
                 resumeWriterThreshold: options.MaxWriteBufferSize / 2,
                 useSynchronizationContext: false
-            );
-
-            requestPipe = new Pipe(requestOptions);
-            responsePipe = new Pipe(responseOptions);
+            ));
         }
+
+        protected abstract Task ReadRequest();
+
+        protected abstract Task FillResponse(PipeWriter writer, ReadOnlyMemory<byte> message);
 
         public override void Dispose()
         {
@@ -88,7 +83,7 @@ namespace Kerberos.NET.Server
         {
             try
             {
-                var responseSent = SendResponse(responsePipe.Reader);
+                var responseSent = SendResponse(ResponsePipe.Reader);
 
                 await Task.WhenAll(responseFilledCompletion.Task, responseSent);
             }
@@ -133,10 +128,11 @@ namespace Kerberos.NET.Server
         {
             try
             {
-                var fill = FillRequest(requestPipe.Writer, buffer => socket.ReceiveAsync(buffer, SocketFlags.None));
-                var read = ReadRequest(requestPipe.Reader);
+                var fill = FillRequest(RequestPipe.Writer, buffer => socket.ReceiveAsync(buffer, SocketFlags.None));
+                var read = ReadRequest();
 
                 await Task.WhenAll(fill, read);
+                responseFilledCompletion.TrySetResult(null);
             }
             catch (SocketException sx) when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
             {
@@ -147,73 +143,6 @@ namespace Kerberos.NET.Server
                 Log(ex);
                 throw;
             }
-        }
-
-        private async Task ReadRequest(PipeReader reader)
-        {
-            long messageLength = 0;
-
-            while (true)
-            {
-                var result = await reader.ReadAsync();
-
-                var buffer = result.Buffer;
-
-                if (messageLength <= 0)
-                {
-                    messageLength = buffer.Slice(0, Int32Size).AsLong();
-                }
-
-                if (buffer.Length > messageLength)
-                {
-                    var message = buffer.Slice(Int32Size, messageLength);
-
-                    await ProcessMessage(message);
-                    break;
-                }
-
-                reader.AdvanceTo(buffer.Start, buffer.End);
-
-                if (result.IsCompleted)
-                {
-                    break;
-                }
-            }
-
-            reader.Complete();
-        }
-
-        private async Task ProcessMessage(ReadOnlySequence<byte> message)
-        {
-            if (Options.Log != null && Options.Log.Level >= LogLevel.Debug)
-            {
-                Options.Log.WriteLine(KerberosLogSource.ServiceListener, Environment.NewLine + message.ToArray().HexDump());
-            }
-
-            var response = await kdc.ProcessMessage(message);
-
-            await FillResponse(responsePipe.Writer, response);
-
-            responseFilledCompletion.TrySetResult(null);
-        }
-
-        private static async Task FillResponse(PipeWriter writer, ReadOnlyMemory<byte> message)
-        {
-            var totalLength = message.Length + Int32Size;
-
-            if (totalLength > Int32Size)
-            {
-                var buffer = writer.GetMemory(totalLength);
-
-                Endian.ConvertToBigEndian(message.Length, buffer.Slice(0, Int32Size));
-
-                message.CopyTo(buffer.Slice(Int32Size, message.Length));
-
-                writer.Advance(totalLength);
-            }
-
-            await writer.FlushAsync();
-            writer.Complete();
         }
 
         private static async Task FillRequest(PipeWriter writer, Func<Memory<byte>, ValueTask<int>> write)

@@ -17,7 +17,7 @@ namespace Kerberos.NET.Server
         private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> postProcessAuthHandlers =
                 new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
 
-        public KdcAsReqMessageHandler(ReadOnlySequence<byte> message, KdcListenerOptions options)
+        public KdcAsReqMessageHandler(ReadOnlySequence<byte> message, ListenerOptions options)
             : base(message, options)
         {
             postProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);

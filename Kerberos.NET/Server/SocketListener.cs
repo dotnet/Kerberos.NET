@@ -8,13 +8,17 @@ namespace Kerberos.NET.Server
     {
         private readonly Socket listeningSocket;
 
-        public SocketListener(KdcListenerOptions options)
+        private readonly Func<Socket, ListenerOptions, SocketWorker> workerFunc;
+
+        public SocketListener(ListenerOptions options, Func<Socket, ListenerOptions, SocketWorker> workerFunc)
             : base(options)
         {
             listeningSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
             listeningSocket.Bind(Options.ListeningOn);
             listeningSocket.Listen(Options.QueueLength);
+
+            this.workerFunc = workerFunc;
         }
 
         public async Task<SocketWorker> Accept()
@@ -24,10 +28,10 @@ namespace Kerberos.NET.Server
                 try
                 {
                     var socket = await listeningSocket.AcceptAsync();
-                    return new SocketWorker(socket, Options);
+
+                    return workerFunc(socket, Options);
                 }
-                catch (SocketException sx)
-                when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
+                catch (SocketException sx) when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
                 {
                     LogVerbose(sx);
                 }

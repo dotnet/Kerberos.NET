@@ -3,6 +3,7 @@ using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using System;
 using System.Threading.Tasks;
 using static System.Console;
 
@@ -11,12 +12,46 @@ namespace KerberosClientApp
     class Program
     {
 
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
             string user = ReadString("UserName", "administrator@corp.identityintervention.com", args);
             string password = ReadString("Password", "P@ssw0rd!", args);
             string overrideKdc = ReadString("KDC", null, args);
 
+            bool overkill = string.Equals(ReadString("async", "false", args), "true", StringComparison.OrdinalIgnoreCase);
+
+            for (var i = 0; i < 10; i++)
+            {
+                _ = RequestTicketsAsync(user, password, overrideKdc);
+
+                if (!overkill)
+                {
+                    break;
+                }
+            }
+
+            Write("Press [Any] key to exit...");
+
+            ReadKey();
+        }
+
+        private static async Task RequestTicketsAsync(string user, string password, string overrideKdc)
+        {
+            while (true)
+            {
+                try
+                {
+                    await RequestTickets(user, password, overrideKdc);
+                }
+                catch (Exception ex)
+                {
+                    WriteLine(ex.Message);
+                }
+            }
+        }
+
+        private static async Task RequestTickets(string user, string password, string overrideKdc)
+        {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
             KerberosClient client = new KerberosClient(overrideKdc);
@@ -35,10 +70,6 @@ namespace KerberosClientApp
             var validated = (KerberosIdentity)await authenticator.Authenticate(encoded);
 
             DumpClaims(validated);
-
-            Write("Press [Any] key to exit...");
-
-            ReadKey();
         }
 
         private static void DumpClaims(KerberosIdentity validated)
@@ -73,7 +104,7 @@ namespace KerberosClientApp
                 {
                     var argName = args[i].Replace("-", "").Replace("/", "").Replace(":", "");
 
-                    if (string.Equals(argName, label, System.StringComparison.InvariantCultureIgnoreCase))
+                    if (string.Equals(argName, label, StringComparison.InvariantCultureIgnoreCase))
                     {
                         defaultVal = args[i + 1];
                     }

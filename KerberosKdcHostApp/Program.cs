@@ -14,7 +14,7 @@ namespace KerberosKdcHostApp
     {
         static async Task Main(string[] args)
         {
-            KdcServiceListener listener = new KdcServiceListener(new KdcListenerOptions
+            KdcServiceListener listener = new KdcServiceListener(new ListenerOptions
             {
                 ListeningOn = new IPEndPoint(IPAddress.Loopback, 8888),
                 Log = new ConsoleLogger(),

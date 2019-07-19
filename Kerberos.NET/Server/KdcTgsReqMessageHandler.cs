@@ -7,7 +7,7 @@ namespace Kerberos.NET.Server
 {
     internal class KdcTgsReqMessageHandler : KdcMessageHandlerBase
     {
-        public KdcTgsReqMessageHandler(ReadOnlySequence<byte> message, KdcListenerOptions options) 
+        public KdcTgsReqMessageHandler(ReadOnlySequence<byte> message, ListenerOptions options) 
             : base(message, options)
         {
         }

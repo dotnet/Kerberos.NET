@@ -3,14 +3,16 @@ using System.Net.Sockets;
 
 namespace Kerberos.NET.Server
 {
-    internal abstract class SocketBase : IDisposable
+    public abstract class SocketBase : IDisposable
     {
-        protected KdcListenerOptions Options { get; }
+        protected ListenerOptions Options { get; }
 
-        protected SocketBase(KdcListenerOptions options)
+        protected SocketBase(ListenerOptions options)
         {
             this.Options = options;
         }
+
+        public abstract void Dispose();
 
         protected void Log(Exception ex)
         {
@@ -40,7 +42,5 @@ namespace Kerberos.NET.Server
             return errorCode == SocketError.OperationAborted ||
                    errorCode == SocketError.Interrupted;
         }
-
-        public abstract void Dispose();
     }
 }
