@@ -1,44 +1,81 @@
-﻿namespace Kerberos.NET.Crypto
-{
-    // copied from https://bitlush.com/blog/rc4-encryption-in-c-sharp
+﻿using System;
 
+namespace Kerberos.NET.Crypto
+{
     public static class RC4
     {
-        public static byte[] Transform(byte[] pwd, byte[] data)
+        public static ReadOnlySpan<byte> Transform(
+            ReadOnlySpan<byte> originalKey, 
+            ReadOnlySpan<byte> data
+        )
         {
-            int a, i, j, k, tmp;
-            int[] key, box;
-            byte[] cipher;
+            var key = new Span<byte>(new byte[256]);
+            var s = new Span<byte>(new byte[256]);
 
-            key = new int[256];
-            box = new int[256];
-            cipher = new byte[data.Length];
+            int i;
+            
+            // for i from 0 to 255
+            //     Key[i]
+            //     S[i] := i
+            // endfor
 
             for (i = 0; i < 256; i++)
             {
-                key[i] = pwd[i % pwd.Length];
-                box[i] = i;
+                key[i] = originalKey[i % originalKey.Length];
+                s[i] = (byte)i;
             }
-            for (j = i = 0; i < 256; i++)
+
+            var j = 0;
+
+            // j := 0
+            // for i from 0 to 255
+            //     j := (j + S[i] + key[i mod keylength]) mod 256
+            //     swap values of S[i] and S[j]
+            // endfor
+
+            for (i = 0; i < 256; i++)
             {
-                j = (j + box[i] + key[i]) % 256;
-                tmp = box[i];
-                box[i] = box[j];
-                box[j] = tmp;
+                j = (j + s[i] + key[i]) % 256;
+
+                var swap = s[i];
+                s[i] = s[j];
+                s[j] = swap;
             }
-            for (a = j = i = 0; i < data.Length; i++)
+
+            // i := 0
+            // j := 0
+            // while GeneratingOutput:
+            //     i := (i + 1) mod 256
+            //     j := (j + S[i]) mod 256
+            //     swap values of S[i] and S[j]
+            //     K := S[(S[i] + S[j]) mod 256]
+            //     output K
+            // endwhile
+
+            // E = data ^ k
+
+            var output = new Span<byte>(new byte[data.Length]);
+
+            i = 0;
+            j = 0;
+
+            for (var counter = 0; counter < data.Length; counter++)
             {
-                a++;
-                a %= 256;
-                j += box[a];
-                j %= 256;
-                tmp = box[a];
-                box[a] = box[j];
-                box[j] = tmp;
-                k = box[((box[a] + box[j]) % 256)];
-                cipher[i] = (byte)(data[i] ^ k);
+                i = (i + 1) % 256;
+                j = (j + s[i]) % 256;
+
+                var swap = s[i];
+                s[i] = s[j];
+                s[j] = swap;
+
+                var k = s[(s[i] + s[j]) % 256];
+
+                var keyed = data[counter] ^ k;
+
+                output[counter] = (byte)keyed;
             }
-            return cipher;
+
+            return output;
         }
     }
 }

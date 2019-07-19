@@ -13,7 +13,6 @@ namespace Kerberos.NET.Server
         // - on message => decode type, pass to kdc
 
         private readonly SocketListener tcpSocketListener;
-
         private readonly ListenerOptions options;
 
         private readonly TaskCompletionSource<object> startTcs
@@ -21,6 +20,7 @@ namespace Kerberos.NET.Server
 
         protected ServiceListenerBase(ListenerOptions options, Func<Socket, ListenerOptions, SocketWorker> workerFunc)
         {
+            this.options = options;
             tcpSocketListener = new SocketListener(options, workerFunc);
         }
 

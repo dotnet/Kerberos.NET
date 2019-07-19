@@ -1,4 +1,6 @@
-﻿
+﻿// This is a generated file.
+// This file is licensed as per the LICENSE file.
+// The generation template has been modified from .NET Foundation implementation
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;

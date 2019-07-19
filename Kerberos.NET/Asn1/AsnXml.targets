@@ -1,4 +1,9 @@
-﻿<Project>
+﻿<!--
+  This file is licensed as per the LICENSE file.
+  The generation template has been modified from .NET Foundation implementation 
+-->
+
+<Project>
   <PropertyGroup>
     <AsnXml />
   </PropertyGroup>

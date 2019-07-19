@@ -5,6 +5,10 @@
   xmlns:msxsl="urn:schemas-microsoft-com:xslt" exclude-result-prefixes="msxsl"
   xml:space ="preserve"
 >
+  <!--
+    This file is licensed as per the LICENSE file.
+    The generation template has been modified from .NET Foundation implementation 
+  -->
   <xsl:strip-space elements="*"/>
   <xsl:output method="text" indent="no" />
 
@@ -40,7 +44,10 @@
     <xsl:apply-templates/>
   </xsl:template>
 
-  <xsl:template match="asn:Sequence">
+  <xsl:template match="asn:Sequence">// This is a generated file.
+// This file is licensed as per the LICENSE file.
+// The generation template has been modified from .NET Foundation implementation
+
 using System;<xsl:if test="asn:SequenceOf | asn:SetOf">
 using System.Collections.Generic;</xsl:if>
 using System.Runtime.InteropServices;
@@ -143,7 +150,9 @@ namespace <xsl:value-of select="@namespace" />
 }
 </xsl:template>
 
-    <xsl:template match="asn:Choice">
+    <xsl:template match="asn:Choice">// This is a generated file.
+// This file is licensed as per the LICENSE file.
+// The generation template has been modified from .NET Foundation implementation
 using System;<xsl:if test="asn:SequenceOf | asn:SetOf">
 using System.Collections.Generic;</xsl:if>
 using System.Runtime.InteropServices;
