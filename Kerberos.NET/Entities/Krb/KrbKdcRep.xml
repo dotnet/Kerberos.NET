@@ -29,6 +29,6 @@
   </asn:SequenceOf>
   <asn:GeneralString name="CRealm" explicitTag="3" />
   <asn:AsnType name="CName" typeName="KrbPrincipalName" explicitTag="4" />
-  <asn:AsnType typeName="KrbTicketApplication" name="Ticket" explicitTag="5" />
+  <asn:AsnType typeName="KrbTicket" name="Ticket" explicitTag="5" />
   <asn:AsnType name="EncPart" typeName="KrbEncryptedData" explicitTag="6" />
 </asn:Sequence>

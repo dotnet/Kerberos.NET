@@ -19,10 +19,17 @@
       </xs:complexContent>
     </xs:complexType>
   </xs:element>
-
+  <xs:element name="InheritedSequence">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="TypeDefType" />
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  
   <xs:complexType name="TypeDefType">
     <xs:sequence>
-      <xs:choice minOccurs="1" maxOccurs="unbounded">
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
         <xs:element name="AsnType" type="ExternalTypeRef" />
         <xs:element name="AnyValue" type="AnyValueType" />
         <xs:element name="Boolean" type="FieldBase" />
