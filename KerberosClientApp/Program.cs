@@ -63,7 +63,7 @@ namespace KerberosClientApp
                 ApOptions.MutualRequired
             );
 
-            var encoded = ticket.EncodeAsApplication().ToArray();
+            var encoded = ticket.EncodeApplication().ToArray();
 
             var authenticator = new KerberosAuthenticator(new KeyTable(new KerberosKey("P@ssw0rd!")));
 

@@ -1,7 +1,6 @@
-﻿using System;
+﻿using Kerberos.NET.Server;
 using System.Diagnostics;
 using System.Linq;
-using Kerberos.NET.Server;
 
 namespace Kerberos.NET.Entities
 {

@@ -27,7 +27,7 @@ namespace Kerberos.NET.Server
         public Task Start()
         {
             ThreadPool.QueueUserWorkItem(StartListenerThreads, tcpSocketListener, preferLocal: false);
-            
+
             return startTcs.Task;
         }
 

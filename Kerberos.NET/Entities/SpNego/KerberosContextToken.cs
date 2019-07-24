@@ -9,17 +9,7 @@ namespace Kerberos.NET.Entities
         {
             var kerb = data ?? gssToken?.Field2;
 
-            var choice = KrbApChoice.Decode(kerb.Value);
-
-            if (choice.ApReq != null)
-            {
-                KrbApReq = choice.ApReq;
-            }
-
-            if (choice.ApRep != null)
-            {
-                KrbApRep = choice.ApRep;
-            }
+            KrbApReq = KrbApReq.DecodeApplication(kerb.Value);
         }
 
         public KrbApReq KrbApReq;

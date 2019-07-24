@@ -36,9 +36,7 @@ namespace Kerberos.NET.Server
             // 6. if some pre-auth succeeded, return error
             // 7. if all required validation succeeds, generate PAC, TGT, and return it
 
-            var asReqMessage = KrbAsReq.DecodeAsApplication(message);
-
-            var asReq = asReqMessage.AsReq;
+            var asReq = KrbAsReq.DecodeApplication(message);
 
             await SetRealmContext(asReq.Body.Realm);
 
@@ -81,7 +79,7 @@ namespace Kerberos.NET.Server
 
             var tgt = await KrbAsRep.GenerateTgt(principal, requirements, RealmService, asReq.Body);
 
-            return tgt.EncodeAsApplication();
+            return tgt.EncodeApplication();
         }
 
         private ReadOnlyMemory<byte> PreAuthFailed(KerberosValidationException kex, IKerberosPrincipal principal)
@@ -94,7 +92,7 @@ namespace Kerberos.NET.Server
                 SName = KrbPrincipalName.FromPrincipal(principal)
             };
 
-            return err.EncodeAsApplication();
+            return err.EncodeApplication();
         }
 
         private ReadOnlyMemory<byte> RequirePreAuth(IEnumerable<KrbPaData> preAuthRequests, IKerberosPrincipal principal)
@@ -111,7 +109,7 @@ namespace Kerberos.NET.Server
                 }.Encode().AsMemory()
             };
 
-            return err.EncodeAsApplication();
+            return err.EncodeApplication();
         }
 
         private async Task<IEnumerable<KrbPaData>> ProcessPreAuth(KrbKdcReq asReq, IKerberosPrincipal principal)

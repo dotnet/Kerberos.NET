@@ -8,7 +8,7 @@ namespace Kerberos.NET.Transport
     public class KerberosTransportSelector : KerberosTransportBase
     {
         private readonly IEnumerable<IKerberosTransport> transports;
-        
+
         public KerberosTransportSelector(IEnumerable<IKerberosTransport> transports, ILogger logger = null)
         {
             this.transports = transports;

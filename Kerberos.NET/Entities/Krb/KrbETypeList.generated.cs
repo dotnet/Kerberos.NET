@@ -66,6 +66,22 @@ namespace Kerberos.NET.Entities
                 throw new CryptographicException();
             }
         }
+                
+        internal ReadOnlyMemory<byte> EncodeApplication(Asn1Tag tag)
+        {
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
+            {
+                writer.PushSequence(tag);
+                
+                this.Encode(writer);
+
+                writer.PopSequence(tag);
+
+                var span = writer.EncodeAsSpan();
+
+                return span.AsMemory();
+            }
+        }
         
         public static KrbETypeList Decode(ReadOnlyMemory<byte> data)
         {
@@ -81,12 +97,13 @@ namespace Kerberos.NET.Entities
             return decoded;
         }
 
-        internal static void Decode(AsnReader reader, out KrbETypeList decoded)
+        internal static void Decode<T>(AsnReader reader, out T decoded)
+          where T: KrbETypeList, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = new KrbETypeList();
+            decoded = new T();
             Asn1Tag tag = reader.PeekTag();
             AsnReader collectionReader;
             

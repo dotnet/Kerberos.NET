@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
 {

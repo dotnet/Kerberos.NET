@@ -80,14 +80,12 @@ namespace Kerberos.NET.Client
         {
             var tgs = KrbTgsReq.CreateTgsReq(spn, tgtSessionKey, tgt, KdcOptions);
 
-            var encodedTgs = tgs.EncodeAsApplication();
+            var encodedTgs = tgs.EncodeApplication();
 
-            var choice = await transport.SendMessage<KrbTgsRep>(
-                tgs.TgsReq.Body.Realm,
+            var tgsRep = await transport.SendMessage<KrbTgsRep>(
+                tgs.Body.Realm,
                 encodedTgs
             );
-
-            var tgsRep = choice.Response;
 
             var encKdcRepPart = tgsRep.EncPart.Decrypt(
                 tgtSessionKey.AsKey(),
@@ -95,20 +93,20 @@ namespace Kerberos.NET.Client
                 d => KrbEncTgsRepPart.Decode(d)
             );
 
-            var authenticatorKey = encKdcRepPart.EncTgsRepPart.Key.AsKey();
+            var authenticatorKey = encKdcRepPart.Key.AsKey();
 
             return KrbApReq.CreateApReq(tgsRep, authenticatorKey, options);
         }
 
         private async Task RequestTgt(KerberosCredential credential)
         {
-            var asReq = KrbAsReq.CreateAsReq(credential, AuthenticationOptions).EncodeAsApplication();
+            var asReq = KrbAsReq.CreateAsReq(credential, AuthenticationOptions).EncodeApplication();
 
             var asRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq);
 
-            var decrypted = DecryptAsRep(asRep.Response, credential);
+            var decrypted = DecryptAsRep(asRep, credential);
 
-            CacheTgt(asRep.Response, decrypted.EncAsRepPart);
+            CacheTgt(asRep, decrypted);
         }
 
         private void CacheTgt(KrbKdcRep kdcRep, KrbEncKdcRepPart decrypted)
@@ -121,7 +119,7 @@ namespace Kerberos.NET.Client
         {
             var key = credential.CreateKey();
 
-            return asRep.EncPart.Decrypt(key, KeyUsage.EncAsRepPart, d => KrbEncAsRepPart.Decode(d));
+            return asRep.EncPart.Decrypt(key, KeyUsage.EncAsRepPart, d => KrbEncAsRepPart.DecodeApplication(d));
         }
     }
 }

@@ -2,11 +2,8 @@
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Server;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.Asn1;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Entities
@@ -14,7 +11,6 @@ namespace Kerberos.NET.Entities
     public partial class KrbAsRep : IAsn1ApplicationEncoder<KrbAsRep>
     {
         internal const int ApplicationTagValue = 11;
-        internal static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, ApplicationTagValue);
 
         private const TicketFlags DefaultFlags = TicketFlags.Renewable |
                                                  TicketFlags.Initial |
@@ -22,26 +18,7 @@ namespace Kerberos.NET.Entities
 
         public KrbAsRep DecodeAsApplication(ReadOnlyMemory<byte> data)
         {
-            return Decode(ApplicationTag, data);
-        }
-
-        public ReadOnlyMemory<byte> EncodeAsApplication()
-        {
-            using (var writer = new AsnWriter(AsnEncodingRules.DER))
-            {
-                writer.PushSequence(ApplicationTag);
-
-                if (this.Response != null)
-                {
-                    this.Response.Encode(writer);
-                }
-
-                writer.PopSequence(ApplicationTag);
-
-                var span = writer.EncodeAsSpan();
-
-                return span.AsMemory();
-            }
+            return DecodeApplication(data);
         }
 
         public static async Task<KrbAsRep> GenerateTgt(
@@ -58,7 +35,7 @@ namespace Kerberos.NET.Entities
 
             KrbAsRep asRep = await GenerateServiceTicket(principal, servicePrincipal, realmService, MessageType.KRB_AS_REP, asReq.Addresses);
 
-            asRep.Response.PaData = requirements.ToArray();
+            asRep.PaData = requirements.ToArray();
 
             return asRep;
         }
@@ -122,36 +99,44 @@ namespace Kerberos.NET.Entities
                     realmService.Name
                 ),
                 EncryptedPart = KrbEncryptedData.Encrypt(
-                    encTicketPart.EncodeAsApplication(),
+                    encTicketPart.EncodeApplication(),
                     serviceKey,
                     KeyUsage.Ticket
                 )
             };
 
-            var encKdcRepPart = new KrbEncKdcRepPart
+            KrbEncKdcRepPart encKdcRepPart;
+
+            if (messageType == MessageType.KRB_AS_REP)
             {
-                AuthTime = encTicketPart.AuthTime,
-                StartTime = encTicketPart.StartTime,
-                EndTime = encTicketPart.EndTime,
-                RenewTill = encTicketPart.RenewTill,
-                KeyExpiration = principal.Expires,
-                Realm = realmService.Name,
-                SName = ticket.SName,
-                Flags = encTicketPart.Flags,
-                CAddr = encTicketPart.CAddr,
-                Key = sessionKey,
-                Nonce = KerberosConstants.GetNonce(),
-                LastReq = new[] { new KrbLastReq { Type = 0, Value = now } },
-                EncryptedPaData = new KrbMethodData
+                encKdcRepPart = new KrbEncAsRepPart();
+            }
+            else
+            {
+                encKdcRepPart = new KrbEncTgsRepPart();
+            }
+
+            encKdcRepPart.AuthTime = encTicketPart.AuthTime;
+            encKdcRepPart.StartTime = encTicketPart.StartTime;
+            encKdcRepPart.EndTime = encTicketPart.EndTime;
+            encKdcRepPart.RenewTill = encTicketPart.RenewTill;
+            encKdcRepPart.KeyExpiration = principal.Expires;
+            encKdcRepPart.Realm = realmService.Name;
+            encKdcRepPart.SName = ticket.SName;
+            encKdcRepPart.Flags = encTicketPart.Flags;
+            encKdcRepPart.CAddr = encTicketPart.CAddr;
+            encKdcRepPart.Key = sessionKey;
+            encKdcRepPart.Nonce = KerberosConstants.GetNonce();
+            encKdcRepPart.LastReq = new[] { new KrbLastReq { Type = 0, Value = now } };
+            encKdcRepPart.EncryptedPaData = new KrbMethodData
+            {
+                MethodData = new[]
                 {
-                    MethodData = new[]
-                        {
-                            new KrbPaData
-                            {
-                                Type = PaDataType.PA_SUPPORTED_ETYPES,
-                                Value = principal.SupportedEncryptionTypes.AsReadOnly(littleEndian: true).AsMemory()
-                            }
-                        }
+                    new KrbPaData
+                    {
+                        Type = PaDataType.PA_SUPPORTED_ETYPES,
+                        Value = principal.SupportedEncryptionTypes.AsReadOnly(littleEndian: true).AsMemory()
+                    }
                 }
             };
 
@@ -159,35 +144,26 @@ namespace Kerberos.NET.Entities
 
             if (messageType == MessageType.KRB_AS_REP)
             {
-                encodedEncPart = new KrbEncAsRepPart
-                {
-                    EncAsRepPart = encKdcRepPart
-                }.EncodeAsApplication();
+                encodedEncPart = ((KrbEncAsRepPart)encKdcRepPart).EncodeApplication();
             }
             else
             {
-                encodedEncPart = new KrbEncTgsRepPart
-                {
-                    EncTgsRepPart = encKdcRepPart
-                }.EncodeAsApplication();
+                encodedEncPart = ((KrbEncTgsRepPart)encKdcRepPart).EncodeApplication();
             }
 
             var principalSecret = await principal.RetrieveLongTermCredential();
 
             var asRep = new KrbAsRep
             {
-                Response = new KrbKdcRep
-                {
-                    CName = cname,
-                    CRealm = realmService.Name,
-                    MessageType = MessageType.KRB_AS_REP,
-                    Ticket = new KrbTicketApplication { Application = ticket },
-                    EncPart = KrbEncryptedData.Encrypt(
-                        encodedEncPart,
-                        principalSecret,
-                        KeyUsage.EncAsRepPart
-                    )
-                }
+                CName = cname,
+                CRealm = realmService.Name,
+                MessageType = MessageType.KRB_AS_REP,
+                Ticket = ticket,
+                EncPart = KrbEncryptedData.Encrypt(
+                    encodedEncPart,
+                    principalSecret,
+                    KeyUsage.EncAsRepPart
+                )
             };
 
             return asRep;

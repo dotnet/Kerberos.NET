@@ -3,48 +3,16 @@ using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
 {
     public partial class KrbTgsReq : IAsn1ApplicationEncoder<KrbTgsReq>
     {
-        internal const int ApplicationTagValue = 12;
-
-        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, ApplicationTagValue);
-
-        public KrbTgsReq()
+        public KrbTgsReq DecodeAsApplication(ReadOnlyMemory<byte> encoded)
         {
+            return DecodeApplication(encoded);
         }
 
-        public static KrbTgsReq DecodeMessageAsApplication(ReadOnlyMemory<byte> message)
-        {
-            return Decode(ApplicationTag, message);
-        }
-
-        public KrbTgsReq DecodeAsApplication(ReadOnlyMemory<byte> message)
-        {
-            return Decode(ApplicationTag, message);
-        }
-
-        public ReadOnlyMemory<byte> EncodeAsApplication()
-        {
-            using (var writer = new AsnWriter(AsnEncodingRules.DER))
-            {
-                writer.PushSequence(ApplicationTag);
-
-                if (TgsReq != null)
-                {
-                    TgsReq.Encode(writer);
-                }
-
-                writer.PopSequence(ApplicationTag);
-
-                var span = writer.EncodeAsSpan();
-
-                return span.AsMemory();
-            }
-        }
 
         public static KrbTgsReq CreateTgsReq(string spn, KrbEncryptionKey tgtSessionKey, KrbKdcRep kdcRep, KdcOptions options)
         {
@@ -58,7 +26,7 @@ namespace Kerberos.NET.Entities
             var paData = new List<KrbPaData>() {
                 new KrbPaData {
                     Type = PaDataType.PA_TGS_REQ,
-                    Value = tgtApReq.EncodeAsApplication()
+                    Value = tgtApReq.EncodeApplication()
                 },
                 new KrbPaData {
                     Type = PaDataType.PA_PAC_OPTIONS,
@@ -66,30 +34,27 @@ namespace Kerberos.NET.Entities
                 }
             };
 
-            var tgt = kdcRep.Ticket.Application;
+            var tgt = kdcRep.Ticket;
 
             var sname = spn.Split('/', '@');
 
             var tgs = new KrbTgsReq
             {
-                TgsReq = new KrbKdcReq
+                MessageType = MessageType.KRB_TGS_REQ,
+                PaData = paData.ToArray(),
+                Body = new KrbKdcReqBody
                 {
-                    MessageType = MessageType.KRB_TGS_REQ,
-                    PaData = paData.ToArray(),
-                    Body = new KrbKdcReqBody
+                    EType = KerberosConstants.ETypes.ToArray(),
+                    KdcOptions = options,
+                    Nonce = KerberosConstants.GetNonce(),
+                    Realm = tgt.Realm,
+                    SName = new KrbPrincipalName()
                     {
-                        EType = KerberosConstants.ETypes.ToArray(),
-                        KdcOptions = options,
-                        Nonce = KerberosConstants.GetNonce(),
-                        Realm = tgt.Realm,
-                        SName = new KrbPrincipalName()
-                        {
-                            Type = PrincipalNameType.NT_SRV_HST,
-                            Name = sname
-                        },
-                        Till = KerberosConstants.EndOfTime
-                    }
-                },
+                        Type = PrincipalNameType.NT_SRV_HST,
+                        Name = sname
+                    },
+                    Till = KerberosConstants.EndOfTime
+                }
             };
 
             return tgs;
@@ -97,7 +62,7 @@ namespace Kerberos.NET.Entities
 
         private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey)
         {
-            var tgt = kdcRep.Ticket.Application;
+            var tgt = kdcRep.Ticket;
 
             KerberosConstants.Now(out DateTimeOffset time, out int usec);
 
@@ -113,14 +78,14 @@ namespace Kerberos.NET.Entities
             };
 
             var encryptedAuthenticator = KrbEncryptedData.Encrypt(
-                authenticator.EncodeAsApplication(),
+                authenticator.EncodeApplication(),
                 tgtSessionKey.AsKey(),
                 KeyUsage.PaTgsReqAuthenticator
             );
 
             var apReq = new KrbApReq
             {
-                Ticket = new KrbTicketApplication { Application = tgt },
+                Ticket = tgt,
                 Authenticator = encryptedAuthenticator
             };
 

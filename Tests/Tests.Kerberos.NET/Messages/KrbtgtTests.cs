@@ -28,11 +28,11 @@ namespace Tests.Kerberos.NET.Messages
 
             var asRep = new KrbAsRep().DecodeAsApplication(krbAsRepBytes);
 
-            var encPart = asRep.Response.EncPart.Decrypt(longUserTermKey, KeyUsage.EncAsRepPart, b => KrbEncAsRepPart.Decode(b));
+            var encPart = asRep.EncPart.Decrypt(longUserTermKey, KeyUsage.EncAsRepPart, b => KrbEncAsRepPart.DecodeApplication(b));
 
             Assert.IsNotNull(encPart);
 
-            var encTicket = asRep.Response.Ticket.Application.EncryptedPart;
+            var encTicket = asRep.Ticket.EncryptedPart;
 
             var krbtgt = encTicket.Decrypt(krbtgtKey, KeyUsage.Ticket, bytes => new KrbEncTicketPart().DecodeAsApplication(bytes));
 
@@ -89,15 +89,15 @@ namespace Tests.Kerberos.NET.Messages
         {
             var tgsReqBytes = ReadDataFile("messages\\tgs-req-testuser-host-app03").Skip(4).ToArray();
 
-            var tgsReq = KrbTgsReq.DecodeMessageAsApplication(tgsReqBytes);
+            var tgsReq = KrbTgsReq.DecodeApplication(tgsReqBytes);
 
-            var paData = tgsReq.TgsReq.PaData.First(p => p.Type == PaDataType.PA_TGS_REQ);
+            var paData = tgsReq.PaData.First(p => p.Type == PaDataType.PA_TGS_REQ);
 
             var apReq = paData.DecodeApReq();
 
             var krbtgtKey = new KerberosKey(key: key);
 
-            var krbtgt = apReq.Ticket.Application.EncryptedPart.Decrypt(krbtgtKey, KeyUsage.Ticket, b => new KrbEncTicketPart().DecodeAsApplication(b));
+            var krbtgt = apReq.Ticket.EncryptedPart.Decrypt(krbtgtKey, KeyUsage.Ticket, b => new KrbEncTicketPart().DecodeAsApplication(b));
 
             Assert.AreEqual("testuser", krbtgt.CName.FullyQualifiedName);
         }

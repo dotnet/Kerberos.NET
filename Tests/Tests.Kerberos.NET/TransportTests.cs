@@ -36,30 +36,24 @@ namespace Tests.Kerberos.NET
 
                 var response = new KrbAsRep()
                 {
-                    Response = new KrbKdcRep
+                    CRealm = "sdf",
+                    CName = new KrbPrincipalName { Name = new[] { "sdf" }, Type = PrincipalNameType.NT_ENTERPRISE },
+                    MessageType = MessageType.KRB_AS_REP,
+                    ProtocolVersionNumber = 5,
+                    Ticket = new KrbTicket
                     {
-                        CRealm = "sdf",
-                        CName = new KrbPrincipalName { Name = new[] { "sdf" }, Type = PrincipalNameType.NT_ENTERPRISE },
-                        MessageType = MessageType.KRB_AS_REP,
-                        ProtocolVersionNumber = 5,
-                        Ticket = new KrbTicketApplication
-                        {
-                            Application = new KrbTicket
-                            {
-                                Realm = "sdfsdf",
-                                SName = new KrbPrincipalName { Name = new[] { "sdf" }, Type = PrincipalNameType.NT_ENTERPRISE },
-                                EncryptedPart = new KrbEncryptedData
-                                {
-                                    Cipher = new byte[] { 0x0, 0x0 }
-                                },
-                            }
-                        },
-                        EncPart = new KrbEncryptedData
+                        Realm = "sdfsdf",
+                        SName = new KrbPrincipalName { Name = new[] { "sdf" }, Type = PrincipalNameType.NT_ENTERPRISE },
+                        EncryptedPart = new KrbEncryptedData
                         {
                             Cipher = new byte[] { 0x0, 0x0 }
-                        }
+                        },
+                    },
+                    EncPart = new KrbEncryptedData
+                    {
+                        Cipher = new byte[] { 0x0, 0x0 }
                     }
-                }.EncodeAsApplication();
+                }.EncodeApplication();
 
                 return Task.FromResult(Decode<T>(response.ToArray()));
             }

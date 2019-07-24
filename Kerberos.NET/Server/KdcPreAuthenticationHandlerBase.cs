@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Kerberos.NET.Entities;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
 {

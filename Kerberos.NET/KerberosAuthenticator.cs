@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Pac;
 using System;
@@ -62,7 +61,7 @@ namespace Kerberos.NET
 
             if (krbApReq.Options.HasFlag(ApOptions.MutualRequired))
             {
-                var apRepEncoded = krbApReq.CreateResponseMessage().EncodeAsApplication();
+                var apRepEncoded = krbApReq.CreateResponseMessage().EncodeApplication();
 
                 apRep = Convert.ToBase64String(apRepEncoded.ToArray());
             }

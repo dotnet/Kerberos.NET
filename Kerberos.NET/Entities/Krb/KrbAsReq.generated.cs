@@ -1,94 +1,35 @@
 ﻿// This is a generated file.
 // This file is licensed as per the LICENSE file.
 // The generation template has been modified from .NET Foundation implementation
-
 using System;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbAsReq
+    public partial class KrbAsReq : KrbKdcReq
     {
-        public KrbKdcReq AsReq;
-      
-        public ReadOnlySpan<byte> Encode()
+        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 10);
+        
+        public ReadOnlyMemory<byte> EncodeApplication() 
         {
-            var writer = new AsnWriter(AsnEncodingRules.DER);
-
-            Encode(writer);
-
-            return writer.EncodeAsSpan();
+          return EncodeApplication(ApplicationTag);
         }
         
-        internal void Encode(AsnWriter writer)
-        {
-            Encode(writer, Asn1Tag.Sequence);
-        }
-    
-        internal void Encode(AsnWriter writer, Asn1Tag tag)
-        {
-            writer.PushSequence(tag);
-            
-            AsReq?.Encode(writer);
-            writer.PopSequence(tag);
-        }
-        
-        public static KrbAsReq Decode(ReadOnlyMemory<byte> data)
-        {
-            return Decode(data, AsnEncodingRules.DER);
-        }
-
-        internal static KrbAsReq Decode(ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
-        {
-            return Decode(Asn1Tag.Sequence, encoded, ruleSet);
-        }
-
-        internal static KrbAsReq Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded)
+        public static KrbAsReq DecodeApplication(ReadOnlyMemory<byte> encoded)
         {
             AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
-            
-            Decode(reader, expectedTag, out KrbAsReq decoded);
+
+            var sequence = reader.ReadSequence(ApplicationTag);
+          
+            KrbAsReq decoded;
+            Decode(sequence, out decoded);
+            sequence.ThrowIfNotEmpty();
+
             reader.ThrowIfNotEmpty();
+
             return decoded;
         }
-
-        internal static KrbAsReq Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
-        {
-            AsnReader reader = new AsnReader(encoded, ruleSet);
-            
-            Decode(reader, expectedTag, out KrbAsReq decoded);
-            reader.ThrowIfNotEmpty();
-            return decoded;
-        }
-
-        internal static void Decode(AsnReader reader, out KrbAsReq decoded)
-        {
-            if (reader == null)
-                throw new ArgumentNullException(nameof(reader));
-
-            Decode(reader, Asn1Tag.Sequence, out decoded);
-        }
-
-        internal static void Decode(AsnReader reader, Asn1Tag expectedTag, out KrbAsReq decoded)
-        {
-            if (reader == null)
-                throw new ArgumentNullException(nameof(reader));
-
-            decoded = new KrbAsReq();
-            AsnReader sequenceReader = reader.ReadSequence(expectedTag);
-            
-            KrbKdcReq.Decode(sequenceReader, out decoded.AsReq);
-
-            sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
-        }
+             
     }
 }
+  

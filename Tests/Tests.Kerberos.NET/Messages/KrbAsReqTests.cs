@@ -20,9 +20,9 @@ namespace Tests.Kerberos.NET.Messages
 
             var asReq = KrbAsReq.CreateAsReq(creds, AuthenticationOptions.AllAuthentication);
 
-            var encoded = asReq.EncodeAsApplication();
+            var encoded = asReq.EncodeApplication();
 
-            var decoded = KrbAsReq.DecodeAsApplication(encoded);
+            var decoded = KrbAsReq.DecodeApplication(encoded);
 
             Assert.IsNotNull(decoded);
         }
@@ -31,12 +31,12 @@ namespace Tests.Kerberos.NET.Messages
         public void TestParseAsReqApplicationMessage()
         {
             var asReqBin = ReadDataFile("messages\\as-req").Skip(4).ToArray();
-            
-            var asReq = KrbAsReq.DecodeAsApplication(asReqBin);
+
+            var asReq = KrbAsReq.DecodeApplication(asReqBin);
 
             Assert.IsNotNull(asReq);
 
-            var addr = asReq.AsReq.Body.Addresses[0].DecodeAddress();
+            var addr = asReq.Body.Addresses[0].DecodeAddress();
 
             Assert.IsNotNull(addr);
             Assert.AreEqual("APP03           ", addr);
@@ -47,13 +47,13 @@ namespace Tests.Kerberos.NET.Messages
         {
             var asReqBin = ReadDataFile("messages\\as-req-preauth").Skip(4).ToArray();
 
-            var asReq = KrbAsReq.DecodeAsApplication(asReqBin);
+            var asReq = KrbAsReq.DecodeApplication(asReqBin);
 
             Assert.IsNotNull(asReq);
 
             KerberosKey key = CreateKey();
 
-            var ts = asReq.AsReq.DecryptTimestamp(key);
+            var ts = asReq.DecryptTimestamp(key);
 
             Assert.AreEqual(636985444450060358L, ts.Ticks);
         }
@@ -64,10 +64,10 @@ namespace Tests.Kerberos.NET.Messages
             var host = "";
 
             var key = new KerberosKey(
-                "P@ssw0rd!", 
-                principalName: principalName, 
-                host: host, 
-                saltType: SaltType.ActiveDirectoryUser, 
+                "P@ssw0rd!",
+                principalName: principalName,
+                host: host,
+                saltType: SaltType.ActiveDirectoryUser,
                 etype: EncryptionType.AES256_CTS_HMAC_SHA1_96
             );
 
@@ -97,24 +97,22 @@ namespace Tests.Kerberos.NET.Messages
 
             var asreq = new KrbAsReq()
             {
-                AsReq = new KrbKdcReq()
+                MessageType = MessageType.KRB_AP_REQ,
+                ProtocolVersionNumber = 5,
+                Body = new KrbKdcReqBody
                 {
-                    MessageType = MessageType.KRB_AP_REQ,
-                    ProtocolVersionNumber = 5,
-                    Body = new KrbKdcReqBody
-                    {
-                        Addresses = new[] {
+                    Addresses = new[] {
                             new KrbHostAddress {
                                 AddressType = AddressType.NetBios,
                                 Address = Encoding.ASCII.GetBytes("APP03           ")
                             }
                         },
-                        CName = new KrbPrincipalName
-                        {
-                            Name = new[] { "testuser@corp.identityintervention.com" },
-                            Type = PrincipalNameType.NT_ENTERPRISE
-                        },
-                        EType = new[] {
+                    CName = new KrbPrincipalName
+                    {
+                        Name = new[] { "testuser@corp.identityintervention.com" },
+                        Type = PrincipalNameType.NT_ENTERPRISE
+                    },
+                    EType = new[] {
                             EncryptionType.AES256_CTS_HMAC_SHA1_96,
                             EncryptionType.AES128_CTS_HMAC_SHA1_96,
                             EncryptionType.RC4_HMAC_NT,
@@ -122,18 +120,18 @@ namespace Tests.Kerberos.NET.Messages
                             EncryptionType.RC4_HMAC_OLD_EXP,
                             EncryptionType.DES_CBC_MD5
                         },
-                        KdcOptions = KdcOptions.RenewableOk | KdcOptions.Canonicalize | KdcOptions.Renewable | KdcOptions.Forwardable,
-                        Nonce = 717695934,
-                        RTime = new DateTimeOffset(642720196850000000L, TimeSpan.Zero),
-                        Realm = "CORP.IDENTITYINTERVENTION.COM",
-                        SName = new KrbPrincipalName
-                        {
-                            Type = PrincipalNameType.NT_SRV_INST,
-                            Name = new[] { "krbtgt", "CORP.IDENTITYINTERVENTION.COM" }
-                        },
-                        Till = new DateTimeOffset(642720196850000000L, TimeSpan.Zero)
+                    KdcOptions = KdcOptions.RenewableOk | KdcOptions.Canonicalize | KdcOptions.Renewable | KdcOptions.Forwardable,
+                    Nonce = 717695934,
+                    RTime = new DateTimeOffset(642720196850000000L, TimeSpan.Zero),
+                    Realm = "CORP.IDENTITYINTERVENTION.COM",
+                    SName = new KrbPrincipalName
+                    {
+                        Type = PrincipalNameType.NT_SRV_INST,
+                        Name = new[] { "krbtgt", "CORP.IDENTITYINTERVENTION.COM" }
                     },
-                    PaData = new[] {
+                    Till = new DateTimeOffset(642720196850000000L, TimeSpan.Zero)
+                },
+                PaData = new[] {
                         new KrbPaData {
                             Type = PaDataType.PA_ENC_TIMESTAMP,
                             Value = new ReadOnlyMemory<byte>(encData.Encode().ToArray())
@@ -143,7 +141,6 @@ namespace Tests.Kerberos.NET.Messages
                             Value = new ReadOnlyMemory<byte>(new KrbPaPacRequest { IncludePac = true }.Encode().ToArray())
                         }
                     }
-                }
             };
 
             var encodedAsReq = asreq.Encode().ToArray();

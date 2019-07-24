@@ -38,7 +38,7 @@ namespace Kerberos.NET.Transport
         {
             if (KrbError.CanDecode(response))
             {
-                var error = KrbError.DecodeAsApplication(response);
+                var error = KrbError.DecodeApplication(response);
 
                 if (error.ErrorCode == KerberosErrorCode.KRB_ERR_RESPONSE_TOO_BIG)
                 {
@@ -54,7 +54,7 @@ namespace Kerberos.NET.Transport
         public virtual Task<TResponse> SendMessage<TRequest, TResponse>(string domain, IAsn1ApplicationEncoder<TRequest> req)
             where TResponse : IAsn1ApplicationEncoder<TResponse>, new()
         {
-            return SendMessage<TResponse>(domain, req.EncodeAsApplication());
+            return SendMessage<TResponse>(domain, req.EncodeApplication());
         }
 
         public abstract Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req)

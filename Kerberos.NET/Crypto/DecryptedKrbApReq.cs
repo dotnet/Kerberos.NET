@@ -15,9 +15,9 @@ namespace Kerberos.NET.Crypto
 
         public ApOptions Options { get => token.ApOptions; }
 
-        public EncryptionType EType => token.Ticket.Application.EncryptedPart.EType;
+        public EncryptionType EType => token.Ticket.EncryptedPart.EType;
 
-        public KrbPrincipalName SName => token.Ticket.Application.SName;
+        public KrbPrincipalName SName => token.Ticket.SName;
 
         public KrbAuthenticator Authenticator { get; private set; }
 
@@ -42,8 +42,8 @@ namespace Kerberos.NET.Crypto
             var apRep = new KrbApRep
             {
                 EncryptedPart = KrbEncryptedData.Encrypt(
-                    apRepPart.EncodeAsApplication(), 
-                    SessionKey, 
+                    apRepPart.EncodeApplication(),
+                    SessionKey,
                     KeyUsage.EncApRepPart
                 )
             };
@@ -60,13 +60,11 @@ namespace Kerberos.NET.Crypto
 
         public void Decrypt(KerberosKey key)
         {
-            var ticketApp = token.Ticket.Application.EncryptedPart.Decrypt(
+            Ticket = token.Ticket.EncryptedPart.Decrypt(
                 key,
                 KeyUsage.Ticket,
-                b => KrbEncTicketPartApplication.Decode(b)
+                b => KrbEncTicketPart.DecodeApplication(b)
             );
-
-            Ticket = ticketApp.Application;
 
             var keyUsage = KeyUsage.ApReqAuthenticator;
 
@@ -75,13 +73,11 @@ namespace Kerberos.NET.Crypto
                 keyUsage = KeyUsage.PaTgsReqAuthenticator;
             }
 
-            var authenticatorApp = token.Authenticator.Decrypt(
+            Authenticator = token.Authenticator.Decrypt(
                 Ticket.Key.AsKey(),
                 keyUsage,
-                b => KrbAuthenticatorApplication.Decode(b)
+                b => KrbAuthenticator.DecodeApplication(b)
             );
-
-            Authenticator = authenticatorApp.Application;
 
             if (Authenticator.Subkey != null)
             {
@@ -94,14 +90,14 @@ namespace Kerberos.NET.Crypto
 
             var delegationInfo = Authenticator.Checksum?.DecodeDelegation();
 
-            var delegation = delegationInfo?.DelegationTicket?.Application;
+            var delegation = delegationInfo?.DelegationTicket;
 
             if (delegation != null)
             {
                 DelegationTicket = delegation.EncryptedPart.Decrypt(
                     Ticket.Key.AsKey(),
                     KeyUsage.EncKrbCredPart,
-                    b => KrbEncKrbCredPartApplication.Decode(b).Application
+                    b => KrbEncKrbCredPart.DecodeApplication(b)
                 );
             }
         }

@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.Asn1;
 
@@ -16,36 +15,6 @@ namespace Kerberos.NET.Entities
             var tag = reader.ReadTagAndLength(out _, out _);
 
             return tag.HasSameClassAndValue(KrbErrorTag);
-        }
-
-        public static KrbError DecodeAsApplication(ReadOnlyMemory<byte> encoded)
-        {
-            AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
-
-            var sequence = reader.ReadSequence(KrbErrorTag);
-
-            Decode(sequence, out KrbError decoded);
-            sequence.ThrowIfNotEmpty();
-
-            reader.ThrowIfNotEmpty();
-
-            return decoded;
-        }
-
-        public ReadOnlyMemory<byte> EncodeAsApplication()
-        {
-            using (var writer = new AsnWriter(AsnEncodingRules.DER))
-            {
-                writer.PushSequence(KrbErrorTag);
-
-                this.Encode(writer);
-
-                writer.PopSequence(KrbErrorTag);
-
-                var span = writer.EncodeAsSpan();
-
-                return span.AsMemory();
-            }
         }
 
         public IEnumerable<KrbPaData> DecodePreAuthentication()

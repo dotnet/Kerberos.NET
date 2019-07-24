@@ -16,7 +16,7 @@ namespace Kerberos.NET.Entities
     {
         public int ProtocolVersionNumber;
         public MessageType MessageType;
-        public KrbTicketApplication[] Tickets;
+        public KrbTicket[] Tickets;
         public KrbEncryptedData EncryptedPart;
       
         public ReadOnlySpan<byte> Encode()
@@ -30,9 +30,10 @@ namespace Kerberos.NET.Entities
         
         internal void Encode(AsnWriter writer)
         {
-            Encode(writer, Asn1Tag.Sequence);
+            EncodeApplication(writer, ApplicationTag);
+            
         }
-    
+        
         internal void Encode(AsnWriter writer, Asn1Tag tag)
         {
             writer.PushSequence(tag);
@@ -57,6 +58,62 @@ namespace Kerberos.NET.Entities
             EncryptedPart?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             writer.PopSequence(tag);
+        }
+        
+        internal void EncodeApplication(AsnWriter writer, Asn1Tag tag)
+        {
+                writer.PushSequence(tag);
+                
+                this.Encode(writer, Asn1Tag.Sequence);
+
+                writer.PopSequence(tag);
+        }        
+        
+        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 22);
+        
+        public ReadOnlyMemory<byte> EncodeApplication() 
+        {
+          return EncodeApplication(ApplicationTag);
+        }
+        
+        public static KrbCred DecodeApplication(ReadOnlyMemory<byte> encoded)
+        {
+            AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
+
+            var sequence = reader.ReadSequence(ApplicationTag);
+          
+            KrbCred decoded;
+            Decode(sequence, Asn1Tag.Sequence, out decoded);
+            sequence.ThrowIfNotEmpty();
+
+            reader.ThrowIfNotEmpty();
+
+            return decoded;
+        }
+        
+        internal static KrbCred DecodeApplication<T>(AsnReader reader, out T decoded)
+          where T: KrbCred, new()
+        {
+            var sequence = reader.ReadSequence(ApplicationTag);
+          
+            Decode(sequence, Asn1Tag.Sequence, out decoded);
+            sequence.ThrowIfNotEmpty();
+
+            reader.ThrowIfNotEmpty();
+
+            return decoded;
+        }
+         
+        internal ReadOnlyMemory<byte> EncodeApplication(Asn1Tag tag)
+        {
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
+            {
+                EncodeApplication(writer, tag);
+
+                var span = writer.EncodeAsSpan();
+
+                return span.AsMemory();
+            }
         }
         
         public static KrbCred Decode(ReadOnlyMemory<byte> data)
@@ -87,20 +144,22 @@ namespace Kerberos.NET.Entities
             return decoded;
         }
 
-        internal static void Decode(AsnReader reader, out KrbCred decoded)
+        internal static void Decode<T>(AsnReader reader, out T decoded)
+          where T: KrbCred, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
-
-            Decode(reader, Asn1Tag.Sequence, out decoded);
+            
+            DecodeApplication(reader, out decoded);
         }
 
-        internal static void Decode(AsnReader reader, Asn1Tag expectedTag, out KrbCred decoded)
+        internal static void Decode<T>(AsnReader reader, Asn1Tag expectedTag, out T decoded)
+          where T: KrbCred, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = new KrbCred();
+            decoded = new T();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
@@ -131,12 +190,12 @@ namespace Kerberos.NET.Entities
             // Decode SEQUENCE OF for Tickets
             {
                 collectionReader = explicitReader.ReadSequence();
-                var tmpList = new List<KrbTicketApplication>();
-                KrbTicketApplication tmpItem;
+                var tmpList = new List<KrbTicket>();
+                KrbTicket tmpItem;
 
                 while (collectionReader.HasData)
                 {
-                    KrbTicketApplication.Decode(collectionReader, out tmpItem); 
+                    KrbTicket.Decode<KrbTicket>(collectionReader, out tmpItem); 
                     tmpList.Add(tmpItem);
                 }
 
@@ -147,7 +206,7 @@ namespace Kerberos.NET.Entities
 
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
-            KrbEncryptedData.Decode(explicitReader, out decoded.EncryptedPart);
+            KrbEncryptedData.Decode<KrbEncryptedData>(explicitReader, out decoded.EncryptedPart);
             explicitReader.ThrowIfNotEmpty();
 
 

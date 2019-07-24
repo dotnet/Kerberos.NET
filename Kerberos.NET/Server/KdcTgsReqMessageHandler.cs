@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
 using System.Buffers;
@@ -10,7 +9,7 @@ namespace Kerberos.NET.Server
 {
     internal class KdcTgsReqMessageHandler : KdcMessageHandlerBase
     {
-        public KdcTgsReqMessageHandler(ReadOnlySequence<byte> message, ListenerOptions options) 
+        public KdcTgsReqMessageHandler(ReadOnlySequence<byte> message, ListenerOptions options)
             : base(message, options)
         {
         }
@@ -19,12 +18,10 @@ namespace Kerberos.NET.Server
 
         protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(ReadOnlyMemory<byte> message)
         {
-            var tgsReqMessage = KrbTgsReq.DecodeMessageAsApplication(message);
-
-            var tgsReq = tgsReqMessage.TgsReq;
+            var tgsReq = KrbTgsReq.DecodeApplication(message);
 
             await SetRealmContext(tgsReq.Body.Realm);
-            
+
             var paData = tgsReq.PaData.First(p => p.Type == PaDataType.PA_TGS_REQ);
 
             var apReq = paData.DecodeApReq();

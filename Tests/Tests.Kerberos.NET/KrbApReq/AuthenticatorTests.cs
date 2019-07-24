@@ -26,10 +26,6 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(result);
 
             Assert.IsNotNull(result.ApRep);
-
-            var apRep = new KerberosContextToken(data: Convert.FromBase64String(result.ApRep));
-
-            Assert.IsNotNull(apRep.KrbApRep);
         }
 
         [TestMethod]

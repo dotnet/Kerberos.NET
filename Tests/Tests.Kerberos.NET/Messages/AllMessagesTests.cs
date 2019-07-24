@@ -44,7 +44,7 @@ namespace Tests.Kerberos.NET.Messages
                              key,
                              file.Value.Skip(4).ToArray(),
                              v => new KrbAsRep().DecodeAsApplication(v),
-                             t => t.EncodeAsApplication().ToArray());
+                             t => t.EncodeApplication().ToArray());
 
                         ;
                         break;
@@ -52,28 +52,28 @@ namespace Tests.Kerberos.NET.Messages
                         TestSimpleRoundtrip(
                             key,
                             file.Value.Skip(4).ToArray(),
-                            v => KrbAsReq.DecodeAsApplication(v),
-                            t => t.EncodeAsApplication().ToArray());
+                            v => KrbAsReq.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray());
                         break;
                     case "as-req-preauth":
                         TestSimpleRoundtrip(
                             key,
                             file.Value.Skip(4).ToArray(),
-                            v => KrbAsReq.DecodeAsApplication(v),
-                            t => t.EncodeAsApplication().ToArray());
+                            v => KrbAsReq.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray());
                         break;
                     case "krb-error-preauth-required":
                         TestSimpleRoundtrip(
                             key,
                             file.Value.Skip(4).ToArray(),
-                            v => KrbError.DecodeAsApplication(v),
-                            t => t.EncodeAsApplication().ToArray());
+                            v => KrbError.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray());
                         break;
                     case "tgs-rep-testuser-host-app03":
                         //TestSimpleRoundtrip(
                         //    key, 
                         //    file.Value.Skip(4).ToArray(), 
-                        //    v => new KrbTgsRep().DecodeAsApplication(v), 
+                        //    v => new KrbTgsRep().DecodeApplication(v), 
                         //    t => t.EncodeAsApplication().ToArray()
                         //);
                         break;
@@ -87,25 +87,25 @@ namespace Tests.Kerberos.NET.Messages
                         var thing = TestSimpleRoundtrip(
                             key,
                             file.Value.Skip(4).ToArray(),
-                            v => KrbTgsReq.DecodeMessageAsApplication(v),
-                            t => t.EncodeAsApplication().ToArray());
+                            v => KrbTgsReq.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray());
 
-                        var ap = KrbApChoice.Decode(thing.TgsReq.PaData[0].Value);
+                        //var ap = KrbApChoice.Decode(thing.TgsReq.PaData[0].Value);
 
                         break;
                     case "tgs-req-testuser-host-appservice":
                         TestSimpleRoundtrip(
                             key,
                             file.Value.Skip(4).ToArray(),
-                            v => KrbTgsReq.DecodeMessageAsApplication(v),
-                            t => t.EncodeAsApplication().ToArray());
+                            v => KrbTgsReq.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray());
                         break;
                     case "tgs-req-testuser-krbtgt-renew":
                         TestSimpleRoundtrip(
                             key,
                             file.Value.Skip(4).ToArray(),
-                            v => KrbTgsReq.DecodeMessageAsApplication(v),
-                            t => t.EncodeAsApplication().ToArray());
+                            v => KrbTgsReq.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray());
                         break;
                     default:
                         Assert.Fail(file.Key);

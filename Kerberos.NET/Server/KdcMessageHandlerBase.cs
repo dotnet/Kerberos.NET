@@ -71,7 +71,7 @@ namespace Kerberos.NET.Server
                 }
             };
 
-            return krbErr.EncodeAsApplication();
+            return krbErr.EncodeApplication();
         }
 
         internal void RegisterPreAuthHandlers(ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> preAuthHandlers)

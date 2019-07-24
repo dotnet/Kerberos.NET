@@ -13,7 +13,7 @@ namespace Tests.Kerberos.NET
         {
             var asReqBin = ReadDataFile("messages\\as-req").Skip(4).ToArray();
 
-            var asreq = KrbAsReq.DecodeAsApplication(asReqBin);
+            var asreq = KrbAsReq.DecodeApplication(asReqBin);
 
             Assert.IsNotNull(asreq);
 
@@ -27,7 +27,7 @@ namespace Tests.Kerberos.NET
         {
             var asReqBin = ReadDataFile("messages\\as-req-preauth").Skip(4).ToArray();
 
-            var asreq = KrbAsReq.DecodeAsApplication(asReqBin);
+            var asreq = KrbAsReq.DecodeApplication(asReqBin);
 
             Assert.IsNotNull(asreq);
 

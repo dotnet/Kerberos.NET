@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Kerberos.NET.Asn1;
+﻿using Kerberos.NET.Asn1;
 using Kerberos.NET.Entities;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
 {

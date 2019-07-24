@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Kerberos.NET.Entities;
+using System;
 using System.Threading.Tasks;
-using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
 {

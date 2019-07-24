@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 
-<asn:Sequence
+<asn:InheritedSequence
   xmlns:asn="http://schemas.dot.net/asnxml/201808/"
   name="KrbAsRep"
-  namespace="Kerberos.NET.Entities">
+  namespace="Kerberos.NET.Entities" explicitTag="11">
   <!--
   
   AS-REP          ::= [APPLICATION 11] KDC-REP
@@ -11,4 +11,4 @@
   -->
 
   <asn:AsnType name="Response" typeName="KrbKdcRep" />
-</asn:Sequence>
+</asn:InheritedSequence>

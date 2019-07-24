@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Client;
-using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Entities;
 using System;
 using System.Runtime.Serialization;
 

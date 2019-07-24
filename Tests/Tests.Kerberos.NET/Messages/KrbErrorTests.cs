@@ -15,9 +15,9 @@ namespace Tests.Kerberos.NET.Data
         {
             var krbErrBin = ReadDataFile("messages\\krb-error-preauth-required").Skip(4).ToArray();
 
-            var err = KrbError.DecodeAsApplication(krbErrBin);
+            var err = KrbError.DecodeApplication(krbErrBin);
 
-            var bytes = err.EncodeAsApplication();
+            var bytes = err.EncodeApplication();
 
             Assert.IsTrue(krbErrBin.SequenceEqual(bytes.ToArray()));
         }
@@ -27,7 +27,7 @@ namespace Tests.Kerberos.NET.Data
         {
             var krbErrBin = ReadDataFile("messages\\krb-error-preauth-required").Skip(4).ToArray();
 
-            var err = KrbError.DecodeAsApplication(krbErrBin);
+            var err = KrbError.DecodeApplication(krbErrBin);
 
             var preauth = err.DecodePreAuthentication();
 

@@ -20,7 +20,7 @@ namespace Kerberos.NET.Entities
 
         protected static DecryptedKrbApReq DecryptApReq(KrbApReq token, KeyTable keytab)
         {
-            if (token.Ticket.Application == null)
+            if (token.Ticket == null)
             {
                 return null;
             }
