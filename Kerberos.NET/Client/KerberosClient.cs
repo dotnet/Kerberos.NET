@@ -90,7 +90,7 @@ namespace Kerberos.NET.Client
             var encKdcRepPart = tgsRep.EncPart.Decrypt(
                 tgtSessionKey.AsKey(),
                 KeyUsage.EncTgsRepPartSubSessionKey,
-                d => KrbEncTgsRepPart.Decode(d)
+                d => KrbEncTgsRepPart.DecodeApplication(d)
             );
 
             var authenticatorKey = encKdcRepPart.Key.AsKey();

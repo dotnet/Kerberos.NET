@@ -101,6 +101,8 @@ namespace Kerberos.NET.Entities
             }
 
             DecodingErrors = errors;
+
+            HasRequiredFields = ServerSignature != null && KdcSignature != null;
         }
 
         private static void ZeroArray(byte[] signatureData, long start, int exclusionEnd)
@@ -177,6 +179,8 @@ namespace Kerberos.NET.Entities
         public UpnDomainInfo UpnDomainInformation { get; private set; }
 
         public PacDelegationInfo DelegationInformation { get; private set; }
+
+        public bool HasRequiredFields { get; private set; }
 
         public ReadOnlyMemory<byte> Encode(KerberosKey kdcKey, KerberosKey serverKey)
         {

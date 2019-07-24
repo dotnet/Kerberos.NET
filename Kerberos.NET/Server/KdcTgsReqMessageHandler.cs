@@ -14,6 +14,8 @@ namespace Kerberos.NET.Server
         {
         }
 
+        // a krbtgt ticket will be replayed repeatedly, so maybe lets not fail validation on that
+
         public ValidationActions Validation { get; set; } = ValidationActions.All & ~ValidationActions.Replay;
 
         protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(ReadOnlyMemory<byte> message)
@@ -22,42 +24,44 @@ namespace Kerberos.NET.Server
 
             await SetRealmContext(tgsReq.Body.Realm);
 
-            var paData = tgsReq.PaData.First(p => p.Type == PaDataType.PA_TGS_REQ);
-
-            var apReq = paData.DecodeApReq();
+            var apReq = ExtractApReq(tgsReq);
 
             var krbtgtIdentity = await RealmService.Principals.RetrieveKrbtgt();
             var krbtgtKey = await krbtgtIdentity.RetrieveLongTermCredential();
 
+            var apReqDecrypted = DecryptApReq(apReq, krbtgtKey);
+
+            var principal = await RealmService.Principals.Find(apReqDecrypted.Ticket.CName.FullyQualifiedName);
+
+            var servicePrincipal = await RealmService.Principals.Find(tgsReq.Body.SName.FullyQualifiedName);
+
+            var tgsRep = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(
+                principal,
+                apReqDecrypted.SessionKey,
+                servicePrincipal,
+                RealmService,
+                tgsReq.Body.Addresses
+            );
+
+            return tgsRep.EncodeApplication();
+        }
+
+        private DecryptedKrbApReq DecryptApReq(KrbApReq apReq, KerberosKey krbtgtKey)
+        {
             var apReqDecrypted = new DecryptedKrbApReq(apReq, MessageType.KRB_TGS_REQ);
 
             apReqDecrypted.Decrypt(krbtgtKey);
 
             apReqDecrypted.Validate(Validation);
 
-            var principal = await RealmService.Principals.Find(apReqDecrypted.Ticket.CName.FullyQualifiedName);
+            return apReqDecrypted;
+        }
 
-            var servicePrincipal = await RealmService.Principals.Find(tgsReq.Body.SName.FullyQualifiedName);
+        private static KrbApReq ExtractApReq(KrbTgsReq tgsReq)
+        {
+            var paData = tgsReq.PaData.First(p => p.Type == PaDataType.PA_TGS_REQ);
 
-            // TODO: move GenerateServiceTicket to KrbKdcRep because it's all the same message
-
-            //var serviceTicket = await KrbAsRep.GenerateServiceTicket(principal, servicePrincipal, RealmService, MessageType.KRB_TGS_REP);
-
-            //var tgsRep = new KrbTgsRep {
-            //    Response = new KrbKdcRep {
-            //        CName = KrbPrincipalName.FromPrincipal(principal, realm: RealmService.Name),
-            //        CRealm = RealmService.Name,
-            //        MessageType = MessageType.KRB_TGS_REP,
-            //        Ticket = serviceTicket.Response.Ticket,
-            //        EncPart = KrbEncryptedData.Encrypt(
-            //            tgsRepPart.Encode().AsMemory(), 
-            //            apReqDecrypted.SessionKey, 
-            //            KeyUsage.EncTgsRepPartSubSessionKey
-            //        )
-            //    }
-            //};
-
-            throw new NotImplementedException("TGS-REQ is not implemented yet");
+            return paData.DecodeApReq();
         }
     }
 }
