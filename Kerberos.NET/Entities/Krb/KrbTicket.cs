@@ -29,7 +29,7 @@ namespace Kerberos.NET.Entities
 
         public KrbTicket DecodeAsApplication(ReadOnlyMemory<byte> data)
         {
-            throw new NotImplementedException();
+            return Decode(ApplicationTag, data);
         }
 
         public KrbTicket()

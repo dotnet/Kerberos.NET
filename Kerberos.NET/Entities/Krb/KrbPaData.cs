@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
@@ -18,6 +19,16 @@ namespace Kerberos.NET.Entities
             var info = KrbETypeInfo2.Decode(Value, AsnEncodingRules.DER);
 
             return info.ETypeInfo;
+        }
+
+        public KrbApReq DecodeApReq()
+        {
+            if (Type != PaDataType.PA_TGS_REQ)
+            {
+                throw new InvalidOperationException($"Cannot parse the TGS ApReq because type is {Type}");
+            }
+
+            return new KrbApReq().DecodeAsApplication(Value);
         }
     }
 

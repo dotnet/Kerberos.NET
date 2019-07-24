@@ -1,5 +1,4 @@
 ﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
 using System.Buffers;
@@ -23,6 +22,7 @@ namespace Kerberos.NET.Server
             postProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);
 
             RegisterPreAuthHandlers(postProcessAuthHandlers);
+
         }
 
         protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(ReadOnlyMemory<byte> message)
@@ -60,10 +60,10 @@ namespace Kerberos.NET.Server
                 return PreAuthFailed(kex, principal);
             }
 
-            return await GenerateTgt(principal);
+            return await GenerateTgt(asReq, principal);
         }
 
-        private async Task<ReadOnlyMemory<byte>> GenerateTgt(IKerberosPrincipal principal)
+        private async Task<ReadOnlyMemory<byte>> GenerateTgt(KrbKdcReq asReq, IKerberosPrincipal principal)
         {
             // 1. detect if specific PAC contents are requested (claims)
             // 2. if requested generate PAC for user
@@ -72,133 +72,16 @@ namespace Kerberos.NET.Server
             // 5. encrypt against krbtgt
             // 6. done
 
-            // This is approximately correct such that a client doesn't barf on it
-            // But the krbtgt Ticket structure is probably incorrect as far as AD thinks
+            var requirements = new List<KrbPaData>();
 
-            var krbtgtPrincipal = await RealmService.Principals.RetrieveKrbtgt();
-            var krbtgtKey = await krbtgtPrincipal.RetrieveLongTermCredential();
-
-            var sessionKey = KrbEncryptionKey.Generate(krbtgtKey.EncryptionType);
-
-            var now = RealmService.Now();
-
-            var cname = KrbPrincipalName.FromPrincipal(principal, realm: RealmService.Name);
-
-            var authz = await GenerateAuthorizationData(principal, krbtgtKey);
-
-            var encTicketPart = new KrbEncTicketPart()
+            foreach (var handler in postProcessAuthHandlers)
             {
-                CName = cname,
-                Key = sessionKey,
-                AuthTime = now,
-                StartTime = now - RealmService.Settings.MaximumSkew,
-                EndTime = now + RealmService.Settings.SessionLifetime,
-                RenewTill = now + RealmService.Settings.MaximumRenewalWindow,
-                CRealm = RealmService.Name,
-                Flags = TicketFlags.Renewable | TicketFlags.Initial,
-                AuthorizationData = authz.ToArray()
-            };
+                await InvokePreAuthHandler(null, principal, requirements, handler.Value);
+            }
 
-            var ticket = new KrbTicket()
-            {
-                Realm = RealmService.Name,
-                SName = KrbPrincipalName.FromPrincipal(
-                    krbtgtPrincipal,
-                    PrincipalNameType.NT_SRV_INST,
-                    RealmService.Name
-                ),
-                EncryptedPart = KrbEncryptedData.Encrypt(
-                    encTicketPart.EncodeAsApplication(),
-                    krbtgtKey,
-                    KeyUsage.Ticket
-                )
-            };
+            var tgt = await KrbAsRep.GenerateTgt(principal, requirements, RealmService, asReq.Body);
 
-            var encAsRepPart = new KrbEncAsRepPart
-            {
-                EncAsRepPart = new KrbEncKdcRepPart
-                {
-                    AuthTime = encTicketPart.AuthTime,
-                    StartTime = encTicketPart.StartTime,
-                    EndTime = encTicketPart.EndTime,
-                    RenewTill = encTicketPart.RenewTill,
-                    Realm = RealmService.Name,
-                    SName = ticket.SName,
-                    Flags = encTicketPart.Flags,
-                    CAddr = encTicketPart.CAddr,
-                    Key = sessionKey,
-                    Nonce = KerberosConstants.GetNonce(),
-                    LastReq = new[] { new KrbLastReq { Type = 0 } }
-                }
-            };
-
-            var principalSecret = await principal.RetrieveLongTermCredential();
-
-            var asRep = new KrbAsRep
-            {
-                Response = new KrbKdcRep
-                {
-                    CName = cname,
-                    CRealm = RealmService.Name,
-                    MessageType = MessageType.KRB_AS_REP,
-                    Ticket = new KrbTicketApplication { Application = ticket },
-                    EncPart = KrbEncryptedData.Encrypt(
-                        encAsRepPart.EncodeAsApplication(),
-                        principalSecret,
-                        KeyUsage.EncAsRepPart
-                    )
-                }
-            };
-
-            return asRep.EncodeAsApplication();
-        }
-
-        private async Task<IEnumerable<KrbAuthorizationData>> GenerateAuthorizationData(
-            IKerberosPrincipal principal, KerberosKey krbtgt
-        )
-        {
-            // authorization-data is annoying because it's a sequence of 
-            // ad-if-relevant, which is a sequence of sequences
-            // it ends up looking something like
-            //
-            // [
-            //   {
-            //      Type = ad-if-relevant,
-            //      Data = 
-            //      [
-            //        { 
-            //           Type = pac,
-            //           Data = encoded-pac
-            //        },
-            //        ...
-            //      ],
-            //   },
-            //   ...
-            // ]
-
-            var pac = await principal.GeneratePac();
-
-            var authz = new List<KrbAuthorizationData>();
-
-            var sequence = new KrbAuthorizationDataSequence
-            {
-                AuthorizationData = new[] 
-                {
-                    new KrbAuthorizationData
-                    {
-                        Type = AuthorizationDataType.AdWin2kPac,
-                        Data = pac.Encode(krbtgt, krbtgt)
-                    }
-                }
-            };
-
-            authz.Add(new KrbAuthorizationData
-            {
-                Type = AuthorizationDataType.AdIfRelevant,
-                Data = sequence.Encode().AsMemory()
-            });
-
-            return authz;
+            return tgt.EncodeAsApplication();
         }
 
         private ReadOnlyMemory<byte> PreAuthFailed(KerberosValidationException kex, IKerberosPrincipal principal)
@@ -233,40 +116,53 @@ namespace Kerberos.NET.Server
 
         private async Task<IEnumerable<KrbPaData>> ProcessPreAuth(KrbKdcReq asReq, IKerberosPrincipal principal)
         {
+            // if there are pre-auth handlers registered check whether they intersect with what the user supports.
+            // at some point in the future this should evaluate whether there's at least a m-of-n PA-Data approval
+            // this would probably best be driven by some policy check, which would involve coming up with a logic
+            // system of some sort. Will leave that as an exercise for future me.
+
             var invokingAuthTypes = PreAuthHandlers.Keys.Intersect(principal.SupportedPreAuthenticationTypes);
 
-            var preAuthRequests = new List<KrbPaData>();
+            var preAuthRequirements = new List<KrbPaData>();
 
             foreach (var preAuthType in invokingAuthTypes)
             {
-                await InvokePreAuthHandler(asReq, principal, preAuthRequests, PreAuthHandlers[preAuthType]);
+                await InvokePreAuthHandler(asReq, principal, preAuthRequirements, PreAuthHandlers[preAuthType]);
             }
 
-            if (preAuthRequests.Count > 0)
+            // if the pre-auth handlers think auth is required we should check with the
+            // post-auth handlers because they may add hints to help the client like if
+            // they should use specific etypes or salts.
+            //
+            // the post-auth handlers will determine if they need to do anything based
+            // on their own criteria.
+
+            foreach (var preAuthType in postProcessAuthHandlers)
             {
-                foreach (var preAuthType in postProcessAuthHandlers)
-                {
-                    await InvokePreAuthHandler(asReq, principal, preAuthRequests, preAuthType.Value);
-                }
+                var func = preAuthType.Value;
+
+                var handler = func(RealmService);
+
+                await handler.PostValidate(principal, preAuthRequirements);
             }
 
-            return preAuthRequests;
+            return preAuthRequirements;
         }
 
         private async Task InvokePreAuthHandler(
-            KrbKdcReq asReq, 
-            IKerberosPrincipal principal, 
-            List<KrbPaData> preAuthRequests, 
+            KrbKdcReq asReq,
+            IKerberosPrincipal principal,
+            List<KrbPaData> preAuthRequirements,
             PreAuthHandlerConstructor func
         )
         {
             var handler = func(RealmService);
 
-            var preAuthRequest = await handler.Validate(asReq, principal);
+            var preAuthRequirement = await handler.Validate(asReq, principal);
 
-            if (preAuthRequest != null)
+            if (preAuthRequirement != null)
             {
-                preAuthRequests.Add(preAuthRequest);
+                preAuthRequirements.Add(preAuthRequirement);
             }
         }
     }

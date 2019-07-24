@@ -36,7 +36,11 @@ namespace Kerberos.NET.Server
     {
         IEnumerable<PaDataType> SupportedPreAuthenticationTypes { get; set; }
 
+        SupportedEncryptionTypes SupportedEncryptionTypes { get; set; }
+
         string PrincipalName { get; set; }
+
+        DateTimeOffset? Expires { get; set; }
 
         Task<KerberosKey> RetrieveLongTermCredential();
 

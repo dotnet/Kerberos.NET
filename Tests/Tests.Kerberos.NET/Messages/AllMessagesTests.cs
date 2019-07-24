@@ -70,7 +70,12 @@ namespace Tests.Kerberos.NET.Messages
                             t => t.EncodeAsApplication().ToArray());
                         break;
                     case "tgs-rep-testuser-host-app03":
-                        //TestSimpleRoundtrip(key, file.Value, v => KrbTgsRep.Decode(v), t => t.Encode().ToArray());
+                        //TestSimpleRoundtrip(
+                        //    key, 
+                        //    file.Value.Skip(4).ToArray(), 
+                        //    v => new KrbTgsRep().DecodeAsApplication(v), 
+                        //    t => t.EncodeAsApplication().ToArray()
+                        //);
                         break;
                     case "tgs-rep-testuser-host-appservice":
                         //TestSimpleRoundtrip(key, file.Value, v => KrbTgsRep.Decode(v), t => t.Encode().ToArray());

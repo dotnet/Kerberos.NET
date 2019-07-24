@@ -5,13 +5,6 @@ namespace Kerberos.NET.Crypto
 {
     public abstract class DecryptedKrbMessage
     {
-        protected DecryptedKrbMessage(KerberosCryptoTransformer transformer)
-        {
-            this.Transformer = transformer;
-        }
-
-        protected KerberosCryptoTransformer Transformer { get; }
-
         private Func<DateTimeOffset> nowFunc;
 
         [KerberosIgnore]
@@ -24,11 +17,6 @@ namespace Kerberos.NET.Crypto
         public abstract void Validate(ValidationActions validation);
 
         public abstract void Decrypt(KeyTable keytab);
-
-        protected virtual byte[] Decrypt(KerberosKey key, ReadOnlyMemory<byte> ciphertext, KeyUsage keyType)
-        {
-            return Transformer.Decrypt(ciphertext, key, keyType);
-        }
 
         protected virtual void ValidateTicketEnd(DateTimeOffset endTime, DateTimeOffset now, TimeSpan skew)
         {

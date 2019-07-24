@@ -5,10 +5,12 @@ namespace Kerberos.NET.Crypto
 {
     public class DecryptedKrbApReq : DecryptedKrbMessage
     {
-        public DecryptedKrbApReq(KrbApReq token, KerberosCryptoTransformer transformer)
-            : base(transformer)
+        private readonly MessageType incomingMessageType;
+
+        public DecryptedKrbApReq(KrbApReq token, MessageType incomingMessageType = MessageType.KRB_AP_REQ)
         {
             this.token = token;
+            this.incomingMessageType = incomingMessageType;
         }
 
         public ApOptions Options { get => token.ApOptions; }
@@ -39,7 +41,11 @@ namespace Kerberos.NET.Crypto
 
             var apRep = new KrbApRep
             {
-                EncryptedPart = KrbEncryptedData.Encrypt(apRepPart.EncodeAsApplication(), SessionKey, KeyUsage.EncApRepPart)
+                EncryptedPart = KrbEncryptedData.Encrypt(
+                    apRepPart.EncodeAsApplication(), 
+                    SessionKey, 
+                    KeyUsage.EncApRepPart
+                )
             };
 
             return apRep;
@@ -47,23 +53,33 @@ namespace Kerberos.NET.Crypto
 
         public override void Decrypt(KeyTable keytab)
         {
-            var ciphertext = token.Ticket.Application.EncryptedPart.Cipher;
-
             var key = keytab.GetKey(EType, SName);
 
-            var decryptedTicket = Decrypt(key, ciphertext, KeyUsage.Ticket);
+            Decrypt(key);
+        }
 
-            var ticketApp = KrbEncTicketPartApplication.Decode(decryptedTicket);
+        public void Decrypt(KerberosKey key)
+        {
+            var ticketApp = token.Ticket.Application.EncryptedPart.Decrypt(
+                key,
+                KeyUsage.Ticket,
+                b => KrbEncTicketPartApplication.Decode(b)
+            );
 
             Ticket = ticketApp.Application;
 
-            var decryptedAuthenticator = Decrypt(
-                Ticket.Key.AsKey(),
-                token.Authenticator.Cipher,
-                KeyUsage.ApReqAuthenticator
-            );
+            var keyUsage = KeyUsage.ApReqAuthenticator;
 
-            var authenticatorApp = KrbAuthenticatorApplication.Decode(decryptedAuthenticator);
+            if (incomingMessageType == MessageType.KRB_TGS_REQ)
+            {
+                keyUsage = KeyUsage.PaTgsReqAuthenticator;
+            }
+
+            var authenticatorApp = token.Authenticator.Decrypt(
+                Ticket.Key.AsKey(),
+                keyUsage,
+                b => KrbAuthenticatorApplication.Decode(b)
+            );
 
             Authenticator = authenticatorApp.Application;
 
@@ -82,13 +98,11 @@ namespace Kerberos.NET.Crypto
 
             if (delegation != null)
             {
-                var decryptedDelegationTicket = Decrypt(
+                DelegationTicket = delegation.EncryptedPart.Decrypt(
                     Ticket.Key.AsKey(),
-                    delegation.EncryptedPart.Cipher,
-                    KeyUsage.EncKrbCredPart
+                    KeyUsage.EncKrbCredPart,
+                    b => KrbEncKrbCredPartApplication.Decode(b).Application
                 );
-
-                DelegationTicket = KrbEncKrbCredPartApplication.Decode(decryptedDelegationTicket).Application;
             }
         }
 

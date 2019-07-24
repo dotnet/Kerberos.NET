@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
@@ -12,6 +13,14 @@ namespace Kerberos.NET.Server
             Service = service;
         }
 
-        public abstract Task<KrbPaData> Validate(KrbKdcReq asReq, IKerberosPrincipal principal);
+        public virtual Task PostValidate(IKerberosPrincipal principal, List<KrbPaData> preAuthRequirements)
+        {
+            return Task.CompletedTask;
+        }
+
+        public virtual Task<KrbPaData> Validate(KrbKdcReq asReq, IKerberosPrincipal principal)
+        {
+            return Task.FromResult<KrbPaData>(null);
+        }
     }
 }

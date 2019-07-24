@@ -10,18 +10,25 @@ namespace Kerberos.NET.Asn1
 
         public static Memory<T> AsMemory<T>(this Span<T> span) => new Memory<T>(span.ToArray());
 
-        public static ReadOnlySpan<byte> AsReadOnly(this Enum val)
+        public static ReadOnlySpan<byte> AsReadOnly(this Enum val, bool littleEndian = false)
         {
             var longVal = (object)val;
 
-            return AsReadOnly((long)longVal);
+            return AsReadOnly((long)longVal, littleEndian: littleEndian);
         }
 
-        public static ReadOnlySpan<byte> AsReadOnly(long longVal)
+        public static ReadOnlySpan<byte> AsReadOnly(long longVal, bool littleEndian = false)
         {
             var bytes = new byte[4];
 
-            Endian.ConvertToBigEndian((int)longVal, bytes);
+            if (littleEndian)
+            {
+                Endian.ConvertToLittleEndian((int)longVal, bytes);
+            }
+            else
+            {
+                Endian.ConvertToBigEndian((int)longVal, bytes);
+            }
 
             return new ReadOnlySpan<byte>(bytes);
         }

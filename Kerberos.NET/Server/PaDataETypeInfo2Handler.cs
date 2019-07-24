@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Kerberos.NET.Asn1;
 using Kerberos.NET.Entities;
 
@@ -11,8 +12,16 @@ namespace Kerberos.NET.Server
         {
         }
 
-        public override async Task<KrbPaData> Validate(KrbKdcReq asReq, IKerberosPrincipal principal)
+        public override async Task PostValidate(IKerberosPrincipal principal, List<KrbPaData> preAuthRequirements)
         {
+            if (preAuthRequirements.Count <= 0)
+            {
+                // we don't want to include this if nothing is required otherwise we could
+                // trigger a pre-auth check later in the flow or by the client in response
+
+                return;
+            }
+
             var cred = await principal.RetrieveLongTermCredential();
 
             var etypeInfo = new KrbETypeInfo2
@@ -25,11 +34,13 @@ namespace Kerberos.NET.Server
                 }
             };
 
-            return new KrbPaData
+            var infoPaData = new KrbPaData
             {
                 Type = PaDataType.PA_ETYPE_INFO2,
                 Value = etypeInfo.Encode().AsMemory()
             };
+
+            preAuthRequirements.Add(infoPaData);
         }
     }
 }

@@ -25,18 +25,9 @@ namespace Kerberos.NET.Entities
                 return null;
             }
 
-            DecryptedKrbApReq decryptedApReq = null;
+            var decryptedApReq = new DecryptedKrbApReq(token);
 
-            var etype = token.Ticket.Application?.EncryptedPart.EType;
-
-            var decryptor = CryptographyService.CreateTransform(etype.Value);
-
-            if (decryptor != null)
-            {
-                decryptedApReq = new DecryptedKrbApReq(token, decryptor);
-
-                decryptedApReq.Decrypt(keytab);
-            }
+            decryptedApReq.Decrypt(keytab);
 
             return decryptedApReq;
         }

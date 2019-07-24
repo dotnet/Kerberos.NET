@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Kerberos.NET.Entities
 {
@@ -20,7 +21,12 @@ namespace Kerberos.NET.Entities
 
         internal static int GetNonce()
         {
-            NonceCounter++;
+            // .NET Runtime guarantees operations on variables up to the natural 
+            // processor pointer size are intrinsically atomic, but there's no
+            // guarantee we'll be running in a 64 bit process on a 64 bit processor
+            // so maybe let's not give the system an opportunity to corrupt this
+
+            Interlocked.Increment(ref NonceCounter);
 
             return (int)NonceCounter;
         }
