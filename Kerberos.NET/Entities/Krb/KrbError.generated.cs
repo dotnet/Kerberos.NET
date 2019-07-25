@@ -13,7 +13,7 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbError
     {
-        public int ProtocolVersionNumer;
+        public int ProtocolVersionNumber;
         public MessageType MessageType;
         public DateTimeOffset? CTime;
         public int? Cusec;
@@ -47,7 +47,7 @@ namespace Kerberos.NET.Entities
             writer.PushSequence(tag);
             
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
-            writer.WriteInteger(ProtocolVersionNumer);
+            writer.WriteInteger(ProtocolVersionNumber);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             writer.WriteInteger((long)MessageType);
@@ -125,11 +125,12 @@ namespace Kerberos.NET.Entities
                 this.Encode(writer, Asn1Tag.Sequence);
 
                 writer.PopSequence(tag);
-        }        
+        }       
+        
         
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 30);
         
-        public ReadOnlyMemory<byte> EncodeApplication() 
+        public virtual ReadOnlyMemory<byte> EncodeApplication() 
         {
           return EncodeApplication(ApplicationTag);
         }
@@ -224,7 +225,7 @@ namespace Kerberos.NET.Entities
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (!explicitReader.TryReadInt32(out decoded.ProtocolVersionNumer))
+            if (!explicitReader.TryReadInt32(out decoded.ProtocolVersionNumber))
             {
                 explicitReader.ThrowIfNotEmpty();
             }

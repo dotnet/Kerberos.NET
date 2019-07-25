@@ -56,7 +56,7 @@ namespace <xsl:value-of select="@namespace" />
     {<xsl:if test="@explicitTag">
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, <xsl:value-of select="@explicitTag" />);
         
-        public ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
+        public override ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
         {
           return EncodeApplication(ApplicationTag);
         }
@@ -135,11 +135,17 @@ namespace <xsl:value-of select="@namespace" />
                 this.Encode(writer, Asn1Tag.Sequence);
 
                 writer.PopSequence(tag);
-        }        
+        }       
+        <xsl:if test="not(@explicitTag)">
+        public virtual ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
+        {
+          return new ReadOnlyMemory&lt;byte&gt;();
+        }
+        </xsl:if>
         <xsl:if test="@explicitTag">
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, <xsl:value-of select="@explicitTag" />);
         
-        public ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
+        public virtual ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
         {
           return EncodeApplication(ApplicationTag);
         }
@@ -298,7 +304,7 @@ namespace <xsl:value-of select="@namespace" />
         <xsl:if test="@explicitTag">
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, <xsl:value-of select="@explicitTag" />);
         
-        public ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
+        public virtual ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
         {
           return EncodeApplication(ApplicationTag);
         }

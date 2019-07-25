@@ -15,6 +15,7 @@ namespace Kerberos.NET.Server
         }
 
         // a krbtgt ticket will be replayed repeatedly, so maybe lets not fail validation on that
+        // unless a higher power indicates we should
 
         public ValidationActions Validation { get; set; } = ValidationActions.All & ~ValidationActions.Replay;
 
@@ -35,15 +36,57 @@ namespace Kerberos.NET.Server
 
             var servicePrincipal = await RealmService.Principals.Find(tgsReq.Body.SName.FullyQualifiedName);
 
+            // renewal is an odd case here because the SName will krbtgt
+            // does this need to be validated more than the Decrypt call?
+
+            await EvaluateSecurityPolicy(principal, servicePrincipal, apReqDecrypted);
+
+            KerberosKey serviceKey;
+
+            if (tgsReq.Body.KdcOptions.HasFlag(KdcOptions.EncTktInSkey) &&
+                tgsReq.Body.AdditionalTickets != null &&
+                tgsReq.Body.AdditionalTickets.Length > 0)
+            {
+                serviceKey = GetUserToUserTicketKey(tgsReq.Body.AdditionalTickets[0], krbtgtKey);
+            }
+            else
+            {
+                serviceKey = await servicePrincipal.RetrieveLongTermCredential();
+            }
+
             var tgsRep = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(
                 principal,
                 apReqDecrypted.SessionKey,
                 servicePrincipal,
+                serviceKey,
                 RealmService,
-                tgsReq.Body.Addresses
+                addresses: tgsReq.Body.Addresses
             );
 
             return tgsRep.EncodeApplication();
+        }
+
+        private static KerberosKey GetUserToUserTicketKey(KrbTicket ticket, KerberosKey key)
+        {
+            var decryptedTicket = ticket.EncryptedPart.Decrypt(
+                key,
+                KeyUsage.Ticket,
+                b => KrbEncTicketPart.DecodeApplication(b)
+            );
+
+            return decryptedTicket.Key.AsKey();
+        }
+
+        protected virtual Task EvaluateSecurityPolicy(
+            IKerberosPrincipal principal,
+            IKerberosPrincipal servicePrincipal,
+            DecryptedKrbApReq apReqDecrypted
+        )
+        {
+            // good place to check whether the incoming principal is allowed to access the service principal
+            // TODO: also maybe a good place to evaluate cross-realm requirements?
+
+            return Task.CompletedTask;
         }
 
         private DecryptedKrbApReq DecryptApReq(KrbApReq apReq, KerberosKey krbtgtKey)

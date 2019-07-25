@@ -11,6 +11,11 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAsReq
     {
+        public KrbAsReq()
+        {
+            MessageType = MessageType.KRB_AS_REQ;
+        }
+
         public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options)
         {
             var kdcOptions = (KdcOptions)(options & ~AuthenticationOptions.AllAuthentication);

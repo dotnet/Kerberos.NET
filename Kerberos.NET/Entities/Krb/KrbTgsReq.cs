@@ -8,13 +8,23 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbTgsReq : IAsn1ApplicationEncoder<KrbTgsReq>
     {
+        public KrbTgsReq()
+        {
+            MessageType = MessageType.KRB_TGS_REQ;
+        }
+
         public KrbTgsReq DecodeAsApplication(ReadOnlyMemory<byte> encoded)
         {
             return DecodeApplication(encoded);
         }
 
-
-        public static KrbTgsReq CreateTgsReq(string spn, KrbEncryptionKey tgtSessionKey, KrbKdcRep kdcRep, KdcOptions options)
+        public static KrbTgsReq CreateTgsReq(
+            string spn,
+            KrbEncryptionKey tgtSessionKey,
+            KrbKdcRep kdcRep,
+            KdcOptions options,
+            KrbTicket user2UserTicket = null
+        )
         {
             var tgtApReq = CreateApReq(kdcRep, tgtSessionKey);
 
@@ -40,7 +50,6 @@ namespace Kerberos.NET.Entities
 
             var tgs = new KrbTgsReq
             {
-                MessageType = MessageType.KRB_TGS_REQ,
                 PaData = paData.ToArray(),
                 Body = new KrbKdcReqBody
                 {
@@ -54,8 +63,15 @@ namespace Kerberos.NET.Entities
                         Name = sname
                     },
                     Till = KerberosConstants.EndOfTime
-                }
+                },
             };
+
+            if (options.HasFlag(KdcOptions.EncTktInSkey) && user2UserTicket != null)
+            {
+                tgs.Body.AdditionalTickets = new[] {
+                    user2UserTicket
+                };
+            }
 
             return tgs;
         }

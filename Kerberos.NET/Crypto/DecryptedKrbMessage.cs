@@ -28,6 +28,16 @@ namespace Kerberos.NET.Crypto
             }
         }
 
+        protected virtual void ValidateTicketRenewal(DateTimeOffset? renewTill, DateTimeOffset now, TimeSpan skew)
+        {
+            if (renewTill == null || renewTill < (now - skew))
+            {
+                throw new KerberosValidationException(
+                    $"Token cannot be renewed any further. Renew Till: {renewTill}; Now: {now}; Skew: {skew}"
+                );
+            }
+        }
+
         protected virtual void ValidateTicketStart(DateTimeOffset startTime, DateTimeOffset now, TimeSpan skew)
         {
             if (startTime > (now + skew))

@@ -7,7 +7,7 @@ namespace Kerberos.NET.Entities
     {
         public KerberosContextToken(GssApiToken gssToken = null, ReadOnlyMemory<byte>? data = null)
         {
-            var kerb = data ?? gssToken?.Field2;
+            var kerb = data ?? gssToken?.Token;
 
             KrbApReq = KrbApReq.DecodeApplication(kerb.Value);
         }

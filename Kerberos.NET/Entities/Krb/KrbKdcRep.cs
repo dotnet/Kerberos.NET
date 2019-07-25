@@ -15,21 +15,21 @@ namespace Kerberos.NET.Entities
             ProtocolVersionNumber = 5;
         }
 
-        private const TicketFlags DefaultFlags = TicketFlags.Renewable |
-                                                 TicketFlags.Initial |
-                                                 TicketFlags.Forwardable;
+        internal const TicketFlags DefaultFlags = TicketFlags.Renewable |
+                                                  TicketFlags.Initial |
+                                                  TicketFlags.Forwardable;
 
         public static async Task<T> GenerateServiceTicket<T>(
             IKerberosPrincipal principal,
             KerberosKey encPartKey,
             IKerberosPrincipal servicePrincipal,
+            KerberosKey serviceKey,
             IRealmService realmService,
+            TicketFlags flags = DefaultFlags,
             IEnumerable<KrbHostAddress> addresses = null
         )
             where T : KrbKdcRep, new()
         {
-            var serviceKey = await servicePrincipal.RetrieveLongTermCredential();
-
             var sessionKey = KrbEncryptionKey.Generate(serviceKey.EncryptionType);
 
             var now = realmService.Now();
@@ -37,8 +37,6 @@ namespace Kerberos.NET.Entities
             var authz = await GenerateAuthorizationData(principal, serviceKey);
 
             var cname = KrbPrincipalName.FromPrincipal(principal, realm: realmService.Name);
-
-            var flags = DefaultFlags;
 
             if (principal.SupportedPreAuthenticationTypes.Any())
             {
@@ -67,13 +65,17 @@ namespace Kerberos.NET.Entities
                 AuthTime = now,
                 StartTime = now - realmService.Settings.MaximumSkew,
                 EndTime = now + realmService.Settings.SessionLifetime,
-                RenewTill = now + realmService.Settings.MaximumRenewalWindow,
                 CRealm = realmService.Name,
                 Flags = flags,
                 AuthorizationData = authz.ToArray(),
                 CAddr = addresses.ToArray(),
                 Transited = new KrbTransitedEncoding()
             };
+
+            if (flags.HasFlag(TicketFlags.Renewable))
+            {
+                encTicketPart.RenewTill = now + realmService.Settings.MaximumRenewalWindow;
+            }
 
             var ticket = new KrbTicket()
             {
@@ -129,19 +131,7 @@ namespace Kerberos.NET.Entities
                 }
             };
 
-            ReadOnlyMemory<byte> encodedEncPart = default;
-            KeyUsage encPartType = default;
-
-            if (typeof(T) == typeof(KrbAsRep))
-            {
-                encodedEncPart = ((KrbEncAsRepPart)encKdcRepPart).EncodeApplication();
-                encPartType = KeyUsage.EncAsRepPart;
-            }
-            else if (typeof(T) == typeof(KrbTgsRep))
-            {
-                encodedEncPart = ((KrbEncTgsRepPart)encKdcRepPart).EncodeApplication();
-                encPartType = KeyUsage.EncTgsRepPartSubSessionKey;
-            }
+            encKdcRepPart.EncodeApplication();
 
             var rep = new T
             {
@@ -150,9 +140,9 @@ namespace Kerberos.NET.Entities
                 MessageType = MessageType.KRB_AS_REP,
                 Ticket = ticket,
                 EncPart = KrbEncryptedData.Encrypt(
-                    encodedEncPart,
+                    encKdcRepPart.EncodeApplication(),
                     encPartKey,
-                    encPartType
+                    encKdcRepPart.KeyUsage
                 )
             };
 

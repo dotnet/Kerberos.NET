@@ -9,6 +9,11 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAsRep : IAsn1ApplicationEncoder<KrbAsRep>
     {
+        public KrbAsRep()
+        {
+            MessageType = MessageType.KRB_AS_REP;
+        }
+
         public KrbAsRep DecodeAsApplication(ReadOnlyMemory<byte> data)
         {
             return DecodeApplication(data);
@@ -27,8 +32,16 @@ namespace Kerberos.NET.Entities
 
             var longTermKey = await principal.RetrieveLongTermCredential();
             var servicePrincipal = await realmService.Principals.RetrieveKrbtgt();
+            var servicePrincipalKey = await servicePrincipal.RetrieveLongTermCredential();
 
-            KrbAsRep asRep = await GenerateServiceTicket<KrbAsRep>(principal, longTermKey, servicePrincipal, realmService, asReq.Addresses);
+            KrbAsRep asRep = await GenerateServiceTicket<KrbAsRep>(
+                principal,
+                longTermKey,
+                servicePrincipal,
+                servicePrincipalKey,
+                realmService,
+                addresses: asReq.Addresses
+            );
 
             asRep.PaData = requirements.ToArray();
 

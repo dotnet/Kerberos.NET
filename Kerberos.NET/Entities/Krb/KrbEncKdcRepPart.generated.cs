@@ -136,7 +136,13 @@ namespace Kerberos.NET.Entities
                 this.Encode(writer, Asn1Tag.Sequence);
 
                 writer.PopSequence(tag);
-        }        
+        }       
+        
+        public virtual ReadOnlyMemory<byte> EncodeApplication() 
+        {
+          return new ReadOnlyMemory<byte>();
+        }
+        
          
         internal ReadOnlyMemory<byte> EncodeApplication(Asn1Tag tag)
         {

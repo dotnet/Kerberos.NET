@@ -136,6 +136,11 @@ namespace Kerberos.NET.Crypto
             {
                 ValidateTicketEnd(Ticket.EndTime, now, Skew);
             }
+
+            if (validation.HasFlag(ValidationActions.RenewTill) && Ticket.Flags.HasFlag(TicketFlags.Renewable))
+            {
+                ValidateTicketRenewal(Ticket.RenewTill, now, Skew);
+            }
         }
 
         public override string ToString()

@@ -6,6 +6,12 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbError
     {
+        public KrbError()
+        {
+            ProtocolVersionNumber = 5;
+            MessageType = MessageType.KRB_ERROR;
+        }
+
         private static readonly Asn1Tag KrbErrorTag = new Asn1Tag(TagClass.Application, 30);
 
         public static bool CanDecode(ReadOnlyMemory<byte> encoded)

@@ -58,10 +58,10 @@ namespace Kerberos.NET.Server
                 return PreAuthFailed(kex, principal);
             }
 
-            return await GenerateTgt(asReq, principal);
+            return await GenerateAsRep(asReq, principal);
         }
 
-        private async Task<ReadOnlyMemory<byte>> GenerateTgt(KrbKdcReq asReq, IKerberosPrincipal principal)
+        private async Task<ReadOnlyMemory<byte>> GenerateAsRep(KrbKdcReq asReq, IKerberosPrincipal principal)
         {
             // 1. detect if specific PAC contents are requested (claims)
             // 2. if requested generate PAC for user
@@ -77,9 +77,9 @@ namespace Kerberos.NET.Server
                 await InvokePreAuthHandler(null, principal, requirements, handler.Value);
             }
 
-            var tgt = await KrbAsRep.GenerateTgt(principal, requirements, RealmService, asReq.Body);
+            var asRep = await KrbAsRep.GenerateTgt(principal, requirements, RealmService, asReq.Body);
 
-            return tgt.EncodeApplication();
+            return asRep.EncodeApplication();
         }
 
         private ReadOnlyMemory<byte> PreAuthFailed(KerberosValidationException kex, IKerberosPrincipal principal)

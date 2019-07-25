@@ -59,11 +59,12 @@ namespace Kerberos.NET.Entities
                 this.Encode(writer, Asn1Tag.Sequence);
 
                 writer.PopSequence(tag);
-        }        
+        }       
+        
         
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 1);
         
-        public ReadOnlyMemory<byte> EncodeApplication() 
+        public virtual ReadOnlyMemory<byte> EncodeApplication() 
         {
           return EncodeApplication(ApplicationTag);
         }

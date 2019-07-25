@@ -44,9 +44,8 @@ namespace Tests.Kerberos.NET.Messages
                              key,
                              file.Value.Skip(4).ToArray(),
                              v => new KrbAsRep().DecodeAsApplication(v),
-                             t => t.EncodeApplication().ToArray());
-
-                        ;
+                             t => t.EncodeApplication().ToArray()
+                        );
                         break;
                     case "as-req":
                         TestSimpleRoundtrip(
@@ -70,28 +69,36 @@ namespace Tests.Kerberos.NET.Messages
                             t => t.EncodeApplication().ToArray());
                         break;
                     case "tgs-rep-testuser-host-app03":
-                        //TestSimpleRoundtrip(
-                        //    key, 
-                        //    file.Value.Skip(4).ToArray(), 
-                        //    v => new KrbTgsRep().DecodeApplication(v), 
-                        //    t => t.EncodeAsApplication().ToArray()
-                        //);
+                        TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbTgsRep.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray()
+                        );
                         break;
                     case "tgs-rep-testuser-host-appservice":
-                        //TestSimpleRoundtrip(key, file.Value, v => KrbTgsRep.Decode(v), t => t.Encode().ToArray());
+                        TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbTgsRep.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray()
+                        );
                         break;
                     case "tgs-rep-testuser-krbtgt-renew":
-                        //TestSimpleRoundtrip(key, file.Value, v => KrbTgsRep.Decode(v), t => t.Encode().ToArray());
+                        TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbTgsRep.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray()
+                        );
                         break;
                     case "tgs-req-testuser-host-app03":
                         var thing = TestSimpleRoundtrip(
                             key,
                             file.Value.Skip(4).ToArray(),
                             v => KrbTgsReq.DecodeApplication(v),
-                            t => t.EncodeApplication().ToArray());
-
-                        //var ap = KrbApChoice.Decode(thing.TgsReq.PaData[0].Value);
-
+                            t => t.EncodeApplication().ToArray()
+                        );
                         break;
                     case "tgs-req-testuser-host-appservice":
                         TestSimpleRoundtrip(
@@ -106,9 +113,6 @@ namespace Tests.Kerberos.NET.Messages
                             file.Value.Skip(4).ToArray(),
                             v => KrbTgsReq.DecodeApplication(v),
                             t => t.EncodeApplication().ToArray());
-                        break;
-                    default:
-                        Assert.Fail(file.Key);
                         break;
                 }
             }

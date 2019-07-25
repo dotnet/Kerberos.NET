@@ -1,7 +1,6 @@
 ﻿using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.SpNego;
 using System;
-using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET
 {
@@ -64,7 +63,7 @@ namespace Kerberos.NET
                 return token;
             }
 
-            var gss = GssApiToken.Decode(new Asn1Tag(TagClass.Application, 0), data);
+            var gss = GssApiToken.Decode(data);
 
             return ContextToken.Parse(gss);
         }

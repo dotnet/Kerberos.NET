@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,8 @@ namespace Kerberos.NET.Server
         private readonly TaskCompletionSource<object> startTcs
             = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        private readonly Stack<SocketListener> openListeners = new Stack<SocketListener>();
+
         protected ServiceListenerBase(ListenerOptions options, Func<Socket, ListenerOptions, SocketWorker> workerFunc)
         {
             this.options = options;
@@ -31,6 +34,16 @@ namespace Kerberos.NET.Server
             return startTcs.Task;
         }
 
+        public void Stop()
+        {
+            while (openListeners.TryPop(out SocketListener listener))
+            {
+                listener.Dispose();
+            }
+
+            startTcs.TrySetResult(null);
+        }
+
         private void StartListenerThreads(SocketListener listener)
         {
             _ = AcceptConnections(listener);
@@ -42,6 +55,8 @@ namespace Kerberos.NET.Server
             {
                 return;
             }
+
+            openListeners.Push(socketListener);
 
             try
             {
@@ -63,8 +78,7 @@ namespace Kerberos.NET.Server
             }
             finally
             {
-                socketListener.Dispose();
-                startTcs.TrySetResult(null);
+                Stop();
             }
         }
 

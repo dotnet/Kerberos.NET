@@ -12,7 +12,7 @@ namespace Kerberos.NET.Entities
             // SPNego tokens optimistically include a token of the first MechType
             // so if mechType[0] == Ntlm process as ntlm, == kerb process as kerb, etc.
 
-            token = NegotiationToken.Decode(gssToken.Field1.Value);
+            token = NegotiationToken.Decode(gssToken.Token);
         }
 
         public override DecryptedKrbApReq DecryptApReq(KeyTable keys)

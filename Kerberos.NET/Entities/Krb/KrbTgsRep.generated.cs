@@ -10,7 +10,7 @@ namespace Kerberos.NET.Entities
     {
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 13);
         
-        public ReadOnlyMemory<byte> EncodeApplication() 
+        public override ReadOnlyMemory<byte> EncodeApplication() 
         {
           return EncodeApplication(ApplicationTag);
         }

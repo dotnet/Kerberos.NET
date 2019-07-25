@@ -2,8 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace System.Buffers
 {
+    [ExcludeFromCodeCoverage]
     internal unsafe class PointerMemoryManager<T> : MemoryManager<T> where T : struct
     {
         private readonly void* _pointer;

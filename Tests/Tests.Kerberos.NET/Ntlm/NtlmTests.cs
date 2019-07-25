@@ -23,15 +23,7 @@ namespace Tests.Kerberos.NET
                 ValidateAfterDecrypt = DefaultActions
             };
 
-            try
-            {
-                await validator.Validate(Convert.FromBase64String(NtlmStart));
-            }
-            catch (NotSupportedException ex)
-            {
-                Assert.IsTrue(ex.Message.Contains("NTLM"));
-                throw;
-            }
+            await validator.Validate(Convert.FromBase64String(NtlmStart));
         }
 
         [TestMethod, ExpectedException(typeof(NotSupportedException))]
@@ -42,15 +34,7 @@ namespace Tests.Kerberos.NET
                 ValidateAfterDecrypt = DefaultActions
             };
 
-            try
-            {
-                await validator.Validate(Convert.FromBase64String(SPNegoNtlmStart));
-            }
-            catch (NotSupportedException ex)
-            {
-                Assert.IsTrue(ex.Message.Contains("NTLM"));
-                throw;
-            }
+            await validator.Validate(Convert.FromBase64String(SPNegoNtlmStart));
         }
     }
 }

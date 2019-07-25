@@ -3,9 +3,11 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace System.Security.Cryptography.Asn1
 {
+    [ExcludeFromCodeCoverage]
     internal class SetOfValueComparer : IComparer<ReadOnlyMemory<byte>>
     {
         internal static SetOfValueComparer Instance { get; } = new SetOfValueComparer();

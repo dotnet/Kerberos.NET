@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
-    <AsnXml Include="Entities\GssApi\GssApiToken.xml" />
     <AsnXml Include="Entities\Krb\KrbApReq.xml" />
     <AsnXml Include="Entities\Krb\KrbApRep.xml" />
     <AsnXml Include="Entities\Krb\KrbAsReq.xml" />
