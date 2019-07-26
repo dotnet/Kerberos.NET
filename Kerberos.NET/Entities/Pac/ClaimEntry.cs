@@ -14,13 +14,36 @@ namespace Kerberos.NET.Entities.Pac
         CLAIM_TYPE_BOOLEAN = 6
     }
 
-    [DebuggerDisplay("{Id}")]
+    [DebuggerDisplay("{Id} {Type} {Count} {RawValues}")]
     public class ClaimEntry : NdrObject
     {
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+
+        }
+
+        public override void WriteBody(NdrBinaryStream stream, Queue<Action> deferredFurther)
+        {
+            stream.WriteClaimEntry(this, deferredFurther);
+        }
+        
+        internal void EncodeType(object val, ClaimType type, NdrBinaryStream stream)
+        {
+            if (type == ClaimType.CLAIM_TYPE_STRING)
+            {
+                stream.WriteString(val.ToString());
+                //stream.WriteDeferredString(val.ToString());
+            }
+            else
+            {
+                stream.WriteUnsignedLong(Convert.ToInt64(val));
+            }
+        }
+
         public ClaimEntry(NdrBinaryStream stream)
             : base(stream)
         {
-            Stream.Seek(4);
+            Stream.Seek(4); // offset for Id
 
             Type = (ClaimType)Stream.ReadShort();
 
@@ -28,7 +51,7 @@ namespace Kerberos.NET.Entities.Pac
 
             Count = Stream.ReadUnsignedInt();
 
-            Stream.Seek(4);
+            Stream.Seek(4); // offset to values
         }
 
         public string Id { get; private set; }
@@ -60,21 +83,21 @@ namespace Kerberos.NET.Entities.Pac
                 throw new InvalidDataException($"ValueCount {Count} doesn't match actual count {count} for claim {Id}.");
             }
 
-            if (Type == ClaimType.CLAIM_TYPE_STRING)
-            {
-                var ptr = stream.ReadInt();
-
-                if (count > 1 && ptr != 0)
-                {
-                    stream.Seek(8);
-                }
-            }
-
             ReadValues(stream);
         }
 
-        private void ReadValues(NdrBinaryStream Stream)
+        private void ReadValues(NdrBinaryStream stream)
         {
+            if (Type == ClaimType.CLAIM_TYPE_STRING)
+            {
+                var pointers = new int[Count];
+
+                for (var i = 0; i < Count; i++)
+                {
+                    pointers[i] = stream.ReadInt();
+                }
+            }
+
             values = new object[Count];
 
             for (var i = 0; i < Count; i++)
@@ -82,16 +105,16 @@ namespace Kerberos.NET.Entities.Pac
                 switch (Type)
                 {
                     case ClaimType.CLAIM_TYPE_BOOLEAN:
-                        values[i] = Convert.ToBoolean(Stream.ReadLong());
+                        values[i] = Convert.ToBoolean(stream.ReadLong());
                         break;
                     case ClaimType.CLAIM_TYPE_INT64:
-                        values[i] = Stream.ReadLong();
+                        values[i] = stream.ReadLong();
                         break;
                     case ClaimType.CLAIM_TYPE_UINT64:
-                        values[i] = (ulong)Stream.ReadLong();
+                        values[i] = (ulong)stream.ReadLong();
                         break;
                     case ClaimType.CLAIM_TYPE_STRING:
-                        values[i] = Stream.ReadString();
+                        values[i] = stream.ReadString();
                         break;
                 }
             }

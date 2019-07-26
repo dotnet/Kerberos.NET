@@ -14,11 +14,23 @@ namespace Kerberos.NET.Entities
             Name = Encoding.Unicode.GetString(Stream.Read(NameLength));
         }
 
-        public DateTimeOffset ClientId { get; }
+        public DateTimeOffset ClientId { get; set; }
 
         [KerberosIgnore]
-        public short NameLength { get; }
+        public short NameLength { get; private set; }
 
-        public string Name { get; }
+        public string Name { get; set; }
+
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+            stream.WriteFiletime(ClientId);
+
+            var name = Encoding.Unicode.GetBytes(Name);
+
+            NameLength = (short)name.Length;
+
+            stream.WriteShort(NameLength);
+            stream.WriteBytes(name);
+        }
     }
 }

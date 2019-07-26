@@ -6,6 +6,18 @@ namespace Kerberos.NET.Entities
 {
     public class PacDelegationInfo : NdrMessage
     {
+        public PacDelegationInfo(NdrBinaryStream stream) : base(stream) { }
+
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+            stream.WriteRPCUnicodeString(S4U2ProxyTarget);
+
+            stream.WriteDeferredArray(S4UTransitedServices, true, (t, str) =>
+            {
+                str.WriteRPCUnicodeString(t.ToString());
+            });
+        }
+
         public PacDelegationInfo(byte[] data)
             : base(data)
         {
@@ -24,7 +36,7 @@ namespace Kerberos.NET.Entities
                 throw new InvalidDataException($"Expected S4UTransitedServices count {transitListSize} doesn't match actual count {realCount}");
             }
 
-            var transitRpcStrings = new PacString[realCount];
+            var transitRpcStrings = new NdrString[realCount];
 
             for (var i = 0; i < realCount; i++)
             {

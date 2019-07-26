@@ -12,6 +12,13 @@ namespace Kerberos.NET.Entities
 
     public class UpnDomainInfo : NdrObject
     {
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+            stream.WriteRPCUnicodeString(Upn);
+            stream.WriteRPCUnicodeString(Domain);
+            stream.WriteUnsignedInt((int)Flags);
+        }
+
         public UpnDomainInfo(byte[] data)
             : base(data)
         {

@@ -38,21 +38,32 @@ namespace Kerberos.NET.Entities
         public EncryptionType EncryptionType { get; }
 
         public byte[] SerializedData { get; }
+
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+            stream.WriteUnsignedInt(Version);
+            stream.WriteUnsignedInt((int)EncryptionType);
+            stream.WriteBytes(SerializedData);
+        }
     }
 
-    public class PrivilegedAttributeCertificate : NdrObject
+    public class PrivilegedAttributeCertificate
     {
         private const int PAC_VERSION = 0;
 
         private readonly byte[] pacData;
 
         public PrivilegedAttributeCertificate()
-            : base(new NdrBinaryStream())
-        { }
+        {
+            Stream = new NdrBinaryStream();
+        }
+
+        protected NdrBinaryStream Stream { get; set; }
 
         public PrivilegedAttributeCertificate(byte[] pac)
-            : base(pac)
         {
+            Stream = new NdrBinaryStream(pac);
+
             pacData = new byte[pac.Length];
 
             Buffer.BlockCopy(pac, 0, pacData, 0, pac.Length);

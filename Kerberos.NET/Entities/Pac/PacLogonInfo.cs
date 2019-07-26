@@ -58,10 +58,8 @@ namespace Kerberos.NET.Entities.Pac
 
     public class PacLogonInfo : NdrMessage
     {
-        public ReadOnlyMemory<byte> Encode()
+        public override void WriteBody(NdrBinaryStream stream)
         {
-            var stream = new NdrBinaryStream();
-
             stream.WriteFiletime(LogonTime);
             stream.WriteFiletime(LogoffTime);
             stream.WriteFiletime(KickOffTime);
@@ -82,9 +80,17 @@ namespace Kerberos.NET.Entities.Pac
             stream.WriteRid(UserSid);
             stream.WriteRid(GroupSid);
 
-            stream.WriteUnsignedInt(GroupSids.Count());
-            var groupPointer = 0;
-            stream.WriteUnsignedInt(groupPointer);
+            WriteSidArray(stream, GroupSids);
+
+            if (ExtraSids != null)
+            {
+                UserFlags |= UserFlags.LOGON_EXTRA_SIDS;
+            }
+
+            if (ResourceGroups != null)
+            {
+                UserFlags |= UserFlags.LOGON_RESOURCE_GROUPS;
+            }
 
             stream.WriteUnsignedInt((int)UserFlags);
 
@@ -93,8 +99,7 @@ namespace Kerberos.NET.Entities.Pac
             stream.WriteRPCUnicodeString(ServerName);
             stream.WriteRPCUnicodeString(DomainName);
 
-            var domainIdPointer = 0;
-            stream.WriteUnsignedInt(domainIdPointer);
+            stream.WriteSid(DomainSid, "DomainSid");
 
             stream.WriteBytes(new byte[8]);
 
@@ -105,19 +110,30 @@ namespace Kerberos.NET.Entities.Pac
             stream.WriteFiletime(LastFailedILogon);
             stream.WriteUnsignedInt(FailedILogonCount);
 
+            // reserved3
             stream.WriteUnsignedInt(0);
 
-            stream.WriteUnsignedInt(ExtraSids.Count());
-            var extraSidsPointer = 0;
-            stream.WriteUnsignedInt(extraSidsPointer);
+            WriteExtraSids(stream, ExtraSids);
 
-            var resourceDomainIdPointer = 0;
-            stream.WriteUnsignedInt(resourceDomainIdPointer);
-            stream.WriteUnsignedInt(ResourceGroups.Count());
-            var resourceGroupPointer = 0;
-            stream.WriteUnsignedInt(resourceGroupPointer);
+            stream.WriteSid(ResourceDomainSid, "ResourceDomainSid");
 
-            return stream.Encode();
+            WriteSidArray(stream, ResourceGroups);
+
+            // write GroupSids
+            // write DomainSid
+            // write ExtraSids
+            // write ResourceDomainSid
+            // write ResourceGroups
+        }
+
+        private void WriteExtraSids(NdrBinaryStream stream, IEnumerable<SecurityIdentifier> extraSids)
+        {
+            stream.WriteSids(extraSids, "ExtraSids");
+        }
+
+        private void WriteSidArray(NdrBinaryStream stream, IEnumerable<SecurityIdentifier> sids)
+        {
+            stream.WriteRids(sids);
         }
 
         public PacLogonInfo(byte[] node)

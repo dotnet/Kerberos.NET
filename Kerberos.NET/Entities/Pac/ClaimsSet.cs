@@ -1,10 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Kerberos.NET.Entities.Pac
 {
     public class ClaimsSet : NdrMessage
     {
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+            stream.WriteUnsignedInt(ClaimsArray.Count());
+            stream.WriteDeferredArray(ClaimsArray);
+
+            stream.WriteShort(ReservedType);
+            stream.WriteUnsignedInt(ReservedFieldSize);
+            stream.WriteBytes(ReservedField);
+        }
+
         public ClaimsSet(byte[] claims)
             : base(claims)
         {
@@ -21,6 +32,8 @@ namespace Kerberos.NET.Entities.Pac
 
             ClaimsArray = ReadClaimsArray(Stream);
         }
+
+        public ClaimsSet(NdrBinaryStream stream) : base(stream) { }
 
         private IEnumerable<ClaimsArray> ReadClaimsArray(NdrBinaryStream stream)
         {
@@ -40,7 +53,7 @@ namespace Kerberos.NET.Entities.Pac
 
             return claims;
         }
-
+        
         [KerberosIgnore]
         public int Count { get; }
 

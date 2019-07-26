@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
+using System;
 using System.Linq;
 using System.Text;
 
@@ -9,12 +11,31 @@ namespace Kerberos.NET.Entities.Pac
         private readonly IdentifierAuthority authority;
         private string sddl;
 
-        public SecurityIdentifier(IdentifierAuthority authority, int[] subs, SidAttributes attributes)
+        private SecurityIdentifier(IdentifierAuthority authority, int[] subs, SidAttributes attributes)
         {
             this.authority = authority;
             SubAuthorities = subs;
 
             Attributes = attributes;
+
+            BinaryForm = ToBinaryForm(authority, subs);
+        }
+
+        private static byte[] ToBinaryForm(IdentifierAuthority authority, int[] subs)
+        {
+            var binaryForm = new Memory<byte>(new byte[(1 + 1 + 6) + 4 * subs.Length]);
+
+            binaryForm.Span[0] = 1; // revision
+            binaryForm.Span[1] = (byte)subs.Length;
+
+            Endian.ConvertToBigEndian((int)authority, binaryForm.Slice(4, 4));
+
+            for (var i = 0; i < subs.Length; i++)
+            {
+                Endian.ConvertToLittleEndian(subs[i], binaryForm.Slice(8 + (4 * i), 4));
+            }
+
+            return binaryForm.ToArray();
         }
 
         public SecurityIdentifier(SecurityIdentifier sid, SidAttributes attributes)
@@ -24,26 +45,22 @@ namespace Kerberos.NET.Entities.Pac
 
         public SecurityIdentifier(byte[] binary, SidAttributes attributes = 0)
         {
-            authority = (IdentifierAuthority)BytesToLong(binary, 2, 5);
+            BinaryForm = binary;
+
+            var span = new Span<byte>(binary);
+
+            authority = (IdentifierAuthority)span.Slice(2, 6).AsLong();
             Attributes = attributes;
 
-            var subs = new int[binary[1]];
+            SubAuthorities = new int[binary[1]];
 
-            for (var i = 0; i < binary[1]; i++)
+            for (var i = 0; i < SubAuthorities.Length; i++)
             {
-                subs[i] =
-                    (int)(
-                        (((uint)binary[8 + 4 * i + 0]) << 0) +
-                        (((uint)binary[8 + 4 * i + 1]) << 8) +
-                        (((uint)binary[8 + 4 * i + 2]) << 16) +
-                        (((uint)binary[8 + 4 * i + 3]) << 24)
-                );
+                SubAuthorities[i] = (int)span.Slice(8 + (4 * i), 4).AsLong(littleEndian: true);
             }
-
-            SubAuthorities = new int[subs.Length];
-
-            subs.CopyTo(SubAuthorities, 0);
         }
+
+        public byte[] BinaryForm { get; }
 
         public SidAttributes Attributes { get; }
 
@@ -75,18 +92,6 @@ namespace Kerberos.NET.Entities.Pac
             var subs = sidId.SubAuthorities.Union(SubAuthorities).ToArray();
 
             return new SecurityIdentifier(sidId.authority, subs, this.Attributes);
-        }
-
-        private static long BytesToLong(byte[] binary, int offset, int max)
-        {
-            long val = 0;
-
-            for (var i = max; i >= 0; i--)
-            {
-                val += binary[offset + (max - i)] << (i * 8);
-            }
-
-            return val;
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -11,6 +12,11 @@ namespace Kerberos.NET.Entities.Pac
 
     public class ClaimsArray : NdrObject
     {
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+            stream.WriteClaimsArray(this);
+        }
+
         public ClaimsArray(NdrBinaryStream stream)
             : base(stream)
         {

@@ -5,6 +5,39 @@ namespace Kerberos.NET.Entities
 {
     public class ClaimsSetMetadata : NdrMessage
     {
+        public ClaimsSetMetadata(NdrBinaryStream stream) : base(stream) { }
+
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+            byte[] claimsSet = Compress(ClaimsSet, CompressionFormat, out int originalSize);
+
+            stream.WriteDeferredBytes(claimsSet);
+
+            stream.WriteUnsignedInt((int)CompressionFormat);
+            stream.WriteUnsignedInt(originalSize);
+            stream.WriteShort(ReservedType);
+
+            stream.WriteDeferredBytes(ReservedField);
+        }
+
+        private static byte[] Compress(ClaimsSet claimsSet, CompressionFormat compressionFormat, out int originalSize)
+        {
+            var stream = new NdrBinaryStream();
+
+            claimsSet.Encode(stream);
+
+            var encoded = stream.ToMemory().ToArray();
+
+            originalSize = encoded.Length;
+
+            if (compressionFormat != CompressionFormat.COMPRESSION_FORMAT_NONE)
+            {
+                encoded = Compressions.Compress(encoded, compressionFormat);
+            }
+
+            return encoded;
+        }
+
         public ClaimsSetMetadata(byte[] data)
             : base(data)
         {

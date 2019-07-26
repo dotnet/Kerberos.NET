@@ -57,9 +57,9 @@ namespace Kerberos.NET.Asn1
             return AsLong((ReadOnlyMemory<byte>)val);
         }
 
-        public static long AsLong(this ReadOnlyMemory<byte> val, bool littleEndian = false)
+        public static long AsLong(this ReadOnlySpan<byte> val, bool littleEndian = false)
         {
-            var bytes = val.Span.ToArray();
+            var bytes = val.ToArray();
 
             if (littleEndian)
             {
@@ -74,6 +74,18 @@ namespace Kerberos.NET.Asn1
             }
 
             return num;
+        }
+
+        public static long AsLong(this Span<byte> val, bool littleEndian = false)
+        {
+            var bytes = val;
+
+            return AsLong((ReadOnlySpan<byte>)bytes, littleEndian);
+        }
+
+        public static long AsLong(this ReadOnlyMemory<byte> val, bool littleEndian = false)
+        {
+            return AsLong(val.Span, littleEndian);
         }
     }
 }

@@ -1,16 +1,18 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 
 namespace Kerberos.NET.Entities.Pac
 {
-    public class PacString
+    [DebuggerDisplay("{length} {maxLength} {pointer}")]
+    public class NdrString
     {
-        private readonly short Length;
+        private readonly short length;
         private readonly short maxLength;
         private readonly int pointer;
 
-        public PacString(short Length, short maxLength, int pointer)
+        public NdrString(short length, short maxLength, int pointer)
         {
-            this.Length = Length;
+            this.length = length;
             this.maxLength = maxLength;
             this.pointer = pointer;
         }
@@ -24,7 +26,7 @@ namespace Kerberos.NET.Entities.Pac
 
             var result = reader.ReadString(maxLength);
 
-            int expected = Length / 2;
+            int expected = length / 2;
 
             if (result.Length != expected)
             {
