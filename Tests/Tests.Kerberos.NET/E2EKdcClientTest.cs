@@ -105,7 +105,7 @@ namespace Tests.Kerberos.NET
                 ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(),
                 IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
+                RealmLocator = realm => LocateRealm(realm, slow: true),
                 ReceiveTimeout = TimeSpan.FromMilliseconds(1),
                 Log = log
             };
@@ -184,11 +184,16 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(validated.FindFirst(ClaimTypes.Sid).Value, "S-1-5-123-456-789-12-321-888");
         }
 
-        private static Task<IRealmService> LocateRealm(string realm)
+        private static async Task<IRealmService> LocateRealm(string realm, bool slow = false)
         {
             IRealmService service = new FakeRealmService(realm);
 
-            return Task.FromResult(service);
+            if (slow)
+            {
+                await Task.Delay(500);
+            }
+
+            return service;
         }
 
         private class ExceptionTraceLog : ILogger

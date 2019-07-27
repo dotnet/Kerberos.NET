@@ -141,14 +141,14 @@ namespace Tests.Kerberos.NET
             var entry = new TicketCacheEntry
             {
                 Key = "blargh",
-                Expires = DateTimeOffset.UtcNow.AddSeconds(1)
+                Expires = DateTimeOffset.UtcNow.AddMilliseconds(100)
             };
 
             var added = await replay.Add(entry);
 
             Assert.IsTrue(added);
 
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await Task.Delay(TimeSpan.FromSeconds(5));
 
             added = await replay.Add(entry);
 
