@@ -56,8 +56,10 @@ namespace Kerberos.NET.Entities.Pac
         ADS_UF_PARTIAL_SECRETS_ACCOUNT = 67108864
     }
 
-    public class PacLogonInfo : NdrMessage
+    public class PacLogonInfo : NdrMessage, IPacElement
     {
+        public PacType PacType => PacType.LOGON_INFO;
+
         public override void WriteBody(NdrBinaryStream stream)
         {
             stream.WriteFiletime(LogonTime);
@@ -136,109 +138,6 @@ namespace Kerberos.NET.Entities.Pac
             stream.WriteRids(sids);
         }
 
-        public PacLogonInfo(byte[] node)
-            : base(node)
-        {
-            #region sdf
-            LogonTime = Stream.ReadFiletime();
-            LogoffTime = Stream.ReadFiletime();
-            KickOffTime = Stream.ReadFiletime();
-            PwdLastChangeTime = Stream.ReadFiletime();
-            PwdCanChangeTime = Stream.ReadFiletime();
-            PwdMustChangeTime = Stream.ReadFiletime();
-
-            var userName = Stream.ReadRPCUnicodeString();
-            var userDisplayName = Stream.ReadRPCUnicodeString();
-            var logonScript = Stream.ReadRPCUnicodeString();
-            var profilePath = Stream.ReadRPCUnicodeString();
-            var homeDirectory = Stream.ReadRPCUnicodeString();
-            var homeDrive = Stream.ReadRPCUnicodeString();
-
-            LogonCount = Stream.ReadShort();
-            BadPasswordCount = Stream.ReadShort();
-
-            var userSid = Stream.ReadRid();
-            var groupSid = Stream.ReadRid();
-
-            // Groups information
-            var groupCount = Stream.ReadInt();
-            var groupPointer = Stream.ReadInt();
-
-            UserFlags = (UserFlags)Stream.ReadInt();
-
-            // sessionKey
-            Stream.Read(new byte[16]);
-
-            var serverNameString = Stream.ReadRPCUnicodeString();
-            var domainNameString = Stream.ReadRPCUnicodeString();
-            var domainIdPointer = Stream.ReadInt();
-
-            // reserved1
-            Stream.Read(new byte[8]);
-
-            UserAccountControl = (UserAccountControlFlags)Stream.ReadInt();
-
-            SubAuthStatus = Stream.ReadInt();
-            LastSuccessfulILogon = Stream.ReadFiletime();
-            LastFailedILogon = Stream.ReadFiletime();
-            FailedILogonCount = Stream.ReadInt();
-
-            // reserved3
-            Stream.ReadInt();
-
-            // Extra SIDs information
-            var extraSidCount = Stream.ReadInt();
-            var extraSidPointer = Stream.ReadInt();
-
-            var resourceDomainIdPointer = Stream.ReadInt();
-            var resourceGroupCount = Stream.ReadInt();
-            var resourceGroupPointer = Stream.ReadInt();
-            #endregion
-
-            UserName = userName.ReadString(Stream);
-            UserDisplayName = userDisplayName.ReadString(Stream);
-            LogonScript = logonScript.ReadString(Stream);
-            ProfilePath = profilePath.ReadString(Stream);
-            HomeDirectory = homeDirectory.ReadString(Stream);
-            HomeDrive = homeDrive.ReadString(Stream);
-
-            // Groups data
-            var groupSids = ParseAttributes(Stream, groupCount, groupPointer);
-
-            // Server related strings
-            ServerName = serverNameString.ReadString(Stream);
-            DomainName = domainNameString.ReadString(Stream);
-
-            if (domainIdPointer != 0)
-            {
-                DomainSid = Stream.ReadSid();
-            }
-
-            UserSid = userSid.AppendTo(DomainSid);
-            GroupSid = groupSid.AppendTo(DomainSid);
-
-            GroupSids = groupSids.Select(g => g.AppendTo(DomainSid)).ToList();
-
-            if (UserFlags.HasFlag(UserFlags.LOGON_EXTRA_SIDS))
-            {
-                ExtraSids = ParseExtraSids(Stream, extraSidCount, extraSidPointer).ToList();
-            }
-
-            if (resourceDomainIdPointer != 0)
-            {
-                ResourceDomainSid = Stream.ReadSid();
-            }
-
-            if (UserFlags.HasFlag(UserFlags.LOGON_RESOURCE_GROUPS))
-            {
-                ResourceGroups = ParseAttributes(
-                    Stream,
-                    resourceGroupCount,
-                    resourceGroupPointer
-                ).Select(g => g.AppendTo(ResourceDomainSid)).ToList();
-            }
-        }
-
         private static SecurityIdentifier[] ParseExtraSids(NdrBinaryStream Stream, int extraSidCount, int extraSidPointer)
         {
             if (extraSidPointer == 0)
@@ -305,6 +204,106 @@ namespace Kerberos.NET.Entities.Pac
             }
 
             return attributes;
+        }
+
+        public override void ReadBody(NdrBinaryStream stream)
+        {
+            LogonTime = stream.ReadFiletime();
+            LogoffTime = stream.ReadFiletime();
+            KickOffTime = stream.ReadFiletime();
+            PwdLastChangeTime = stream.ReadFiletime();
+            PwdCanChangeTime = stream.ReadFiletime();
+            PwdMustChangeTime = stream.ReadFiletime();
+
+            var userName = stream.ReadRPCUnicodeString();
+            var userDisplayName = stream.ReadRPCUnicodeString();
+            var logonScript = stream.ReadRPCUnicodeString();
+            var profilePath = stream.ReadRPCUnicodeString();
+            var homeDirectory = stream.ReadRPCUnicodeString();
+            var homeDrive = stream.ReadRPCUnicodeString();
+
+            LogonCount = stream.ReadShort();
+            BadPasswordCount = stream.ReadShort();
+
+            var userSid = stream.ReadRid();
+            var groupSid = stream.ReadRid();
+
+            // Groups information
+            var groupCount = stream.ReadInt();
+            var groupPointer = stream.ReadInt();
+
+            UserFlags = (UserFlags)stream.ReadInt();
+
+            // sessionKey
+            stream.Read(new byte[16]);
+
+            var serverNameString = stream.ReadRPCUnicodeString();
+            var domainNameString = stream.ReadRPCUnicodeString();
+            var domainIdPointer = stream.ReadInt();
+
+            // reserved1
+            stream.Read(new byte[8]);
+
+            UserAccountControl = (UserAccountControlFlags)stream.ReadInt();
+
+            SubAuthStatus = stream.ReadInt();
+            LastSuccessfulILogon = stream.ReadFiletime();
+            LastFailedILogon = stream.ReadFiletime();
+            FailedILogonCount = stream.ReadInt();
+
+            // reserved3
+            stream.ReadInt();
+
+            // Extra SIDs information
+            var extraSidCount = stream.ReadInt();
+            var extraSidPointer = stream.ReadInt();
+
+            var resourceDomainIdPointer = stream.ReadInt();
+            var resourceGroupCount = stream.ReadInt();
+            var resourceGroupPointer = stream.ReadInt();
+
+            UserName = userName.ReadString(stream);
+            UserDisplayName = userDisplayName.ReadString(stream);
+            LogonScript = logonScript.ReadString(stream);
+            ProfilePath = profilePath.ReadString(stream);
+            HomeDirectory = homeDirectory.ReadString(stream);
+            HomeDrive = homeDrive.ReadString(stream);
+
+            // Groups data
+            var groupSids = ParseAttributes(stream, groupCount, groupPointer);
+
+            // Server related strings
+            ServerName = serverNameString.ReadString(stream);
+            DomainName = domainNameString.ReadString(stream);
+
+            if (domainIdPointer != 0)
+            {
+                DomainSid = stream.ReadSid();
+            }
+
+            UserSid = userSid.AppendTo(DomainSid);
+            GroupSid = groupSid.AppendTo(DomainSid);
+
+            GroupSids = groupSids.Select(g => g.AppendTo(DomainSid)).ToList();
+
+            if (UserFlags.HasFlag(UserFlags.LOGON_EXTRA_SIDS))
+            {
+                ExtraSids = ParseExtraSids(stream, extraSidCount, extraSidPointer).ToList();
+            }
+
+            if (resourceDomainIdPointer != 0)
+            {
+                ResourceDomainSid = stream.ReadSid();
+            }
+
+            if (UserFlags.HasFlag(UserFlags.LOGON_RESOURCE_GROUPS))
+            {
+                ResourceGroups = ParseAttributes(
+                    stream,
+                    resourceGroupCount,
+                    resourceGroupPointer
+                ).Select(g => g.AppendTo(ResourceDomainSid)).ToList();
+            }
         }
 
         public DateTimeOffset LogonTime { get; set; }

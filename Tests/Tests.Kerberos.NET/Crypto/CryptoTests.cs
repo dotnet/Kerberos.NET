@@ -27,7 +27,7 @@ namespace Tests.Kerberos.NET
 
             var key = CreateKey();
 
-            var aesTransformer = CryptographyService.CreateTransform(EncryptionType.AES128_CTS_HMAC_SHA1_96);
+            var aesTransformer = CryptoService.CreateTransform(EncryptionType.AES128_CTS_HMAC_SHA1_96);
 
             var encrypted = aesTransformer.Encrypt(data, key, KeyUsage.PaEncTs);
 
@@ -43,7 +43,7 @@ namespace Tests.Kerberos.NET
 
             var key = CreateKey();
 
-            var aesTransformer = CryptographyService.CreateTransform(EncryptionType.AES256_CTS_HMAC_SHA1_96);
+            var aesTransformer = CryptoService.CreateTransform(EncryptionType.AES256_CTS_HMAC_SHA1_96);
 
             var encrypted = aesTransformer.Encrypt(data, key, KeyUsage.PaEncTs);
 
@@ -59,7 +59,7 @@ namespace Tests.Kerberos.NET
 
             var key = CreateKey();
 
-            var rc4Transformer = CryptographyService.CreateTransform(EncryptionType.RC4_HMAC_NT);
+            var rc4Transformer = CryptoService.CreateTransform(EncryptionType.RC4_HMAC_NT);
 
             var encrypted = rc4Transformer.Encrypt(data, key, KeyUsage.PaEncTs);
 

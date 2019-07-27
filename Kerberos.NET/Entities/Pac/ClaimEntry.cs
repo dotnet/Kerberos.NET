@@ -32,34 +32,19 @@ namespace Kerberos.NET.Entities.Pac
             if (type == ClaimType.CLAIM_TYPE_STRING)
             {
                 stream.WriteString(val.ToString());
-                //stream.WriteDeferredString(val.ToString());
             }
             else
             {
                 stream.WriteUnsignedLong(Convert.ToInt64(val));
             }
         }
-
-        public ClaimEntry(NdrBinaryStream stream)
-            : base(stream)
-        {
-            Stream.Seek(4); // offset for Id
-
-            Type = (ClaimType)Stream.ReadShort();
-
-            Stream.Align(4);
-
-            Count = Stream.ReadUnsignedInt();
-
-            Stream.Seek(4); // offset to values
-        }
-
+        
         public string Id { get; private set; }
 
-        public ClaimType Type { get; }
+        public ClaimType Type { get; set; }
 
         [KerberosIgnore]
-        public uint Count { get; }
+        public uint Count { get; set; }
 
         private object[] values;
 
@@ -118,6 +103,19 @@ namespace Kerberos.NET.Entities.Pac
                         break;
                 }
             }
+        }
+
+        public override void ReadBody(NdrBinaryStream stream)
+        {
+            stream.Seek(4); // offset for Id
+
+            Type = (ClaimType)stream.ReadShort();
+
+            stream.Align(4);
+
+            Count = stream.ReadUnsignedInt();
+
+            stream.Seek(4); // offset to values
         }
     }
 }

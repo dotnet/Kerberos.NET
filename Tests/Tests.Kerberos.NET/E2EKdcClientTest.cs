@@ -3,6 +3,7 @@ using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.Pac;
 using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -12,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +41,7 @@ namespace Tests.Kerberos.NET
 
             _ = listener.Start();
 
-            await RequestTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}");
+            await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}");
 
             listener.Stop();
         }
@@ -117,7 +119,7 @@ namespace Tests.Kerberos.NET
 
             try
             {
-                await RequestTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}");
+                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}");
             }
             catch
             {
@@ -132,7 +134,7 @@ namespace Tests.Kerberos.NET
             throw timeout;
         }
 
-        private static async Task RequestTickets(string user, string password, string overrideKdc)
+        private static async Task RequestAndValidateTickets(string user, string password, string overrideKdc)
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
@@ -178,6 +180,8 @@ namespace Tests.Kerberos.NET
             var validated = (KerberosIdentity)await authenticator.Authenticate(encoded);
 
             Assert.IsNotNull(validated);
+
+            Assert.AreEqual(validated.FindFirst(ClaimTypes.Sid).Value, "S-1-5-123-456-789-12-321-888");
         }
 
         private static Task<IRealmService> LocateRealm(string realm)
@@ -264,6 +268,22 @@ namespace Tests.Kerberos.NET
                 0, 0, 0, 0, 0, 0, 0, 0
             };
 
+            private static readonly SecurityIdentifier domainSid = new SecurityIdentifier(IdentifierAuthority.NTAuthority, new int[] {
+                123,456,789,012,321
+            }, 0);
+
+            private readonly SecurityIdentifier userSid = new SecurityIdentifier(
+                IdentifierAuthority.NTAuthority,
+                domainSid.SubAuthorities.Concat(new[] { 888 }).ToArray(),
+                0
+            );
+
+            private readonly SecurityIdentifier groupSid = new SecurityIdentifier(
+                IdentifierAuthority.NTAuthority,
+                domainSid.SubAuthorities.Concat(new[] { 513 }).ToArray(),
+                0
+            );
+
             private readonly static byte[] FakePassword = Encoding.Unicode.GetBytes("P@ssw0rd!");
 
             private const string realm = "CORP.IDENTITYINTERVENTION.COM";
@@ -289,7 +309,22 @@ namespace Tests.Kerberos.NET
 
             public Task<PrivilegedAttributeCertificate> GeneratePac()
             {
-                var pac = new PrivilegedAttributeCertificate();
+                var pac = new PrivilegedAttributeCertificate()
+                {
+                    LogonInfo = new PacLogonInfo
+                    {
+                        DomainName = realm,
+                        UserName = PrincipalName,
+                        UserDisplayName = PrincipalName,
+                        BadPasswordCount = 12,
+                        SubAuthStatus = 0,
+                        DomainSid = domainSid,
+                        UserSid = userSid,
+                        GroupSid = groupSid,
+                        LogonTime = DateTimeOffset.UtcNow,
+                        ServerName = "server"
+                    }
+                };
 
                 return Task.FromResult(pac);
             }

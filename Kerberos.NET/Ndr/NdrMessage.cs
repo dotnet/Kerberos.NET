@@ -1,68 +1,89 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Kerberos.NET.Entities.Pac
 {
     public abstract class NdrMessage : NdrObject
     {
-        protected NdrMessage(byte[] data)
-            : base(data)
-        {
-            if ((data?.Length ?? 0) <= 0)
-            {
-                return;
-            }
-
-            Header = Stream.ReadNdrHeader();
-        }
-
-        protected NdrMessage(NdrBinaryStream stream)
-            : base(stream)
-        {
-
-        }
-
         [KerberosIgnore]
         public RpcHeader Header { get; private set; }
 
-        public virtual void Encode(NdrBinaryStream stream = null)
+        public virtual void Decode(ReadOnlyMemory<byte> data)
+        {
+            var stream = new NdrBinaryStream(data.ToArray());
+
+            Header = stream.ReadNdrHeader();
+
+            ReadBody(stream);
+        }
+
+        public virtual void Encode(NdrBinaryStream stream)
         {
             if (Header == null)
             {
                 Header = new RpcHeader();
             }
 
-            var encodingStream = stream ?? Stream;
+            Header.WriteCommonHeader(stream);
 
-            Header.WriteCommonHeader(encodingStream);
+            WriteBody(stream);
 
-            WriteBody(encodingStream);
+            stream.WriteDeferred();
+        }
 
-            encodingStream.WriteDeferred();
+        private ReadOnlyMemory<byte> cachedEncodedValue;
+
+        public override ReadOnlyMemory<byte> Encode()
+        {
+            if (cachedEncodedValue.Length <= 0 || IsDirty)
+            {
+                var stream = new NdrBinaryStream();
+
+                Encode(stream);
+
+                cachedEncodedValue = stream.ToMemory();
+
+                IsDirty = false;
+            }
+
+            return cachedEncodedValue;
         }
     }
 
     public abstract class NdrObject
     {
-        protected NdrObject(byte[] data)
-        {
-            Stream = new NdrBinaryStream(data);
-        }
-
-        protected NdrObject(NdrBinaryStream stream)
-        {
-            Stream = stream;
-        }
-
-        [KerberosIgnore]
-        protected NdrBinaryStream Stream { get; }
-
         public abstract void WriteBody(NdrBinaryStream stream);
 
         public virtual void WriteBody(NdrBinaryStream stream, Queue<Action> deferredFurther)
         {
             WriteBody(stream);
+        }
+
+        public abstract void ReadBody(NdrBinaryStream stream);
+
+        public virtual void ReadBody(ReadOnlyMemory<byte> data)
+        {
+            ReadBody(new NdrBinaryStream(data.ToArray()));
+        }
+
+        protected bool IsDirty { get; set; }
+
+        private ReadOnlyMemory<byte> cachedEncodedValue;
+
+        public virtual ReadOnlyMemory<byte> Encode()
+        {
+            if (cachedEncodedValue.Length <= 0 || IsDirty)
+            {
+                var stream = new NdrBinaryStream();
+
+                WriteBody(stream);
+
+                cachedEncodedValue = stream.ToMemory();
+
+                IsDirty = false;
+            }
+
+            return cachedEncodedValue;
         }
     }
 }

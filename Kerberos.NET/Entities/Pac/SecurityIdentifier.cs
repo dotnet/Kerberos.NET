@@ -11,7 +11,7 @@ namespace Kerberos.NET.Entities.Pac
         private readonly IdentifierAuthority authority;
         private string sddl;
 
-        private SecurityIdentifier(IdentifierAuthority authority, int[] subs, SidAttributes attributes)
+        public SecurityIdentifier(IdentifierAuthority authority, int[] subs, SidAttributes attributes)
         {
             this.authority = authority;
             SubAuthorities = subs;

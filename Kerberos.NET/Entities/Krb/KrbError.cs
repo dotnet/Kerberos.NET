@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
 {
+    [DebuggerDisplay("{ErrorCode} {EText}")]
     public partial class KrbError
     {
         public KrbError()

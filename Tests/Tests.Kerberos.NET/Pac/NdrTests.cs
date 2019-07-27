@@ -6,7 +6,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET.Pac
@@ -52,6 +51,60 @@ namespace Tests.Kerberos.NET.Pac
             return result;
         }
 
+        private static T TestPacEncoding<T>(T thing)
+            where T : NdrObject, new()
+        {
+            var stream = new NdrBinaryStream();
+
+            if (thing is NdrMessage message)
+            {
+                message.Encode(stream);
+            }
+            else
+            {
+                thing.WriteBody(stream);
+            }
+
+            var encoded = stream.ToMemory();
+
+            var decodedThing = new T();
+
+            if (decodedThing is NdrMessage decodedMessage)
+            {
+                decodedMessage.Decode(encoded);
+            }
+            else
+            {
+                decodedThing.ReadBody(encoded);
+            }
+
+            return decodedThing;
+        }
+
+        [TestMethod]
+        public async Task TestPacClientInfoRoundtrip()
+        {
+            var pac = await GeneratePac(true);
+
+            var client = pac.ClientInformation;
+
+            var clientDecoded = TestPacEncoding(client);
+
+            Assert.AreEqual("Administrator", clientDecoded.Name);
+        }
+
+        [TestMethod]
+        public async Task TestPacServerSignatureRoundtrip()
+        {
+            var pac = await GeneratePac(true);
+
+            var signature = pac.ServerSignature;
+
+            var signatureDecoded = TestPacEncoding(signature);
+
+            Assert.IsTrue(signature.Signature.SequenceEqual(signatureDecoded.Signature));
+        }
+
         [TestMethod]
         public async Task TestNdrClaimsRoundtrip()
         {
@@ -59,13 +112,7 @@ namespace Tests.Kerberos.NET.Pac
 
             var claims = pac.ClientClaims;
 
-            var stream = new NdrBinaryStream();
-
-            claims.Encode(stream);
-
-            var claimsEncoded = stream.ToMemory();
-
-            var claimsDecoded = new ClaimsSetMetadata(claimsEncoded.ToArray());
+            var claimsDecoded = TestPacEncoding(claims);
 
             Assert.IsNotNull(claimsDecoded);
 
@@ -101,22 +148,28 @@ namespace Tests.Kerberos.NET.Pac
 
             var logonInfo = pac.LogonInfo;
 
-            var stream = new NdrBinaryStream();
-
-            logonInfo.Encode(stream);
-
-            Assert.IsNotNull(stream);
-
-            var logonInfoEncoded = stream.ToMemory();
-
-            var logonInfoDecoded = new PacLogonInfo(logonInfoEncoded.ToArray());
+            var logonInfoDecoded = TestPacEncoding(logonInfo);
 
             Assert.IsNotNull(logonInfoDecoded);
 
-            AssertEqualPacs(logonInfo, logonInfoDecoded);
+            AssertEqualLogonInfo(logonInfo, logonInfoDecoded);
         }
 
-        private void AssertEqualPacs(PacLogonInfo left, PacLogonInfo right)
+        [TestMethod]
+        public async Task TestNdrUpnInfoRoundtrip()
+        {
+            var pac = await GeneratePac(true);
+
+            var upnInfo = pac.UpnDomainInformation;
+
+            var upnInfoDecoded = TestPacEncoding(upnInfo);
+
+            Assert.IsNotNull(upnInfoDecoded);
+
+            Assert.AreEqual("Administrator@identityintervention.com", upnInfoDecoded.Upn);
+        }
+
+        private void AssertEqualLogonInfo(PacLogonInfo left, PacLogonInfo right)
         {
             Assert.AreEqual(left.DomainName, right.DomainName);
             Assert.AreEqual(left.UserName, right.UserName);

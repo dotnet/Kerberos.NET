@@ -255,6 +255,11 @@ namespace Kerberos.NET.Entities.Pac
 
         internal void WriteRPCUnicodeString(string val)
         {
+            if (val == null)
+            {
+                val = "";
+            }
+
             var bytes = Encoding.Unicode.GetBytes(val);
 
             // length
@@ -434,6 +439,11 @@ namespace Kerberos.NET.Entities.Pac
 
         public void WriteRid(SecurityIdentifier value)
         {
+            if (value == null)
+            {
+                throw new ArgumentException("SecurityIdentifier cannot be null");
+            }
+
             var lastAuthority = value.SubAuthorities.Last();
 
             var bytes = new byte[4];

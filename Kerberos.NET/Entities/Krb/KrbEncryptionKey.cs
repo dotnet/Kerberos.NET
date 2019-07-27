@@ -11,7 +11,7 @@ namespace Kerberos.NET.Entities
 
         public static KrbEncryptionKey Generate(EncryptionType type)
         {
-            var crypto = CryptographyService.CreateTransform(type);
+            var crypto = CryptoService.CreateTransform(type);
 
             return new KrbEncryptionKey
             {

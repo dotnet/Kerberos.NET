@@ -17,17 +17,16 @@ namespace Kerberos.NET.Entities.Pac
             stream.WriteClaimsArray(this);
         }
 
-        public ClaimsArray(NdrBinaryStream stream)
-            : base(stream)
+        public override void ReadBody(NdrBinaryStream stream)
         {
-            ClaimSource = (ClaimSourceType)Stream.ReadInt();
-            Count = Stream.ReadUnsignedInt();
+            ClaimSource = (ClaimSourceType)stream.ReadInt();
+            Count = stream.ReadUnsignedInt();
 
             var claims = new List<ClaimEntry>();
 
-            Stream.Seek(4);
+            stream.Seek(4);
 
-            var count = Stream.ReadInt();
+            var count = stream.ReadInt();
 
             if (Count != count)
             {
@@ -36,22 +35,25 @@ namespace Kerberos.NET.Entities.Pac
 
             for (var i = 0; i < Count; i++)
             {
-                claims.Add(new ClaimEntry(Stream));
+                var claim = new ClaimEntry();
+                claim.ReadBody(stream);
+
+                claims.Add(claim);
             }
 
             foreach (var entry in claims)
             {
-                entry.ReadValue(Stream);
+                entry.ReadValue(stream);
             }
 
             ClaimEntries = claims;
         }
 
-        public ClaimSourceType ClaimSource { get; }
+        public ClaimSourceType ClaimSource { get; set; }
 
         [KerberosIgnore]
-        public uint Count { get; }
+        public uint Count { get; set; }
 
-        public IEnumerable<ClaimEntry> ClaimEntries { get; }
+        public IEnumerable<ClaimEntry> ClaimEntries { get; set; }
     }
 }

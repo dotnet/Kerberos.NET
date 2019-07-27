@@ -122,7 +122,7 @@ namespace Kerberos.NET.Crypto
 
             if (transformer == null)
             {
-                transformer = CryptographyService.CreateTransform(EncryptionType);
+                transformer = CryptoService.CreateTransform(EncryptionType);
             }
 
             if (transformer == null)
