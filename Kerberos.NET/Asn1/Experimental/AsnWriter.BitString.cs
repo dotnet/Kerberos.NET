@@ -4,9 +4,11 @@
 
 using System.Buffers;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace System.Security.Cryptography.Asn1
 {
+    [ExcludeFromCodeCoverage]
     internal sealed partial class AsnWriter
     {
         /// <summary>

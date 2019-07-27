@@ -19,6 +19,16 @@ namespace Kerberos.NET.Entities
 
             return info.ETypeInfo;
         }
+
+        public KrbApReq DecodeApReq()
+        {
+            if (Type != PaDataType.PA_TGS_REQ)
+            {
+                throw new InvalidOperationException($"Cannot parse the TGS ApReq because type is {Type}");
+            }
+
+            return new KrbApReq().DecodeAsApplication(Value);
+        }
     }
 
     public enum PaDataType : long

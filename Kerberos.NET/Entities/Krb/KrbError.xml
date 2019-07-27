@@ -3,7 +3,7 @@
 <asn:Sequence
   xmlns:asn="http://schemas.dot.net/asnxml/201808/"
   name="KrbError"
-  namespace="Kerberos.NET.Entities">
+  namespace="Kerberos.NET.Entities" explicitTag="30">
   <!--
 
     KRB-ERROR       ::= [APPLICATION 30] SEQUENCE {
@@ -24,7 +24,7 @@
 
   -->
 
-  <asn:Integer name="ProtocolVersionNumer" explicitTag="0" backingType="int" />
+  <asn:Integer name="ProtocolVersionNumber" explicitTag="0" backingType="int" />
   <asn:Integer name="MessageType" explicitTag="1" backingType="enum" enumType="MessageType" />
   <asn:GeneralizedTime name="CTime" explicitTag="2" optional="true" />
   <asn:Integer name="Cusec" explicitTag="3" backingType="int" optional="true" />

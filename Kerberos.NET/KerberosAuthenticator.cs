@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Pac;
 using System;
@@ -58,11 +57,13 @@ namespace Kerberos.NET
 
             DecodeRestrictions(krbApReq, claims, restrictions);
 
+            SetMinimumIdentity(krbApReq, claims);
+
             string apRep = null;
 
             if (krbApReq.Options.HasFlag(ApOptions.MutualRequired))
             {
-                var apRepEncoded = krbApReq.CreateResponseMessage().EncodeAsApplication();
+                var apRepEncoded = krbApReq.CreateResponseMessage().EncodeApplication();
 
                 apRep = Convert.ToBase64String(apRepEncoded.ToArray());
             }
@@ -76,6 +77,19 @@ namespace Kerberos.NET
                 validator.ValidateAfterDecrypt,
                 apRep
             );
+        }
+
+        private void SetMinimumIdentity(DecryptedKrbApReq krbApReq, List<Claim> claims)
+        {
+            // there's no guarantee a PAC will be sent along so we should be nice and
+            // fill in a minimum set of identifying information like the principal name
+
+            if (claims.Any(c => c.Type == ClaimTypes.Name || c.Type == ClaimTypes.NameIdentifier))
+            {
+                return;
+            }
+
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, krbApReq.Ticket.CName.FullyQualifiedName, ClaimValueTypes.String, AD_AUTHORITY));
         }
 
         private void DecodeRestrictions(
@@ -140,6 +154,11 @@ namespace Kerberos.NET
         private void DecodePac(DecryptedKrbApReq krbApReq, List<Claim> claims, KrbAuthorizationData authz)
         {
             var pac = new PrivilegedAttributeCertificate(authz.Data.ToArray());
+
+            if (!pac.HasRequiredFields)
+            {
+                return;
+            }
 
             if (validator.ValidateAfterDecrypt.HasFlag(ValidationActions.Pac))
             {
@@ -214,15 +233,18 @@ namespace Kerberos.NET
             }
         }
 
+        private const string CERT_AUTHORITY = "CERTIFICATE AUTHORITY";
+        private const string AD_AUTHORITY = "AD AUTHORITY";
+
         private static string GetSourceIssuer(ClaimSourceType source)
         {
             switch (source)
             {
                 case ClaimSourceType.CLAIMS_SOURCE_TYPE_CERTIFICATE:
-                    return "CERTIFICATE AUTHORITY";
+                    return CERT_AUTHORITY;
                 case ClaimSourceType.CLAIMS_SOURCE_TYPE_AD:
                 default:
-                    return "AD AUTHORITY";
+                    return AD_AUTHORITY;
             }
         }
 

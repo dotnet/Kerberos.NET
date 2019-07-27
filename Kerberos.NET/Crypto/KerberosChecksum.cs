@@ -3,13 +3,13 @@ using System.Security;
 
 namespace Kerberos.NET.Crypto
 {
-    public abstract class PacSign
+    public abstract class KerberosChecksum
     {
         public ReadOnlyMemory<byte> Signature { get; private set; }
 
         protected ReadOnlyMemory<byte> Pac { get; private set; }
 
-        protected PacSign(byte[] signature = null, byte[] pac = null)
+        protected KerberosChecksum(byte[] signature = null, byte[] pac = null)
         {
             Signature = signature;
             Pac = pac;
@@ -33,27 +33,27 @@ namespace Kerberos.NET.Crypto
         protected abstract bool ValidateInternal(KerberosKey key);
     }
 
-    public class HmacAes256PacSign : AesPacSign
+    public class HmacAes256PacSign : AesPacKerberosChecksum
     {
         public HmacAes256PacSign(byte[] signature = null, byte[] pac = null)
-            : base(CryptographyService.CreateTransform(EncryptionType.AES256_CTS_HMAC_SHA1_96), signature, pac)
+            : base(CryptoService.CreateTransform(EncryptionType.AES256_CTS_HMAC_SHA1_96), signature, pac)
         {
         }
     }
 
-    public class HmacAes128PacSign : AesPacSign
+    public class HmacAes128KerberosChecksum : AesPacKerberosChecksum
     {
-        public HmacAes128PacSign(byte[] signature = null, byte[] pac = null)
-            : base(CryptographyService.CreateTransform(EncryptionType.AES128_CTS_HMAC_SHA1_96), signature, pac)
+        public HmacAes128KerberosChecksum(byte[] signature = null, byte[] pac = null)
+            : base(CryptoService.CreateTransform(EncryptionType.AES128_CTS_HMAC_SHA1_96), signature, pac)
         {
         }
     }
 
-    public abstract class AesPacSign : PacSign
+    public abstract class AesPacKerberosChecksum : KerberosChecksum
     {
         private readonly KerberosCryptoTransformer decryptor;
 
-        protected AesPacSign(KerberosCryptoTransformer decryptor, byte[] signature, byte[] pac)
+        protected AesPacKerberosChecksum(KerberosCryptoTransformer decryptor, byte[] signature, byte[] pac)
             : base(signature, pac)
         {
             this.decryptor = decryptor;
@@ -78,16 +78,16 @@ namespace Kerberos.NET.Crypto
         }
     }
 
-    public class HmacMd5PacSign : PacSign
+    public class HmacMd5KerberosChecksum : KerberosChecksum
     {
-        public HmacMd5PacSign(byte[] signature = null, byte[] pac = null)
+        public HmacMd5KerberosChecksum(byte[] signature = null, byte[] pac = null)
             : base(signature, pac)
         {
         }
 
         protected override ReadOnlyMemory<byte> SignInternal(KerberosKey key)
         {
-            var crypto = CryptographyService.CreateTransform(EncryptionType.RC4_HMAC_NT);
+            var crypto = CryptoService.CreateTransform(EncryptionType.RC4_HMAC_NT);
 
             return crypto.MakeChecksum(
                 key.GetKey(crypto),

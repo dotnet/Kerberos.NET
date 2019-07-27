@@ -1,5 +1,4 @@
 ﻿using Kerberos.NET.Entities;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -15,7 +14,7 @@ namespace Kerberos.NET
             string roleType,
             IEnumerable<Restriction> restrictions,
             ValidationActions validationMode,
-            string apRep           
+            string apRep
         ) : base(userClaims, authenticationType, nameType, roleType)
         {
             Restrictions = restrictions.GroupBy(r => r.Type).ToDictionary(r => r.Key, r => r.ToList().AsEnumerable());

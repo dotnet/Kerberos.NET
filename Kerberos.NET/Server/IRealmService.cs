@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
 {
@@ -36,7 +36,11 @@ namespace Kerberos.NET.Server
     {
         IEnumerable<PaDataType> SupportedPreAuthenticationTypes { get; set; }
 
+        SupportedEncryptionTypes SupportedEncryptionTypes { get; set; }
+
         string PrincipalName { get; set; }
+
+        DateTimeOffset? Expires { get; set; }
 
         Task<KerberosKey> RetrieveLongTermCredential();
 

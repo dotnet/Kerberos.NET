@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 
-<asn:Choice
+<asn:InheritedSequence
   xmlns:asn="http://schemas.dot.net/asnxml/201808/"
   name="KrbEncAsRepPart"
-  namespace="Kerberos.NET.Entities">
+  namespace="Kerberos.NET.Entities" explicitTag="25">
   <!--
 
     EncASRepPart    ::= [APPLICATION 25] EncKDCRepPart
@@ -12,4 +12,4 @@
 
   <asn:AsnType name="EncAsRepPart" explicitTag="25" tagClass="Application" typeName="KrbEncKdcRepPart" />
 
-</asn:Choice>
+</asn:InheritedSequence>

@@ -43,6 +43,42 @@
   <xsl:template match="/" xml:space="default">
     <xsl:apply-templates/>
   </xsl:template>
+  
+  <xsl:template match="asn:InheritedSequence">// This is a generated file.
+// This file is licensed as per the LICENSE file.
+// The generation template has been modified from .NET Foundation implementation
+using System;
+using System.Security.Cryptography.Asn1;
+
+namespace <xsl:value-of select="@namespace" />
+{
+    public partial class <xsl:value-of select="@name" /> : <xsl:apply-templates mode="InheritedParentDef" />
+    {<xsl:if test="@explicitTag">
+        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, <xsl:value-of select="@explicitTag" />);
+        
+        public override ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
+        {
+          return EncodeApplication(ApplicationTag);
+        }
+        
+        public static <xsl:value-of select="@name" /> DecodeApplication(ReadOnlyMemory&lt;byte&gt; encoded)
+        {
+            AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
+
+            var sequence = reader.ReadSequence(ApplicationTag);
+          
+            <xsl:value-of select="@name" /> decoded;
+            Decode(sequence, out decoded);
+            sequence.ThrowIfNotEmpty();
+
+            reader.ThrowIfNotEmpty();
+
+            return decoded;
+        }
+        </xsl:if>     
+    }
+}
+  </xsl:template>
 
   <xsl:template match="asn:Sequence">// This is a generated file.
 // This file is licensed as per the LICENSE file.
@@ -81,14 +117,77 @@ namespace <xsl:value-of select="@namespace" />
         
         internal void Encode(AsnWriter writer)
         {
-            Encode(writer, Asn1Tag.Sequence);
+            <xsl:if test="@explicitTag">EncodeApplication(writer, ApplicationTag);</xsl:if>
+            <xsl:if test="not(@explicitTag)">Encode(writer, Asn1Tag.Sequence);</xsl:if>
         }
-    
+        
         internal void Encode(AsnWriter writer, Asn1Tag tag)
         {
             writer.PushSequence(tag);
             <xsl:apply-templates mode="Encode" />
             writer.PopSequence(tag);
+        }
+        
+        internal void EncodeApplication(AsnWriter writer, Asn1Tag tag)
+        {
+                writer.PushSequence(tag);
+                
+                this.Encode(writer, Asn1Tag.Sequence);
+
+                writer.PopSequence(tag);
+        }       
+        <xsl:if test="not(@explicitTag)">
+        public virtual ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
+        {
+          return new ReadOnlyMemory&lt;byte&gt;();
+        }
+        </xsl:if>
+        <xsl:if test="@explicitTag">
+        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, <xsl:value-of select="@explicitTag" />);
+        
+        public virtual ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
+        {
+          return EncodeApplication(ApplicationTag);
+        }
+        
+        public static <xsl:value-of select="@name" /> DecodeApplication(ReadOnlyMemory&lt;byte&gt; encoded)
+        {
+            AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
+
+            var sequence = reader.ReadSequence(ApplicationTag);
+          
+            <xsl:value-of select="@name" /> decoded;
+            Decode(sequence, Asn1Tag.Sequence, out decoded);
+            sequence.ThrowIfNotEmpty();
+
+            reader.ThrowIfNotEmpty();
+
+            return decoded;
+        }
+        
+        internal static <xsl:value-of select="@name" /> DecodeApplication&lt;T&gt;(AsnReader reader, out T decoded)
+          where T: <xsl:value-of select="@name" />, new()
+        {
+            var sequence = reader.ReadSequence(ApplicationTag);
+          
+            Decode(sequence, Asn1Tag.Sequence, out decoded);
+            sequence.ThrowIfNotEmpty();
+
+            reader.ThrowIfNotEmpty();
+
+            return decoded;
+        }
+        </xsl:if> 
+        internal ReadOnlyMemory&lt;byte&gt; EncodeApplication(Asn1Tag tag)
+        {
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
+            {
+                EncodeApplication(writer, tag);
+
+                var span = writer.EncodeAsSpan();
+
+                return span.AsMemory();
+            }
         }
         
         public static <xsl:value-of select="@name" /> Decode(ReadOnlyMemory&lt;byte&gt; data)
@@ -119,20 +218,22 @@ namespace <xsl:value-of select="@namespace" />
             return decoded;
         }
 
-        internal static void Decode(AsnReader reader, out <xsl:value-of select="@name" /> decoded)
+        internal static void Decode&lt;T&gt;(AsnReader reader, out T decoded)
+          where T: <xsl:value-of select="@name" />, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
-
-            Decode(reader, Asn1Tag.Sequence, out decoded);
+            
+            <xsl:if test="@explicitTag">DecodeApplication(reader, out decoded);</xsl:if><xsl:if test="not(@explicitTag)">Decode(reader, Asn1Tag.Sequence, out decoded);</xsl:if>
         }
 
-        internal static void Decode(AsnReader reader, Asn1Tag expectedTag, out <xsl:value-of select="@name" /> decoded)
+        internal static void Decode&lt;T&gt;(AsnReader reader, Asn1Tag expectedTag, out T decoded)
+          where T: <xsl:value-of select="@name" />, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = new <xsl:value-of select="@name" />();
+            decoded = new T();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);<xsl:if test="*[@explicitTag]">
             AsnReader explicitReader;</xsl:if><xsl:if test="*[@defaultDerInit]">
             AsnReader defaultReader;</xsl:if><xsl:if test="asn:SequenceOf | asn:SetOf">
@@ -200,6 +301,44 @@ namespace <xsl:value-of select="@namespace" />
                 throw new CryptographicException();
             }
         }
+        <xsl:if test="@explicitTag">
+        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, <xsl:value-of select="@explicitTag" />);
+        
+        public virtual ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
+        {
+          return EncodeApplication(ApplicationTag);
+        }
+        
+        public static <xsl:value-of select="@name" /> DecodeApplication(ReadOnlyMemory&lt;byte&gt; encoded)
+        {
+            AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);
+
+            var sequence = reader.ReadSequence(ApplicationTag);
+          
+            <xsl:value-of select="@name" /> decoded;
+            Decode(sequence, out decoded);
+            sequence.ThrowIfNotEmpty();
+
+            reader.ThrowIfNotEmpty();
+
+            return decoded;
+        }
+        </xsl:if>        
+        internal ReadOnlyMemory&lt;byte&gt; EncodeApplication(Asn1Tag tag)
+        {
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
+            {
+                writer.PushSequence(tag);
+                
+                this.Encode(writer);
+
+                writer.PopSequence(tag);
+
+                var span = writer.EncodeAsSpan();
+
+                return span.AsMemory();
+            }
+        }
         
         public static <xsl:value-of select="@name" /> Decode(ReadOnlyMemory&lt;byte&gt; data)
         {
@@ -215,12 +354,13 @@ namespace <xsl:value-of select="@namespace" />
             return decoded;
         }
 
-        internal static void Decode(AsnReader reader, out <xsl:value-of select="@name" /> decoded)
+        internal static void Decode&lt;T&gt;(AsnReader reader, out T decoded)
+          where T: <xsl:value-of select="@name" />, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = new <xsl:value-of select="@name" />();
+            decoded = new T();
             Asn1Tag tag = reader.PeekTag();<xsl:if test="*[@explicitTag]">
             AsnReader explicitReader;</xsl:if><xsl:if test="asn:SequenceOf | asn:SetOf">
             AsnReader collectionReader;</xsl:if>
@@ -440,6 +580,7 @@ namespace <xsl:value-of select="@namespace" />
     </xsl:choose>
   </xsl:template>
 
+  <xsl:template match="asn:AsnType" mode="InheritedParentDef"><xsl:value-of select="@typeName" /></xsl:template>
   <xsl:template match="asn:AsnType" mode="FieldDef">
         public <xsl:value-of select="@typeName"/><xsl:if test="@optional | parent::asn:Choice"></xsl:if> <xsl:value-of select="@name" />;</xsl:template>
 
@@ -461,11 +602,11 @@ namespace <xsl:value-of select="@namespace" />
     <xsl:choose>
       <xsl:when test="@optional | parent::asn:Choice" xml:space="preserve">
             <xsl:value-of select="$indent"/><xsl:value-of select="@typeName"/> tmp<xsl:value-of select="@name"/>;
-            <xsl:value-of select="$indent"/><xsl:value-of select="@typeName"/>.Decode(<xsl:value-of select="$readerName"/>, <xsl:call-template name="MaybeImplicitCallP"/>out tmp<xsl:value-of select="@name"/>);
+            <xsl:value-of select="$indent"/><xsl:value-of select="@typeName"/>.Decode&lt;<xsl:value-of select="@typeName"/>&gt;(<xsl:value-of select="$readerName"/>, <xsl:call-template name="MaybeImplicitCallP"/>out tmp<xsl:value-of select="@name"/>);
             <xsl:value-of select="$indent"/><xsl:value-of select="$name"/> = tmp<xsl:value-of select="@name"/>;
 </xsl:when>
       <xsl:otherwise xml:space="preserve">
-            <xsl:value-of select="$indent"/><xsl:value-of select="@typeName"/>.Decode(<xsl:value-of select="$readerName"/>, <xsl:call-template name="MaybeImplicitCallP"/>out <xsl:value-of select="$name"/>);</xsl:otherwise>
+            <xsl:value-of select="$indent"/><xsl:value-of select="@typeName"/>.Decode&lt;<xsl:value-of select="@typeName"/>&gt;(<xsl:value-of select="$readerName"/>, <xsl:call-template name="MaybeImplicitCallP"/>out <xsl:value-of select="$name"/>);</xsl:otherwise>
     </xsl:choose>
   </xsl:template>
   

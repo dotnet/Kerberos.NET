@@ -1,28 +1,16 @@
-﻿using System;
-using System.Security.Cryptography.Asn1;
-using Kerberos.NET.Asn1;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
+using System;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbEncAsRepPart
+    public partial class KrbEncAsRepPart : IAsn1ApplicationEncoder<KrbEncAsRepPart>
     {
-        internal const int ApplicationTagValue = 25;
-        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, ApplicationTagValue);
-
-        public ReadOnlyMemory<byte> EncodeAsApplication()
+        public KrbEncAsRepPart DecodeAsApplication(ReadOnlyMemory<byte> encoded)
         {
-            using (var writer = new AsnWriter(AsnEncodingRules.DER))
-            {
-                writer.PushSequence(ApplicationTag);
-
-                this.EncAsRepPart.Encode(writer);
-
-                writer.PopSequence(ApplicationTag);
-
-                var span = writer.EncodeAsSpan();
-
-                return span.AsMemory();
-            }
+            return DecodeApplication(encoded);
         }
+
+        public override KeyUsage KeyUsage => KeyUsage.EncAsRepPart;
     }
 }

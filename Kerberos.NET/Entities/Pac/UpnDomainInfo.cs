@@ -1,4 +1,7 @@
 ﻿using Kerberos.NET.Entities.Pac;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 
 #pragma warning disable S2344 // Enumeration type names should not have "Flags" or "Enum" suffixes
@@ -10,44 +13,67 @@ namespace Kerberos.NET.Entities
         U = 1
     }
 
-    public class UpnDomainInfo : NdrObject
+    public class UpnDomainInfo : NdrObject, IPacElement
     {
-        public UpnDomainInfo(byte[] data)
-            : base(data)
+        public override void WriteBody(NdrBinaryStream stream)
         {
-            UpnLength = Stream.ReadShort();
-            UpnOffset = Stream.ReadShort();
+            var upnBytes = Encoding.Unicode.GetBytes(Upn);
+            var domainBytes = Encoding.Unicode.GetBytes(Domain);
 
-            DnsDomainNameLength = Stream.ReadShort();
-            DnsDomainNameOffset = Stream.ReadShort();
+            stream.WriteShort((short)upnBytes.Length);
+            stream.WriteShort(2 + 2 + 2 + 2 + 4 + 4); // + 4 to align on 8 boundary
 
-            Flags = (UpnDomainFlags)Stream.ReadInt();
+            stream.WriteShort((short)domainBytes.Length);
+            stream.WriteShort((short)(2 + 2 + 2 + 2 + 4 + 4 + upnBytes.Length));
 
-            Stream.Align(8);
+            stream.WriteUnsignedInt((int)Flags);
 
-            Upn = Encoding.Unicode.GetString(Stream.Read(UpnLength));
+            stream.Align(8);
 
-            Stream.Align(8);
+            stream.WriteBytes(upnBytes);
 
-            Domain = Encoding.Unicode.GetString(Stream.Read(DnsDomainNameLength));
+            stream.Align(8);
+
+            stream.WriteBytes(domainBytes);
         }
 
-        public string Upn { get; }
+        public override void ReadBody(NdrBinaryStream stream)
+        {
+            UpnLength = stream.ReadShort();
+            UpnOffset = stream.ReadShort();
 
-        public string Domain { get; }
+            DnsDomainNameLength = stream.ReadShort();
+            DnsDomainNameOffset = stream.ReadShort();
+
+            Flags = (UpnDomainFlags)stream.ReadInt();
+
+            stream.Align(8);
+
+            Upn = Encoding.Unicode.GetString(stream.Read(UpnLength));
+
+            stream.Align(8);
+
+            Domain = Encoding.Unicode.GetString(stream.Read(DnsDomainNameLength));
+        }
+
+        public string Upn { get; set; }
+
+        public string Domain { get; set; }
 
         [KerberosIgnore]
-        public short UpnLength { get; }
+        public short UpnLength { get; set; }
 
         [KerberosIgnore]
-        public short UpnOffset { get; }
+        public short UpnOffset { get; set; }
 
         [KerberosIgnore]
-        public short DnsDomainNameLength { get; }
+        public short DnsDomainNameLength { get; set; }
 
         [KerberosIgnore]
-        public short DnsDomainNameOffset { get; }
+        public short DnsDomainNameOffset { get; set; }
 
-        public UpnDomainFlags Flags { get; }
+        public UpnDomainFlags Flags { get; set; }
+
+        public PacType PacType => PacType.UPN_DOMAIN_INFO;
     }
 }

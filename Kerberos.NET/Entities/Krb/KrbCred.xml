@@ -3,7 +3,7 @@
 <asn:Sequence
   xmlns:asn="http://schemas.dot.net/asnxml/201808/"
   name="KrbCred"
-  namespace="Kerberos.NET.Entities">
+  namespace="Kerberos.NET.Entities" explicitTag="22">
   <!--
 
     KRB-CRED        ::= [APPLICATION 22] SEQUENCE {
@@ -18,7 +18,7 @@
   <asn:Integer name="ProtocolVersionNumber" explicitTag="0" backingType="int" />
   <asn:Integer name="MessageType" explicitTag="1" backingType="enum" enumType="MessageType" />
   <asn:SequenceOf name="Tickets" explicitTag="2">
-    <asn:AsnType typeName="KrbTicketApplication" />
+    <asn:AsnType typeName="KrbTicket" />
   </asn:SequenceOf>
   <asn:AsnType name="EncryptedPart" explicitTag="3" typeName="KrbEncryptedData" />
 </asn:Sequence>

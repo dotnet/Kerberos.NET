@@ -8,7 +8,7 @@ namespace Tests.Kerberos.NET
     public abstract class BaseTest
     {
         public const ValidationActions DefaultActions
-            = ValidationActions.All & (~(ValidationActions.EndTime | ValidationActions.StartTime | ValidationActions.TokenWindow));
+            = ValidationActions.All & (~(ValidationActions.EndTime | ValidationActions.StartTime | ValidationActions.TokenWindow | ValidationActions.RenewTill));
 
         public const string RC4Header = "Negotiate YIIKbQYGKwYBBQUCoIIKYTCCCl2gMDAuBgkqhkiC9xIBAgIGCSqGSIb3EgECAgYKKw" +
             "YBBAGCNwICHgYKKwYBBAGCNwICCqKCCicEggojYIIKHwYJKoZIhvcSAQICAQBuggoOMIIKCqADAgEFoQMCAQ6iBwMFACAAAACjggiCYYI" +

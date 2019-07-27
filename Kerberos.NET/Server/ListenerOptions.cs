@@ -20,7 +20,7 @@ namespace Kerberos.NET.Server
 
         public int MaxWriteBufferSize { get; set; } = 64 * 1024;
 
-        public ILogger Log { get; set; }
+        public ILogger Log { get; set; } = new DebugLogger();
 
         public string DefaultRealm { get; set; }
 

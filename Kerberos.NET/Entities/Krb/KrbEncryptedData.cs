@@ -7,7 +7,7 @@ namespace Kerberos.NET.Entities
     {
         public T Decrypt<T>(KerberosKey key, KeyUsage usage, Func<ReadOnlyMemory<byte>, T> func)
         {
-            var crypto = CryptographyService.CreateTransform(this.EType);
+            var crypto = CryptoService.CreateTransform(this.EType);
 
             var decrypted = crypto.Decrypt(this.Cipher, key, usage);
 
@@ -16,7 +16,7 @@ namespace Kerberos.NET.Entities
 
         public static KrbEncryptedData Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)
         {
-            var crypto = CryptographyService.CreateTransform(key.EncryptionType);
+            var crypto = CryptoService.CreateTransform(key.EncryptionType);
 
             ReadOnlyMemory<byte> cipher = crypto.Encrypt(data, key, usage);
 

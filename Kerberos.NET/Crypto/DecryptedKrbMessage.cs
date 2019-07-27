@@ -5,13 +5,6 @@ namespace Kerberos.NET.Crypto
 {
     public abstract class DecryptedKrbMessage
     {
-        protected DecryptedKrbMessage(KerberosCryptoTransformer transformer)
-        {
-            this.Transformer = transformer;
-        }
-
-        protected KerberosCryptoTransformer Transformer { get; }
-
         private Func<DateTimeOffset> nowFunc;
 
         [KerberosIgnore]
@@ -25,17 +18,22 @@ namespace Kerberos.NET.Crypto
 
         public abstract void Decrypt(KeyTable keytab);
 
-        protected virtual byte[] Decrypt(KerberosKey key, ReadOnlyMemory<byte> ciphertext, KeyUsage keyType)
-        {
-            return Transformer.Decrypt(ciphertext, key, keyType);
-        }
-
         protected virtual void ValidateTicketEnd(DateTimeOffset endTime, DateTimeOffset now, TimeSpan skew)
         {
             if (endTime < (now - skew))
             {
                 throw new KerberosValidationException(
                     $"Token has expired. End: {endTime}; Now: {now}; Skew: {skew}"
+                );
+            }
+        }
+
+        protected virtual void ValidateTicketRenewal(DateTimeOffset? renewTill, DateTimeOffset now, TimeSpan skew)
+        {
+            if (renewTill == null || renewTill < (now - skew))
+            {
+                throw new KerberosValidationException(
+                    $"Token cannot be renewed any further. Renew Till: {renewTill}; Now: {now}; Skew: {skew}"
                 );
             }
         }

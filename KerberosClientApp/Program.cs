@@ -63,9 +63,21 @@ namespace KerberosClientApp
                 ApOptions.MutualRequired
             );
 
-            var encoded = ticket.EncodeAsApplication().ToArray();
+            var encoded = ticket.EncodeApplication().ToArray();
 
-            var authenticator = new KerberosAuthenticator(new KeyTable(new KerberosKey("P@ssw0rd!")));
+            var authenticator = new KerberosAuthenticator(
+                new KeyTable(
+                    new KerberosKey(
+                        "P@ssw0rd!", 
+                        principalName: new PrincipalName(
+                            PrincipalNameType.NT_PRINCIPAL, 
+                            "CORP.IDENTITYINTERVENTION.com", 
+                            new[] { "host/appservice.corp.identityintervention.com" }
+                        ),
+                        saltType: SaltType.ActiveDirectoryUser
+                    )
+                )
+            );
 
             var validated = (KerberosIdentity)await authenticator.Authenticate(encoded);
 

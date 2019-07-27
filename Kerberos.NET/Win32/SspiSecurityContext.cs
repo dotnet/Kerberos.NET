@@ -169,8 +169,6 @@ namespace Kerberos.NET.Win32
                 }
                 while (result == SecStatus.SEC_I_INCOMPLETE_CREDENTIALS || result == SecStatus.SEC_E_INSUFFICENT_MEMORY);
 
-                //ContextDebugger.WriteLine($"[SecuityContext] [ISC] {result}");
-
                 if (result > SecStatus.SEC_E_ERROR)
                 {
                     throw new Win32Exception((int)result);
@@ -212,8 +210,6 @@ namespace Kerberos.NET.Win32
                 do
                 {
                     pOutput = new SecBufferDesc(tokenSize);
-
-                    // ContextDebugger.WriteLine($"[SecurityContext] [ASC] Server context: {securityContext.dwLower} {securityContext.dwUpper}");
 
                     if (!securityContext.IsSet)
                     {
@@ -284,58 +280,11 @@ namespace Kerberos.NET.Win32
             disposable.Add(thing);
         }
 
-        //public ImpersonationContext ImpersonateClient()
-        //{
-        //    SecStatus status;
-
-        //    RuntimeHelpers.PrepareConstrainedRegions();
-        //    try { }
-        //    finally
-        //    {
-        //        status = ImpersonateSecurityContext(ref securityContext);
-        //    }
-
-        //    if (status != 0)
-        //    {
-        //        throw new Win32Exception(Marshal.GetLastWin32Error());
-        //    }
-
-        //    SetThreadPrincipal();
-
-        //    Impersonating = true;
-
-        //    return new ImpersonationContext(this);
-        //}
-
-        //private void SetThreadPrincipal()
-        //{
-        //    Thread.CurrentPrincipal = new WindowsPrincipal(
-        //        WindowsIdentity.GetCurrent(TokenAccessLevels.AllAccess)
-        //    );
-        //}
-
-        //public void RevertImpersonation()
-        //{
-        //    if (!Impersonating)
-        //    {
-        //        return;
-        //    }
-
-        //    RuntimeHelpers.PrepareConstrainedRegions();
-        //    try { }
-        //    finally
-        //    {
-        //        RevertSecurityContext(ref securityContext);
-        //    }
-        //}
-
         private unsafe void AcquireCredentials()
         {
             CredentialHandle creds = credential.Structify();
 
             TrackUnmanaged(creds);
-
-            //ContextDebugger.WriteLine($"[SecurityContext] [Acquire] Cred: {creds.DangerousGetHandle()}");
 
             creds.DebugStructure();
 
@@ -357,9 +306,6 @@ namespace Kerberos.NET.Win32
                     IntPtr.Zero
                );
             }
-
-            //ContextDebugger.WriteLine($"[SecurityContext] [ACH] Package: {Package}");
-            //ContextDebugger.WriteLine($"[SecurityContext] [ACH] Cred: {credentialsHandle.dwLower} {credentialsHandle.dwUpper}");
 
             if (result != SecStatus.SEC_E_OK)
             {

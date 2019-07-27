@@ -2,6 +2,7 @@
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
+using System;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Client
@@ -41,8 +42,9 @@ namespace Kerberos.NET.Client
             transport = new KerberosTransportSelector(transports);
         }
 
-        private KrbKdcRep tgt;
-        private KrbEncryptionKey tgtSessionKey;
+        public KrbKdcRep TicketGrantingTicket { get; private set; }
+
+        public KrbEncryptionKey TgtSessionKey { get; private set; }
 
         public AuthenticationOptions AuthenticationOptions { get; set; } = DefaultAuthentication;
 
@@ -76,52 +78,79 @@ namespace Kerberos.NET.Client
             while (true);
         }
 
-        public async Task<KrbApReq> GetServiceTicket(string spn, ApOptions options = DefaultApOptions)
+        public async Task<KrbApReq> GetServiceTicket(string spn, ApOptions options = DefaultApOptions, KrbTicket u2uServerTicket = null)
         {
-            var tgs = KrbTgsReq.CreateTgsReq(spn, tgtSessionKey, tgt, KdcOptions);
+            var kdcOptions = KdcOptions;
 
-            var encodedTgs = tgs.EncodeAsApplication();
+            if (u2uServerTicket != null)
+            {
+                kdcOptions |= KdcOptions.EncTktInSkey;
+            }
 
-            var choice = await transport.SendMessage<KrbTgsRep>(
-                tgs.TgsReq.Body.Realm,
+            var tgs = KrbTgsReq.CreateTgsReq(spn, TgtSessionKey, TicketGrantingTicket, kdcOptions, u2uServerTicket);
+
+            var encodedTgs = tgs.EncodeApplication();
+
+            var tgsRep = await transport.SendMessage<KrbTgsRep>(
+                tgs.Body.Realm,
                 encodedTgs
             );
 
-            var tgsRep = choice.Response;
-
             var encKdcRepPart = tgsRep.EncPart.Decrypt(
-                tgtSessionKey.AsKey(),
+                TgtSessionKey.AsKey(),
                 KeyUsage.EncTgsRepPartSubSessionKey,
-                d => KrbEncTgsRepPart.Decode(d)
+                d => KrbEncTgsRepPart.DecodeApplication(d)
             );
 
-            var authenticatorKey = encKdcRepPart.EncTgsRepPart.Key.AsKey();
+            var authenticatorKey = encKdcRepPart.Key.AsKey();
 
             return KrbApReq.CreateApReq(tgsRep, authenticatorKey, options);
         }
 
+        public async Task RenewTicket()
+        {
+            var tgs = KrbTgsReq.CreateTgsReq("krbtgt", TgtSessionKey, TicketGrantingTicket, KdcOptions);
+
+            var encodedTgs = tgs.EncodeApplication();
+
+            var tgsRep = await transport.SendMessage<KrbTgsRep>(
+                tgs.Body.Realm,
+                encodedTgs
+            );
+
+            var encKdcRepPart = tgsRep.EncPart.Decrypt(
+                TgtSessionKey.AsKey(),
+                KeyUsage.EncTgsRepPartSubSessionKey,
+                d => KrbEncTgsRepPart.DecodeApplication(d)
+            );
+
+            CacheTgt(tgsRep, encKdcRepPart);
+        }
+
         private async Task RequestTgt(KerberosCredential credential)
         {
-            var asReq = KrbAsReq.CreateAsReq(credential, AuthenticationOptions).EncodeAsApplication();
+            var asReq = KrbAsReq.CreateAsReq(credential, AuthenticationOptions).EncodeApplication();
 
             var asRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq);
 
-            var decrypted = DecryptAsRep(asRep.Response, credential);
+            var decrypted = DecryptAsRep(asRep, credential);
 
-            CacheTgt(asRep.Response, decrypted.EncAsRepPart);
+            CacheTgt(asRep, decrypted);
         }
 
         private void CacheTgt(KrbKdcRep kdcRep, KrbEncKdcRepPart decrypted)
         {
-            tgt = kdcRep;
-            tgtSessionKey = decrypted.Key;
+            // not the most sophisticated of caches
+
+            TicketGrantingTicket = kdcRep;
+            TgtSessionKey = decrypted.Key;
         }
 
         private static KrbEncAsRepPart DecryptAsRep(KrbKdcRep asRep, KerberosCredential credential)
         {
             var key = credential.CreateKey();
 
-            return asRep.EncPart.Decrypt(key, KeyUsage.EncAsRepPart, d => KrbEncAsRepPart.Decode(d));
+            return asRep.EncPart.Decrypt(key, KeyUsage.EncAsRepPart, d => KrbEncAsRepPart.DecodeApplication(d));
         }
     }
 }

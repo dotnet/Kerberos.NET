@@ -4,45 +4,56 @@ using System.IO;
 
 namespace Kerberos.NET.Entities
 {
-    public class PacDelegationInfo : NdrMessage
+    public class PacDelegationInfo : NdrMessage, IPacElement
     {
-        public PacDelegationInfo(byte[] data)
-            : base(data)
+        public override void WriteBody(NdrBinaryStream stream)
         {
-            var s4uProxyTargetString = Stream.ReadRPCUnicodeString();
+            stream.WriteRPCUnicodeString(S4U2ProxyTarget);
 
-            var transitListSize = Stream.ReadInt();
+            stream.WriteDeferredArray(S4UTransitedServices, true, (t, str) =>
+            {
+                str.WriteRPCUnicodeString(t.ToString());
+            });
+        }
 
-            Stream.ReadInt(); // transit pointer
+        public override void ReadBody(NdrBinaryStream stream)
+        {
+            var s4uProxyTargetString = stream.ReadRPCUnicodeString();
 
-            S4U2ProxyTarget = s4uProxyTargetString.ReadString(Stream);
+            var transitListSize = stream.ReadInt();
 
-            var realCount = Stream.ReadInt();
+            stream.ReadInt(); // transit pointer
+
+            S4U2ProxyTarget = s4uProxyTargetString.ReadString(stream);
+
+            var realCount = stream.ReadInt();
 
             if (realCount != transitListSize)
             {
                 throw new InvalidDataException($"Expected S4UTransitedServices count {transitListSize} doesn't match actual count {realCount}");
             }
 
-            var transitRpcStrings = new PacString[realCount];
+            var transitRpcStrings = new NdrString[realCount];
 
             for (var i = 0; i < realCount; i++)
             {
-                transitRpcStrings[i] = Stream.ReadRPCUnicodeString();
+                transitRpcStrings[i] = stream.ReadRPCUnicodeString();
             }
 
             var transits = new List<string>();
 
             for (var i = 0; i < transitRpcStrings.Length; i++)
             {
-                transits.Add(transitRpcStrings[i].ReadString(Stream));
+                transits.Add(transitRpcStrings[i].ReadString(stream));
             }
 
             S4UTransitedServices = transits;
         }
 
-        public string S4U2ProxyTarget { get; }
+        public string S4U2ProxyTarget { get; set; }
 
-        public IEnumerable<string> S4UTransitedServices { get; }
+        public IEnumerable<string> S4UTransitedServices { get; set; }
+
+        public PacType PacType => PacType.CONSTRAINED_DELEGATION_INFO;
     }
 }

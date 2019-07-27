@@ -136,7 +136,9 @@ namespace Tests.Kerberos.NET
 
             try
             {
-                new PacSignature(infoBufferBytes, pacBytes).Validator.Validate(kerbKey);
+                var sig = new PacSignature(pacBytes);
+                sig.ReadBody(infoBufferBytes);
+                sig.Validator.Validate(kerbKey);
                 pacValidated = true;
             }
             catch (Exception)
@@ -159,7 +161,28 @@ namespace Tests.Kerberos.NET
                 pacBytes[i] = (byte)rand.Next(0, 254);
             }
 
-            return new PacSignature(infoBufferBytes, pacBytes);
+            var sig = new PacSignature(pacBytes);
+            sig.ReadBody(infoBufferBytes);
+
+            return sig;
+        }
+
+        [TestMethod]
+        public async Task TestPacRoundtrip()
+        {
+            var keyBytes = ReadDataFile("rc4-key-data");
+            var key = new KerberosKey(keyBytes, etype: EncryptionType.RC4_HMAC_NT);
+
+            var pac = await GeneratePac();
+
+            var encoded = pac.Encode(key, key);
+
+            var pacDecoded = new PrivilegedAttributeCertificate(encoded.ToArray());
+
+            ;
+
+            pacDecoded.ServerSignature.Validator.Validate(key);
+            pacDecoded.KdcSignature.Validator.Validate(key);
         }
 
         [TestMethod]

@@ -4,10 +4,12 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace System.Security.Cryptography.Asn1
 {
+    [ExcludeFromCodeCoverage]
     internal static class AsnCharacterStringEncodings
     {
         private static readonly Text.Encoding s_utf8Encoding = new UTF8Encoding(false, throwOnInvalidBytes: true);
@@ -292,6 +294,7 @@ namespace System.Security.Cryptography.Asn1
     // T-REC-X.690-201508 sec 8.23.8 says to see ISO/IEC 10646:2003 section 13.1.
     // ISO/IEC 10646:2003 sec 13.1 says each character is represented by "two octets".
     // ISO/IEC 10646:2003 sec 6.3 says that when serialized as octets to use big endian.
+    [ExcludeFromCodeCoverage]
     internal class BMPEncoding : SpanBasedEncoding
     {
         protected override int GetBytes(ReadOnlySpan<char> chars, Span<byte> bytes, bool write)
@@ -392,6 +395,7 @@ namespace System.Security.Cryptography.Asn1
     /// Compatibility encoding for T61Strings. Interprets the characters as UTF-8 or
     /// ISO-8859-1 as a fallback.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal class T61Encoding : Text.Encoding
     {
         private static readonly Text.Encoding s_utf8Encoding = new UTF8Encoding(false, throwOnInvalidBytes: true);

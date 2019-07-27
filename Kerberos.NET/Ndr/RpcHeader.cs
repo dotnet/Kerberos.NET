@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -20,6 +21,8 @@ namespace Kerberos.NET.Entities.Pac
             pacStream.Read(4);
         }
 
+        internal RpcHeader() { }
+
         public byte Version { get; private set; }
 
         public bool Endian { get; private set; }
@@ -27,6 +30,21 @@ namespace Kerberos.NET.Entities.Pac
         public byte Encoding { get; private set; }
 
         public int Length { get; private set; }
+
+        public void WriteCommonHeader(NdrBinaryStream stream)
+        {
+            stream.WriteBytes(new byte[] { NdrConstants.PROTOCOL_VERSION });
+
+            byte headerBits = 0;
+
+            headerBits |= Convert.ToByte(Encoding);
+            headerBits |= (byte)((1 << 4) & Convert.ToByte(Endian));
+
+            stream.WriteBytes(new byte[] { headerBits });
+
+            stream.WriteShort(NdrConstants.COMMON_HEADER_BYTES);
+            stream.WriteBytes(Enumerable.Repeat((byte)0, 4 + 8 + 4).ToArray());
+        }
 
         private void ReadCommonHeader(NdrBinaryStream pacStream)
         {

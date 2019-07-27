@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 
-<asn:Sequence
+<asn:InheritedSequence
   xmlns:asn="http://schemas.dot.net/asnxml/201808/"
   name="KrbTgsReq"
-  namespace="Kerberos.NET.Entities">
+  namespace="Kerberos.NET.Entities" explicitTag="12">
   <!--
   
   TGS-REQ          ::= [APPLICATION 12] KDC-REQ
@@ -11,4 +11,4 @@
   -->
 
   <asn:AsnType name="TgsReq" typeName="KrbKdcReq" />
-</asn:Sequence>
+</asn:InheritedSequence>

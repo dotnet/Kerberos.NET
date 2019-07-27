@@ -3,7 +3,7 @@
 <asn:Sequence
   xmlns:asn="http://schemas.dot.net/asnxml/201808/"
   name="KrbEncKrbCredPart"
-  namespace="Kerberos.NET.Entities">
+  namespace="Kerberos.NET.Entities" explicitTag="29">
   <!--
 
     EncKrbCredPart  ::= [APPLICATION 29] SEQUENCE {

@@ -15,7 +15,7 @@ namespace Tests.Kerberos.NET
 
             try
             {
-                KrbError.DecodeAsApplication(asReq);
+                KrbError.DecodeApplication(asReq);
             }
             catch (Exception ex)
             {

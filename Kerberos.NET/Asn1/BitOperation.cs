@@ -10,18 +10,25 @@ namespace Kerberos.NET.Asn1
 
         public static Memory<T> AsMemory<T>(this Span<T> span) => new Memory<T>(span.ToArray());
 
-        public static ReadOnlySpan<byte> AsReadOnly(this Enum val)
+        public static ReadOnlySpan<byte> AsReadOnly(this Enum val, bool littleEndian = false)
         {
             var longVal = (object)val;
 
-            return AsReadOnly((long)longVal);
+            return AsReadOnly((long)longVal, littleEndian: littleEndian);
         }
 
-        public static ReadOnlySpan<byte> AsReadOnly(long longVal)
+        public static ReadOnlySpan<byte> AsReadOnly(long longVal, bool littleEndian = false)
         {
             var bytes = new byte[4];
 
-            Endian.ConvertToBigEndian((int)longVal, bytes);
+            if (littleEndian)
+            {
+                Endian.ConvertToLittleEndian((int)longVal, bytes);
+            }
+            else
+            {
+                Endian.ConvertToBigEndian((int)longVal, bytes);
+            }
 
             return new ReadOnlySpan<byte>(bytes);
         }
@@ -50,9 +57,9 @@ namespace Kerberos.NET.Asn1
             return AsLong((ReadOnlyMemory<byte>)val);
         }
 
-        public static long AsLong(this ReadOnlyMemory<byte> val, bool littleEndian = false)
+        public static long AsLong(this ReadOnlySpan<byte> val, bool littleEndian = false)
         {
-            var bytes = val.Span.ToArray();
+            var bytes = val.ToArray();
 
             if (littleEndian)
             {
@@ -67,6 +74,18 @@ namespace Kerberos.NET.Asn1
             }
 
             return num;
+        }
+
+        public static long AsLong(this Span<byte> val, bool littleEndian = false)
+        {
+            var bytes = val;
+
+            return AsLong((ReadOnlySpan<byte>)bytes, littleEndian);
+        }
+
+        public static long AsLong(this ReadOnlyMemory<byte> val, bool littleEndian = false)
+        {
+            return AsLong(val.Span, littleEndian);
         }
     }
 }

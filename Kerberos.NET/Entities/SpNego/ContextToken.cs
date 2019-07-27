@@ -20,23 +20,14 @@ namespace Kerberos.NET.Entities
 
         protected static DecryptedKrbApReq DecryptApReq(KrbApReq token, KeyTable keytab)
         {
-            if (token.Ticket.Application == null)
+            if (token.Ticket == null)
             {
                 return null;
             }
 
-            DecryptedKrbApReq decryptedApReq = null;
+            var decryptedApReq = new DecryptedKrbApReq(token);
 
-            var etype = token.Ticket.Application?.EncryptedPart.EType;
-
-            var decryptor = CryptographyService.CreateTransform(etype.Value);
-
-            if (decryptor != null)
-            {
-                decryptedApReq = new DecryptedKrbApReq(token, decryptor);
-
-                decryptedApReq.Decrypt(keytab);
-            }
+            decryptedApReq.Decrypt(keytab);
 
             return decryptedApReq;
         }

@@ -5,38 +5,15 @@ using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.Asn1;
 using System.Text;
 
 namespace Kerberos.NET.Entities
 {
     public partial class KrbAsReq
     {
-        internal const int ApplicationTagValue = 10;
-        internal static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, ApplicationTagValue);
-
-        public static KrbAsReq DecodeAsApplication(ReadOnlyMemory<byte> data)
+        public KrbAsReq()
         {
-            return Decode(ApplicationTag, data);
-        }
-
-        public ReadOnlyMemory<byte> EncodeAsApplication()
-        {
-            using (var writer = new AsnWriter(AsnEncodingRules.DER))
-            {
-                writer.PushSequence(ApplicationTag);
-
-                if (this.AsReq != null)
-                {
-                    this.AsReq?.Encode(writer);
-                }
-
-                writer.PopSequence(ApplicationTag);
-
-                var span = writer.EncodeAsSpan();
-
-                return span.AsMemory();
-            }
+            MessageType = MessageType.KRB_AS_REQ;
         }
 
         public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options)
@@ -83,36 +60,33 @@ namespace Kerberos.NET.Entities
 
             var asreq = new KrbAsReq()
             {
-                AsReq = new KrbKdcReq()
+                MessageType = MessageType.KRB_AS_REQ,
+                Body = new KrbKdcReqBody
                 {
-                    MessageType = MessageType.KRB_AS_REQ,
-                    Body = new KrbKdcReqBody
-                    {
-                        Addresses = new[] {
+                    Addresses = new[] {
                             new KrbHostAddress {
                                 AddressType = AddressType.NetBios,
                                 Address = Encoding.ASCII.GetBytes(hostAddress.PadRight(16, ' '))
                             }
                         },
-                        CName = new KrbPrincipalName
-                        {
-                            Name = new[] { $"{credential.UserName}@{credential.Domain}" },
-                            Type = PrincipalNameType.NT_ENTERPRISE
-                        },
-                        EType = KerberosConstants.ETypes.ToArray(),
-                        KdcOptions = kdcOptions,
-                        Nonce = KerberosConstants.GetNonce(),
-                        RTime = KerberosConstants.EndOfTime,
-                        Realm = credential.Domain,
-                        SName = new KrbPrincipalName
-                        {
-                            Type = PrincipalNameType.NT_SRV_INST,
-                            Name = new[] { "krbtgt", credential.Domain }
-                        },
-                        Till = KerberosConstants.EndOfTime
+                    CName = new KrbPrincipalName
+                    {
+                        Name = new[] { $"{credential.UserName}@{credential.Domain}" },
+                        Type = PrincipalNameType.NT_ENTERPRISE
                     },
-                    PaData = padata.ToArray()
-                }
+                    EType = KerberosConstants.ETypes.ToArray(),
+                    KdcOptions = kdcOptions,
+                    Nonce = KerberosConstants.GetNonce(),
+                    RTime = KerberosConstants.EndOfTime,
+                    Realm = credential.Domain,
+                    SName = new KrbPrincipalName
+                    {
+                        Type = PrincipalNameType.NT_SRV_INST,
+                        Name = new[] { "krbtgt", credential.Domain }
+                    },
+                    Till = KerberosConstants.EndOfTime
+                },
+                PaData = padata.ToArray()
             };
 
             return asreq;

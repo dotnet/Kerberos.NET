@@ -3,10 +3,40 @@ using System.IO;
 
 namespace Kerberos.NET.Entities
 {
-    public class ClaimsSetMetadata : NdrMessage
+    public class ClaimsSetMetadata : NdrMessage, IPacElement
     {
-        public ClaimsSetMetadata(byte[] data)
-            : base(data)
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+            byte[] claimsSet = Compress(ClaimsSet, CompressionFormat, out int originalSize);
+
+            stream.WriteDeferredBytes(claimsSet);
+
+            stream.WriteUnsignedInt((int)CompressionFormat);
+            stream.WriteUnsignedInt(originalSize);
+            stream.WriteShort(ReservedType);
+
+            stream.WriteDeferredBytes(ReservedField);
+        }
+
+        private static byte[] Compress(ClaimsSet claimsSet, CompressionFormat compressionFormat, out int originalSize)
+        {
+            var stream = new NdrBinaryStream();
+
+            claimsSet.Encode(stream);
+
+            var encoded = stream.ToMemory().ToArray();
+
+            originalSize = encoded.Length;
+
+            if (compressionFormat != CompressionFormat.COMPRESSION_FORMAT_NONE)
+            {
+                encoded = Compressions.Compress(encoded, compressionFormat);
+            }
+
+            return encoded;
+        }
+
+        public override void ReadBody(NdrBinaryStream Stream)
         {
             ClaimSetSize = Stream.ReadInt();
 
@@ -33,26 +63,29 @@ namespace Kerberos.NET.Entities
                 claimSet = Compressions.Decompress(claimSet, UncompressedClaimSetSize, CompressionFormat);
             }
 
-            ClaimsSet = new ClaimsSet(claimSet);
+            ClaimsSet = new ClaimsSet();
+            ClaimsSet.Decode(claimSet);
 
             ReservedField = Stream.Read(ReservedFieldSize);
         }
 
         [KerberosIgnore]
-        public int ClaimSetSize { get; }
+        public int ClaimSetSize { get; set; }
 
-        public ClaimsSet ClaimsSet { get; }
+        public ClaimsSet ClaimsSet { get; set; }
 
-        public CompressionFormat CompressionFormat { get; }
-
-        [KerberosIgnore]
-        public int UncompressedClaimSetSize { get; }
-
-        public short ReservedType { get; }
+        public CompressionFormat CompressionFormat { get; set; }
 
         [KerberosIgnore]
-        public int ReservedFieldSize { get; }
+        public int UncompressedClaimSetSize { get; set; }
 
-        public byte[] ReservedField { get; }
+        public short ReservedType { get; set; }
+
+        [KerberosIgnore]
+        public int ReservedFieldSize { get; set; }
+
+        public byte[] ReservedField { get; set; }
+
+        public PacType PacType { get; private set; } = PacType.CLIENT_CLAIMS;
     }
 }

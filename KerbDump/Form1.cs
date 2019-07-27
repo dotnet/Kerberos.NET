@@ -32,7 +32,7 @@ namespace KerbDump
 
             InitializeComponent();
 
-            CryptographyService.RegisterCryptographicAlgorithm(EncryptionType.NULL, () => new NoopTransform());
+            CryptoService.RegisterCryptographicAlgorithm(EncryptionType.NULL, () => new NoopTransform());
 
             SetHost();
 
@@ -268,7 +268,7 @@ namespace KerbDump
                 var key = new KerberosKey(
                     Encoding.Unicode.GetString(
                         k.Key.GetKey(
-                            CryptographyService.CreateTransform(EncryptionType.NULL)
+                            CryptoService.CreateTransform(EncryptionType.NULL)
                         )
                     ),
                     k.Principal

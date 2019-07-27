@@ -14,7 +14,8 @@ namespace Kerberos.NET
         EndTime = 1 << 4,
         Replay = 1 << 5,
         Pac = 1 << 6,
+        RenewTill = 1 << 7,
 
-        All = ClientPrincipalIdentifier | Realm | TokenWindow | StartTime | EndTime | Replay | Pac
+        All = ClientPrincipalIdentifier | Realm | TokenWindow | StartTime | EndTime | Replay | Pac | RenewTill
     }
 }

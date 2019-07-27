@@ -39,9 +39,10 @@ namespace Kerberos.NET.Entities
         
         internal void Encode(AsnWriter writer)
         {
+            
             Encode(writer, Asn1Tag.Sequence);
         }
-    
+        
         internal void Encode(AsnWriter writer, Asn1Tag tag)
         {
             writer.PushSequence(tag);
@@ -141,6 +142,33 @@ namespace Kerberos.NET.Entities
             writer.PopSequence(tag);
         }
         
+        internal void EncodeApplication(AsnWriter writer, Asn1Tag tag)
+        {
+                writer.PushSequence(tag);
+                
+                this.Encode(writer, Asn1Tag.Sequence);
+
+                writer.PopSequence(tag);
+        }       
+        
+        public virtual ReadOnlyMemory<byte> EncodeApplication() 
+        {
+          return new ReadOnlyMemory<byte>();
+        }
+        
+         
+        internal ReadOnlyMemory<byte> EncodeApplication(Asn1Tag tag)
+        {
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
+            {
+                EncodeApplication(writer, tag);
+
+                var span = writer.EncodeAsSpan();
+
+                return span.AsMemory();
+            }
+        }
+        
         public static KrbKdcReqBody Decode(ReadOnlyMemory<byte> data)
         {
             return Decode(data, AsnEncodingRules.DER);
@@ -169,20 +197,22 @@ namespace Kerberos.NET.Entities
             return decoded;
         }
 
-        internal static void Decode(AsnReader reader, out KrbKdcReqBody decoded)
+        internal static void Decode<T>(AsnReader reader, out T decoded)
+          where T: KrbKdcReqBody, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
-
+            
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
 
-        internal static void Decode(AsnReader reader, Asn1Tag expectedTag, out KrbKdcReqBody decoded)
+        internal static void Decode<T>(AsnReader reader, Asn1Tag expectedTag, out T decoded)
+          where T: KrbKdcReqBody, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = new KrbKdcReqBody();
+            decoded = new T();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
@@ -206,7 +236,7 @@ namespace Kerberos.NET.Entities
             {
                 explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 KrbPrincipalName tmpCName;
-                KrbPrincipalName.Decode(explicitReader, out tmpCName);
+                KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out tmpCName);
                 decoded.CName = tmpCName;
 
                 explicitReader.ThrowIfNotEmpty();
@@ -222,7 +252,7 @@ namespace Kerberos.NET.Entities
             {
                 explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 KrbPrincipalName tmpSName;
-                KrbPrincipalName.Decode(explicitReader, out tmpSName);
+                KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out tmpSName);
                 decoded.SName = tmpSName;
 
                 explicitReader.ThrowIfNotEmpty();
@@ -297,7 +327,7 @@ namespace Kerberos.NET.Entities
 
                     while (collectionReader.HasData)
                     {
-                        KrbHostAddress.Decode(collectionReader, out tmpItem); 
+                        KrbHostAddress.Decode<KrbHostAddress>(collectionReader, out tmpItem); 
                         tmpList.Add(tmpItem);
                     }
 
@@ -312,7 +342,7 @@ namespace Kerberos.NET.Entities
             {
                 explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
                 KrbEncryptedData tmpEncAuthorizationData;
-                KrbEncryptedData.Decode(explicitReader, out tmpEncAuthorizationData);
+                KrbEncryptedData.Decode<KrbEncryptedData>(explicitReader, out tmpEncAuthorizationData);
                 decoded.EncAuthorizationData = tmpEncAuthorizationData;
 
                 explicitReader.ThrowIfNotEmpty();
@@ -331,7 +361,7 @@ namespace Kerberos.NET.Entities
 
                     while (collectionReader.HasData)
                     {
-                        KrbTicket.Decode(collectionReader, out tmpItem); 
+                        KrbTicket.Decode<KrbTicket>(collectionReader, out tmpItem); 
                         tmpList.Add(tmpItem);
                     }
 

@@ -27,22 +27,17 @@
 
   <ItemGroup>
     <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
-    <AsnXml Include="Entities\GssApi\GssApiToken.xml" />
-    <AsnXml Include="Entities\Krb\KrbApChoice.xml" />
     <AsnXml Include="Entities\Krb\KrbApReq.xml" />
     <AsnXml Include="Entities\Krb\KrbApRep.xml" />
     <AsnXml Include="Entities\Krb\KrbAsReq.xml" />
     <AsnXml Include="Entities\Krb\KrbAsRep.xml" />
     <AsnXml Include="Entities\Krb\KrbAuthenticator.xml" />
-    <AsnXml Include="Entities\Krb\KrbAuthenticatorApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbAuthorizationData.xml" />
     <AsnXml Include="Entities\Krb\KrbAuthorizationDataSequence.xml" />
     <AsnXml Include="Entities\Krb\KrbChecksum.xml" />
     <AsnXml Include="Entities\Krb\KrbCred.xml" />
-    <AsnXml Include="Entities\Krb\KrbCredApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbCredInfo.xml" />
     <AsnXml Include="Entities\Krb\KrbEncKrbCredPart.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncKrbCredPartApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbEncryptedData.xml" />
     <AsnXml Include="Entities\Krb\KrbEncryptionKey.xml" />
     <AsnXml Include="Entities\Krb\KrbEncAsRepPart.xml" />
@@ -50,7 +45,6 @@
     <AsnXml Include="Entities\Krb\KrbEncKdcRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncTgsRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncTicketPart.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncTicketPartApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbError.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2Entry.xml" />
@@ -69,7 +63,6 @@
     <AsnXml Include="Entities\Krb\KrbTgsReq.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
     <AsnXml Include="Entities\Krb\KrbTicket.xml" />
-    <AsnXml Include="Entities\Krb\KrbTicketApplication.xml" />
     <AsnXml Include="Entities\Krb\KrbTransitedEncoding.xml" />
     <AsnXml Include="Entities\SpNego\NegotiationToken.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenInit.xml" />

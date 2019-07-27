@@ -1,27 +1,10 @@
-﻿
-using Kerberos.NET.Asn1;
-using System;
-using System.Security.Cryptography.Asn1;
-
-namespace Kerberos.NET.Entities
+﻿namespace Kerberos.NET.Entities
 {
     public partial class KrbAuthenticator
     {
-        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 2);
-
-        public ReadOnlyMemory<byte> EncodeAsApplication()
+        public KrbAuthenticator()
         {
-            var writer = new AsnWriter(AsnEncodingRules.DER);
-
-            writer.PushSequence(ApplicationTag);
-
-            this.Encode(writer);
-
-            writer.PopSequence(ApplicationTag);
-
-            var span = writer.EncodeAsSpan();
-
-            return span.AsMemory();
+            AuthenticatorVersionNumber = 5;
         }
     }
 }

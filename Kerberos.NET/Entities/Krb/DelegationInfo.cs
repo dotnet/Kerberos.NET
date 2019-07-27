@@ -56,7 +56,7 @@ namespace Kerberos.NET.Entities
 
             if (delegationTicket != null && delegationTicket.Length > 0)
             {
-                DelegationTicket = KrbCredApplication.Decode(delegationTicket);
+                DelegationTicket = KrbCred.DecodeApplication(delegationTicket);
             }
 
             if (reader.BytesAvailable() > 0)
@@ -75,7 +75,7 @@ namespace Kerberos.NET.Entities
 
         public int DelegationOption;
 
-        public KrbCredApplication DelegationTicket;
+        public KrbCred DelegationTicket;
 
         public byte[] Extensions;
     }

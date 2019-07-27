@@ -5,7 +5,7 @@ namespace Kerberos.NET.Crypto
     public static class RC4
     {
         public static ReadOnlySpan<byte> Transform(
-            ReadOnlySpan<byte> originalKey, 
+            ReadOnlySpan<byte> originalKey,
             ReadOnlySpan<byte> data
         )
         {
@@ -13,7 +13,7 @@ namespace Kerberos.NET.Crypto
             var s = new Span<byte>(new byte[256]);
 
             int i;
-            
+
             // for i from 0 to 255
             //     Key[i]
             //     S[i] := i

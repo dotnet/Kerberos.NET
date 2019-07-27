@@ -25,4 +25,18 @@
         AES128_CTS_HMAC_SHA1_96_PLAIN = -148,
         AES256_CTS_HMAC_SHA1_96_PLAIN = -149
     }
+
+    public enum SupportedEncryptionTypes : long
+    {
+        DesCbcCrc = 1 << 0,
+        DesCbcMd5 = 1 << 1,
+        Rc4Hmac = 1 << 2,
+        Aes128CtsHmacSha196 = 1 << 3,
+        Aes256CtsHmacSha196 = 1 << 4,
+
+        FastSupported = 1 << 18,
+        CompoundIdentitySupported = 1 << 19,
+        ClaimsSupported = 1 << 20,
+        ResourceSidCompressionDisabled = 1 << 21
+    }
 }

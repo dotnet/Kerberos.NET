@@ -6,6 +6,6 @@ namespace Kerberos.NET.Asn1
     {
         T DecodeAsApplication(ReadOnlyMemory<byte> data);
 
-        ReadOnlyMemory<byte> EncodeAsApplication();
+        ReadOnlyMemory<byte> EncodeApplication();
     }
 }

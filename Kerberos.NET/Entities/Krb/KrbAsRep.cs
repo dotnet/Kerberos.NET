@@ -1,36 +1,51 @@
 ﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Server;
 using System;
-using System.Security.Cryptography.Asn1;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Kerberos.NET.Entities
 {
     public partial class KrbAsRep : IAsn1ApplicationEncoder<KrbAsRep>
     {
-        internal const int ApplicationTagValue = 11;
-        internal static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, ApplicationTagValue);
+        public KrbAsRep()
+        {
+            MessageType = MessageType.KRB_AS_REP;
+        }
 
         public KrbAsRep DecodeAsApplication(ReadOnlyMemory<byte> data)
         {
-            return Decode(ApplicationTag, data);
+            return DecodeApplication(data);
         }
 
-        public ReadOnlyMemory<byte> EncodeAsApplication()
+        public static async Task<KrbAsRep> GenerateTgt(
+            IKerberosPrincipal principal,
+            IEnumerable<KrbPaData> requirements,
+            IRealmService realmService,
+            KrbKdcReqBody asReq
+        )
         {
-            using (var writer = new AsnWriter(AsnEncodingRules.DER))
-            {
-                writer.PushSequence(ApplicationTag);
+            // This is approximately correct such that a client doesn't barf on it
+            // The krbtgt Ticket structure is probably correct as far as AD thinks
+            // Modulo the PAC, at least.
 
-                if (this.Response != null)
-                {
-                    this.Response.Encode(writer);
-                }
+            var longTermKey = await principal.RetrieveLongTermCredential();
+            var servicePrincipal = await realmService.Principals.RetrieveKrbtgt();
+            var servicePrincipalKey = await servicePrincipal.RetrieveLongTermCredential();
 
-                writer.PopSequence(ApplicationTag);
+            KrbAsRep asRep = await GenerateServiceTicket<KrbAsRep>(
+                principal,
+                longTermKey,
+                servicePrincipal,
+                servicePrincipalKey,
+                realmService,
+                addresses: asReq.Addresses
+            );
 
-                var span = writer.EncodeAsSpan();
+            asRep.PaData = requirements.ToArray();
 
-                return span.AsMemory();
-            }
+            return asRep;
         }
     }
 }

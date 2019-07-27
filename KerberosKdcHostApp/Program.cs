@@ -94,11 +94,21 @@ namespace KerberosKdcHostApp
         public FakeKerberosPrincipal(string principalName)
         {
             PrincipalName = principalName;
+            Expires = DateTimeOffset.UtcNow.AddMonths(9999);
         }
+
+        public SupportedEncryptionTypes SupportedEncryptionTypes { get; set; }
+             = SupportedEncryptionTypes.Aes128CtsHmacSha196 |
+               SupportedEncryptionTypes.Aes256CtsHmacSha196 |
+               SupportedEncryptionTypes.Rc4Hmac |
+               SupportedEncryptionTypes.DesCbcCrc |
+               SupportedEncryptionTypes.DesCbcMd5;
 
         public IEnumerable<PaDataType> SupportedPreAuthenticationTypes { get; set; } = new[] { PaDataType.PA_ENC_TIMESTAMP };
 
         public string PrincipalName { get; set; }
+
+        public DateTimeOffset? Expires { get; set; }
 
         public Task<PrivilegedAttributeCertificate> GeneratePac()
         {
@@ -138,9 +148,9 @@ namespace KerberosKdcHostApp
     {
         public TimeSpan MaximumSkew => TimeSpan.FromMinutes(5);
 
-        public TimeSpan SessionLifetime => TimeSpan.FromHours(12);
+        public TimeSpan SessionLifetime => TimeSpan.FromHours(10);
 
-        public TimeSpan MaximumRenewalWindow => TimeSpan.FromDays(14);
+        public TimeSpan MaximumRenewalWindow => TimeSpan.FromDays(7);
     }
 
     internal class ConsoleLogger : ILogger

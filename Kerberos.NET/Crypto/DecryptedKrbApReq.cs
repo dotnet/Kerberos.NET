@@ -5,17 +5,19 @@ namespace Kerberos.NET.Crypto
 {
     public class DecryptedKrbApReq : DecryptedKrbMessage
     {
-        public DecryptedKrbApReq(KrbApReq token, KerberosCryptoTransformer transformer)
-            : base(transformer)
+        private readonly MessageType incomingMessageType;
+
+        public DecryptedKrbApReq(KrbApReq token, MessageType incomingMessageType = MessageType.KRB_AP_REQ)
         {
             this.token = token;
+            this.incomingMessageType = incomingMessageType;
         }
 
         public ApOptions Options { get => token.ApOptions; }
 
-        public EncryptionType EType => token.Ticket.Application.EncryptedPart.EType;
+        public EncryptionType EType => token.Ticket.EncryptedPart.EType;
 
-        public KrbPrincipalName SName => token.Ticket.Application.SName;
+        public KrbPrincipalName SName => token.Ticket.SName;
 
         public KrbAuthenticator Authenticator { get; private set; }
 
@@ -39,7 +41,11 @@ namespace Kerberos.NET.Crypto
 
             var apRep = new KrbApRep
             {
-                EncryptedPart = KrbEncryptedData.Encrypt(apRepPart.EncodeAsApplication(), SessionKey, KeyUsage.EncApRepPart)
+                EncryptedPart = KrbEncryptedData.Encrypt(
+                    apRepPart.EncodeApplication(),
+                    SessionKey,
+                    KeyUsage.EncApRepPart
+                )
             };
 
             return apRep;
@@ -47,25 +53,31 @@ namespace Kerberos.NET.Crypto
 
         public override void Decrypt(KeyTable keytab)
         {
-            var ciphertext = token.Ticket.Application.EncryptedPart.Cipher;
-
             var key = keytab.GetKey(EType, SName);
 
-            var decryptedTicket = Decrypt(key, ciphertext, KeyUsage.Ticket);
+            Decrypt(key);
+        }
 
-            var ticketApp = KrbEncTicketPartApplication.Decode(decryptedTicket);
-
-            Ticket = ticketApp.Application;
-
-            var decryptedAuthenticator = Decrypt(
-                Ticket.Key.AsKey(),
-                token.Authenticator.Cipher,
-                KeyUsage.ApReqAuthenticator
+        public void Decrypt(KerberosKey key)
+        {
+            Ticket = token.Ticket.EncryptedPart.Decrypt(
+                key,
+                KeyUsage.Ticket,
+                b => KrbEncTicketPart.DecodeApplication(b)
             );
 
-            var authenticatorApp = KrbAuthenticatorApplication.Decode(decryptedAuthenticator);
+            var keyUsage = KeyUsage.ApReqAuthenticator;
 
-            Authenticator = authenticatorApp.Application;
+            if (incomingMessageType == MessageType.KRB_TGS_REQ)
+            {
+                keyUsage = KeyUsage.PaTgsReqAuthenticator;
+            }
+
+            Authenticator = token.Authenticator.Decrypt(
+                Ticket.Key.AsKey(),
+                keyUsage,
+                b => KrbAuthenticator.DecodeApplication(b)
+            );
 
             if (Authenticator.Subkey != null)
             {
@@ -78,17 +90,15 @@ namespace Kerberos.NET.Crypto
 
             var delegationInfo = Authenticator.Checksum?.DecodeDelegation();
 
-            var delegation = delegationInfo?.DelegationTicket?.Application;
+            var delegation = delegationInfo?.DelegationTicket;
 
             if (delegation != null)
             {
-                var decryptedDelegationTicket = Decrypt(
+                DelegationTicket = delegation.EncryptedPart.Decrypt(
                     Ticket.Key.AsKey(),
-                    delegation.EncryptedPart.Cipher,
-                    KeyUsage.EncKrbCredPart
+                    KeyUsage.EncKrbCredPart,
+                    b => KrbEncKrbCredPart.DecodeApplication(b)
                 );
-
-                DelegationTicket = KrbEncKrbCredPartApplication.Decode(decryptedDelegationTicket).Application;
             }
         }
 
@@ -125,6 +135,11 @@ namespace Kerberos.NET.Crypto
             if (validation.HasFlag(ValidationActions.EndTime))
             {
                 ValidateTicketEnd(Ticket.EndTime, now, Skew);
+            }
+
+            if (validation.HasFlag(ValidationActions.RenewTill) && Ticket.Flags.HasFlag(TicketFlags.Renewable))
+            {
+                ValidateTicketRenewal(Ticket.RenewTill, now, Skew);
             }
         }
 

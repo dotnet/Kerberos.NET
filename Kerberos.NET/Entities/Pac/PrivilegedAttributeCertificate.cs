@@ -21,38 +21,50 @@ namespace Kerberos.NET.Entities
         DEVICE_CLAIMS = 0x0000000F
     }
 
-    public class PacCredentialInfo : NdrObject
+    public class PacCredentialInfo : NdrObject, IPacElement
     {
-        public PacCredentialInfo(byte[] info)
-            : base(info)
+        public int Version { get; set; }
+
+        public EncryptionType EncryptionType { get; set; }
+
+        public byte[] SerializedData { get; set; }
+
+        public PacType PacType => PacType.CREDENTIAL_TYPE;
+
+        public override void ReadBody(NdrBinaryStream stream)
         {
-            Version = Stream.ReadInt();
+            Version = stream.ReadInt();
 
-            EncryptionType = (EncryptionType)Stream.ReadInt();
+            EncryptionType = (EncryptionType)stream.ReadInt();
 
-            SerializedData = Stream.ReadToEnd();
+            SerializedData = stream.ReadToEnd();
         }
 
-        public int Version { get; }
-
-        public EncryptionType EncryptionType { get; }
-
-        public byte[] SerializedData { get; }
+        public override void WriteBody(NdrBinaryStream stream)
+        {
+            stream.WriteUnsignedInt(Version);
+            stream.WriteUnsignedInt((int)EncryptionType);
+            stream.WriteBytes(SerializedData);
+        }
     }
 
-    public class PrivilegedAttributeCertificate : NdrObject
+    public class PrivilegedAttributeCertificate
     {
         private const int PAC_VERSION = 0;
 
         private readonly byte[] pacData;
 
         public PrivilegedAttributeCertificate()
-            : base(new NdrBinaryStream())
-        { }
+        {
+            Stream = new NdrBinaryStream();
+        }
+
+        protected NdrBinaryStream Stream { get; set; }
 
         public PrivilegedAttributeCertificate(byte[] pac)
-            : base(pac)
         {
+            Stream = new NdrBinaryStream(pac);
+
             pacData = new byte[pac.Length];
 
             Buffer.BlockCopy(pac, 0, pacData, 0, pac.Length);
@@ -101,6 +113,8 @@ namespace Kerberos.NET.Entities
             }
 
             DecodingErrors = errors;
+
+            HasRequiredFields = ServerSignature != null && KdcSignature != null;
         }
 
         private static void ZeroArray(byte[] signatureData, long start, int exclusionEnd)
@@ -121,62 +135,73 @@ namespace Kerberos.NET.Entities
             switch (type)
             {
                 case PacType.LOGON_INFO:
-                    LogonInfo = new PacLogonInfo(pacInfoBuffer);
+                    LogonInfo = new PacLogonInfo();
+                    LogonInfo.Decode(pacInfoBuffer);
                     break;
                 case PacType.CREDENTIAL_TYPE:
-                    CredentialType = new PacCredentialInfo(pacInfoBuffer);
+                    CredentialType = new PacCredentialInfo();
+                    CredentialType.ReadBody(pacInfoBuffer);
                     break;
                 case PacType.SERVER_CHECKSUM:
-                    ServerSignature = new PacSignature(pacInfoBuffer, pacData);
+                    ServerSignature = new PacSignature(pacData);
+                    ServerSignature.ReadBody(pacInfoBuffer);
 
                     exclusionStart = ServerSignature.SignaturePosition;
                     exclusionLength = ServerSignature.Signature.Length;
                     break;
                 case PacType.PRIVILEGE_SERVER_CHECKSUM:
-                    KdcSignature = new PacSignature(pacInfoBuffer, pacData);
+                    KdcSignature = new PacSignature(pacData);
+                    KdcSignature.ReadBody(pacInfoBuffer);
 
                     exclusionStart = KdcSignature.SignaturePosition;
                     exclusionLength = KdcSignature.Signature.Length;
                     break;
                 case PacType.CLIENT_NAME_TICKET_INFO:
-                    ClientInformation = new PacClientInfo(pacInfoBuffer);
+                    ClientInformation = new PacClientInfo();
+                    ClientInformation.ReadBody(pacInfoBuffer);
                     break;
                 case PacType.CONSTRAINED_DELEGATION_INFO:
-                    DelegationInformation = new PacDelegationInfo(pacInfoBuffer);
+                    DelegationInformation = new PacDelegationInfo();
+                    DelegationInformation.ReadBody(pacInfoBuffer);
                     break;
                 case PacType.UPN_DOMAIN_INFO:
-                    UpnDomainInformation = new UpnDomainInfo(pacInfoBuffer);
+                    UpnDomainInformation = new UpnDomainInfo();
+                    UpnDomainInformation.ReadBody(pacInfoBuffer);
                     break;
                 case PacType.CLIENT_CLAIMS:
-                    ClientClaims = new ClaimsSetMetadata(pacInfoBuffer);
+                    ClientClaims = new ClaimsSetMetadata();
+                    ClientClaims.Decode(pacInfoBuffer);
                     break;
                 case PacType.DEVICE_INFO:
                     break;
                 case PacType.DEVICE_CLAIMS:
-                    DeviceClaims = new ClaimsSetMetadata(pacInfoBuffer);
+                    DeviceClaims = new ClaimsSetMetadata();
+                    DeviceClaims.Decode(pacInfoBuffer);
                     break;
             }
         }
 
         public long Version { get; private set; }
 
-        public PacLogonInfo LogonInfo { get; private set; }
+        public PacLogonInfo LogonInfo { get; set; }
 
         public PacSignature ServerSignature { get; private set; }
 
-        public PacCredentialInfo CredentialType { get; private set; }
+        public PacCredentialInfo CredentialType { get; set; }
 
-        public PacSignature KdcSignature { get; private set; }
+        public PacSignature KdcSignature { get; set; }
 
-        public ClaimsSetMetadata ClientClaims { get; private set; }
+        public ClaimsSetMetadata ClientClaims { get; set; }
 
-        public ClaimsSetMetadata DeviceClaims { get; private set; }
+        public ClaimsSetMetadata DeviceClaims { get; set; }
 
-        public PacClientInfo ClientInformation { get; private set; }
+        public PacClientInfo ClientInformation { get; set; }
 
-        public UpnDomainInfo UpnDomainInformation { get; private set; }
+        public UpnDomainInfo UpnDomainInformation { get; set; }
 
-        public PacDelegationInfo DelegationInformation { get; private set; }
+        public PacDelegationInfo DelegationInformation { get; set; }
+
+        public bool HasRequiredFields { get; private set; }
 
         public ReadOnlyMemory<byte> Encode(KerberosKey kdcKey, KerberosKey serverKey)
         {
@@ -197,27 +222,40 @@ namespace Kerberos.NET.Entities
             // ...
             // }
 
-            var pacElements = CollectElements();
+            var pacElements = CollectElements(kdcKey, serverKey);
 
-            var pac = GeneratePac(pacElements);
+            // signing is weird because you need to generate the pac with the checksums empty
+            // then hmac the entire thing before inserting the checksums into the body
+            // presumably this should be safe to encode and sign and inject back into the 
+            // original elements to then be encoded again.
+            //
+            // It's not efficient, but it's better than tracking where the checksum will
+            // land in the encoded blob
 
-            SignPac(pacElements, pac, kdcKey, serverKey);
+            foreach (var element in pacElements.Where(e => e is PacSignature).Cast<PacSignature>())
+            {
+                ZeroArray(element.Signature, 0, element.Signature.Length);
+            }
 
-            return pac;
+            var pacUnsigned = GeneratePac(pacElements);
+
+            SignPac(pacElements, pacUnsigned, kdcKey, serverKey);
+
+            return GeneratePac(pacElements);
         }
 
-        private static void SignPac(IEnumerable<IPacElement> pacElements, Memory<byte> pac, KerberosKey kdcKey, KerberosKey serverKey)
+        private static void SignPac(IEnumerable<IPacElement> pacElements, Memory<byte> pacUnsigned, KerberosKey kdcKey, KerberosKey serverKey)
         {
-            foreach (var element in pacElements.Where(e => e.RequiresKdcSignature || e.RequiresServerSignature))
+            foreach (var element in pacElements.Where(e => e is PacSignature).Cast<PacSignature>())
             {
-                if (element.RequiresServerSignature)
+                if (element.PacType == PacType.SERVER_CHECKSUM)
                 {
-                    element.Sign(pac, serverKey);
+                    element.Sign(pacUnsigned, serverKey);
                 }
 
-                if (element.RequiresKdcSignature)
+                if (element.PacType == PacType.PRIVILEGE_SERVER_CHECKSUM)
                 {
-                    element.Sign(pac, kdcKey);
+                    element.Sign(pacUnsigned, kdcKey);
                 }
             }
         }
@@ -237,16 +275,23 @@ namespace Kerberos.NET.Entities
                 {
                     writer.Write((int)element.PacType);
 
+                    // encoded value is cached internally within element
+                    // unless it's been marked dirty, which only happens
+                    // when it's been signed
+
                     var encoded = element.Encode();
 
                     writer.Write(encoded.Length);
-                    writer.Write(offset);
+                    writer.Write((long)offset);
 
                     offset += encoded.Length;
                 }
 
                 foreach (var element in pacElements)
                 {
+                    // the encoded value is cached internally unless it's marked
+                    // as dirty, where it will be regenerated on next call to encode
+
                     var encoded = element.Encode();
 
                     writer.Write(encoded.ToArray());
@@ -258,11 +303,34 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        private IEnumerable<IPacElement> CollectElements()
+        private IEnumerable<IPacElement> CollectElements(KerberosKey kdcKey, KerberosKey serverKey)
         {
             var elements = new List<IPacElement>();
 
+            AddIfNotNull(elements, this.LogonInfo);
+            AddIfNotNull(elements, this.CredentialType);
+            AddIfNotNull(elements, this.ClientClaims);
+            AddIfNotNull(elements, this.DeviceClaims);
+            AddIfNotNull(elements, this.ClientInformation);
+            AddIfNotNull(elements, this.UpnDomainInformation);
+            AddIfNotNull(elements, this.DelegationInformation);
+
+            // don't care if they've been added to the parent PAC
+            // explicitly add the server and kdc signatures here
+            // so someone can't screw with the values within
+
+            elements.Add(new PacSignature(PacType.SERVER_CHECKSUM, serverKey.EncryptionType));
+            elements.Add(new PacSignature(PacType.PRIVILEGE_SERVER_CHECKSUM, kdcKey.EncryptionType));
+
             return elements;
+        }
+
+        private void AddIfNotNull(List<IPacElement> elements, IPacElement element)
+        {
+            if (element != null)
+            {
+                elements.Add(element);
+            }
         }
     }
 
@@ -270,12 +338,6 @@ namespace Kerberos.NET.Entities
     {
         PacType PacType { get; }
 
-        bool RequiresKdcSignature { get; }
-
-        bool RequiresServerSignature { get; }
-
         ReadOnlyMemory<byte> Encode();
-
-        void Sign(Memory<byte> pac, KerberosKey key);
     }
 }

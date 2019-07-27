@@ -27,9 +27,10 @@ namespace Kerberos.NET.Entities
         
         internal void Encode(AsnWriter writer)
         {
+            
             Encode(writer, Asn1Tag.Sequence);
         }
-    
+        
         internal void Encode(AsnWriter writer, Asn1Tag tag)
         {
             writer.PushSequence(tag);
@@ -46,6 +47,33 @@ namespace Kerberos.NET.Entities
             }
 
             writer.PopSequence(tag);
+        }
+        
+        internal void EncodeApplication(AsnWriter writer, Asn1Tag tag)
+        {
+                writer.PushSequence(tag);
+                
+                this.Encode(writer, Asn1Tag.Sequence);
+
+                writer.PopSequence(tag);
+        }       
+        
+        public virtual ReadOnlyMemory<byte> EncodeApplication() 
+        {
+          return new ReadOnlyMemory<byte>();
+        }
+        
+         
+        internal ReadOnlyMemory<byte> EncodeApplication(Asn1Tag tag)
+        {
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
+            {
+                EncodeApplication(writer, tag);
+
+                var span = writer.EncodeAsSpan();
+
+                return span.AsMemory();
+            }
         }
         
         public static KrbETypeInfoEntry Decode(ReadOnlyMemory<byte> data)
@@ -76,20 +104,22 @@ namespace Kerberos.NET.Entities
             return decoded;
         }
 
-        internal static void Decode(AsnReader reader, out KrbETypeInfoEntry decoded)
+        internal static void Decode<T>(AsnReader reader, out T decoded)
+          where T: KrbETypeInfoEntry, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
-
+            
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
 
-        internal static void Decode(AsnReader reader, Asn1Tag expectedTag, out KrbETypeInfoEntry decoded)
+        internal static void Decode<T>(AsnReader reader, Asn1Tag expectedTag, out T decoded)
+          where T: KrbETypeInfoEntry, new()
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
 
-            decoded = new KrbETypeInfoEntry();
+            decoded = new T();
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
