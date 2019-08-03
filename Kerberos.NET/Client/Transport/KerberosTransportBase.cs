@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
@@ -28,6 +29,10 @@ namespace Kerberos.NET.Transport
         public virtual bool TransportFailed { get; set; }
 
         public virtual KerberosTransportException LastError { get; set; }
+
+        public abstract ProtocolType Protocol { get; }
+
+        public bool Enabled { get; set; }
 
         protected void Log(string log)
         {

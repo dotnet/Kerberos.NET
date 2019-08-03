@@ -8,12 +8,12 @@ namespace Kerberos.NET.Server
 {
     public abstract class ServiceListenerBase : IDisposable
     {
-        // - spin up UDP+TCP sockets
+        // - spin up sockets
         // - on Accept => dispatch to handler
         // - on handler => parse length, then read in message
         // - on message => decode type, pass to kdc
 
-        private readonly SocketListener tcpSocketListener;
+        private readonly SocketListener socketListener;
         private readonly ListenerOptions options;
 
         private readonly TaskCompletionSource<object> startTcs
@@ -21,15 +21,18 @@ namespace Kerberos.NET.Server
 
         private readonly Stack<SocketListener> openListeners = new Stack<SocketListener>();
 
-        protected ServiceListenerBase(ListenerOptions options, Func<Socket, ListenerOptions, SocketWorker> workerFunc)
+        protected ServiceListenerBase(
+            ListenerOptions options, 
+            Func<Socket, ListenerOptions, SocketWorkerBase> workerFunc
+        )
         {
             this.options = options;
-            tcpSocketListener = new SocketListener(options, workerFunc);
+            socketListener = new SocketListener(options, workerFunc);
         }
 
         public Task Start()
         {
-            ThreadPool.QueueUserWorkItem(StartListenerThreads, tcpSocketListener, preferLocal: false);
+            ThreadPool.QueueUserWorkItem(StartListenerThreads, socketListener, preferLocal: false);
 
             return startTcs.Task;
         }
@@ -92,9 +95,9 @@ namespace Kerberos.NET.Server
 
         public virtual void Dispose()
         {
-            if (tcpSocketListener != null)
+            if (socketListener != null)
             {
-                tcpSocketListener.Dispose();
+                socketListener.Dispose();
             }
         }
     }

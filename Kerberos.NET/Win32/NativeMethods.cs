@@ -8,7 +8,6 @@ namespace Kerberos.NET.Win32
     internal unsafe class NativeMethods
     {
         private const string SECUR32 = "secur32.dll";
-        private const string MSVCRT = "msvcrt.dll";
 
         [DllImport(SECUR32,
                 CharSet = CharSet.Auto,
@@ -101,17 +100,7 @@ namespace Kerberos.NET.Win32
             SecurityContextAttribute ulAttribute,
             ref SecPkgContext_SecString pBuffer
         );
-
-        [DllImport(SECUR32, SetLastError = true, EntryPoint = "ImpersonateSecurityContext")]
-        internal static extern SecStatus ImpersonateSecurityContext(
-            ref SECURITY_HANDLE phContext
-        );
-
-        [DllImport(SECUR32, SetLastError = true, EntryPoint = "RevertSecurityContext")]
-        internal static extern SecStatus RevertSecurityContext(
-            ref SECURITY_HANDLE phContext
-        );
-
+        
         [DllImport(SECUR32)]
         internal static extern int FreeCredentialsHandle(SECURITY_HANDLE* handle);
 
@@ -120,48 +109,6 @@ namespace Kerberos.NET.Win32
 
         [DllImport(SECUR32)]
         public static extern SecStatus DeleteSecurityContext(SECURITY_HANDLE* context);
-
-        [DllImport(MSVCRT, EntryPoint = "memset", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
-        public static extern byte* MemSet(byte* dest, byte c, int byteCount);
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct SEC_WINNT_AUTH_IDENTITY_EX2
-        {
-            public uint Version;
-            public ushort cbHeaderLength;
-            public uint cbStructureLength;
-            public uint UserOffset;
-            public ushort UserLength;
-            public uint DomainOffset;
-            public ushort DomainLength;
-            public uint PackedCredentialsOffset;
-            public ushort PackedCredentialsLength;
-            public uint Flags;
-            public uint PackageListOffset;
-            public ushort PackageListLength;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct SEC_WINNT_AUTH_PACKED_CREDENTIALS
-        {
-            public ushort cbHeaderLength;
-            public ushort cbStructureLength;
-            public SEC_WINNT_AUTH_DATA AuthData; // SEC_WINNT_AUTH_DATA
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct SEC_WINNT_AUTH_DATA
-        {
-            public Guid CredType;
-            public SEC_WINNT_AUTH_BYTE_VECTOR CredData; // SEC_WINNT_AUTH_BYTE_VECTOR
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct SEC_WINNT_AUTH_BYTE_VECTOR
-        {
-            public uint ByteArrayOffset;
-            public ushort ByteArrayLength;
-        }
 
         internal enum SecBufferType
         {

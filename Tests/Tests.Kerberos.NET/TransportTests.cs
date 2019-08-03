@@ -5,6 +5,7 @@ using Kerberos.NET.Transport;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
@@ -27,6 +28,8 @@ namespace Tests.Kerberos.NET
         private class NoopTransport : KerberosTransportBase
         {
             public NoopTransport() { }
+
+            public override ProtocolType Protocol => ProtocolType.Unspecified;
 
             public override Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req)
             {

@@ -86,12 +86,12 @@ namespace Kerberos.NET.Server
 
             var handler = builder(request, options);
 
-            handler.RegisterPreAuthHandlers(preAuthHandlers);
-
             if (handler == null)
             {
                 throw new InvalidOperationException($"Message handler builder {messageType} must not return null");
             }
+
+            handler.RegisterPreAuthHandlers(preAuthHandlers);
 
             return handler;
         }

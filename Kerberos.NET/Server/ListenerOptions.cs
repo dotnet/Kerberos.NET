@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
@@ -7,10 +8,6 @@ namespace Kerberos.NET.Server
     public class ListenerOptions
     {
         public EndPoint ListeningOn { get; set; }
-
-        public bool SupportTcp { get; set; } = true;
-
-        public bool SupportUdp { get; set; } = false;
 
         public int QueueLength { get; set; } = 1000;
 

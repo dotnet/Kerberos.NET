@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
 {
-    internal class KdcSocketWorker : SocketWorker
+    internal class KdcSocketWorker : SocketWorkerBase
     {
         private const int Int32Size = 4;
 
@@ -63,15 +63,17 @@ namespace Kerberos.NET.Server
 
         protected override async Task FillResponse(PipeWriter writer, ReadOnlyMemory<byte> message)
         {
-            var totalLength = message.Length + Int32Size;
+            var minResponseLength = Int32Size;
 
-            if (totalLength > Int32Size)
+            var totalLength = message.Length + minResponseLength;
+
+            if (totalLength > minResponseLength)
             {
                 var buffer = writer.GetMemory(totalLength);
 
                 Endian.ConvertToBigEndian(message.Length, buffer.Slice(0, Int32Size));
 
-                message.CopyTo(buffer.Slice(Int32Size, message.Length));
+                message.CopyTo(buffer.Slice(minResponseLength, message.Length));
 
                 writer.Advance(totalLength);
             }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
@@ -16,6 +17,10 @@ namespace Kerberos.NET.Transport
             Logger = logger ?? new DebugLogger();
         }
 
+        public override ProtocolType Protocol => ProtocolType.Unspecified;
+
+        public IEnumerable<IKerberosTransport> Transports => transports;
+
         public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> encoded)
         {
             // basic logic should be 
@@ -24,7 +29,7 @@ namespace Kerberos.NET.Transport
             // if try = fail for transport reasons move on to next
             // if try = fail or protocol reasons, throw and bail
 
-            foreach (var transport in transports.Where(t => !t.TransportFailed))
+            foreach (var transport in transports.Where(t => t.Enabled && !t.TransportFailed))
             {
                 try
                 {

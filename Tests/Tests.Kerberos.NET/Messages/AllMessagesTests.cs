@@ -132,5 +132,23 @@ namespace Tests.Kerberos.NET.Messages
 
             return thing;
         }
+
+        [TestMethod]
+        public void TestKrbEncApRepPartRoundtrip()
+        {
+            var encPart = new KrbEncApRepPart
+            {
+                CTime = DateTimeOffset.UtcNow,
+                CuSec = 123,
+                SequenceNumber = 123,
+                SubSessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96)
+            };
+
+            var encoded = encPart.Encode();
+
+            var decoded = KrbEncApRepPart.DecodeApplication(encoded.AsMemory());
+
+            Assert.IsNotNull(decoded);
+        }
     }
 }

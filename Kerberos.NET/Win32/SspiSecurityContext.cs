@@ -286,8 +286,6 @@ namespace Kerberos.NET.Win32
 
             TrackUnmanaged(creds);
 
-            creds.DebugStructure();
-
             SecStatus result;
 
             RuntimeHelpers.PrepareConstrainedRegions();

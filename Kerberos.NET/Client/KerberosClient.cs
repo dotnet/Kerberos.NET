@@ -2,6 +2,7 @@
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Client
@@ -21,9 +22,8 @@ namespace Kerberos.NET.Client
         //                   -> cache TGT/cache service ticket?
 
         public KerberosClient(string kdc = null)
-            : this(new TcpKerberosTransport(kdc))
+            : this(new UdpKerberosTransport(kdc), new TcpKerberosTransport(kdc))
         {
-            // add UdpKerberosTransport for UDP support
         }
 
         private const AuthenticationOptions DefaultAuthentication =
@@ -41,6 +41,8 @@ namespace Kerberos.NET.Client
         {
             transport = new KerberosTransportSelector(transports);
         }
+
+        public IEnumerable<IKerberosTransport> Transports => transport.Transports;
 
         public KrbKdcRep TicketGrantingTicket { get; private set; }
 
@@ -65,7 +67,7 @@ namespace Kerberos.NET.Client
                 }
                 catch (KerberosProtocolException pex)
                 {
-                    if (++preauthAttempts > 3 || pex?.Error.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
+                    if (++preauthAttempts > 3 || pex?.Error?.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
                     {
                         throw;
                     }

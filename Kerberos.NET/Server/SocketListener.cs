@@ -8,9 +8,9 @@ namespace Kerberos.NET.Server
     {
         private readonly Socket listeningSocket;
 
-        private readonly Func<Socket, ListenerOptions, SocketWorker> workerFunc;
+        private readonly Func<Socket, ListenerOptions, SocketWorkerBase> workerFunc;
 
-        public SocketListener(ListenerOptions options, Func<Socket, ListenerOptions, SocketWorker> workerFunc)
+        public SocketListener(ListenerOptions options, Func<Socket, ListenerOptions, SocketWorkerBase> workerFunc)
             : base(options)
         {
             listeningSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
@@ -21,7 +21,7 @@ namespace Kerberos.NET.Server
             this.workerFunc = workerFunc;
         }
 
-        public async Task<SocketWorker> Accept()
+        public async Task<SocketWorkerBase> Accept()
         {
             while (true)
             {

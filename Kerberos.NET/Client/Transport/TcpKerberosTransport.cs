@@ -13,7 +13,11 @@ namespace Kerberos.NET.Transport
 
         public TcpKerberosTransport(string kdc = null)
             : base(kdc)
-        { }
+        {
+            Enabled = true;
+        }
+
+        public override ProtocolType Protocol => ProtocolType.Tcp;
 
         public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> encoded)
         {

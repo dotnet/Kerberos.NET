@@ -78,7 +78,7 @@ namespace Tests.Kerberos.NET
             await validator.Validate(data);
         }
 
-        private class TestLogger : ILogger
+        internal class TestLogger : ILogger
         {
             public TestLogger()
             {

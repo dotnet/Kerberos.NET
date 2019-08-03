@@ -34,13 +34,14 @@ namespace Tests.Kerberos.NET
                 ReceiveTimeout = TimeSpan.FromHours(1)
             };
 
-            KdcServiceListener listener = new KdcServiceListener(options);
+            using (KdcServiceListener listener = new KdcServiceListener(options))
+            {
+                _ = listener.Start();
 
-            _ = listener.Start();
+                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}");
 
-            await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}");
-
-            listener.Stop();
+                listener.Stop();
+            }
         }
 
         [TestMethod]

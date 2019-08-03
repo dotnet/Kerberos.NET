@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
 {
-    public abstract class SocketWorker : SocketBase
+    public abstract class SocketWorkerBase : SocketBase
     {
         private readonly TaskCompletionSource<object> responseFilledCompletion = new TaskCompletionSource<object>();
 
@@ -19,7 +19,7 @@ namespace Kerberos.NET.Server
 
         protected Pipe ResponsePipe { get; }
 
-        public SocketWorker(Socket socket, ListenerOptions options)
+        protected SocketWorkerBase(Socket socket, ListenerOptions options)
             : base(options)
         {
             this.socket = socket;
