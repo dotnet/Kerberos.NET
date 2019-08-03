@@ -24,7 +24,14 @@ namespace Kerberos.NET.Server
             RegisterPreAuthHandlers(postProcessAuthHandlers);
         }
 
-        protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(ReadOnlyMemory<byte> message)
+        protected override MessageType MessageType => MessageType.KRB_AS_REQ;
+
+        protected override IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message)
+        {
+            return KrbAsReq.DecodeApplication(message);
+        }
+
+        protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message)
         {
             // 1. check what pre-auth validation is required for user
             // 2. enumerate all pre-auth handlers that are available
@@ -35,9 +42,7 @@ namespace Kerberos.NET.Server
             // 6. if some pre-auth succeeded, return error
             // 7. if all required validation succeeds, generate PAC, TGT, and return it
 
-            var asReq = KrbAsReq.DecodeApplication(message);
-
-            await SetRealmContext(asReq.Body.Realm);
+            KrbAsReq asReq = (KrbAsReq)message;
 
             var principal = await RealmService.Principals.Find(asReq.Body.CName.FullyQualifiedName);
 

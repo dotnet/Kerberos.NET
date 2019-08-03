@@ -9,12 +9,18 @@ using System.Text;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbAsReq
+    public partial class KrbAsReq : IKerberosMessage
     {
         public KrbAsReq()
         {
             MessageType = MessageType.KRB_AS_REQ;
         }
+
+        public MessageType KerberosMessageType => MessageType;
+
+        public string Realm => Body.Realm;
+
+        public int KerberosProtocolVersionNumber => ProtocolVersionNumber;
 
         public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options)
         {
