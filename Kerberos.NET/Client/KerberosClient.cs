@@ -2,7 +2,6 @@
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
-using System;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Client
@@ -22,8 +21,9 @@ namespace Kerberos.NET.Client
         //                   -> cache TGT/cache service ticket?
 
         public KerberosClient(string kdc = null)
-            : this(/*new UdpKerberosTransport(kdc),*/ new TcpKerberosTransport(kdc))
+            : this(new TcpKerberosTransport(kdc))
         {
+            // add UdpKerberosTransport for UDP support
         }
 
         private const AuthenticationOptions DefaultAuthentication =

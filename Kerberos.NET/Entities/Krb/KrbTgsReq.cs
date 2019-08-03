@@ -6,12 +6,18 @@ using System.Linq;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbTgsReq : IAsn1ApplicationEncoder<KrbTgsReq>
+    public partial class KrbTgsReq : IAsn1ApplicationEncoder<KrbTgsReq>, IKerberosMessage
     {
         public KrbTgsReq()
         {
             MessageType = MessageType.KRB_TGS_REQ;
         }
+
+        public MessageType KerberosMessageType => MessageType;
+
+        public string Realm => Body.Realm;
+
+        public int KerberosProtocolVersionNumber => ProtocolVersionNumber;
 
         public KrbTgsReq DecodeAsApplication(ReadOnlyMemory<byte> encoded)
         {

@@ -7,15 +7,12 @@ using Kerberos.NET.Entities.Pac;
 using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET

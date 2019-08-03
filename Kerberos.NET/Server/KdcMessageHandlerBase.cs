@@ -25,6 +25,8 @@ namespace Kerberos.NET.Server
             get => preAuthHandlers;
         }
 
+        protected abstract MessageType MessageType { get; }
+
         protected KdcMessageHandlerBase(ReadOnlySequence<byte> message, ListenerOptions options)
         {
             Message = new ReadOnlyMemory<byte>(message.ToArray());
@@ -36,15 +38,38 @@ namespace Kerberos.NET.Server
             RealmService = await Options.RealmLocator(realm);
         }
 
-        public virtual Task<ReadOnlyMemory<byte>> Execute()
+        private async Task<IKerberosMessage> DecodeMessage(ReadOnlyMemory<byte> message)
+        {
+            var decoded = DecodeMessageCore(message);
+
+            if (decoded.KerberosProtocolVersionNumber != 5)
+            {
+                throw new InvalidOperationException($"Message version should be set to v5. Actual: {decoded.KerberosProtocolVersionNumber}");
+            }
+
+            if (decoded.KerberosMessageType != MessageType)
+            {
+                throw new InvalidOperationException($"MessageType should match application class. Actual: {decoded.KerberosMessageType}; Expected: {MessageType}");
+            }
+
+            await SetRealmContext(decoded.Realm);
+
+            return decoded;
+        }
+
+        protected abstract IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message);
+
+        public virtual async Task<ReadOnlyMemory<byte>> Execute()
         {
             try
             {
-                return ExecuteCore(Message);
+                var message = await DecodeMessage(Message);
+
+                return await ExecuteCore(message);
             }
             catch (Exception ex)
             {
-                return Task.FromResult(GenerateGenericError(ex, Options));
+                return GenerateGenericError(ex, Options);
             }
         }
 
@@ -53,7 +78,7 @@ namespace Kerberos.NET.Server
             Options.Log?.WriteLine(KerberosLogSource.Kdc, ex);
         }
 
-        protected abstract Task<ReadOnlyMemory<byte>> ExecuteCore(ReadOnlyMemory<byte> message);
+        protected abstract Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message);
 
         internal static ReadOnlyMemory<byte> GenerateGenericError(Exception ex, ListenerOptions options)
         {

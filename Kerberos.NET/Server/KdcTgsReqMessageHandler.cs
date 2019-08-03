@@ -19,11 +19,28 @@ namespace Kerberos.NET.Server
 
         public ValidationActions Validation { get; set; } = ValidationActions.All & ~ValidationActions.Replay;
 
-        protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(ReadOnlyMemory<byte> message)
+        protected override IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message)
         {
-            var tgsReq = KrbTgsReq.DecodeApplication(message);
+            return KrbTgsReq.DecodeApplication(message);
+        }
 
-            await SetRealmContext(tgsReq.Body.Realm);
+        protected override MessageType MessageType => MessageType.KRB_TGS_REQ;
+
+        protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message)
+        {
+            // the logic for a TGS-REQ is relatively simple in the primary case where you have a TGT and want
+            // to get a ticket to another service. It gets a bit more complicated when you need to do something
+            // like a U2U exchange, renew, or get a referral to another realm. Realm referral isn't supported yet.
+
+            // 1. Get the ApReq (TGT) from the PA-Data of the request
+            // 2. Decrypt the TGT and extract the client calling identity
+            // 3. Find the requested service principal
+            // 4. Evaluate whether the client identity should get a ticket to the service
+            // 5. Evaluate whether it should do U2U and if so extract that key instead
+            // 6. Generate a service ticket for the calling client to the service
+            // 7. return to client
+
+            var tgsReq = (KrbTgsReq)message;
 
             var apReq = ExtractApReq(tgsReq);
 
@@ -43,32 +60,46 @@ namespace Kerberos.NET.Server
 
             KerberosKey serviceKey;
 
-            if (tgsReq.Body.KdcOptions.HasFlag(KdcOptions.EncTktInSkey) &&
-                tgsReq.Body.AdditionalTickets != null &&
-                tgsReq.Body.AdditionalTickets.Length > 0)
+            if (tgsReq.Body.KdcOptions.HasFlag(KdcOptions.EncTktInSkey))
             {
-                serviceKey = GetUserToUserTicketKey(tgsReq.Body.AdditionalTickets[0], krbtgtKey);
+                serviceKey = GetUserToUserTicketKey(tgsReq.Body.AdditionalTickets, krbtgtKey);
             }
             else
             {
                 serviceKey = await servicePrincipal.RetrieveLongTermCredential();
             }
 
+            var now = RealmService.Now();
+
             var tgsRep = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(
-                principal,
-                krbtgtApReqDecrypted.SessionKey,
-                servicePrincipal,
-                serviceKey,
-                RealmService,
-                addresses: tgsReq.Body.Addresses,
-                renewTill: krbtgtApReqDecrypted.Ticket.RenewTill
+                new ServiceTicketRequest
+                {
+                    Principal = principal,
+                    EncryptedPartKey = krbtgtApReqDecrypted.SessionKey,
+                    ServicePrincipal = servicePrincipal,
+                    ServicePrincipalKey = serviceKey,
+                    RealmName = RealmService.Name,
+                    Addresses = tgsReq.Body.Addresses,
+                    RenewTill = krbtgtApReqDecrypted.Ticket.RenewTill,
+                    StartTime = now - RealmService.Settings.MaximumSkew,
+                    EndTime = now + RealmService.Settings.SessionLifetime,
+                    Flags = KrbKdcRep.DefaultFlags,
+                    Now = now
+                }
             );
 
             return tgsRep.EncodeApplication();
         }
 
-        private static KerberosKey GetUserToUserTicketKey(KrbTicket ticket, KerberosKey key)
+        private static KerberosKey GetUserToUserTicketKey(KrbTicket[] tickets, KerberosKey key)
         {
+            if (tickets == null || tickets.Length <= 0)
+            {
+                throw new InvalidOperationException("User to User authentication was requested but a ticket wasn't provided");
+            }
+
+            var ticket = tickets[0];
+
             var decryptedTicket = ticket.EncryptedPart.Decrypt(
                 key,
                 KeyUsage.Ticket,

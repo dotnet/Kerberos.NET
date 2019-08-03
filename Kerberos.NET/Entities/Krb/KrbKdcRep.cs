@@ -19,27 +19,18 @@ namespace Kerberos.NET.Entities
                                                   TicketFlags.Initial |
                                                   TicketFlags.Forwardable;
 
-        public static async Task<T> GenerateServiceTicket<T>(
-            IKerberosPrincipal principal,
-            KerberosKey encPartKey,
-            IKerberosPrincipal servicePrincipal,
-            KerberosKey serviceKey,
-            IRealmService realmService,
-            TicketFlags flags = DefaultFlags,
-            IEnumerable<KrbHostAddress> addresses = null,
-            DateTimeOffset? renewTill = null
-        )
+        public static async Task<T> GenerateServiceTicket<T>(ServiceTicketRequest request)
             where T : KrbKdcRep, new()
         {
-            var sessionKey = KrbEncryptionKey.Generate(serviceKey.EncryptionType);
+            var sessionKey = KrbEncryptionKey.Generate(request.ServicePrincipalKey.EncryptionType);
 
-            var now = realmService.Now();
+            var authz = await GenerateAuthorizationData(request.Principal, request.ServicePrincipalKey);
 
-            var authz = await GenerateAuthorizationData(principal, serviceKey);
+            var cname = KrbPrincipalName.FromPrincipal(request.Principal, realm: request.RealmName);
 
-            var cname = KrbPrincipalName.FromPrincipal(principal, realm: realmService.Name);
+            var flags = request.Flags;
 
-            if (principal.SupportedPreAuthenticationTypes.Any())
+            if (request.Principal.SupportedPreAuthenticationTypes.Any())
             {
                 // This is not strictly an accurate way of detecting if the user was pre-authenticated.
                 // If pre-auth handlers are registered and the principal has PA-Types available, a request
@@ -54,6 +45,8 @@ namespace Kerberos.NET.Entities
                 flags |= TicketFlags.EncryptedPreAuthentication | TicketFlags.PreAuthenticated;
             }
 
+            var addresses = request.Addresses;
+
             if (addresses == null)
             {
                 addresses = new KrbHostAddress[0];
@@ -63,10 +56,10 @@ namespace Kerberos.NET.Entities
             {
                 CName = cname,
                 Key = sessionKey,
-                AuthTime = now,
-                StartTime = now - realmService.Settings.MaximumSkew,
-                EndTime = now + realmService.Settings.SessionLifetime,
-                CRealm = realmService.Name,
+                AuthTime = request.Now,
+                StartTime = request.StartTime,
+                EndTime = request.EndTime,
+                CRealm = request.RealmName,
                 Flags = flags,
                 AuthorizationData = authz.ToArray(),
                 CAddr = addresses.ToArray(),
@@ -77,20 +70,20 @@ namespace Kerberos.NET.Entities
             {
                 // RenewTill should never increase if it was set previously even if this is a renewal pass
 
-                encTicketPart.RenewTill = renewTill ?? now + realmService.Settings.MaximumRenewalWindow;
+                encTicketPart.RenewTill = request.RenewTill;
             }
 
             var ticket = new KrbTicket()
             {
-                Realm = realmService.Name,
+                Realm = request.RealmName,
                 SName = KrbPrincipalName.FromPrincipal(
-                    servicePrincipal,
+                    request.ServicePrincipal,
                     PrincipalNameType.NT_SRV_INST,
-                    realmService.Name
+                    request.RealmName
                 ),
                 EncryptedPart = KrbEncryptedData.Encrypt(
                     encTicketPart.EncodeApplication(),
-                    serviceKey,
+                    request.ServicePrincipalKey,
                     KeyUsage.Ticket
                 )
             };
@@ -114,14 +107,14 @@ namespace Kerberos.NET.Entities
             encKdcRepPart.StartTime = encTicketPart.StartTime;
             encKdcRepPart.EndTime = encTicketPart.EndTime;
             encKdcRepPart.RenewTill = encTicketPart.RenewTill;
-            encKdcRepPart.KeyExpiration = principal.Expires;
-            encKdcRepPart.Realm = realmService.Name;
+            encKdcRepPart.KeyExpiration = request.Principal.Expires;
+            encKdcRepPart.Realm = request.RealmName;
             encKdcRepPart.SName = ticket.SName;
             encKdcRepPart.Flags = encTicketPart.Flags;
             encKdcRepPart.CAddr = encTicketPart.CAddr;
             encKdcRepPart.Key = sessionKey;
             encKdcRepPart.Nonce = KerberosConstants.GetNonce();
-            encKdcRepPart.LastReq = new[] { new KrbLastReq { Type = 0, Value = now } };
+            encKdcRepPart.LastReq = new[] { new KrbLastReq { Type = 0, Value = request.Now } };
             encKdcRepPart.EncryptedPaData = new KrbMethodData
             {
                 MethodData = new[]
@@ -129,7 +122,7 @@ namespace Kerberos.NET.Entities
                     new KrbPaData
                     {
                         Type = PaDataType.PA_SUPPORTED_ETYPES,
-                        Value = principal.SupportedEncryptionTypes.AsReadOnly(littleEndian: true).AsMemory()
+                        Value = request.Principal.SupportedEncryptionTypes.AsReadOnly(littleEndian: true).AsMemory()
                     }
                 }
             };
@@ -139,12 +132,12 @@ namespace Kerberos.NET.Entities
             var rep = new T
             {
                 CName = cname,
-                CRealm = realmService.Name,
+                CRealm = request.RealmName,
                 MessageType = MessageType.KRB_AS_REP,
                 Ticket = ticket,
                 EncPart = KrbEncryptedData.Encrypt(
                     encKdcRepPart.EncodeApplication(),
-                    encPartKey,
+                    request.EncryptedPartKey,
                     encKdcRepPart.KeyUsage
                 )
             };
@@ -153,7 +146,7 @@ namespace Kerberos.NET.Entities
         }
 
         private static async Task<IEnumerable<KrbAuthorizationData>> GenerateAuthorizationData(
-            IKerberosPrincipal principal, 
+            IKerberosPrincipal principal,
             KerberosKey krbtgt
         )
         {

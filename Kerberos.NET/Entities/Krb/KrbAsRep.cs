@@ -34,13 +34,23 @@ namespace Kerberos.NET.Entities
             var servicePrincipal = await realmService.Principals.RetrieveKrbtgt();
             var servicePrincipalKey = await servicePrincipal.RetrieveLongTermCredential();
 
+            var now = realmService.Now();
+
             KrbAsRep asRep = await GenerateServiceTicket<KrbAsRep>(
-                principal,
-                longTermKey,
-                servicePrincipal,
-                servicePrincipalKey,
-                realmService,
-                addresses: asReq.Addresses
+                new ServiceTicketRequest
+                {
+                    Principal = principal,
+                    EncryptedPartKey = longTermKey,
+                    ServicePrincipal = servicePrincipal,
+                    ServicePrincipalKey = servicePrincipalKey,
+                    Now = now,
+                    Addresses = asReq.Addresses,
+                    RenewTill = now + realmService.Settings.MaximumRenewalWindow,
+                    StartTime = now - realmService.Settings.MaximumSkew,
+                    EndTime = now + realmService.Settings.SessionLifetime,
+                    Flags = DefaultFlags,
+                    RealmName = realmService.Name
+                }
             );
 
             asRep.PaData = requirements.ToArray();
