@@ -1,14 +1,12 @@
 # Kerberos.NET
-A Managed Code validator for Kerberos tickets.
+A complete Kerberos library built entirely in managed code without (many) OS dependencies.
 
 ![Build Status](https://syfuhs2.visualstudio.com/_apis/public/build/definitions/bcf490cf-a965-4d26-999c-8de04067ee1e/1/badge)
 [![Nuget Package](https://img.shields.io/nuget/v/Kerberos.NET.svg)](https://www.nuget.org/packages/Kerberos.NET)
 
 # What is it?
 
-Kerberos is a black box in the .NET world. It's services are exposed by Windows in a domain environment and most of the Kerberos-isms are hidden by Windows to simplify usage. .NET then tries to simplify further by treating Kerberos as just a Windows authentication method. This has the side effect that working with Kerberos at a protocol level in .NET is severely limited. That means doing anything out of the ordinary with Kerberos is either painful to do, or simply impossible.
-
-The Point of Kerberos.NET is to make Kerberos much easier to work with in such scenarios. This is done by removing any hard dependencies on Windows and moving all ticket processing to the application itself. This of course means you don't need the application to be on a domain-joined machine, and it probably doesn't need to be on Windows either.
+A library built in .NET that lets you operate on Kerberos messages. You can run a client, host your own KDC, or just validate incoming tickets. It's intended to be as lightweight as possible.
 
 Take a look at the [Kerberos.NET](https://syfuhs.net/tag/kerberos-net/) tag for more information while the documentation here is updated.
 
@@ -19,13 +17,51 @@ There are two ways you can go about using this library. The first is to download
 PM> Install-Package Kerberos.NET
 ```
 
-This will install everything you need to validate tickets. Note that AES support has been merged into the main package because the bouncycastle dependency was removed!
+Note that the current Nuget package does not include the v3 build yet. This is to limit the impact to callers while it's in an Alpha state. There are also a handful of minor but breaking changes as it gets converted to .NET Standard 2.1 and removing the Framework build.
 
 ## On Updates to the Nuget Packages
 
-The nuget packages will be kept up to date with any changes to the core library. Check the package release notes for specific changes.
+The nuget packages will generally be kept up to date with any changes to the core library. Check the package release notes for specific changes. However as noted above the library has undergone a substantial overhaul and is in an alpha state.
 
-## Using the Library
+# Using the Library
+
+There are three ways you can use this library.
+
+## Using The Kerberos Client
+
+The client is intentionally simple and does not have all the features of a comprehensive client found in other platforms. This client is useful for lightweight testing and extending to meet your needs.
+
+```C#
+var client = new KerberosClient();
+
+var kerbCred = new KerberosPasswordCredential("user@domain.com", "userP@ssw0rd!");
+
+await client.Authenticate(kerbCred);
+
+var ticket = await client.GetServiceTicket("host/appservice.corp.identityintervention.com");
+```
+## Using the KDC Server
+
+Hosting a KDC is a little more complicated as it requires listening on a particular port. Usually you listen on port 88.
+
+```C#
+var port = 88;
+
+var options = new ListenerOptions
+{
+    ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
+    DefaultRealm = "corp.identityintervention.com".ToUpper(),
+    RealmLocator = realmName => new MyRealmService(realmName)
+};
+
+var listener = new KdcServiceListener(options);
+
+await listener.Start();
+```
+
+The listener will wait until `listener.Stop()` is called (or disposed).
+
+## Using the Authenticator
 
 Ticket authentication occurs in two stages. The first stage validates the ticket for correctness via an `IKerberosValidator` with a default implementation of `KerberosValidator`. The second stage involves converting the ticket in to a usable `ClaimsIdentity`, which occurs in the `KerberosAuthenticator`. 
 
@@ -452,7 +488,7 @@ ktpass /princ HTTP/test.identityintervention.com@IDENTITIYINTERVENTION.COM /mapu
 The parameter `princ` is used to specify the generated PrincipalName, and `mapuser` which is used to map it to the user in Active Directory. The `crypto` parameter specifies which algorithms should generate entries.
 
 ## AES Support
-AES tickets are now supported natively. No need to do anything extra!
+AES tickets are supported natively. No need to do anything extra!
 
 ## Registering Custom Decryptors
 
@@ -490,17 +526,5 @@ There are samples!
  - [KerberosMiddlewareSample](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/Samples/KerberosMiddlewareEndToEndSample) A simple pass/fail middleware sample that decodes a ticket if present, but otherwise never prompts to negotiate.
  - [KerberosWebSample](https://github.com/SteveSyfuhs/Kerberos.NET/tree/master/Samples/KerberosWebSample) A sample web project intended to be hosted in IIS that prompts to negotiate and validates any incoming tickets from the browser.
 
-# The TODO List
-Just a list of things that should be done, but aren't yet.
- 
- - The validation process should be vetted by someone other than the developer.
- - Samples for clustered environments should be created.
- - ~~Port to .NET Core~~ DONE!
- - ~~Support [keytab](https://web.mit.edu/kerberos/krb5-latest/doc/basic/keytab_def.html) files~~ DONE!
- - ~~Replay detection is weak. The default `ITicketCacheValidator` needs to be a proper LMU cache so older entries are automatically cleaned up. The detection should also probably happen after a partial decoding so we can use the ticket's own expiry to remove itself from the cache. The validator should be simple enough that it can be backed by shared storage for clustered environments.~~ DONE!
- - ~~Validation and transformation isn't extensible. It just dumps a ClaimsIdentity with a fairly arbitrary list of claims from the ticket. You should be able to easily get whatever information you want out of the token. Validation also shouldn't be disabled so easily (it's currently just a bool flag on the validator class).~~ DONE!
-
 # License
-This project has an MIT License, but both the RC4 and MD4 implementations are externally sourced and have their own license.
-
-The crypto data and key test files were sourced from https://github.com/drankye/haox/ originally under Apache 2.0 license https://github.com/drankye/haox/blob/master/LICENSE
+This project has an MIT License. See the [License File](/LICENSE) for more details. Also see the [Notices file](/NOTICES) for more information on the licenses of projects this depends on.
