@@ -26,7 +26,8 @@ namespace Kerberos.NET.Entities
             KerberosKey serviceKey,
             IRealmService realmService,
             TicketFlags flags = DefaultFlags,
-            IEnumerable<KrbHostAddress> addresses = null
+            IEnumerable<KrbHostAddress> addresses = null,
+            DateTimeOffset? renewTill = null
         )
             where T : KrbKdcRep, new()
         {
@@ -74,7 +75,9 @@ namespace Kerberos.NET.Entities
 
             if (flags.HasFlag(TicketFlags.Renewable))
             {
-                encTicketPart.RenewTill = now + realmService.Settings.MaximumRenewalWindow;
+                // RenewTill should never increase if it was set previously even if this is a renewal pass
+
+                encTicketPart.RenewTill = renewTill ?? now + realmService.Settings.MaximumRenewalWindow;
             }
 
             var ticket = new KrbTicket()
@@ -150,7 +153,8 @@ namespace Kerberos.NET.Entities
         }
 
         private static async Task<IEnumerable<KrbAuthorizationData>> GenerateAuthorizationData(
-            IKerberosPrincipal principal, KerberosKey krbtgt
+            IKerberosPrincipal principal, 
+            KerberosKey krbtgt
         )
         {
             // authorization-data is annoying because it's a sequence of 

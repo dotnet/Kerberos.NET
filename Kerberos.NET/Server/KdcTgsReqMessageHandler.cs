@@ -30,16 +30,16 @@ namespace Kerberos.NET.Server
             var krbtgtIdentity = await RealmService.Principals.RetrieveKrbtgt();
             var krbtgtKey = await krbtgtIdentity.RetrieveLongTermCredential();
 
-            var apReqDecrypted = DecryptApReq(apReq, krbtgtKey);
+            var krbtgtApReqDecrypted = DecryptApReq(apReq, krbtgtKey);
 
-            var principal = await RealmService.Principals.Find(apReqDecrypted.Ticket.CName.FullyQualifiedName);
+            var principal = await RealmService.Principals.Find(krbtgtApReqDecrypted.Ticket.CName.FullyQualifiedName);
 
             var servicePrincipal = await RealmService.Principals.Find(tgsReq.Body.SName.FullyQualifiedName);
 
-            // renewal is an odd case here because the SName will krbtgt
+            // renewal is an odd case here because the SName will be krbtgt
             // does this need to be validated more than the Decrypt call?
 
-            await EvaluateSecurityPolicy(principal, servicePrincipal, apReqDecrypted);
+            await EvaluateSecurityPolicy(principal, servicePrincipal, krbtgtApReqDecrypted);
 
             KerberosKey serviceKey;
 
@@ -56,11 +56,12 @@ namespace Kerberos.NET.Server
 
             var tgsRep = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(
                 principal,
-                apReqDecrypted.SessionKey,
+                krbtgtApReqDecrypted.SessionKey,
                 servicePrincipal,
                 serviceKey,
                 RealmService,
-                addresses: tgsReq.Body.Addresses
+                addresses: tgsReq.Body.Addresses,
+                renewTill: krbtgtApReqDecrypted.Ticket.RenewTill
             );
 
             return tgsRep.EncodeApplication();

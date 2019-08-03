@@ -22,7 +22,6 @@ namespace Kerberos.NET.Server
             postProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);
 
             RegisterPreAuthHandlers(postProcessAuthHandlers);
-
         }
 
         protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(ReadOnlyMemory<byte> message)
