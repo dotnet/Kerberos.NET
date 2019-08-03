@@ -8,3 +8,11 @@ The MIT License (MIT)
 
 https://github.com/dotnet/corefx/blob/master/LICENSE.TXT
 
+License for Apache Kerby
+---------------------------------
+Copyright (c) Apache Software Foundation. All rights reserved.
+Apache License 2.0
+
+https://github.com/apache/directory-kerby/blob/trunk/LICENSE
+
+Apache Kerby is only used for interop unit tests.
