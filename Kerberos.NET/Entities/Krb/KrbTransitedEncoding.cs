@@ -43,11 +43,7 @@ namespace Kerberos.NET.Entities
         private IEnumerable<string> DecodeX500Compress()
         {
             var realms = new List<string>();
-#if NETSTANDARD2_0
             var encoded = Encoding.UTF8.GetString(Contents.Span.ToArray());
-#else
-            var encoded = Encoding.UTF8.GetString(Contents.Span);
-#endif            
             if (encoded.Contains('/'))
             {
                 throw new InvalidOperationException($"X500 domain names are not supported: {encoded}");

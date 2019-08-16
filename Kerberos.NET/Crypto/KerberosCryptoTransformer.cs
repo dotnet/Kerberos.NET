@@ -37,11 +37,7 @@ namespace Kerberos.NET.Crypto
         {
             var arr = new byte[size];
             var span = new Span<byte>(arr);
-#if NETSTANDARD2_0
             RandomNumberGenerator.Create().GetBytes(arr);
-#else
-            RandomNumberGenerator.Fill(span);
-#endif
             return span.AsMemory();
         }
 

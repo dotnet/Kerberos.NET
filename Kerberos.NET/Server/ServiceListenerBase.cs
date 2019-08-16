@@ -32,11 +32,7 @@ namespace Kerberos.NET.Server
 
         public Task Start()
         {
-#if NETSTANDARD2_0
             ThreadPool.QueueUserWorkItem(state => StartListenerThreads((SocketListener)state), socketListener);
-#else
-            ThreadPool.QueueUserWorkItem(StartListenerThreads, socketListener, preferLocal: false);
-#endif            
             return startTcs.Task;
         }
 
