@@ -32,15 +32,15 @@ namespace Kerberos.NET.Server
 
         public Task Start()
         {
-            ThreadPool.QueueUserWorkItem(StartListenerThreads, socketListener, preferLocal: false);
-
+            ThreadPool.QueueUserWorkItem(state => StartListenerThreads((SocketListener)state), socketListener);
             return startTcs.Task;
         }
 
         public void Stop()
         {
-            while (openListeners.TryPop(out SocketListener listener))
+            while (openListeners.Count != 0)
             {
+                SocketListener listener = openListeners.Pop();
                 listener.Dispose();
             }
 

@@ -47,8 +47,9 @@ namespace Kerberos.NET.Entities.Pac
         {
             Debug.WriteLine("...writing deferred...");
 
-            while (deferredWrites.TryDequeue(out Action action))
+            while (deferredWrites.Count != 0)
             {
+                var action = deferredWrites.Dequeue();
                 action();
             }
 
@@ -327,8 +328,9 @@ namespace Kerberos.NET.Entities.Pac
                         }
                     }
 
-                    while (localQueue.TryDequeue(out SecurityIdentifier sid2))
+                    while (localQueue.Count != 0)
                     {
+                        var sid2 = localQueue.Dequeue();
                         Debug.WriteLine("[Deferred WriteSid] " + debug);
                         var len = (sid2.BinaryForm.Length - 8) / 4;
 
@@ -530,8 +532,10 @@ namespace Kerberos.NET.Entities.Pac
 
             deferredWrites.Enqueue(() =>
             {
-                while (deferred.TryDequeue(out Action action))
+                
+                while (deferred.Count != 0)
                 {
+                    var action = deferred.Dequeue();
                     action();
                 }
             });
