@@ -1,3 +1,8 @@
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+// Relevant bits copied from https://github.com/dotnet/corefx/blob/master/src/Common/src/CoreLib/System/IO/Stream.cs
+
 using System;
 using System.Buffers;
 using System.IO;
@@ -7,22 +12,23 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET
 {
-#if NETSTANDARD2_0
     public static class StreamExtensions
     {
-        public static ValueTask WriteAsync(this Stream stream,
-            ReadOnlyMemory<byte> buffer,
-            CancellationToken cancellationToken = default (CancellationToken))
+        public static ValueTask WriteAsync(this Stream stream, ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
         {
-            ArraySegment<byte> segment;
-            if (MemoryMarshal.TryGetArray<byte>(buffer, out segment))
-                return new ValueTask(stream.WriteAsync(segment.Array, segment.Offset, segment.Count, cancellationToken));
-            byte[] numArray = ArrayPool<byte>.Shared.Rent(buffer.Length);
-            buffer.Span.CopyTo((Span<byte>) numArray);
-            return new ValueTask(stream.FinishWriteAsync(stream.WriteAsync(numArray, 0, buffer.Length, cancellationToken), numArray));
+            if (MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> array))
+            {
+                return new ValueTask(stream.WriteAsync(array.Array, array.Offset, array.Count, cancellationToken));
+            }
+            else
+            {
+                byte[] sharedBuffer = ArrayPool<byte>.Shared.Rent(buffer.Length);
+                buffer.Span.CopyTo(sharedBuffer);
+                return new ValueTask(stream.FinishWriteAsync(stream.WriteAsync(sharedBuffer, 0, buffer.Length, cancellationToken), sharedBuffer));
+            }
         }
 
-        internal static async Task FinishWriteAsync(this Stream stream, Task writeTask, byte[] localBuffer)
+        private static async Task FinishWriteAsync(this Stream stream, Task writeTask, byte[] localBuffer)
         {
             try
             {
@@ -30,39 +36,36 @@ namespace Kerberos.NET
             }
             finally
             {
-                ArrayPool<byte>.Shared.Return(localBuffer, false);
+                ArrayPool<byte>.Shared.Return(localBuffer);
             }
         }
-        
+
         internal static ValueTask<int> ReadAsync(this Stream stream,
             Memory<byte> buffer,
-            CancellationToken cancellationToken = default (CancellationToken))
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            ArraySegment<byte> segment;
-            if (MemoryMarshal.TryGetArray<byte>((ReadOnlyMemory<byte>) buffer, out segment))
-                return new ValueTask<int>(stream.ReadAsync(segment.Array, segment.Offset, segment.Count, cancellationToken));
-            byte[] numArray = ArrayPool<byte>.Shared.Rent(buffer.Length);
-            return FinishReadAsync(stream.ReadAsync(numArray, 0, buffer.Length, cancellationToken), numArray, buffer);
-
-            async ValueTask<int> FinishReadAsync(
-                Task<int> readTask,
-                byte[] localBuffer,
-                Memory<byte> localDestination)
+            if (MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> array))
             {
-                int num;
-                try
-                {
-                    int length = await readTask.ConfigureAwait(false);
-                    new Span<byte>(localBuffer, 0, length).CopyTo(localDestination.Span);
-                    num = length;
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(localBuffer, false);
-                }
-                return num;
+                return new ValueTask<int>(stream.ReadAsync(array.Array, array.Offset, array.Count, cancellationToken));
+            }
+            else
+            {
+                byte[] sharedBuffer = ArrayPool<byte>.Shared.Rent(buffer.Length);
+                return FinishReadAsync(stream.ReadAsync(sharedBuffer, 0, buffer.Length, cancellationToken), sharedBuffer, buffer);
+            }
+        }
+        private static async ValueTask<int> FinishReadAsync(Task<int> readTask, byte[] localBuffer, Memory<byte> localDestination)
+        {
+            try
+            {
+                int result = await readTask.ConfigureAwait(false);
+                new Span<byte>(localBuffer, 0, result).CopyTo(localDestination.Span);
+                return result;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(localBuffer);
             }
         }
     }
-#endif
 }
