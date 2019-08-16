@@ -115,9 +115,12 @@ namespace Kerberos.NET.Server
                 {
                     break;
                 }
-
+#if NETSTANDARD2_0
+                await socket.SendAsync(new ArraySegment<byte>(buffer.ToArray()), SocketFlags.None);
+                
+#else
                 await socket.SendAsync(buffer.ToArray(), SocketFlags.None);
-
+#endif
                 reader.AdvanceTo(buffer.Start, buffer.End);
             }
 
@@ -128,7 +131,19 @@ namespace Kerberos.NET.Server
         {
             try
             {
+#if NETSTANDARD2_0
+                
+                var fill = FillRequest(RequestPipe.Writer, async buffer =>
+                {
+                    var fillBuffer = new byte[buffer.Length];
+                    var retval = await socket.ReceiveAsync(new ArraySegment<byte>(fillBuffer), SocketFlags.None);
+                    fillBuffer.CopyTo(buffer);
+                    return retval;
+                });                
+                
+#else
                 var fill = FillRequest(RequestPipe.Writer, buffer => socket.ReceiveAsync(buffer, SocketFlags.None));
+#endif
                 var read = ReadRequest();
 
                 await Task.WhenAll(fill, read);

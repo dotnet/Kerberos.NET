@@ -35,10 +35,13 @@ namespace Kerberos.NET.Crypto
 
         public virtual ReadOnlyMemory<byte> GenerateRandomBytes(int size)
         {
-            var span = new Span<byte>(new byte[size]);
-
+            var arr = new byte[size];
+            var span = new Span<byte>(arr);
+#if NETSTANDARD2_0
+            RandomNumberGenerator.Create().GetBytes(arr);
+#else
             RandomNumberGenerator.Fill(span);
-
+#endif
             return span.AsMemory();
         }
 
