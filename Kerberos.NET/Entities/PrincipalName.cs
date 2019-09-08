@@ -24,11 +24,11 @@ namespace Kerberos.NET.Entities
 
         public PrincipalNameType NameType;
 
+        public string FullyQualifiedName => string.Join("/", Names);
+
         public override bool Equals(object obj)
         {
-            var other = obj as PrincipalName;
-
-            if (other == null)
+            if (!(obj is PrincipalName other))
             {
                 return false;
             }

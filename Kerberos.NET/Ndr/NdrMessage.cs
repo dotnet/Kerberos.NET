@@ -10,7 +10,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public virtual void Decode(ReadOnlyMemory<byte> data)
         {
-            var stream = new NdrBinaryStream(data.ToArray());
+            var stream = new NdrBinaryStream(data);
 
             Header = stream.ReadNdrHeader();
 
@@ -63,7 +63,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public virtual void ReadBody(ReadOnlyMemory<byte> data)
         {
-            ReadBody(new NdrBinaryStream(data.ToArray()));
+            ReadBody(new NdrBinaryStream(data));
         }
 
         protected bool IsDirty { get; set; }

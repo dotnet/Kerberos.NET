@@ -1,4 +1,4 @@
-﻿using Kerberos.NET.Asn1;
+﻿using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -77,7 +77,8 @@ namespace Tests.Kerberos.NET.Data
             Assert.AreEqual(err.CRealm, decoded.CRealm);
             Assert.AreEqual(MessageType.KRB_ERROR, decoded.MessageType);
             Assert.AreEqual(5, decoded.ProtocolVersionNumber);
-            Assert.AreEqual(err.CTime, decoded.CTime);
+
+            Assert.AreEqual(err.CTime.ToString(), decoded.CTime.ToString());
             Assert.AreEqual(err.ErrorCode, decoded.ErrorCode);
             Assert.AreEqual(err.Realm, decoded.Realm);
         }

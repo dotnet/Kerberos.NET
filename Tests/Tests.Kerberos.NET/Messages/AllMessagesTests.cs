@@ -1,4 +1,4 @@
-﻿using Kerberos.NET.Asn1;
+﻿using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,21 +11,6 @@ namespace Tests.Kerberos.NET.Messages
     [TestClass]
     public class AllMessagesTests : BaseTest
     {
-        [TestMethod]
-        public void TestBitOps()
-        {
-            var values = new int[] { int.MinValue, int.MaxValue, 0, 123, -23346457, 2342341, -234234, 23456, 123456789 };
-
-            for (var i = 0; i < values.Length; i++)
-            {
-                var bytes = BitOperation.AsReadOnly(i);
-
-                var newNum = BitOperation.AsInt(bytes.ToArray());
-
-                Assert.AreEqual(i, newNum);
-            }
-        }
-
         [TestMethod]
         public void TestParseAllMessagesRoundtrip()
         {

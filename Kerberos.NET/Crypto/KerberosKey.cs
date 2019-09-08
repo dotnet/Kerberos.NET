@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Crypto.AES;
 using Kerberos.NET.Entities;
 using System;
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace Kerberos.NET.Crypto
@@ -59,6 +60,20 @@ namespace Kerberos.NET.Crypto
             IterationParameter = iterationParams;
         }
 
+        private readonly ConcurrentDictionary<string, ReadOnlyMemory<byte>> DerivedKeyCache 
+            = new ConcurrentDictionary<string, ReadOnlyMemory<byte>>();
+
+        internal ReadOnlySpan<byte> GetOrDeriveKey(
+            KerberosCryptoTransformer transformer,
+            string cacheKey,
+            Func<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>> dk
+        )
+        {
+            var derived = DerivedKeyCache.GetOrAdd(cacheKey, str => dk(GetKey(transformer).AsMemory()));
+
+            return derived.Span;
+        }
+
         private string salt;
 
         public EncryptionType EncryptionType { get; }
@@ -113,7 +128,11 @@ namespace Kerberos.NET.Crypto
 
         public int? Version { get; set; }
 
-        public byte[] GetKey(KerberosCryptoTransformer transformer = null)
+        private readonly object _keyLock = new object();
+
+        private ReadOnlyMemory<byte> keyCache = null;
+
+        public ReadOnlySpan<byte> GetKey(KerberosCryptoTransformer transformer = null)
         {
             if (key != null && key.Length > 0)
             {
@@ -130,7 +149,18 @@ namespace Kerberos.NET.Crypto
                 throw new NotSupportedException();
             }
 
-            return transformer.String2Key(this);
+            if (keyCache.Length <= 0)
+            {
+                lock (_keyLock)
+                {
+                    if (keyCache.Length <= 0)
+                    {
+                        keyCache = transformer.String2Key(this).AsMemory();
+                    }
+                }
+            }
+
+            return keyCache.Span;
         }
 
         public override bool Equals(object obj)

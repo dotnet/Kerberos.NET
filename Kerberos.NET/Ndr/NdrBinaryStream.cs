@@ -1,11 +1,9 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Kerberos.NET.Entities.Pac
@@ -33,9 +31,19 @@ namespace Kerberos.NET.Entities.Pac
             writer = new BinaryWriter(stream);
         }
 
+        public NdrBinaryStream(ReadOnlyMemory<byte> bufferData)
+            : this(new BinaryReader(new MemoryStream(bufferData.ToArray())))
+        {
+        }
+
         private NdrBinaryStream(BinaryReader reader)
         {
             this.reader = reader;
+        }
+
+        public ReadOnlySpan<byte> ToSpan()
+        {
+            return stream.ToArray();
         }
 
         public ReadOnlyMemory<byte> ToMemory()
@@ -45,20 +53,11 @@ namespace Kerberos.NET.Entities.Pac
 
         internal void WriteDeferred()
         {
-            Debug.WriteLine("...writing deferred...");
-
             while (deferredWrites.Count != 0)
             {
                 var action = deferredWrites.Dequeue();
                 action();
             }
-
-            Debug.WriteLine("...done deferred...");
-        }
-
-        public NdrBinaryStream(byte[] bufferData)
-            : this(new BinaryReader(new MemoryStream(bufferData)))
-        {
         }
 
         public long Position
@@ -115,6 +114,13 @@ namespace Kerberos.NET.Entities.Pac
         public byte[] Read(int length)
         {
             return reader.ReadBytes(length);
+        }
+
+        public ReadOnlySpan<byte> ReadSpan(int length)
+        {
+            var read = Read(length);
+
+            return new ReadOnlySpan<byte>(read);
         }
 
         public void Read(byte[] b)
@@ -229,6 +235,11 @@ namespace Kerberos.NET.Entities.Pac
             }
         }
 
+        public void WriteDeferredBytes(ReadOnlySpan<byte> val)
+        {
+            WriteDeferredBytes(val.ToArray());
+        }
+
         public void WriteDeferredBytes(byte[] val)
         {
             WriteUnsignedInt(val?.Length ?? 0);
@@ -309,8 +320,6 @@ namespace Kerberos.NET.Entities.Pac
 
             if (WriteReferent(extraSids))
             {
-                Debug.WriteLine("[WriteSids] " + debug);
-
                 deferredWrites.Enqueue(() =>
                 {
                     WriteUnsignedInt(extraSids.Count());
@@ -319,8 +328,6 @@ namespace Kerberos.NET.Entities.Pac
 
                     foreach (var sid in extraSids)
                     {
-                        //WriteSid(sid, debug);
-
                         if (WriteReferent(sid))
                         {
                             localQueue.Enqueue(sid);
@@ -331,11 +338,11 @@ namespace Kerberos.NET.Entities.Pac
                     while (localQueue.Count != 0)
                     {
                         var sid2 = localQueue.Dequeue();
-                        Debug.WriteLine("[Deferred WriteSid] " + debug);
+
                         var len = (sid2.BinaryForm.Length - 8) / 4;
 
                         WriteUnsignedInt(len);
-                        WriteBytes(sid2.BinaryForm);
+                        WriteBytes(sid2.BinaryForm.Span);
                     }
                 });
             }
@@ -389,6 +396,11 @@ namespace Kerberos.NET.Entities.Pac
             }
 
             return DateTimeOffset.MinValue;
+        }
+
+        internal void WriteBytes(ReadOnlySpan<byte> v)
+        {
+            writer.Write(v.ToArray());
         }
 
         internal void WriteBytes(byte[] v)
@@ -448,42 +460,42 @@ namespace Kerberos.NET.Entities.Pac
 
             var lastAuthority = value.SubAuthorities.Last();
 
-            var bytes = new byte[4];
+            var bytes = new Memory<byte>(new byte[4]);
 
             Endian.ConvertToLittleEndian(lastAuthority, bytes);
 
-            writer.Write(bytes);
+            writer.Write(bytes.ToArray());
         }
 
         public void WriteSid(SecurityIdentifier value, string debug)
         {
-            Debug.WriteLine("[WriteSid] " + debug);
-
             if (WriteReferent(value))
             {
                 deferredWrites.Enqueue(() =>
                 {
-                    Debug.WriteLine("[Deferred WriteSid] " + debug);
                     var len = (value.BinaryForm.Length - 8) / 4;
 
                     WriteUnsignedInt(len);
-                    WriteBytes(value.BinaryForm);
+                    WriteBytes(value.BinaryForm.Span);
                 });
             }
         }
 
+        private static readonly ReadOnlyMemory<byte> NTAuthority = new byte[] { 0, 0, 0, 0, 0, 5 };
+
         public SecurityIdentifier ReadRid()
         {
-            var bytes = new byte[4];
-            Read(bytes);
+            var ridBytes = new byte[4];
 
-            var sidBytes = new byte[8 + bytes.Length];
+            Read(ridBytes);
+
+            var sidBytes = new Span<byte>(new byte[8 + 4]);
 
             sidBytes[0] = 1;
-            sidBytes[1] = (byte)(bytes.Length / 4);
+            sidBytes[1] = 1;
 
-            Buffer.BlockCopy(new byte[] { 0, 0, 0, 0, 0, 5 }, 0, sidBytes, 2, 6);
-            Buffer.BlockCopy(bytes, 0, sidBytes, 8, bytes.Length);
+            NTAuthority.Span.CopyTo(sidBytes.Slice(2, 6));
+            ridBytes.CopyTo(sidBytes.Slice(8, 4));
 
             return new SecurityIdentifier(sidBytes);
         }
@@ -532,14 +544,13 @@ namespace Kerberos.NET.Entities.Pac
 
             deferredWrites.Enqueue(() =>
             {
-                
+
                 while (deferred.Count != 0)
                 {
                     var action = deferred.Dequeue();
                     action();
                 }
             });
-            //WriteDeferredArray(array.ClaimEntries, false, (c, s) => ((ClaimEntry)c).WriteDeferred(s));
         }
 
         internal void WriteClaimEntry(ClaimEntry claim, Queue<Action> deferred)

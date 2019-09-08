@@ -1,9 +1,9 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using System;
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
@@ -20,7 +20,7 @@ namespace Kerberos.NET.Server
             kdc = new KdcServer(options);
         }
 
-        protected override async Task ReadRequest()
+        protected override async Task ReadRequest(CancellationToken cancellation)
         {
             var reader = RequestPipe.Reader;
 
@@ -30,7 +30,13 @@ namespace Kerberos.NET.Server
             {
                 while (true)
                 {
-                    var result = await reader.ReadAsync();
+                    if (cancellation.IsCancellationRequested)
+                    {
+                        reader.CancelPendingRead();
+                        break;
+                    }
+
+                    var result = await reader.ReadAsync(cancellation);
 
                     var buffer = result.Buffer;
 
@@ -43,7 +49,7 @@ namespace Kerberos.NET.Server
                     {
                         var message = buffer.Slice(Int32Size, messageLength);
 
-                        await ProcessMessage(message);
+                        await ProcessMessage(message, cancellation);
                         break;
                     }
 
@@ -61,7 +67,7 @@ namespace Kerberos.NET.Server
             }
         }
 
-        protected override async Task FillResponse(PipeWriter writer, ReadOnlyMemory<byte> message)
+        protected override async Task FillResponse(PipeWriter writer, ReadOnlyMemory<byte> message, CancellationToken cancellation)
         {
             var minResponseLength = Int32Size;
 
@@ -78,11 +84,11 @@ namespace Kerberos.NET.Server
                 writer.Advance(totalLength);
             }
 
-            await writer.FlushAsync();
+            await writer.FlushAsync(cancellation);
             writer.Complete();
         }
 
-        private async Task ProcessMessage(ReadOnlySequence<byte> message)
+        private async Task ProcessMessage(ReadOnlySequence<byte> message, CancellationToken cancellation)
         {
             if (Options.Log != null && Options.Log.Level >= LogLevel.Debug)
             {
@@ -91,7 +97,7 @@ namespace Kerberos.NET.Server
 
             var response = await kdc.ProcessMessage(message);
 
-            await FillResponse(ResponsePipe.Writer, response);
+            await FillResponse(ResponsePipe.Writer, response, cancellation);
         }
     }
 }

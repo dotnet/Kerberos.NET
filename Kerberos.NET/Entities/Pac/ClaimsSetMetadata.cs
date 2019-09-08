@@ -1,4 +1,5 @@
 ﻿using Kerberos.NET.Entities.Pac;
+using System;
 using System.IO;
 
 namespace Kerberos.NET.Entities
@@ -7,7 +8,7 @@ namespace Kerberos.NET.Entities
     {
         public override void WriteBody(NdrBinaryStream stream)
         {
-            byte[] claimsSet = Compress(ClaimsSet, CompressionFormat, out int originalSize);
+            var claimsSet = Compress(ClaimsSet, CompressionFormat, out int originalSize);
 
             stream.WriteDeferredBytes(claimsSet);
 
@@ -18,13 +19,13 @@ namespace Kerberos.NET.Entities
             stream.WriteDeferredBytes(ReservedField);
         }
 
-        private static byte[] Compress(ClaimsSet claimsSet, CompressionFormat compressionFormat, out int originalSize)
+        private static ReadOnlySpan<byte> Compress(ClaimsSet claimsSet, CompressionFormat compressionFormat, out int originalSize)
         {
             var stream = new NdrBinaryStream();
 
             claimsSet.Encode(stream);
 
-            var encoded = stream.ToMemory().ToArray();
+            var encoded = stream.ToSpan();
 
             originalSize = encoded.Length;
 
@@ -56,7 +57,7 @@ namespace Kerberos.NET.Entities
                 throw new InvalidDataException($"Data length {size} doesn't match expected ClaimSetSize {ClaimSetSize}");
             }
 
-            var claimSet = Stream.Read(ClaimSetSize);
+            var claimSet = Stream.ReadSpan(ClaimSetSize);
 
             if (CompressionFormat != CompressionFormat.COMPRESSION_FORMAT_NONE)
             {
@@ -64,7 +65,7 @@ namespace Kerberos.NET.Entities
             }
 
             ClaimsSet = new ClaimsSet();
-            ClaimsSet.Decode(claimSet);
+            ClaimsSet.Decode(claimSet.AsMemory());
 
             ReservedField = Stream.Read(ReservedFieldSize);
         }

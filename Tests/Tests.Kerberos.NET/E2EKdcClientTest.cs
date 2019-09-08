@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
+
 {
     [TestClass]
     public class E2EKdcClientTest
@@ -219,7 +220,7 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        private class FakeRealmService : IRealmService
+        public class FakeRealmService : IRealmService
         {
             private readonly string realm;
 
@@ -230,7 +231,7 @@ namespace Tests.Kerberos.NET
 
             public IRealmSettings Settings => new FakeRealmSettings();
 
-            public IPrincipalService Principals => new FakePrincipalService(realm);
+            public IPrincipalService Principals => new FakePrincipalService();
 
             public string Name => realm;
 
@@ -242,13 +243,6 @@ namespace Tests.Kerberos.NET
 
         internal class FakePrincipalService : IPrincipalService
         {
-            private string realm;
-
-            public FakePrincipalService(string realm)
-            {
-                this.realm = realm;
-            }
-
             public Task<IKerberosPrincipal> Find(string principalName)
             {
                 IKerberosPrincipal principal = new FakeKerberosPrincipal(principalName);
@@ -332,30 +326,57 @@ namespace Tests.Kerberos.NET
                 return Task.FromResult(pac);
             }
 
+            private static readonly KerberosKey TgtKey = new KerberosKey(
+                password: KrbTgtKey,
+                principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { "krbtgt" }),
+                etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
+                saltType: SaltType.ActiveDirectoryUser
+            );
+
+            private static readonly ConcurrentDictionary<string, KerberosKey> KeyCache = new ConcurrentDictionary<string, KerberosKey>();
+
             public Task<KerberosKey> RetrieveLongTermCredential()
             {
                 KerberosKey key;
 
                 if (PrincipalName == "krbtgt")
                 {
-                    key = new KerberosKey(
-                        password: KrbTgtKey,
-                        principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { "krbtgt" }),
-                        etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
-                        saltType: SaltType.ActiveDirectoryUser
-                    );
+                    key = TgtKey;
                 }
                 else
                 {
-                    key = new KerberosKey(
-                        password: FakePassword,
-                        principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { PrincipalName }),
-                        etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
-                        saltType: SaltType.ActiveDirectoryUser
-                    );
+                    key = KeyCache.GetOrAdd(PrincipalName, pn =>
+                    {
+                        EncryptionType etype = ExtractEType(PrincipalName);
+
+                        return new KerberosKey(
+                            password: FakePassword,
+                            principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { PrincipalName }),
+                            etype: etype,
+                            saltType: SaltType.ActiveDirectoryUser
+                        );
+                    });
                 }
 
                 return Task.FromResult(key);
+            }
+
+            private EncryptionType ExtractEType(string principalName)
+            {
+                if (principalName.StartsWith("RC4"))
+                {
+                    return EncryptionType.RC4_HMAC_NT;
+                }
+                else if (principalName.StartsWith("AES128"))
+                {
+                    return EncryptionType.AES128_CTS_HMAC_SHA1_96;
+                }
+                else if (principalName.StartsWith("AES256"))
+                {
+                    return EncryptionType.AES256_CTS_HMAC_SHA1_96;
+                }
+
+                return EncryptionType.AES256_CTS_HMAC_SHA1_96;
             }
         }
 

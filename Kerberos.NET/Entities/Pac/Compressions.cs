@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
@@ -12,7 +13,7 @@ namespace Kerberos.NET.Entities.Pac
         COMPRESSION_FORMAT_XPRESS_HUFF = 4
     }
 
-    internal static class Compressions
+    internal unsafe static class Compressions
     {
         const ushort COMPRESSION_ENGINE_MAXIMUM = 0x100;
 
@@ -26,27 +27,27 @@ namespace Kerberos.NET.Entities.Pac
         [DllImport("ntdll.dll")]
         private static extern uint RtlDecompressBufferEx(
             ushort compressionFormat,
-            byte[] uncompressedBuffer,
+            byte* uncompressedBuffer,
             int uncompressedBufferSize,
-            byte[] compressedBuffer,
+            byte* compressedBuffer,
             int compressedBufferSize,
             ref int finalUncompressedSize,
-            byte[] workSpace
+            byte* workSpace
         );
 
         [DllImport("ntdll.dll")]
         static extern uint RtlCompressBuffer(
             ushort CompressionFormat,
-            byte[] SourceBuffer,
+            byte* SourceBuffer,
             int SourceBufferLength,
-            byte[] DestinationBuffer,
+            byte* DestinationBuffer,
             int DestinationBufferLength,
             uint Unknown,
             out int pDestinationSize,
-            byte[] WorkspaceBuffer
+            byte* WorkspaceBuffer
         );
 
-        internal static byte[] Compress(byte[] buffer, CompressionFormat format)
+        internal static ReadOnlySpan<byte> Compress(ReadOnlySpan<byte> buffer, CompressionFormat format)
         {
             var bufferWorkSize = 0;
             var fragmentWorkSize = 0;
@@ -66,36 +67,48 @@ namespace Kerberos.NET.Entities.Pac
                 throw ex;
             }
 
-            var work = new byte[bufferWorkSize];
+            var work = MemoryPool<byte>.Shared.Rent(bufferWorkSize);
 
-            var compressed = new byte[bufferWorkSize];
-
-            result = RtlCompressBuffer(
-                compressionFormat,
-                buffer,
-                buffer.Length,
-                compressed,
-                compressed.Length,
-                0,
-                out int destinationSize,
-                work
-            );
-
-            if (result != 0)
+            try
             {
-                var ex = new Win32Exception((int)result);
+                int destinationSize;
 
-                throw ex;
+                var compressed = new Span<byte>(new byte[bufferWorkSize]);
+
+                fixed (byte* pBuffer = &MemoryMarshal.GetReference(buffer))
+                fixed (byte* pCompressed = &MemoryMarshal.GetReference(compressed))
+                fixed (byte* pWork = &MemoryMarshal.GetReference(work.Memory.Span))
+                {
+                    result = RtlCompressBuffer(
+                        compressionFormat,
+                        pBuffer,
+                        buffer.Length,
+                        pCompressed,
+                        compressed.Length,
+                        0,
+                        out destinationSize,
+                        pWork
+                    );
+                }
+
+                if (result != 0)
+                {
+                    var ex = new Win32Exception((int)result);
+
+                    throw ex;
+                }
+
+                return compressed.Slice(0, destinationSize);
             }
-
-            Array.Resize(ref compressed, destinationSize);
-
-            return compressed;
+            finally
+            {
+                work.Dispose();
+            }
         }
 
-        public static byte[] Decompress(byte[] data, long decompressedSize, CompressionFormat format)
+        public static ReadOnlySpan<byte> Decompress(ReadOnlySpan<byte> data, long decompressedSize, CompressionFormat format)
         {
-            var decompressed = new byte[decompressedSize];
+            var decompressed = new Span<byte>(new byte[decompressedSize]);
 
             var bufferWorkSize = 0;
             var fragmentWorkSize = 0;
@@ -115,28 +128,40 @@ namespace Kerberos.NET.Entities.Pac
                 throw ex;
             }
 
-            var work = new byte[fragmentWorkSize];
+            var work = MemoryPool<byte>.Shared.Rent(bufferWorkSize);
 
             var finalDecompressedSize = (int)decompressedSize;
 
-            result = RtlDecompressBufferEx(
-                compressionFormat,
-                decompressed,
-                decompressed.Length,
-                data,
-                data.Length,
-                ref finalDecompressedSize,
-                work
-            );
-
-            if (result != 0)
+            try
             {
-                var ex = new Win32Exception((int)result);
+                fixed (byte* pDecompressed = &MemoryMarshal.GetReference(decompressed))
+                fixed (byte* pData = &MemoryMarshal.GetReference(data))
+                fixed (byte* pWork = &MemoryMarshal.GetReference(work.Memory.Span))
+                {
+                    result = RtlDecompressBufferEx(
+                        compressionFormat,
+                        pDecompressed,
+                        decompressed.Length,
+                        pData,
+                        data.Length,
+                        ref finalDecompressedSize,
+                        pWork
+                    );
 
-                throw ex;
+                    if (result != 0)
+                    {
+                        var ex = new Win32Exception((int)result);
+
+                        throw ex;
+                    }
+                }
+
+                return decompressed;
             }
-
-            return decompressed;
+            finally
+            {
+                work.Dispose();
+            }
         }
     }
 }

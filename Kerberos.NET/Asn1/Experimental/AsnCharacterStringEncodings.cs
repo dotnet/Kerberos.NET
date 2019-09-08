@@ -240,7 +240,7 @@ namespace System.Security.Cryptography.Asn1
             {
                 char c = chars[i];
 
-                if ((uint)c >= (uint)_isAllowed.Length || !_isAllowed[c])
+                if (c >= (uint)_isAllowed.Length || !_isAllowed[c])
                 {
                     EncoderFallback.CreateFallbackBuffer().Fallback(c, i);
 

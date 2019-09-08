@@ -27,6 +27,8 @@ namespace Kerberos.NET.Transport
 
             using (var client = new TcpClient(AddressFamily.InterNetwork))
             {
+                client.LingerState = new LingerOption(false, 0);
+
                 try
                 {
                     await client.ConnectAsync(target.Target, target.Port);
@@ -38,17 +40,18 @@ namespace Kerberos.NET.Transport
 
                 var stream = client.GetStream();
 
-                var messageSize = new byte[4];
+                var messageSize = new Memory<byte>(new byte[4]);
                 Endian.ConvertToBigEndian(encoded.Length, messageSize);
 
                 await stream.WriteAsync(messageSize);
                 await stream.WriteAsync(encoded);
                 await stream.FlushAsync();
 
-                await stream.ReadAsync(messageSize, 0, 4);
+                await stream.ReadAsync(messageSize.Slice(0, 4));
 
-                var response = new byte[messageSize.AsLong()];
+                var response = new byte[messageSize.Span.AsLong()];
 
+                await stream.FlushAsync();
                 await stream.ReadAsync(response);
 
                 return Decode<T>(response);

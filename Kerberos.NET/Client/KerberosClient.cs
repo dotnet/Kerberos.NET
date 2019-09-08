@@ -58,6 +58,8 @@ namespace Kerberos.NET.Client
 
             int preauthAttempts = 0;
 
+            AuthenticationOptions &= ~AuthenticationOptions.PreAuthenticate;
+
             do
             {
                 try
@@ -72,7 +74,7 @@ namespace Kerberos.NET.Client
                         throw;
                     }
 
-                    credential.IncludePreAuthenticationHints(pex?.Error.DecodePreAuthentication());
+                    credential.IncludePreAuthenticationHints(pex?.Error?.DecodePreAuthentication());
 
                     AuthenticationOptions |= AuthenticationOptions.PreAuthenticate;
                 }

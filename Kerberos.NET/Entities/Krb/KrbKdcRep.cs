@@ -127,8 +127,6 @@ namespace Kerberos.NET.Entities
                 }
             };
 
-            encKdcRepPart.EncodeApplication();
-
             var rep = new T
             {
                 CName = cname,

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Entities
 {
@@ -48,11 +49,11 @@ namespace Kerberos.NET.Entities
         }
     }
 
-    public class PrivilegedAttributeCertificate
+    public class PrivilegedAttributeCertificate : Restriction
     {
         private const int PAC_VERSION = 0;
 
-        private readonly byte[] pacData;
+        private readonly Memory<byte> pacData;
 
         public PrivilegedAttributeCertificate()
         {
@@ -61,13 +62,14 @@ namespace Kerberos.NET.Entities
 
         protected NdrBinaryStream Stream { get; set; }
 
-        public PrivilegedAttributeCertificate(byte[] pac)
+        public PrivilegedAttributeCertificate(KrbAuthorizationData authz)
+            : base(authz.Type, AuthorizationDataType.AdWin2kPac)
         {
+            var pac = authz.Data;
+
             Stream = new NdrBinaryStream(pac);
 
-            pacData = new byte[pac.Length];
-
-            Buffer.BlockCopy(pac, 0, pacData, 0, pac.Length);
+            pacData = MemoryMarshal.AsMemory(authz.Data);
 
             var count = Stream.ReadInt();
             var version = Stream.ReadInt();
@@ -85,9 +87,8 @@ namespace Kerberos.NET.Entities
                 var size = Stream.ReadInt();
 
                 var offset = Stream.ReadLong();
-                var pacInfoBuffer = new byte[size];
 
-                Buffer.BlockCopy(pac, (int)offset, pacInfoBuffer, 0, size);
+                var pacInfoBuffer = pac.Slice((int)offset, size);
 
                 int exclusionStart = 0;
                 int exclusionLength = 0;
@@ -108,7 +109,7 @@ namespace Kerberos.NET.Entities
 
                 if (exclusionStart > 0 && exclusionLength > 0)
                 {
-                    ZeroArray(pacData, offset + exclusionStart, exclusionLength);
+                    pacData.Span.Slice((int)offset + exclusionStart, exclusionLength).Fill(0);
                 }
             }
 
@@ -117,17 +118,9 @@ namespace Kerberos.NET.Entities
             HasRequiredFields = ServerSignature != null && KdcSignature != null;
         }
 
-        private static void ZeroArray(byte[] signatureData, long start, int exclusionEnd)
-        {
-            for (var i = start; i < start + exclusionEnd; i++)
-            {
-                signatureData[i] = 0;
-            }
-        }
-
         public IEnumerable<PacDecodeError> DecodingErrors { get; }
 
-        private void ParsePacType(PacType type, byte[] pacInfoBuffer, out int exclusionStart, out int exclusionLength)
+        private void ParsePacType(PacType type, ReadOnlyMemory<byte> pacInfoBuffer, out int exclusionStart, out int exclusionLength)
         {
             exclusionStart = 0;
             exclusionLength = 0;
@@ -234,7 +227,7 @@ namespace Kerberos.NET.Entities
 
             foreach (var element in pacElements.Where(e => e is PacSignature).Cast<PacSignature>())
             {
-                ZeroArray(element.Signature, 0, element.Signature.Length);
+                element.Signature.Span.Fill(0);
             }
 
             var pacUnsigned = GeneratePac(pacElements);

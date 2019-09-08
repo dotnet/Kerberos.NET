@@ -54,7 +54,7 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        internal static KerberosChecksum CreateChecksumValidator(ChecksumType type, byte[] signature, byte[] signatureData)
+        internal static KerberosChecksum CreateChecksumValidator(ChecksumType type, ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> signatureData)
         {
             switch (type)
             {

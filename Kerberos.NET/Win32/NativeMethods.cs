@@ -100,7 +100,7 @@ namespace Kerberos.NET.Win32
             SecurityContextAttribute ulAttribute,
             ref SecPkgContext_SecString pBuffer
         );
-        
+
         [DllImport(SECUR32)]
         internal static extern int FreeCredentialsHandle(SECURITY_HANDLE* handle);
 
@@ -232,18 +232,18 @@ namespace Kerberos.NET.Win32
 
                 var finalLen = bufferList.Sum(b => b.Length);
 
-                var finalBuffer = new byte[finalLen];
+                var finalBuffer = new Span<byte>(new byte[finalLen]);
 
                 var position = 0;
 
                 for (var i = 0; i < bufferList.Count; i++)
                 {
-                    Buffer.BlockCopy(bufferList[i], 0, finalBuffer, position, bufferList[i].Length);
+                    bufferList[i].CopyTo(finalBuffer.Slice(position, bufferList[i].Length));
 
                     position += bufferList[i].Length - 1;
                 }
 
-                return finalBuffer;
+                return finalBuffer.ToArray();
             }
         }
 

@@ -1,15 +1,16 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
 using System.Buffers;
+using System.Runtime.CompilerServices;
 
-namespace Kerberos.NET.Asn1
+namespace Kerberos.NET
 {
     public static class BitOperation
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlyMemory<T> AsMemory<T>(this ReadOnlySpan<T> span) => new ReadOnlyMemory<T>(span.ToArray());
 
-        public static Memory<T> AsMemory<T>(this Span<T> span) => new Memory<T>(span.ToArray());
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlySpan<byte> AsReadOnly(this Enum val, bool littleEndian = false)
         {
             var longVal = (object)val;
@@ -17,9 +18,10 @@ namespace Kerberos.NET.Asn1
             return AsReadOnly((long)longVal, littleEndian: littleEndian);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlySpan<byte> AsReadOnly(long longVal, bool littleEndian = false)
         {
-            var bytes = new byte[4];
+            var bytes = new Span<byte>(new byte[4]);
 
             if (littleEndian)
             {
@@ -30,33 +32,22 @@ namespace Kerberos.NET.Asn1
                 Endian.ConvertToBigEndian((int)longVal, bytes);
             }
 
-            return new ReadOnlySpan<byte>(bytes);
+            return bytes;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long AsLong(this ReadOnlySequence<byte> val)
         {
-            return val.ToArray().AsLong();
+            return val.First.Span.AsLong();
         }
 
-        public static int AsInt(this ReadOnlyMemory<byte> val)
-        {
-            var bytes = val.Span;
-
-            int num = 0;
-
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                num = (num << 8) | bytes[i];
-            }
-
-            return num;
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long AsLong(this byte[] val)
         {
             return AsLong((ReadOnlyMemory<byte>)val);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long AsLong(this ReadOnlySpan<byte> val, bool littleEndian = false)
         {
             var bytes = val.ToArray();
@@ -76,6 +67,7 @@ namespace Kerberos.NET.Asn1
             return num;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long AsLong(this Span<byte> val, bool littleEndian = false)
         {
             var bytes = val;
@@ -83,6 +75,7 @@ namespace Kerberos.NET.Asn1
             return AsLong((ReadOnlySpan<byte>)bytes, littleEndian);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long AsLong(this ReadOnlyMemory<byte> val, bool littleEndian = false)
         {
             return AsLong(val.Span, littleEndian);

@@ -1,15 +1,17 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using System.Runtime.InteropServices;
 
 namespace Kerberos.NET
 {
     public abstract class Restriction
     {
+        protected Restriction() { }
+
         protected Restriction(AuthorizationDataType actualType, AuthorizationDataType expectedType)
         {
             if (actualType != expectedType)
@@ -23,12 +25,12 @@ namespace Kerberos.NET
         public AuthorizationDataType Type { get; }
     }
 
-    public class KerbServiceTargetRestriction : Restriction
+    public unsafe class KerbServiceTargetRestriction : Restriction
     {
         public KerbServiceTargetRestriction(KrbAuthorizationData authz)
             : base(authz.Type, AuthorizationDataType.KerbServiceTarget)
         {
-            ServiceName = Encoding.Unicode.GetString(authz.Data.ToArray());
+            ServiceName = MemoryMarshal.Cast<byte, char>(authz.Data.Span).ToString();
         }
 
         public string ServiceName { get; }
@@ -39,10 +41,10 @@ namespace Kerberos.NET
         public KerbLocalRestriction(KrbAuthorizationData authz)
             : base(authz.Type, AuthorizationDataType.KerbLocal)
         {
-            Value = authz.Data.ToArray();
+            Value = new ReadOnlySequence<byte>(authz.Data);
         }
 
-        public byte[] Value { get; }
+        public ReadOnlySequence<byte> Value { get; }
     }
 
     public class KerbApOptionsRestriction : Restriction
@@ -50,7 +52,7 @@ namespace Kerberos.NET
         public KerbApOptionsRestriction(KrbAuthorizationData authz)
             : base(authz.Type, AuthorizationDataType.KerbApOptions)
         {
-            Options = (ApOptions)authz.Data.AsLong(littleEndian: true);
+            Options = (ApOptions)BinaryPrimitives.ReadInt32LittleEndian(authz.Data.Span);
         }
 
         public ApOptions Options { get; }
@@ -66,7 +68,7 @@ namespace Kerberos.NET
             foreach (var data in restriction.AuthorizationData)
             {
                 RestrictionType = (int)data.Type;
-                Restriction = new LsapTokenInfoIntegrity(data.Data.ToArray());
+                Restriction = new LsapTokenInfoIntegrity(data.Data);
                 break;
             }
 
@@ -79,21 +81,19 @@ namespace Kerberos.NET
 
     public class LsapTokenInfoIntegrity
     {
-        public LsapTokenInfoIntegrity(byte[] value)
+        public LsapTokenInfoIntegrity(ReadOnlyMemory<byte> value)
         {
-            var reader = new BinaryReader(new MemoryStream(value));
+            Flags = (TokenTypes)BinaryPrimitives.ReadInt32LittleEndian(value.Span);
+            TokenIntegrityLevel = (IntegrityLevels)BinaryPrimitives.ReadInt32LittleEndian(value.Span.Slice(4, 4));
 
-            Flags = (TokenTypes)reader.ReadInt32();
-            TokenIntegrityLevel = (IntegrityLevels)reader.ReadInt32();
-
-            MachineId = reader.ReadBytes(32);
+            MachineId = new ReadOnlySequence<byte>(value.Slice(8, 32));
         }
 
         public TokenTypes Flags { get; }
 
         public IntegrityLevels TokenIntegrityLevel { get; }
 
-        public byte[] MachineId { get; }
+        public ReadOnlySequence<byte> MachineId { get; }
     }
 
     [Flags]
