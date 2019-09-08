@@ -25,12 +25,19 @@ namespace KerbDump
     {
         private const string RequestTemplateText = "Request for {0}";
 
+        private readonly ContextMenu exportMenu = new ContextMenu();
+
         public Form1()
         {
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = AutoScaleMode.Dpi;
 
             InitializeComponent();
+
+            exportMenu.MenuItems.Add("Export to WireShark", ExportWireshark);
+            exportMenu.MenuItems.Add("Export to Keytab", ExportKeytab);
+
+            btnExport.Click += (s, e) => { exportMenu.Show(btnExport, new System.Drawing.Point()); };
 
             CryptoService.RegisterCryptographicAlgorithm(EncryptionType.NULL, () => new NoopTransform());
 
@@ -111,46 +118,63 @@ namespace KerbDump
 
             string ticket;
 
-            if (string.IsNullOrWhiteSpace(txtKey.Text))
+            if (string.IsNullOrWhiteSpace(txtKey.Text) && table == null)
             {
                 ticket = Decode(txtTicket.Text);
             }
             else
             {
-                var key = table;
-
-                var domain = Environment.GetEnvironmentVariable("USERDNSDOMAIN");
-
-                if (key == null)
-                {
-                    if (chkEncodedKey.Checked)
-                    {
-                        var bytes = Convert.FromBase64String(txtKey.Text);
-
-                        key = new KeyTable(
-                            new KerberosKey(
-                                password: bytes,
-                                principal: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
-                                host: txtHost.Text
-                            )
-                        );
-                    }
-                    else
-                    {
-                        key = new KeyTable(
-                            new KerberosKey(
-                                txtKey.Text,
-                                principalName: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
-                                host: string.IsNullOrWhiteSpace(txtHost.Text) ? null : txtHost.Text
-                            )
-                        );
-                    }
-                }
+                var key = CreateKeytab();
 
                 ticket = await Decode(txtTicket.Text, key);
             }
 
             DisplayDeconstructed(ticket, "Decoded Ticket");
+        }
+
+        private KeyTable CreateKeytab()
+        {
+            var key = table;
+
+            var domain = Environment.GetEnvironmentVariable("USERDNSDOMAIN");
+
+            var host = txtHost.Text;
+
+            var split = host.Split(new[] { '.' }, 2);
+
+            if (split.Length == 2)
+            {
+                host = split[0];
+                domain = split[1];
+            }
+
+            if (key == null)
+            {
+                if (chkEncodedKey.Checked)
+                {
+                    var bytes = Convert.FromBase64String(txtKey.Text);
+
+                    key = new KeyTable(
+                        new KerberosKey(
+                            password: bytes,
+                            principal: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
+                            host: host
+                        )
+                    );
+                }
+                else
+                {
+                    key = new KeyTable(
+                        new KerberosKey(
+                            txtKey.Text,
+                            principalName: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
+                            host: string.IsNullOrWhiteSpace(host) ? null : host
+                        )
+                    );
+                }
+            }
+
+            return key;
         }
 
         private void ResetPersistedValues()
@@ -580,7 +604,7 @@ namespace KerbDump
             }
         }
 
-        private void btnExport_Click(object sender, EventArgs e)
+        private void ExportWireshark(object sender, EventArgs e)
         {
             using (var dialog = new SaveFileDialog
             {
@@ -593,13 +617,44 @@ namespace KerbDump
                 {
                     using (var stream = dialog.OpenFile())
                     {
-                        ExportFile(stream);
+                        ExportWireSharkFile(stream);
                     }
                 }
             }
         }
 
-        private void ExportFile(Stream stream)
+        private void ExportKeytab(object sender, EventArgs e)
+        {
+            using (var dialog = new SaveFileDialog
+            {
+                Filter = "keytab files (*.ketab)|*.keytab|All files (*.*)|*.*",
+                FilterIndex = 2,
+                RestoreDirectory = true
+            })
+            {
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    using (var stream = dialog.OpenFile())
+                    {
+                        ExportKeytabFile(stream);
+                    }
+                }
+            }
+        }
+
+        private void ExportKeytabFile(Stream stream)
+        {
+            var keytab = CreateKeytab();
+
+            using (var writer = new BinaryWriter(stream))
+            {
+                keytab.Write(writer);
+
+                writer.Flush();
+            }
+        }
+
+        private void ExportWireSharkFile(Stream stream)
         {
             var header = new StringBuilder();
 
@@ -615,30 +670,9 @@ namespace KerbDump
 
             using (var writer = new StreamWriter(stream))
             {
-                writer.Write(HexDump(Encoding.ASCII.GetBytes(header.ToString())));
+                writer.Write(Hex.DumpHex(Encoding.ASCII.GetBytes(header.ToString())));
                 writer.Flush();
             }
-        }
-
-        public static string HexDump(byte[] bytes, int bytesPerLine = 16)
-        {
-            var sb = new StringBuilder();
-
-            for (int line = 0; line < bytes.Length; line += bytesPerLine)
-            {
-                var lineBytes = bytes.Skip(line).Take(bytesPerLine).ToArray();
-
-                sb.AppendFormat("{0:x8} ", line);
-
-                sb.Append(string.Join(" ", lineBytes.Select(b => b.ToString("x2")).ToArray()).PadRight((bytesPerLine * 3)));
-
-                sb.Append(" ");
-
-                sb.Append(new string(lineBytes.Select(b => b < 32 ? '.' : (char)b).ToArray()));
-                sb.AppendLine();
-            }
-
-            return sb.ToString();
         }
     }
 

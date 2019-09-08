@@ -31,13 +31,18 @@ namespace Kerberos.NET.Server
 
                     return workerFunc(socket, Options);
                 }
-                catch (SocketException sx) when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
+                catch (SocketException sx)
+                    when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
                 {
                     LogVerbose(sx);
                 }
                 catch (ObjectDisposedException ex)
                 {
                     LogVerbose(ex);
+                }
+                catch (Exception ex)
+                {
+                    Log(ex);
                 }
             }
         }

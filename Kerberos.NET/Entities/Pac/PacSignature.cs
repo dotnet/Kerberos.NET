@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities.Pac
@@ -30,9 +31,9 @@ namespace Kerberos.NET.Entities.Pac
             throw new InvalidOperationException($"Unknown checksum type {type}");
         }
 
-        private readonly byte[] signatureData;
+        private readonly Memory<byte> signatureData;
 
-        public PacSignature(byte[] signatureData)
+        public PacSignature(Memory<byte> signatureData)
         {
             this.signatureData = signatureData;
         }
@@ -41,7 +42,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public ChecksumType Type { get; set; }
 
-        public byte[] Signature { get; set; }
+        public Memory<byte> Signature { get; set; }
 
         public short RODCIdentifier { get; set; }
 
@@ -70,7 +71,7 @@ namespace Kerberos.NET.Entities.Pac
         {
             stream.WriteUnsignedInt((int)Type);
 
-            stream.WriteBytes(Signature);
+            stream.WriteBytes(Signature.Span);
 
             stream.WriteShort(RODCIdentifier);
         }
@@ -86,11 +87,11 @@ namespace Kerberos.NET.Entities.Pac
 
         internal void Sign(Memory<byte> pacUnsigned, KerberosKey key)
         {
-            Validator = CryptoService.CreateChecksumValidator(Type, Signature, pacUnsigned.ToArray());
+            Validator = CryptoService.CreateChecksumValidator(Type, Signature, pacUnsigned);
 
             Validator.Sign(key);
-
-            this.Signature = Validator.Signature.ToArray();
+            
+            Signature = MemoryMarshal.AsMemory(Validator.Signature);
 
             IsDirty = true;
         }

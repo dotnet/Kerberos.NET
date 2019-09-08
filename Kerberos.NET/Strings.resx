@@ -262,7 +262,7 @@
     <value>Pre-authentication information was invalid</value>
   </data>
   <data name="KRB_ERROR_KDC_ERR_PREAUTH_REQUIRED" xml:space="preserve">
-    <value>Additional pre- authentication required</value>
+    <value>Additional pre-authentication required</value>
   </data>
   <data name="KRB_ERROR_KDC_ERR_PRINCIPAL_NOT_UNIQUE" xml:space="preserve">
     <value>Multiple principal entries in database</value>

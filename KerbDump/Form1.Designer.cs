@@ -296,9 +296,8 @@
             this.btnExport.Name = "btnExport";
             this.btnExport.Size = new System.Drawing.Size(130, 23);
             this.btnExport.TabIndex = 8;
-            this.btnExport.Text = "Export for WireShark";
+            this.btnExport.Text = "Export";
             this.btnExport.UseVisualStyleBackColor = true;
-            this.btnExport.Click += new System.EventHandler(this.btnExport_Click);
             // 
             // Form1
             // 

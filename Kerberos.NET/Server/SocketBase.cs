@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 
 namespace Kerberos.NET.Server
 {
@@ -14,12 +15,10 @@ namespace Kerberos.NET.Server
 
         public abstract void Dispose();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void Log(Exception ex)
         {
-            if (Options.Log != null)
-            {
-                Options.Log.WriteLine(KerberosLogSource.ServiceListener, ex);
-            }
+            Options?.Log?.WriteLine(KerberosLogSource.ServiceListener, ex);
         }
 
         protected void LogVerbose(Exception ex)
@@ -30,6 +29,7 @@ namespace Kerberos.NET.Server
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static bool IsSocketError(SocketError errorCode)
         {
             return errorCode == SocketError.ConnectionReset ||
@@ -37,6 +37,7 @@ namespace Kerberos.NET.Server
                    errorCode == SocketError.ConnectionAborted;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static bool IsSocketAbort(SocketError errorCode)
         {
             return errorCode == SocketError.OperationAborted ||

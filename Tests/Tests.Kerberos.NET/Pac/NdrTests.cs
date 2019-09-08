@@ -32,7 +32,7 @@ namespace Tests.Kerberos.NET.Pac
                     .Where(a => a.Type == AuthorizationDataType.AdWin2kPac)
                 ).First();
 
-            return new PrivilegedAttributeCertificate(pac.First().Data.ToArray());
+            return new PrivilegedAttributeCertificate(new KrbAuthorizationData { Type = AuthorizationDataType.AdWin2kPac, Data = pac.First().Data });
         }
 
         private static async Task<DecryptedKrbApReq> GeneratePacContainingClaims()
@@ -102,7 +102,7 @@ namespace Tests.Kerberos.NET.Pac
 
             var signatureDecoded = TestPacEncoding(signature);
 
-            Assert.IsTrue(signature.Signature.SequenceEqual(signatureDecoded.Signature));
+            Assert.IsTrue(signature.Signature.Span.SequenceEqual(signatureDecoded.Signature.Span));
         }
 
         [TestMethod]
@@ -202,7 +202,7 @@ namespace Tests.Kerberos.NET.Pac
             Assert.AreEqual(leftSid.Value, rightSid.Value);
             Assert.AreEqual(leftSid.Attributes, rightSid.Attributes);
 
-            Assert.IsTrue(leftSid.BinaryForm.SequenceEqual(rightSid.BinaryForm));
+            Assert.IsTrue(leftSid.BinaryForm.Span.SequenceEqual(rightSid.BinaryForm.Span));
         }
     }
 }

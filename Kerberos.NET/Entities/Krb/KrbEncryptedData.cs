@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
 using System;
 
 namespace Kerberos.NET.Entities
@@ -11,7 +12,7 @@ namespace Kerberos.NET.Entities
 
             var decrypted = crypto.Decrypt(this.Cipher, key, usage);
 
-            return func(decrypted);
+            return func(decrypted.AsMemory());
         }
 
         public static KrbEncryptedData Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)

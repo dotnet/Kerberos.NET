@@ -291,7 +291,7 @@ namespace Kerberos.NET.Crypto
         {
             WriteInt16(writer, (short)key.EncryptionType);
 
-            WriteBytes(writer, key.GetKey());
+            WriteBytes(writer, key.GetKey().ToArray());
         }
 
         private static void WriteString(BinaryWriter writer, string val)

@@ -2,6 +2,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
 
@@ -98,11 +99,12 @@ namespace Kerberos.NET.Server
 
         private static Asn1Tag PeekTag(ReadOnlySequence<byte> request)
         {
-            AsnReader reader = new AsnReader(request.ToArray(), AsnEncodingRules.DER);
+            AsnReader reader = new AsnReader(request.First, AsnEncodingRules.DER);
 
             return reader.PeekTag();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Log(Exception ex)
         {
             options?.Log?.WriteLine(KerberosLogSource.Kdc, ex);

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
 {
-    public abstract class KerberosTransportBase : IKerberosTransport
+    public abstract class KerberosTransportBase : IKerberosTransport, IDisposable
     {
         private const int DefaultKerberosPort = 88;
 
@@ -34,12 +34,15 @@ namespace Kerberos.NET.Transport
 
         public bool Enabled { get; set; }
 
+        public virtual void Dispose() { }
+
         protected void Log(string log)
         {
             Logger?.WriteLine(KerberosLogSource.Client, log);
         }
 
-        protected static T Decode<T>(byte[] response) where T : IAsn1ApplicationEncoder<T>, new()
+        protected static T Decode<T>(byte[] response)
+            where T : IAsn1ApplicationEncoder<T>, new()
         {
             if (KrbError.CanDecode(response))
             {

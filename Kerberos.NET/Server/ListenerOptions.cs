@@ -13,6 +13,8 @@ namespace Kerberos.NET.Server
 
         public TimeSpan ReceiveTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
+        public TimeSpan AcceptTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
         public int MaxReadBufferSize { get; set; } = 1024 * 1024;
 
         public int MaxWriteBufferSize { get; set; } = 64 * 1024;

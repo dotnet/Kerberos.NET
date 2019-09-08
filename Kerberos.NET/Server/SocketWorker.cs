@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -41,9 +42,9 @@ namespace Kerberos.NET.Server
             ));
         }
 
-        protected abstract Task ReadRequest();
+        protected abstract Task ReadRequest(CancellationToken cancellation);
 
-        protected abstract Task FillResponse(PipeWriter writer, ReadOnlyMemory<byte> message);
+        protected abstract Task FillResponse(PipeWriter writer, ReadOnlyMemory<byte> message, CancellationToken cancellation);
 
         public override void Dispose()
         {
@@ -52,38 +53,45 @@ namespace Kerberos.NET.Server
 
         public async Task HandleMessage()
         {
-            var timeoutSource = new CancellationTokenSource(Options.ReceiveTimeout);
-            var timeoutCompletion = new TaskCompletionSource<object>();
-
-            timeoutSource.Token.Register(() => timeoutCompletion.TrySetCanceled(timeoutSource.Token));
-
-            try
+            using (var timeoutSource = new CancellationTokenSource())
+            using (var receiveTimeoutSource = new CancellationTokenSource())
+            using (var acceptTimeoutSource = new CancellationTokenSource(Options.AcceptTimeout))
             {
-                var receiving = Receive();
-                var responding = Respond();
+                receiveTimeoutSource.Token.Register(timeoutSource.Cancel);
+                acceptTimeoutSource.Token.Register(timeoutSource.Cancel);
 
-                if (await Task.WhenAny(receiving, responding, timeoutCompletion.Task) == timeoutCompletion.Task)
+                var timeoutCompletion = new TaskCompletionSource<object>();
+
+                timeoutSource.Token.Register(() => timeoutCompletion.TrySetResult(timeoutSource.Token));
+
+                try
                 {
-                    throw new TimeoutException();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log(ex);
-            }
-            finally
-            {
-                timeoutSource.Dispose();
+                    receiveTimeoutSource.CancelAfter(Options.ReceiveTimeout);
 
-                Dispose();
+                    var receiving = Receive(timeoutSource.Token);
+                    var responding = Respond(timeoutSource.Token);
+
+                    var waitAll = Task.WhenAll(receiving, responding);
+
+                    if (await Task.WhenAny(waitAll, timeoutCompletion.Task) == timeoutCompletion.Task)
+                    {
+                        throw new TimeoutException();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log(ex);
+
+                    Dispose();
+                }
             }
         }
 
-        private async Task Respond()
+        private async Task Respond(CancellationToken cancellation)
         {
             try
             {
-                var responseSent = SendResponse(ResponsePipe.Reader);
+                var responseSent = SendResponse(ResponsePipe.Reader, cancellation);
 
                 await Task.WhenAll(responseFilledCompletion.Task, responseSent);
             }
@@ -103,11 +111,23 @@ namespace Kerberos.NET.Server
             }
         }
 
-        private async Task SendResponse(PipeReader reader)
+        private async Task SendResponse(PipeReader reader, CancellationToken cancellation)
         {
             while (true)
             {
-                var result = await reader.ReadAsync();
+                if (cancellation.IsCancellationRequested)
+                {
+                    reader.CancelPendingRead();
+
+                    break;
+                }
+
+                var result = await reader.ReadAsync(cancellation);
+
+                if (result.IsCanceled)
+                {
+                    break;
+                }
 
                 var buffer = result.Buffer;
 
@@ -115,41 +135,94 @@ namespace Kerberos.NET.Server
                 {
                     break;
                 }
-                await socket.SendAsync(new ArraySegment<byte>(buffer.ToArray()), SocketFlags.None);
+
+                byte[] fillBufferBytes = null;
+
+                try
+                {
+                    if (!MemoryMarshal.TryGetArray(buffer.First, out ArraySegment<byte> fillBuffer))
+                    {
+                        fillBufferBytes = ArrayPool<byte>.Shared.Rent((int)buffer.Length);
+
+                        fillBuffer = new ArraySegment<byte>(fillBufferBytes);
+                    }
+
+                    await socket.SendAsync(fillBuffer, SocketFlags.None);
+
+                    if (result.IsCompleted)
+                    {
+                        break;
+                    }
+                }
+                finally
+                {
+                    if (fillBufferBytes != null)
+                    {
+                        ArrayPool<byte>.Shared.Return(fillBufferBytes);
+                    }
+                }
+
                 reader.AdvanceTo(buffer.Start, buffer.End);
             }
 
             reader.Complete();
         }
 
-        private async Task Receive()
+        private async Task Receive(CancellationToken cancellation)
         {
             try
             {
-                var fill = FillRequest(RequestPipe.Writer, async buffer =>
+                var fill = FillRequest(RequestPipe.Writer, cancellation, async buffer =>
                 {
-                    var fillBuffer = new byte[buffer.Length];
-                    var retval = await socket.ReceiveAsync(new ArraySegment<byte>(fillBuffer), SocketFlags.None);
-                    fillBuffer.CopyTo(buffer);
-                    return retval;
-                });                
-                var read = ReadRequest();
+                    byte[] fillBufferBytes = null;
+
+                    try
+                    {
+                        if (!MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> fillBuffer))
+                        {
+                            fillBufferBytes = ArrayPool<byte>.Shared.Rent(buffer.Length);
+
+                            fillBuffer = new ArraySegment<byte>(fillBufferBytes);
+                        }
+
+                        var bytesRead = await socket.ReceiveAsync(fillBuffer, SocketFlags.None);
+
+                        if (fillBufferBytes != null)
+                        {
+                            fillBuffer.AsSpan(0, buffer.Length).CopyTo(buffer.Span);
+                        }
+
+                        return bytesRead;
+                    }
+                    finally
+                    {
+                        if (fillBufferBytes != null)
+                        {
+                            ArrayPool<byte>.Shared.Return(fillBufferBytes);
+                        }
+                    }
+                });
+
+                var read = ReadRequest(cancellation);
 
                 await Task.WhenAll(fill, read);
-                responseFilledCompletion.TrySetResult(null);
             }
-            catch (SocketException sx) when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
+            catch (SocketException sx)
+                when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
             {
                 LogVerbose(sx);
             }
             catch (Exception ex)
             {
                 Log(ex);
-                throw;
+            }
+            finally
+            {
+                responseFilledCompletion.TrySetResult(null);
             }
         }
 
-        private static async Task FillRequest(PipeWriter writer, Func<Memory<byte>, ValueTask<int>> write)
+        private static async Task FillRequest(PipeWriter writer, CancellationToken cancellation, Func<Memory<byte>, ValueTask<int>> write)
         {
             while (true)
             {
@@ -164,10 +237,16 @@ namespace Kerberos.NET.Server
 
                 writer.Advance(bytesRead);
 
-                var result = await writer.FlushAsync();
+                var result = await writer.FlushAsync(cancellation);
 
                 if (result.IsCompleted)
                 {
+                    break;
+                }
+
+                if (cancellation.IsCancellationRequested)
+                {
+                    writer.CancelPendingFlush();
                     break;
                 }
             }

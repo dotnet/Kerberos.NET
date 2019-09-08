@@ -177,7 +177,7 @@ namespace Tests.Kerberos.NET
 
             var encoded = pac.Encode(key, key);
 
-            var pacDecoded = new PrivilegedAttributeCertificate(encoded.ToArray());
+            var pacDecoded = new PrivilegedAttributeCertificate(new KrbAuthorizationData { Type = AuthorizationDataType.AdWin2kPac, Data = encoded });
 
             ;
 
@@ -284,7 +284,7 @@ namespace Tests.Kerberos.NET
                     .Where(a => a.Type == AuthorizationDataType.AdWin2kPac)
                 ).First();
 
-            return new PrivilegedAttributeCertificate(pac.First().Data.ToArray());
+            return new PrivilegedAttributeCertificate(new KrbAuthorizationData { Type = AuthorizationDataType.AdWin2kPac, Data = pac.First().Data });
         }
 
         private static DateTimeOffset Truncate(DateTimeOffset dateTime)

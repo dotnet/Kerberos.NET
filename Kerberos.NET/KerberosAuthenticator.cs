@@ -127,7 +127,7 @@ namespace Kerberos.NET
                         break;
 
                     case AuthorizationDataType.AdWin2kPac:
-                        DecodePac(krbApReq, claims, authz);
+                        DecodePac(krbApReq, claims, authz, restrictions);
                         break;
                     case AuthorizationDataType.AdETypeNegotiation:
                         restrictions.Add(new ETypeNegotiationRestriction(authz));
@@ -151,9 +151,9 @@ namespace Kerberos.NET
             }
         }
 
-        private void DecodePac(DecryptedKrbApReq krbApReq, List<Claim> claims, KrbAuthorizationData authz)
+        private void DecodePac(DecryptedKrbApReq krbApReq, List<Claim> claims, KrbAuthorizationData authz, List<Restriction> restrictions)
         {
-            var pac = new PrivilegedAttributeCertificate(authz.Data.ToArray());
+            var pac = new PrivilegedAttributeCertificate(authz);
 
             if (!pac.HasRequiredFields)
             {
@@ -166,6 +166,8 @@ namespace Kerberos.NET
             }
 
             MergeAttributes(krbApReq.Ticket, pac, claims);
+
+            restrictions.Add(pac);
         }
 
         protected virtual void ValidatePacSignature(PrivilegedAttributeCertificate pac, KrbPrincipalName name)

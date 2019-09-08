@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using System;
 using System.Linq;
 using System.Text;
@@ -43,29 +42,29 @@ namespace Kerberos.NET.Entities.Pac
         {
         }
 
-        public SecurityIdentifier(byte[] binary, SidAttributes attributes = 0)
+        public SecurityIdentifier(ReadOnlySpan<byte> binary, SidAttributes attributes = 0)
         {
-            BinaryForm = binary;
+            BinaryForm = new ReadOnlyMemory<byte>(binary.ToArray());
 
-            var span = new Span<byte>(binary);
-
-            authority = (IdentifierAuthority)span.Slice(2, 6).AsLong();
+            authority = (IdentifierAuthority)binary.Slice(2, 6).AsLong();
             Attributes = attributes;
 
             SubAuthorities = new int[binary[1]];
 
             for (var i = 0; i < SubAuthorities.Length; i++)
             {
-                SubAuthorities[i] = (int)span.Slice(8 + (4 * i), 4).AsLong(littleEndian: true);
+                SubAuthorities[i] = (int)binary.Slice(8 + (4 * i), 4).AsLong(littleEndian: true);
             }
         }
 
-        public byte[] BinaryForm { get; }
+        [KerberosIgnore]
+        public ReadOnlyMemory<byte> BinaryForm { get; }
 
         public SidAttributes Attributes { get; }
 
         public string Value { get { return ToString(); } }
 
+        [KerberosIgnore]
         public int[] SubAuthorities { get; }
 
         public override string ToString()

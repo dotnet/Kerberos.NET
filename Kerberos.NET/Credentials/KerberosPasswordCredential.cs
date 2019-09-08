@@ -42,30 +42,43 @@ namespace Kerberos.NET.Credentials
             }
         }
 
+        private readonly object _syncCache = new object();
+
+        private KerberosKey cacheKey;
+
         public override KerberosKey CreateKey()
         {
-            var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, Domain, new[] { UserName });
-
-            var etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
-            var salt = "";
-
-            if (Salts != null && Salts.Count() > 0)
+            if (cacheKey == null)
             {
-                var kv = Salts.ElementAt(0);
+                lock (_syncCache)
+                {
+                    if (cacheKey == null)
+                    {
+                        var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, Domain, new[] { UserName });
 
-                etype = kv.Key;
-                salt = kv.Value;
+                        var etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
+                        var salt = "";
+
+                        if (Salts != null && Salts.Count() > 0)
+                        {
+                            var kv = Salts.ElementAt(0);
+
+                            etype = kv.Key;
+                            salt = kv.Value;
+                        }
+
+                        cacheKey = new KerberosKey(
+                            password,
+                            principalName: principalName,
+                            etype: etype,
+                            saltType: SaltType.ActiveDirectoryUser,
+                            salt: salt
+                        );
+                    }
+                }
             }
 
-            var key = new KerberosKey(
-                password,
-                principalName: principalName,
-                etype: etype,
-                saltType: SaltType.ActiveDirectoryUser,
-                salt: salt
-            );
-
-            return key;
+            return cacheKey;
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
@@ -27,37 +26,43 @@ namespace Kerberos.NET.Crypto
             return GenerateRandomBytes(KeySize);
         }
 
-        public abstract byte[] String2Key(KerberosKey key);
+        public abstract ReadOnlySpan<byte> String2Key(KerberosKey key);
 
-        public abstract byte[] Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage);
+        public abstract ReadOnlySpan<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage);
 
         public abstract ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage);
 
         public virtual ReadOnlyMemory<byte> GenerateRandomBytes(int size)
         {
             var arr = new byte[size];
-            var span = new Span<byte>(arr);
-            RandomNumberGenerator.Create().GetBytes(arr);
-            return span.AsMemory();
+
+            RNG.GetBytes(arr);
+
+            return new ReadOnlyMemory<byte>(arr);
         }
 
-        public virtual byte[] MakeChecksum(byte[] data, byte[] key, KeyUsage usage, KeyDerivationMode kdf, int hashSize)
+        public virtual ReadOnlySpan<byte> MakeChecksum(
+            ReadOnlySpan<byte> data, 
+            KerberosKey key, 
+            KeyUsage usage, 
+            KeyDerivationMode kdf, 
+            int hashSize)
         {
             throw new NotImplementedException();
         }
 
-        public virtual byte[] MakeChecksum(byte[] key, byte[] data, KeyUsage keyUsage)
+        public virtual ReadOnlySpan<byte> MakeChecksum(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data, KeyUsage keyUsage)
         {
             throw new NotImplementedException();
         }
 
-        protected virtual byte[] Random2Key(byte[] randomBits)
+        protected virtual ReadOnlySpan<byte> Random2Key(ReadOnlySpan<byte> randomBits)
         {
             return randomBits;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        public static bool AreEqualSlow(byte[] left, byte[] right, int rightLength = 0)
+        public static bool AreEqualSlow(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right, int rightLength = 0)
         {
             if (rightLength <= 0)
             {

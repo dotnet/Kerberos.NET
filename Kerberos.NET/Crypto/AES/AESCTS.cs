@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using AESAlgorithm = System.Security.Cryptography.Aes;
 
@@ -9,7 +10,11 @@ namespace Kerberos.NET.Crypto
 {
     internal static class AESCTS
     {
-        public static byte[] Encrypt(byte[] plainText, byte[] key, byte[] iv)
+        public static ReadOnlySpan<byte> Encrypt(
+            ReadOnlySpan<byte> plainText, 
+            ReadOnlySpan<byte> key, 
+            ReadOnlySpan<byte> iv
+        )
         {
             var padSize = 16 - (plainText.Length % 16);
 
@@ -18,8 +23,8 @@ namespace Kerberos.NET.Crypto
                 return plainText;
             }
 
-            byte[] data;
-            byte[] encrypted;
+            Span<byte> data;
+            Span<byte> encrypted;
 
             if (padSize == 16)
             {
@@ -28,13 +33,13 @@ namespace Kerberos.NET.Crypto
                     iv = new byte[iv.Length];
                 }
 
-                data = plainText;
+                data = plainText.ToArray();
             }
             else
             {
                 data = new byte[plainText.Length + padSize];
 
-                Buffer.BlockCopy(plainText, 0, data, 0, plainText.Length);
+                plainText.CopyTo(data);
 
                 for (var i = 0; i < padSize; i++)
                 {
@@ -49,11 +54,7 @@ namespace Kerberos.NET.Crypto
                 SwapLastTwoBlocks(encrypted);
             }
 
-            var result = new byte[plainText.Length];
-
-            Buffer.BlockCopy(encrypted, 0, result, 0, plainText.Length);
-
-            return result;
+            return encrypted.Slice(0, plainText.Length);
         }
 
         private static AESAlgorithm algorithm;
@@ -69,7 +70,7 @@ namespace Kerberos.NET.Crypto
                     {
                         if (algorithm == null)
                         {
-                            var impl = Aes.Create();
+                            var impl = AESAlgorithm.Create();
                             impl.Padding = PaddingMode.None;
                             impl.Mode = CipherMode.CBC;
                             algorithm = impl;
@@ -81,17 +82,17 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        private static byte[] Transform(byte[] data, byte[] key, byte[] iv, bool encrypt)
+        private static Span<byte> Transform(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv, bool encrypt)
         {
             ICryptoTransform transform;
 
             if (encrypt)
             {
-                transform = Algorithm.CreateEncryptor(key, iv);
+                transform = Algorithm.CreateEncryptor(key.ToArray(), iv.ToArray());
             }
             else
             {
-                transform = Algorithm.CreateDecryptor(key, iv);
+                transform = Algorithm.CreateDecryptor(key.ToArray(), iv.ToArray());
             }
 
             using (transform)
@@ -99,29 +100,29 @@ namespace Kerberos.NET.Crypto
             {
                 using (var cryptoStream = new CryptoStream(stream, transform, CryptoStreamMode.Write))
                 {
-                    cryptoStream.Write(data, 0, data.Length);
+                    cryptoStream.Write(data.ToArray(), 0, data.Length);
                 }
 
                 return stream.ToArray();
             }
         }
 
-        public static byte[] Decrypt(byte[] cipherText, byte[] key, byte[] iv)
+        public static ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv)
         {
-            var padSize = 16 - (cipherText.Length % 16);
+            var padSize = 16 - (ciphertext.Length % 16);
 
-            if (cipherText.Length < 16)
+            if (ciphertext.Length < 16)
             {
-                return cipherText;
+                return ciphertext;
             }
 
             if (padSize == 16)
             {
-                var data = new byte[cipherText.Length];
+                var data = new Span<byte>(new byte[ciphertext.Length]);
 
-                Buffer.BlockCopy(cipherText, 0, data, 0, cipherText.Length);
+                ciphertext.CopyTo(data);
 
-                if (cipherText.Length >= 32)
+                if (ciphertext.Length >= 32)
                 {
                     SwapLastTwoBlocks(data);
                 }
@@ -135,7 +136,7 @@ namespace Kerberos.NET.Crypto
             }
             else
             {
-                var depadded = Depad(cipherText, padSize);
+                var depadded = Depad(ciphertext, padSize);
 
                 var dn = Transform(
                     depadded,
@@ -144,40 +145,34 @@ namespace Kerberos.NET.Crypto
                     false
                 );
 
-                var data = new byte[cipherText.Length + padSize];
+                var data = new Span<byte>(new byte[ciphertext.Length + padSize]);
 
-                Buffer.BlockCopy(cipherText, 0, data, 0, cipherText.Length);
+                ciphertext.CopyTo(data);
 
-                Buffer.BlockCopy(dn, dn.Length - padSize, data, cipherText.Length, padSize);
+                dn.Slice(dn.Length - padSize).CopyTo(data.Slice(ciphertext.Length, padSize));
 
                 SwapLastTwoBlocks(data);
 
                 var transformed = Transform(data, key, iv, false);
 
-                var result = new byte[cipherText.Length];
-
-                Buffer.BlockCopy(transformed, 0, result, 0, cipherText.Length);
-
-                return result;
+                return transformed.Slice(0, ciphertext.Length);
             }
         }
 
-        private static byte[] Depad(byte[] cipherText, int padSize)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ReadOnlySpan<byte> Depad(ReadOnlySpan<byte> ciphertext, int padSize)
         {
-            var result = new byte[16];
+            var offset = ciphertext.Length - 32 + padSize;
 
-            var offset = cipherText.Length - 32 + padSize;
-
-            Buffer.BlockCopy(cipherText, offset, result, 0, 16);
-
-            return result;
+            return ciphertext.Slice(offset, 16);
         }
 
-        private static void SwapLastTwoBlocks(byte[] data)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SwapLastTwoBlocks(Span<byte> data)
         {
             for (var i = 0; i < 16; i++)
             {
-                byte temp = data[i + data.Length - 32];
+                var temp = data[i + data.Length - 32];
 
                 data[i + data.Length - 32] = data[i + data.Length - 16];
                 data[i + data.Length - 16] = temp;

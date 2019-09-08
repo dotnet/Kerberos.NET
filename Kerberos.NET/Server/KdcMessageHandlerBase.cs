@@ -29,7 +29,7 @@ namespace Kerberos.NET.Server
 
         protected KdcMessageHandlerBase(ReadOnlySequence<byte> message, ListenerOptions options)
         {
-            Message = new ReadOnlyMemory<byte>(message.ToArray());
+            Message = message.First;
             Options = options;
         }
 

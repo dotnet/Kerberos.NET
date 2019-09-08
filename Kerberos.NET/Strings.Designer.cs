@@ -457,7 +457,7 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Additional pre- authentication required.
+        ///   Looks up a localized string similar to Additional pre-authentication required.
         /// </summary>
         internal static string KRB_ERROR_KDC_ERR_PREAUTH_REQUIRED {
             get {

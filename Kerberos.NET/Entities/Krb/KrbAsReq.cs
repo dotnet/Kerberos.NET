@@ -32,10 +32,10 @@ namespace Kerberos.NET.Entities
                 new KrbPaData
                 {
                     Type = PaDataType.PA_PAC_REQUEST,
-                    Value = new ReadOnlyMemory<byte>(new KrbPaPacRequest
+                    Value = new KrbPaPacRequest
                     {
                         IncludePac = options.HasFlag(AuthenticationOptions.IncludePacRequest)
-                    }.Encode().ToArray())
+                    }.Encode().AsMemory()
                 }
             };
 

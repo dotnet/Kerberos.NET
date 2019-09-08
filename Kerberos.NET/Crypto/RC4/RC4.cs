@@ -4,13 +4,19 @@ namespace Kerberos.NET.Crypto
 {
     public static class RC4
     {
-        public static ReadOnlySpan<byte> Transform(
+        public static void Transform(
             ReadOnlySpan<byte> originalKey,
-            ReadOnlySpan<byte> data
+            ReadOnlySpan<byte> data,
+            Span<byte> output
         )
         {
-            var key = new Span<byte>(new byte[256]);
-            var s = new Span<byte>(new byte[256]);
+            if (output.Length < data.Length)
+            {
+                throw new InvalidOperationException($"Output {output.Length} cannot be smaller than input {data.Length}");
+            }
+
+            Span<byte> key = stackalloc byte[256];
+            Span<byte> s = stackalloc byte[256];
 
             int i;
 
@@ -54,8 +60,6 @@ namespace Kerberos.NET.Crypto
 
             // E = data ^ k
 
-            var output = new Span<byte>(new byte[data.Length]);
-
             i = 0;
             j = 0;
 
@@ -74,8 +78,6 @@ namespace Kerberos.NET.Crypto
 
                 output[counter] = (byte)keyed;
             }
-
-            return output;
         }
     }
 }

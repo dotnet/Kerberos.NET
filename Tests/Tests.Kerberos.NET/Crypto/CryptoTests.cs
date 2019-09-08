@@ -23,7 +23,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void TestAes128Roundtrip()
         {
-            var data = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+            var data = new Memory<byte>(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 });
 
             var key = CreateKey();
 
@@ -33,13 +33,13 @@ namespace Tests.Kerberos.NET
 
             var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.PaEncTs);
 
-            Assert.IsTrue(data.SequenceEqual(decrypted));
+            Assert.IsTrue(data.Span.SequenceEqual(decrypted));
         }
 
         [TestMethod]
         public void TestAes256Roundtrip()
         {
-            var data = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+            var data = new Memory<byte>(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 });
 
             var key = CreateKey();
 
@@ -49,13 +49,13 @@ namespace Tests.Kerberos.NET
 
             var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.PaEncTs);
 
-            Assert.IsTrue(data.SequenceEqual(decrypted));
+            Assert.IsTrue(data.Span.SequenceEqual(decrypted));
         }
 
         [TestMethod]
         public void TestRC4Roundtrip()
         {
-            var data = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+            var data = new Memory<byte>(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 });
 
             var key = CreateKey();
 
@@ -65,7 +65,7 @@ namespace Tests.Kerberos.NET
 
             var decrypted = rc4Transformer.Decrypt(encrypted, key, KeyUsage.PaEncTs);
 
-            Assert.IsTrue(data.SequenceEqual(decrypted));
+            Assert.IsTrue(data.Span.SequenceEqual(decrypted));
         }
 
         [TestMethod]
