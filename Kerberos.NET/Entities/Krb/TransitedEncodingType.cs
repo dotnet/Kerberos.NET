@@ -1,6 +1,6 @@
 ﻿namespace Kerberos.NET.Entities
 {
-    public enum TransitedEncodingType : long
+    public enum TransitedEncodingType 
     {
         DomainX500Compress = 1
     }

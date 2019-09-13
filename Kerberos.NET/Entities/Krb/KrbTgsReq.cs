@@ -29,7 +29,8 @@ namespace Kerberos.NET.Entities
             KrbEncryptionKey tgtSessionKey,
             KrbKdcRep kdcRep,
             KdcOptions options,
-            KrbTicket user2UserTicket = null
+            KrbTicket user2UserTicket = null,
+            string s4u = null
         )
         {
             var tgtApReq = CreateApReq(kdcRep, tgtSessionKey);
@@ -51,6 +52,15 @@ namespace Kerberos.NET.Entities
             };
 
             var tgt = kdcRep.Ticket;
+
+            if (!string.IsNullOrWhiteSpace(s4u))
+            {
+                paData.Add(new KrbPaData
+                {
+                    Type = PaDataType.PA_FOR_USER,
+                    Value = EncodeS4URequest(s4u, tgt.Realm, tgtSessionKey)
+                });
+            }
 
             var sname = spn.Split('/', '@');
 
@@ -80,6 +90,20 @@ namespace Kerberos.NET.Entities
             }
 
             return tgs;
+        }
+
+        private static ReadOnlyMemory<byte> EncodeS4URequest(string s4u, string realm, KrbEncryptionKey sessionKey)
+        {
+            var paS4u = new KrbPaForUser
+            {
+                AuthPackage = "Kerberos",
+                UserName = new KrbPrincipalName { Type = PrincipalNameType.NT_ENTERPRISE, Name = new[] { s4u } },
+                UserRealm = realm
+            };
+
+            paS4u.GenerateChecksum(sessionKey.AsKey());
+
+            return paS4u.Encode().AsMemory();
         }
 
         private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey)

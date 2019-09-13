@@ -59,7 +59,7 @@ namespace Kerberos.NET.Entities.Pac
             SignaturePosition = (int)stream.Position;
             Signature = SetSignatureValue(Type, size => stream.Read(size));
 
-            Validator = CryptoService.CreateChecksumValidator(Type, Signature, signatureData);
+            Validator = CryptoService.CreateChecksum(Type, Signature, signatureData);
 
             if (stream.Position < stream.Length)
             {
@@ -87,7 +87,7 @@ namespace Kerberos.NET.Entities.Pac
 
         internal void Sign(Memory<byte> pacUnsigned, KerberosKey key)
         {
-            Validator = CryptoService.CreateChecksumValidator(Type, Signature, pacUnsigned);
+            Validator = CryptoService.CreateChecksum(Type, Signature, pacUnsigned);
 
             Validator.Sign(key);
             

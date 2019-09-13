@@ -3,7 +3,7 @@
 namespace Kerberos.NET.Entities
 {
     [Flags]
-    public enum PacOptions : long
+    public enum PacOptions 
     {
         Claims = 1 << 31,
         BranchAware = 1 << 30,

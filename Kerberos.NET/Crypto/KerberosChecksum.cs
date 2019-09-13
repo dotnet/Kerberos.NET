@@ -7,12 +7,12 @@ namespace Kerberos.NET.Crypto
     {
         public ReadOnlyMemory<byte> Signature { get; private set; }
 
-        protected ReadOnlyMemory<byte> Pac { get; private set; }
+        protected ReadOnlyMemory<byte> Data { get; private set; }
 
-        protected KerberosChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> pac)
+        protected KerberosChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> data)
         {
             Signature = signature;
-            Pac = pac;
+            Data = data;
         }
 
         public void Validate(KerberosKey key)
@@ -33,28 +33,28 @@ namespace Kerberos.NET.Crypto
         protected abstract bool ValidateInternal(KerberosKey key);
     }
 
-    public class HmacAes256PacSign : AesPacKerberosChecksum
+    public class HmacAes256KerberosChecksum : AesKerberosChecksum
     {
-        public HmacAes256PacSign(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> pac)
-            : base(CryptoService.CreateTransform(EncryptionType.AES256_CTS_HMAC_SHA1_96), signature, pac)
+        public HmacAes256KerberosChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> data)
+            : base(CryptoService.CreateTransform(EncryptionType.AES256_CTS_HMAC_SHA1_96), signature, data)
         {
         }
     }
 
-    public class HmacAes128KerberosChecksum : AesPacKerberosChecksum
+    public class HmacAes128KerberosChecksum : AesKerberosChecksum
     {
-        public HmacAes128KerberosChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> pac)
-            : base(CryptoService.CreateTransform(EncryptionType.AES128_CTS_HMAC_SHA1_96), signature, pac)
+        public HmacAes128KerberosChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> data)
+            : base(CryptoService.CreateTransform(EncryptionType.AES128_CTS_HMAC_SHA1_96), signature, data)
         {
         }
     }
 
-    public abstract class AesPacKerberosChecksum : KerberosChecksum
+    public abstract class AesKerberosChecksum : KerberosChecksum
     {
         private readonly KerberosCryptoTransformer decryptor;
 
-        protected AesPacKerberosChecksum(KerberosCryptoTransformer decryptor, ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> pac)
-            : base(signature, pac)
+        protected AesKerberosChecksum(KerberosCryptoTransformer decryptor, ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> data)
+            : base(signature, data)
         {
             this.decryptor = decryptor;
         }
@@ -62,7 +62,7 @@ namespace Kerberos.NET.Crypto
         protected override ReadOnlySpan<byte> SignInternal(KerberosKey key)
         {
             return decryptor.MakeChecksum(
-                Pac.Span,
+                Data.Span,
                 key,
                 KeyUsage.PaForUserChecksum,
                 KeyDerivationMode.Kc,
@@ -80,8 +80,8 @@ namespace Kerberos.NET.Crypto
 
     public class HmacMd5KerberosChecksum : KerberosChecksum
     {
-        public HmacMd5KerberosChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> pac)
-            : base(signature, pac)
+        public HmacMd5KerberosChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> data)
+            : base(signature, data)
         {
         }
 
@@ -91,7 +91,7 @@ namespace Kerberos.NET.Crypto
 
             return crypto.MakeChecksum(
                 key.GetKey(crypto),
-                Pac.Span,
+                Data.Span,
                 KeyUsage.PaForUserChecksum
             );
         }

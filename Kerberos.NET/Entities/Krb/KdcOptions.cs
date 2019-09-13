@@ -3,7 +3,7 @@
 namespace Kerberos.NET.Entities
 {
     [Flags]
-    public enum KdcOptions : long
+    public enum KdcOptions 
     {
         Reserved = 1 << 31,
         Forwardable = 1 << 30,
@@ -22,7 +22,7 @@ namespace Kerberos.NET.Entities
         ConstrainedDelegation = 1 << 17,
         Canonicalize = 1 << 16,
         RequestAnonymous = 1 << 15,
-        Unused17 = 1 << 14,
+        CNameInAdditionalTicket = 1 << 14,
         Unused18 = 1 << 13,
         Unused19 = 1 << 12,
         Unused20 = 1 << 11,

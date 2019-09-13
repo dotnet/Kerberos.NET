@@ -15,7 +15,7 @@ namespace Kerberos.NET
         {
             var longVal = (object)val;
 
-            return AsReadOnly((long)longVal, littleEndian: littleEndian);
+            return AsReadOnly((int)longVal, littleEndian: littleEndian);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

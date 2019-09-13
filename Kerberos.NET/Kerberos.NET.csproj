@@ -28,7 +28,7 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(Generate)' == 'true'">
+  <ItemGroup>
     <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
     <AsnXml Include="Entities\Krb\KrbApReq.xml" />
     <AsnXml Include="Entities\Krb\KrbApRep.xml" />
@@ -60,6 +60,7 @@
     <AsnXml Include="Entities\Krb\KrbMethodData.xml" />
     <AsnXml Include="Entities\Krb\KrbPaData.xml" />
     <AsnXml Include="Entities\Krb\KrbPaEncTsEnc.xml" />
+    <AsnXml Include="Entities\Krb\KrbPaForUser.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacOptions.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacRequest.xml" />
     <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
@@ -92,6 +93,6 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <Import Project="Asn1\AsnXml.targets" Condition="'$(Generate)' == 'true'" />
+  <Import Project="Asn1\AsnXml.targets" />
 
 </Project>

@@ -30,17 +30,17 @@ namespace Kerberos.NET.Entities
             return true;
         }
 
-        public static KrbPrincipalName FromPrincipal(
-            IKerberosPrincipal principal,
+        public static KrbPrincipalName FromString(
+            string principal,
             PrincipalNameType type = PrincipalNameType.NT_PRINCIPAL,
             string realm = null
         )
         {
-            var nameSplit = principal.PrincipalName.Split('@');
+            var nameSplit = principal.Split('@');
 
             var name = nameSplit[0];
 
-            if (string.IsNullOrWhiteSpace(realm) && nameSplit.Length > 0)
+            if (string.IsNullOrWhiteSpace(realm) && nameSplit.Length > 1)
             {
                 realm = nameSplit[1];
             }
@@ -50,6 +50,15 @@ namespace Kerberos.NET.Entities
                 Type = type,
                 Name = new[] { name, realm.ToUpperInvariant() }
             };
+        }
+
+        public static KrbPrincipalName FromPrincipal(
+            IKerberosPrincipal principal,
+            PrincipalNameType type = PrincipalNameType.NT_PRINCIPAL,
+            string realm = null
+        )
+        {
+            return FromString(principal.PrincipalName, type, realm);
         }
     }
 }

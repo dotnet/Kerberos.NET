@@ -1,6 +1,6 @@
 ﻿namespace Kerberos.NET.Entities
 {
-    public enum AuthorizationDataType : long
+    public enum AuthorizationDataType 
     {
         AdIfRelevant = 1,
         AdIntendedForServer = 2,

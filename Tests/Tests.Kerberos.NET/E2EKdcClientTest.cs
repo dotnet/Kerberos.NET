@@ -46,6 +46,30 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public async Task TestE2ES4U()
+        {
+            var port = new Random().Next(20000, 40000);
+
+            var options = new ListenerOptions
+            {
+                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
+                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
+                IsDebug = true,
+                RealmLocator = realm => LocateRealm(realm),
+                ReceiveTimeout = TimeSpan.FromHours(1)
+            };
+
+            using (KdcServiceListener listener = new KdcServiceListener(options))
+            {
+                _ = listener.Start();
+
+                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}", s4u: "blah@corp.identityintervention.com");
+
+                listener.Stop();
+            }
+        }
+
+        [TestMethod]
         public async Task TestU2U()
         {
             var port = new Random().Next(20000, 40000);
@@ -133,7 +157,7 @@ namespace Tests.Kerberos.NET
             throw timeout;
         }
 
-        private static async Task RequestAndValidateTickets(string user, string password, string overrideKdc)
+        private static async Task RequestAndValidateTickets(string user, string password, string overrideKdc, string s4u = null)
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
@@ -153,6 +177,14 @@ namespace Tests.Kerberos.NET
             ticket = await client.GetServiceTicket(
                 "host/appservice.corp.identityintervention.com",
                 ApOptions.MutualRequired
+            );
+
+            await ValidateTicket(ticket);
+
+            ticket = await client.GetServiceTicket(
+                "host/appservice.corp.identityintervention.com",
+                ApOptions.MutualRequired,
+                s4u: s4u
             );
 
             await ValidateTicket(ticket);

@@ -1,6 +1,8 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 
 namespace Kerberos.NET.Entities
@@ -31,6 +33,7 @@ namespace Kerberos.NET.Entities
             return (int)NonceCounter;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Now(out DateTimeOffset time, out int usec)
         {
             var nowTicks = DateTimeOffset.UtcNow.Ticks;
@@ -38,6 +41,18 @@ namespace Kerberos.NET.Entities
             usec = (int)nowTicks % 1000000;
 
             time = new DateTimeOffset(nowTicks - usec, TimeSpan.Zero);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ReadOnlySpan<byte> UnicodeBytesToUtf8(byte[] str)
+        {
+            return Encoding.Convert(Encoding.Unicode, Encoding.UTF8, str, 0, str.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ReadOnlySpan<byte> UnicodeStringToUtf8(string str)
+        {
+            return UnicodeBytesToUtf8(Encoding.Unicode.GetBytes(str));
         }
     }
 }

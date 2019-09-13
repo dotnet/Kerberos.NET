@@ -99,6 +99,19 @@ namespace Tests.Kerberos.NET.Messages
                             v => KrbTgsReq.DecodeApplication(v),
                             t => t.EncodeApplication().ToArray());
                         break;
+                    case "tgs-req-administrator-s4u-test":
+                        var tgsReq = TestSimpleRoundtrip(
+                            key,
+                            file.Value.Skip(4).ToArray(),
+                            v => KrbTgsReq.DecodeApplication(v),
+                            t => t.EncodeApplication().ToArray());
+
+                        var paData = tgsReq.PaData.First(p => p.Type == PaDataType.PA_FOR_USER);
+
+                        var krbPaForUser = KrbPaForUser.Decode(paData.Value);
+
+                        TestSimpleRoundtrip(key, paData.Value.ToArray(), v => KrbPaForUser.Decode(v.ToArray()), t => t.Encode().ToArray());
+                        break;
                 }
             }
         }

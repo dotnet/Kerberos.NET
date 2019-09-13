@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
 {
-    public interface IKerberosTransport
+    public interface IKerberosTransport : IDisposable
     {
         bool TransportFailed { get; set; }
 

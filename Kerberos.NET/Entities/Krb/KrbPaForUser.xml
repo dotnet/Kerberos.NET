@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbPaForUser"
+  namespace="Kerberos.NET.Entities">
+  <!--
+
+    PA-FOR-USER     ::= SEQUENCE {
+        userName        [0] PrincipalName,
+        userRealm       [1] Realm,
+        cksum           [2] Checksum,
+        auth-package    [3] KerberosString
+    }
+   
+  -->
+
+  <asn:AsnType name="UserName" explicitTag="0" typeName="KrbPrincipalName" />
+  <asn:GeneralString name="UserRealm" explicitTag="1" />
+  <asn:AsnType name="Checksum" explicitTag="2" typeName="KrbChecksum" />
+  <asn:GeneralString name="AuthPackage" explicitTag="3" />
+</asn:Sequence>
