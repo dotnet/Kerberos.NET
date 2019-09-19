@@ -79,9 +79,13 @@ namespace Kerberos.NET.Transport
                     Target = split[0]
                 };
 
-                if (split.Length > 0)
+                if (split.Length > 1)
                 {
                     record.Port = int.Parse(split[1]);
+                }
+                else
+                {
+                    record.Port = DefaultKerberosPort;
                 }
 
                 return record;
