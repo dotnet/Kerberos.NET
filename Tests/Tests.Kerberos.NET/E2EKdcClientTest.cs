@@ -46,6 +46,30 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public async Task TestE2EWithNegotiate()
+        {
+            var port = new Random().Next(20000, 40000);
+
+            var options = new ListenerOptions
+            {
+                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
+                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
+                IsDebug = true,
+                RealmLocator = realm => LocateRealm(realm),
+                ReceiveTimeout = TimeSpan.FromHours(1)
+            };
+
+            using (KdcServiceListener listener = new KdcServiceListener(options))
+            {
+                _ = listener.Start();
+
+                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}", encodeNego: true);
+
+                listener.Stop();
+            }
+        }
+
+        [TestMethod]
         public async Task TestE2ES4U()
         {
             var port = new Random().Next(20000, 40000);
@@ -157,7 +181,7 @@ namespace Tests.Kerberos.NET
             throw timeout;
         }
 
-        private static async Task RequestAndValidateTickets(string user, string password, string overrideKdc, string s4u = null)
+        private static async Task RequestAndValidateTickets(string user, string password, string overrideKdc, string s4u = null, bool encodeNego = false)
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
@@ -179,7 +203,7 @@ namespace Tests.Kerberos.NET
                 ApOptions.MutualRequired
             );
 
-            await ValidateTicket(ticket);
+            await ValidateTicket(ticket, encodeNego);
 
             ticket = await client.GetServiceTicket(
                 "host/appservice.corp.identityintervention.com",
@@ -190,9 +214,18 @@ namespace Tests.Kerberos.NET
             await ValidateTicket(ticket);
         }
 
-        private static async Task ValidateTicket(KrbApReq ticket)
+        private static async Task ValidateTicket(KrbApReq ticket, bool encodeNego = false)
         {
-            var encoded = ticket.EncodeApplication().ToArray();
+            byte[] encoded;
+
+            if (encodeNego)
+            {
+                encoded = ticket.EncodeNegotiateGssApi().ToArray();
+            }
+            else
+            {
+                encoded = ticket.EncodeApplication().ToArray();
+            }
 
             var authenticator = new KerberosAuthenticator(
                 new KeyTable(

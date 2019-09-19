@@ -26,13 +26,31 @@ namespace Kerberos.NET.Entities
         // KRB_AP_REP            02 00
         // KRB_ERROR             03 00
 
+        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 0);
+
+        public static ReadOnlyMemory<byte> Encode(Oid oid, NegotiationToken token)
+        {
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
+            {
+                writer.PushSequence(ApplicationTag);
+
+                writer.WriteObjectIdentifier(oid);
+
+                writer.WriteEncodedValue(token.Encode());
+
+                writer.PopSequence(ApplicationTag);
+
+                return writer.Encode();
+            }
+        }
+
         public static GssApiToken Decode(ReadOnlyMemory<byte> data)
         {
             var reader = new AsnReader(data, AsnEncodingRules.DER);
 
             var token = new GssApiToken();
 
-            var sequenceReader = reader.ReadSequence(new Asn1Tag(TagClass.Application, 0));
+            var sequenceReader = reader.ReadSequence(ApplicationTag);
 
             token.ThisMech = sequenceReader.ReadObjectIdentifier();
 
