@@ -35,11 +35,7 @@ namespace Kerberos.NET.Entities
             Concat(checksumData, ref position, ref UserRealm);
             Concat(checksumData, ref position, ref AuthPackage);
 
-            var checksum = CryptoService.CreateChecksum(ChecksumType.KERB_CHECKSUM_HMAC_MD5, signatureData: checksumData);
-
-            checksum.Sign(key);
-
-            Checksum = new KrbChecksum { Type = PaForUserChecksumType, Checksum = checksum.Signature };
+            Checksum = KrbChecksum.Create(checksumData, key, KeyUsage.PaForUserChecksum, PaForUserChecksumType);
         }
 
         private static void Concat(Memory<byte> checksumData, ref int position, ref string value)

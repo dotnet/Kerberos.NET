@@ -5,6 +5,8 @@ namespace Kerberos.NET.Crypto
 {
     public abstract class KerberosChecksum
     {
+        public KeyUsage Usage { get; set; } = KeyUsage.PaForUserChecksum;
+
         public ReadOnlyMemory<byte> Signature { get; private set; }
 
         protected ReadOnlyMemory<byte> Data { get; private set; }
@@ -64,7 +66,7 @@ namespace Kerberos.NET.Crypto
             return decryptor.MakeChecksum(
                 Data.Span,
                 key,
-                KeyUsage.PaForUserChecksum,
+                Usage,
                 KeyDerivationMode.Kc,
                 decryptor.ChecksumSize
             );
@@ -92,7 +94,7 @@ namespace Kerberos.NET.Crypto
             return crypto.MakeChecksum(
                 key.GetKey(crypto),
                 Data.Span,
-                KeyUsage.PaForUserChecksum
+                Usage
             );
         }
 
