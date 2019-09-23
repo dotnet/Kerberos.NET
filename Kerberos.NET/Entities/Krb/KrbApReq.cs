@@ -51,14 +51,16 @@ namespace Kerberos.NET.Entities
             return apReq;
         }
 
-        public ReadOnlyMemory<byte> EncodeNegotiateGssApi()
+        public ReadOnlyMemory<byte> EncodeGssApi()
         {
+            var token = GssApiToken.Encode(Kerberos5Oid, this);
+
             var negoToken = new NegotiationToken
             {
                 InitialToken = new NegTokenInit
                 {
                     MechTypes = new[] { Kerberos5Oid },
-                    MechToken = EncodeApplication()
+                    MechToken = token
                 }
             };
 

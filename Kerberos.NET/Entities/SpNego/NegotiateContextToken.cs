@@ -7,7 +7,7 @@ namespace Kerberos.NET.Entities
     {
         private readonly NegotiationToken token;
 
-        public NegotiateContextToken(GssApiToken gssToken = null)
+        public NegotiateContextToken(GssApiToken gssToken)
         {
             // SPNego tokens optimistically include a token of the first MechType
             // so if mechType[0] == Ntlm process as ntlm, == kerb process as kerb, etc.

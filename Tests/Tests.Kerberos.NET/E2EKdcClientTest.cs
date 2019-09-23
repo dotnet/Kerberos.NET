@@ -185,33 +185,34 @@ namespace Tests.Kerberos.NET
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            KerberosClient client = new KerberosClient(overrideKdc);
+            using (KerberosClient client = new KerberosClient(overrideKdc))
+            {
+                await client.Authenticate(kerbCred);
 
-            await client.Authenticate(kerbCred);
+                var ticket = await client.GetServiceTicket(
+                    "host/appservice.corp.identityintervention.com",
+                    ApOptions.MutualRequired
+                );
 
-            var ticket = await client.GetServiceTicket(
-                "host/appservice.corp.identityintervention.com",
-                ApOptions.MutualRequired
-            );
+                await ValidateTicket(ticket);
 
-            await ValidateTicket(ticket);
+                await client.RenewTicket();
 
-            await client.RenewTicket();
+                ticket = await client.GetServiceTicket(
+                    "host/appservice.corp.identityintervention.com",
+                    ApOptions.MutualRequired
+                );
 
-            ticket = await client.GetServiceTicket(
-                "host/appservice.corp.identityintervention.com",
-                ApOptions.MutualRequired
-            );
+                await ValidateTicket(ticket, encodeNego);
 
-            await ValidateTicket(ticket, encodeNego);
+                ticket = await client.GetServiceTicket(
+                    "host/appservice.corp.identityintervention.com",
+                    ApOptions.MutualRequired,
+                    s4u: s4u
+                );
 
-            ticket = await client.GetServiceTicket(
-                "host/appservice.corp.identityintervention.com",
-                ApOptions.MutualRequired,
-                s4u: s4u
-            );
-
-            await ValidateTicket(ticket);
+                await ValidateTicket(ticket);
+            }
         }
 
         private static async Task ValidateTicket(KrbApReq ticket, bool encodeNego = false)
@@ -220,7 +221,7 @@ namespace Tests.Kerberos.NET
 
             if (encodeNego)
             {
-                encoded = ticket.EncodeNegotiateGssApi().ToArray();
+                encoded = ticket.EncodeGssApi().ToArray();
             }
             else
             {

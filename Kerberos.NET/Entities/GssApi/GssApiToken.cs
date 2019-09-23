@@ -44,6 +44,24 @@ namespace Kerberos.NET.Entities
             }
         }
 
+        public static ReadOnlyMemory<byte> Encode(Oid oid, KrbApReq krbApReq)
+        {
+            using (var writer = new AsnWriter(AsnEncodingRules.DER))
+            {
+                writer.PushSequence(ApplicationTag);
+
+                writer.WriteObjectIdentifier(oid);
+
+                writer.WriteEncodedValue(new byte[] { 0x01, 0x0 });
+
+                writer.WriteEncodedValue(krbApReq.EncodeApplication().Span);
+
+                writer.PopSequence(ApplicationTag);
+
+                return writer.Encode();
+            }
+        }
+
         public static GssApiToken Decode(ReadOnlyMemory<byte> data)
         {
             var reader = new AsnReader(data, AsnEncodingRules.DER);
