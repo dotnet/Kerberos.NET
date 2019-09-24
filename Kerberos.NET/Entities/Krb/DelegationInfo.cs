@@ -28,7 +28,6 @@ namespace Kerberos.NET.Entities
         public const int ChannelBindingLength = 0x10;
 
         private const ChecksumFlag DefaultFlags =
-                        ChecksumFlag.GSS_C_DELEG_FLAG |
                         ChecksumFlag.GSS_C_MUTUAL_FLAG |
                         ChecksumFlag.GSS_C_REPLAY_FLAG |
                         ChecksumFlag.GSS_C_SEQUENCE_FLAG |
