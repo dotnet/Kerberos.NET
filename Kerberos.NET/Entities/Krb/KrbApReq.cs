@@ -34,7 +34,7 @@ namespace Kerberos.NET.Entities
                 Realm = ticket.Realm,
                 SequenceNumber = KerberosConstants.GetNonce(),
                 Subkey = null,
-                AuthenticatorVersionNumber = 5
+                Checksum = KrbChecksum.EncodeDelegationChecksum(new DelegationInfo())
             };
 
             var apReq = new KrbApReq

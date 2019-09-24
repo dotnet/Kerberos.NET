@@ -25,6 +25,38 @@ namespace Kerberos.NET.Entities
     {
         public const int GSS_C_AF_NETBIOS = 0x14;
 
+        public const int ChannelBindingLength = 0x10;
+
+        private const ChecksumFlag DefaultFlags =
+                        ChecksumFlag.GSS_C_DELEG_FLAG |
+                        ChecksumFlag.GSS_C_MUTUAL_FLAG |
+                        ChecksumFlag.GSS_C_REPLAY_FLAG |
+                        ChecksumFlag.GSS_C_SEQUENCE_FLAG |
+                        ChecksumFlag.GSS_C_CONF_FLAG |
+                        ChecksumFlag.GSS_C_INTEG_FLAG |
+                        ChecksumFlag.GSS_C_EXTENDED_ERROR_FLAG;
+
+        public ReadOnlyMemory<byte> Encode()
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                if (ChannelBinding == null)
+                {
+                    ChannelBinding = new byte[ChannelBindingLength];
+                }
+
+                writer.Write(ChannelBinding?.Length ?? 0);
+                writer.Write(ChannelBinding);
+
+                writer.Write((int)Flags);
+
+                // TODO: Encode DelegationTicket
+
+                return stream.ToArray();
+            }
+        }
+
         public DelegationInfo Decode(ReadOnlyMemory<byte> value)
         {
             var reader = new BinaryReader(new MemoryStream(value.ToArray()));
@@ -33,7 +65,7 @@ namespace Kerberos.NET.Entities
 
             ChannelBinding = reader.ReadBytes(Length);
 
-            Flags = (ChecksumFlag)BitConverter.ToInt32(reader.ReadBytes(4), 0);
+            Flags = (ChecksumFlag)reader.ReadBytes(4).AsLong(littleEndian: true);
 
             if (reader.BytesAvailable() > 0)
             {
@@ -67,16 +99,16 @@ namespace Kerberos.NET.Entities
             return this;
         }
 
-        public int Length;
+        public int Length { get; set; }
 
-        public byte[] ChannelBinding;
+        public byte[] ChannelBinding { get; set; }
 
-        public ChecksumFlag Flags;
+        public ChecksumFlag Flags { get; set; } = DefaultFlags;
 
-        public int DelegationOption;
+        public int DelegationOption { get; set; }
 
-        public KrbCred DelegationTicket;
+        public KrbCred DelegationTicket { get; set; }
 
-        public byte[] Extensions;
+        public byte[] Extensions { get; set; }
     }
 }

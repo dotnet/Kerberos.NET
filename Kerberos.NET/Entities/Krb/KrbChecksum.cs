@@ -17,6 +17,15 @@ namespace Kerberos.NET.Entities
             return new DelegationInfo().Decode(this.Checksum);
         }
 
+        public static KrbChecksum EncodeDelegationChecksum(DelegationInfo deleg)
+        {
+            return new KrbChecksum
+            {
+                Type = ChecksumContainsDelegationType,
+                Checksum = deleg.Encode()
+            };
+        }
+
         public static KrbChecksum Create(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage ku, ChecksumType type = 0)
         {
             if (type == 0)
