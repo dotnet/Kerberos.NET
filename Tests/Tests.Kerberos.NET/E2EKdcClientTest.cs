@@ -205,7 +205,7 @@ namespace Tests.Kerberos.NET
 
                 await client.Authenticate(kerbCred);
 
-                Task.WaitAll(Enumerable.Range(0, 100).Select(taskNum => Task.Run(async () =>
+                Task.WaitAll(Enumerable.Range(0, 2).Select(taskNum => Task.Run(async () =>
                 {
                     for (var i = 0; i < 10; i++)
                     {
