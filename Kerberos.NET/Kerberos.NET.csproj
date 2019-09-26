@@ -7,7 +7,6 @@
     <FileVersion>3.0.0</FileVersion>
 
     <VersionPrefix>3.0.0</VersionPrefix>
-    <VersionSuffix>alpha</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -15,7 +14,7 @@
     <Authors>Steve Syfuhs</Authors>
     <Company>Steve Syfuhs</Company>
     <Product>Kerberos.NET library</Product>
-    <Description>A cross-platform, pure managed-code Kerberos Ticket parsing, validation, and authentication library that doesn’t rely on any OS components.</Description>
+    <Description>A cross-platform, pure managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
     <Copyright>Copyright 2019</Copyright>
     <PackageProjectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageProjectUrl>
     <PackageTags>security kerberos</PackageTags>
