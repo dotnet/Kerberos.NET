@@ -46,6 +46,54 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public async Task TestE2EWithNegotiate()
+        {
+            var port = new Random().Next(20000, 40000);
+
+            var options = new ListenerOptions
+            {
+                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
+                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
+                IsDebug = true,
+                RealmLocator = realm => LocateRealm(realm),
+                ReceiveTimeout = TimeSpan.FromHours(1)
+            };
+
+            using (KdcServiceListener listener = new KdcServiceListener(options))
+            {
+                _ = listener.Start();
+
+                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}", encodeNego: true);
+
+                listener.Stop();
+            }
+        }
+
+        [TestMethod]
+        public async Task TestE2ES4U()
+        {
+            var port = new Random().Next(20000, 40000);
+
+            var options = new ListenerOptions
+            {
+                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
+                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
+                IsDebug = true,
+                RealmLocator = realm => LocateRealm(realm),
+                ReceiveTimeout = TimeSpan.FromHours(1)
+            };
+
+            using (KdcServiceListener listener = new KdcServiceListener(options))
+            {
+                _ = listener.Start();
+
+                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}", s4u: "blah@corp.identityintervention.com");
+
+                listener.Stop();
+            }
+        }
+
+        [TestMethod]
         public async Task TestU2U()
         {
             var port = new Random().Next(20000, 40000);
@@ -133,34 +181,99 @@ namespace Tests.Kerberos.NET
             throw timeout;
         }
 
-        private static async Task RequestAndValidateTickets(string user, string password, string overrideKdc)
+        [TestMethod]
+        public async Task TestE2EMultithreadedClient()
+        {
+            var port = new Random().Next(20000, 40000);
+
+            var options = new ListenerOptions
+            {
+                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
+                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
+                IsDebug = true,
+                RealmLocator = realm => LocateRealm(realm),
+                ReceiveTimeout = TimeSpan.FromHours(1)
+            };
+
+            using (KdcServiceListener listener = new KdcServiceListener(options))
+            {
+                _ = listener.Start();
+
+                var kerbCred = new KerberosPasswordCredential("administrator@corp.identityintervention.com", "P@ssw0rd!");
+
+                KerberosClient client = new KerberosClient($"127.0.0.1:{port}");
+
+                await client.Authenticate(kerbCred);
+
+                Task.WaitAll(Enumerable.Range(0, 2).Select(taskNum => Task.Run(async () =>
+                {
+                    for (var i = 0; i < 10; i++)
+                    {
+                        if (i % 2 == 0)
+                        {
+                            await client.Authenticate(kerbCred);
+                        }
+
+                        var ticket = await client.GetServiceTicket(
+                            "host/appservice.corp.identityintervention.com",
+                            ApOptions.MutualRequired
+                        );
+
+                        await ValidateTicket(ticket);
+                    }
+                })).ToArray());
+
+                client.Dispose();
+                listener.Stop();
+            }
+        }
+
+        private static async Task RequestAndValidateTickets(string user, string password, string overrideKdc, string s4u = null, bool encodeNego = false)
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            KerberosClient client = new KerberosClient(overrideKdc);
+            using (KerberosClient client = new KerberosClient(overrideKdc))
+            {
+                await client.Authenticate(kerbCred);
 
-            await client.Authenticate(kerbCred);
+                var ticket = await client.GetServiceTicket(
+                    "host/appservice.corp.identityintervention.com",
+                    ApOptions.MutualRequired
+                );
 
-            var ticket = await client.GetServiceTicket(
-                "host/appservice.corp.identityintervention.com",
-                ApOptions.MutualRequired
-            );
+                await ValidateTicket(ticket);
 
-            await ValidateTicket(ticket);
+                await client.RenewTicket();
 
-            await client.RenewTicket();
+                ticket = await client.GetServiceTicket(
+                    "host/appservice.corp.identityintervention.com",
+                    ApOptions.MutualRequired
+                );
 
-            ticket = await client.GetServiceTicket(
-                "host/appservice.corp.identityintervention.com",
-                ApOptions.MutualRequired
-            );
+                await ValidateTicket(ticket, encodeNego);
 
-            await ValidateTicket(ticket);
+                ticket = await client.GetServiceTicket(
+                    "host/appservice.corp.identityintervention.com",
+                    ApOptions.MutualRequired,
+                    s4u: s4u
+                );
+
+                await ValidateTicket(ticket);
+            }
         }
 
-        private static async Task ValidateTicket(KrbApReq ticket)
+        private static async Task ValidateTicket(KrbApReq ticket, bool encodeNego = false)
         {
-            var encoded = ticket.EncodeApplication().ToArray();
+            byte[] encoded;
+
+            if (encodeNego)
+            {
+                encoded = ticket.EncodeGssApi().ToArray();
+            }
+            else
+            {
+                encoded = ticket.EncodeApplication().ToArray();
+            }
 
             var authenticator = new KerberosAuthenticator(
                 new KeyTable(

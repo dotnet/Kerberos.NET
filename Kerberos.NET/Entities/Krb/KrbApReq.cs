@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Asn1;
 using Kerberos.NET.Crypto;
 using System;
+using System.Security.Cryptography;
 
 namespace Kerberos.NET.Entities
 {
@@ -33,7 +34,7 @@ namespace Kerberos.NET.Entities
                 Realm = ticket.Realm,
                 SequenceNumber = KerberosConstants.GetNonce(),
                 Subkey = null,
-                AuthenticatorVersionNumber = 5
+                Checksum = KrbChecksum.EncodeDelegationChecksum(new DelegationInfo())
             };
 
             var apReq = new KrbApReq
@@ -48,6 +49,39 @@ namespace Kerberos.NET.Entities
             };
 
             return apReq;
+        }
+
+        public ReadOnlyMemory<byte> EncodeGssApi()
+        {
+            var token = GssApiToken.Encode(Kerberos5Oid, this);
+
+            var negoToken = new NegotiationToken
+            {
+                InitialToken = new NegTokenInit
+                {
+                    MechTypes = new[] { Kerberos5Oid },
+                    MechToken = token
+                }
+            };
+
+            return GssApiToken.Encode(SPNegoOid, negoToken);
+        }
+
+        private static readonly Oid Kerberos5Oid = new Oid(MechType.KerberosV5);
+        private static readonly Oid SPNegoOid = new Oid(MechType.SPNEGO);
+
+        public ReadOnlyMemory<byte> EncodeNegotiate()
+        {
+            var negoToken = new NegotiationToken
+            {
+                InitialToken = new NegTokenInit
+                {
+                    MechTypes = new[] { SPNegoOid },
+                    MechToken = EncodeApplication()
+                }
+            };
+
+            return negoToken.Encode().AsMemory();
         }
     }
 }

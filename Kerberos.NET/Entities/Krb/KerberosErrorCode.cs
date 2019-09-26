@@ -1,6 +1,6 @@
 ﻿namespace Kerberos.NET.Entities
 {
-    public enum KerberosErrorCode : long
+    public enum KerberosErrorCode 
     {
         KDC_ERR_NONE = 0,
         KDC_ERR_NAME_EXP = 1,

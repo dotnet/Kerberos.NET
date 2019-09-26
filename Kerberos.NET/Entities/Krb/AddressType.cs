@@ -1,6 +1,6 @@
 ﻿namespace Kerberos.NET.Entities
 {
-    public enum AddressType : long
+    public enum AddressType 
     {
         IPv4 = 2,
         Directional = 3,

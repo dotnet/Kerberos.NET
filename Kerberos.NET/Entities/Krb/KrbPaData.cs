@@ -31,7 +31,7 @@ namespace Kerberos.NET.Entities
         }
     }
 
-    public enum PaDataType : long
+    public enum PaDataType 
     {
         PA_TGS_REQ = 1,
         PA_ENC_TIMESTAMP = 2,

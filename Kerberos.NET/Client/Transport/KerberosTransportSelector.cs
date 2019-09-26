@@ -44,5 +44,18 @@ namespace Kerberos.NET.Transport
 
             throw LastError ?? new KerberosTransportException("No transport could be used to send the message");
         }
+
+        public override void Dispose()
+        {
+            foreach (var transport in transports)
+            {
+                if (transport is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+
+            base.Dispose();
+        }
     }
 }

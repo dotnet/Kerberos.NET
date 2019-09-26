@@ -12,36 +12,28 @@ namespace KerberosClientApp
     class Program
     {
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             string user = ReadString("UserName", "administrator@corp.identityintervention.com", args);
             string password = ReadString("Password", "P@ssw0rd!", args);
-            string overrideKdc = ReadString("KDC", null, args);
+            string s4u = ReadString("S4U", null, args);
+            string spn = ReadString("SPN", "host/downlevel.corp.identityintervention.com", args);
+            string overrideKdc = ReadString("KDC", "10.0.0.21:88", args);
 
-            bool overkill = string.Equals(ReadString("async", "false", args), "true", StringComparison.OrdinalIgnoreCase);
-
-            for (var i = 0; i < 10; i++)
-            {
-                _ = RequestTicketsAsync(user, password, overrideKdc);
-
-                if (!overkill)
-                {
-                    break;
-                }
-            }
+            await RequestTicketsAsync(user, password, overrideKdc, s4u, spn);
 
             Write("Press [Any] key to exit...");
 
             ReadKey();
         }
 
-        private static async Task RequestTicketsAsync(string user, string password, string overrideKdc)
+        private static async Task RequestTicketsAsync(string user, string password, string overrideKdc, string s4u, string spn)
         {
             while (true)
             {
                 try
                 {
-                    await RequestTickets(user, password, overrideKdc);
+                    await RequestTickets(user, password, overrideKdc, s4u, spn);
                 }
                 catch (Exception ex)
                 {
@@ -50,7 +42,7 @@ namespace KerberosClientApp
             }
         }
 
-        private static async Task RequestTickets(string user, string password, string overrideKdc)
+        private static async Task RequestTickets(string user, string password, string overrideKdc, string s4u, string spn)
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
@@ -58,9 +50,12 @@ namespace KerberosClientApp
 
             await client.Authenticate(kerbCred);
 
+            spn = spn ?? "host/appservice.corp.identityintervention.com";
+
             var ticket = await client.GetServiceTicket(
-                "host/appservice.corp.identityintervention.com",
-                ApOptions.MutualRequired
+                spn,
+                ApOptions.MutualRequired,
+                s4u: s4u
             );
 
             var encoded = ticket.EncodeApplication().ToArray();
@@ -68,11 +63,11 @@ namespace KerberosClientApp
             var authenticator = new KerberosAuthenticator(
                 new KeyTable(
                     new KerberosKey(
-                        "P@ssw0rd!", 
+                        "P@ssw0rd!",
                         principalName: new PrincipalName(
-                            PrincipalNameType.NT_PRINCIPAL, 
-                            "CORP.IDENTITYINTERVENTION.com", 
-                            new[] { "host/appservice.corp.identityintervention.com" }
+                            PrincipalNameType.NT_PRINCIPAL,
+                            "CORP.IDENTITYINTERVENTION.com",
+                            new[] { spn }
                         ),
                         saltType: SaltType.ActiveDirectoryUser
                     )

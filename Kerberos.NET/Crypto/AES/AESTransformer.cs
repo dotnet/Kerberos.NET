@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kerberos.NET.Entities;
+using System;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Cryptography;
@@ -134,7 +135,7 @@ namespace Kerberos.NET.Crypto.AES
 
         private ReadOnlySpan<byte> String2Key(byte[] password, string salt, byte[] param)
         {
-            var passwordBytes = UnicodeBytesToUtf8(password);
+            var passwordBytes = KerberosConstants.UnicodeBytesToUtf8(password);
 
             var iterations = GetIterations(param, 4096);
 
@@ -145,18 +146,6 @@ namespace Kerberos.NET.Crypto.AES
             var tmpKey = Random2Key(random);
 
             return DK(tmpKey, KerberosConstant.Span, KeySize, BlockSize);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ReadOnlySpan<byte> UnicodeBytesToUtf8(byte[] str)
-        {
-            return Encoding.Convert(Encoding.Unicode, Encoding.UTF8, str, 0, str.Length);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ReadOnlySpan<byte> UnicodeStringToUtf8(string salt)
-        {
-            return UnicodeBytesToUtf8(Encoding.Unicode.GetBytes(salt));
         }
 
         private static int GetIterations(byte[] param, int defCount)
@@ -196,14 +185,14 @@ namespace Kerberos.NET.Crypto.AES
 
         private static ReadOnlySpan<byte> GetSaltBytes(string salt, string pepper)
         {
-            var saltBytes = UnicodeStringToUtf8(salt);
+            var saltBytes = KerberosConstants.UnicodeStringToUtf8(salt);
 
             if (string.IsNullOrWhiteSpace(pepper))
             {
                 return saltBytes;
             }
 
-            var pepperBytes = UnicodeStringToUtf8(pepper);
+            var pepperBytes = KerberosConstants.UnicodeStringToUtf8(pepper);
             
             var results = new Span<byte>(new byte[saltBytes.Length + 1 + pepperBytes.Length]);
 

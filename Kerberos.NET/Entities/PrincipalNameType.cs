@@ -1,6 +1,6 @@
 ﻿namespace Kerberos.NET.Entities
 {
-    public enum PrincipalNameType : long
+    public enum PrincipalNameType 
     {
         NT_UNKNOWN = 0,
         NT_PRINCIPAL = 1,

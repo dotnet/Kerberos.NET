@@ -205,7 +205,7 @@ namespace System.Security.Cryptography.Asn1
 
             if (TryReadSignedInteger(sizeof(int), expectedTag, UniversalTagNumber.Integer, out long longValue))
             {
-                obj = longValue;
+                obj = (int)longValue;
                 value = (T)obj;
                 return true;
             }

@@ -54,7 +54,11 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        internal static KerberosChecksum CreateChecksumValidator(ChecksumType type, ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> signatureData)
+        internal static KerberosChecksum CreateChecksum(
+            ChecksumType type, 
+            ReadOnlyMemory<byte> signature = default, 
+            ReadOnlyMemory<byte> signatureData = default
+        )
         {
             switch (type)
             {
@@ -63,7 +67,7 @@ namespace Kerberos.NET.Crypto
                 case ChecksumType.HMAC_SHA1_96_AES128:
                     return new HmacAes128KerberosChecksum(signature, signatureData);
                 case ChecksumType.HMAC_SHA1_96_AES256:
-                    return new HmacAes256PacSign(signature, signatureData);
+                    return new HmacAes256KerberosChecksum(signature, signatureData);
             }
 
             return null;

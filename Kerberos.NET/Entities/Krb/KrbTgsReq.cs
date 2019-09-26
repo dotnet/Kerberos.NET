@@ -29,10 +29,30 @@ namespace Kerberos.NET.Entities
             KrbEncryptionKey tgtSessionKey,
             KrbKdcRep kdcRep,
             KdcOptions options,
-            KrbTicket user2UserTicket = null
+            KrbTicket user2UserTicket = null,
+            string s4u = null
         )
         {
-            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey);
+            var sname = spn.Split('/', '@');
+            var tgt = kdcRep.Ticket;
+
+            var body = new KrbKdcReqBody
+            {
+                EType = KerberosConstants.ETypes.ToArray(),
+                KdcOptions = options,
+                Nonce = KerberosConstants.GetNonce(),
+                Realm = tgt.Realm,
+                SName = new KrbPrincipalName()
+                {
+                    Type = PrincipalNameType.NT_SRV_HST,
+                    Name = sname
+                },
+                Till = KerberosConstants.EndOfTime
+            };
+
+            var bodyChecksum = KrbChecksum.Create(body.Encode().AsMemory(), tgtSessionKey.AsKey(), KeyUsage.PaTgsReqChecksum);
+
+            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey, bodyChecksum);
 
             var pacOptions = new KrbPaPacOptions
             {
@@ -50,26 +70,19 @@ namespace Kerberos.NET.Entities
                 }
             };
 
-            var tgt = kdcRep.Ticket;
-
-            var sname = spn.Split('/', '@');
+            if (!string.IsNullOrWhiteSpace(s4u))
+            {
+                paData.Add(new KrbPaData
+                {
+                    Type = PaDataType.PA_FOR_USER,
+                    Value = EncodeS4URequest(s4u, tgt.Realm, tgtSessionKey)
+                });
+            }
 
             var tgs = new KrbTgsReq
             {
                 PaData = paData.ToArray(),
-                Body = new KrbKdcReqBody
-                {
-                    EType = KerberosConstants.ETypes.ToArray(),
-                    KdcOptions = options,
-                    Nonce = KerberosConstants.GetNonce(),
-                    Realm = tgt.Realm,
-                    SName = new KrbPrincipalName()
-                    {
-                        Type = PrincipalNameType.NT_SRV_HST,
-                        Name = sname
-                    },
-                    Till = KerberosConstants.EndOfTime
-                },
+                Body = body
             };
 
             if (options.HasFlag(KdcOptions.EncTktInSkey) && user2UserTicket != null)
@@ -82,7 +95,21 @@ namespace Kerberos.NET.Entities
             return tgs;
         }
 
-        private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey)
+        private static ReadOnlyMemory<byte> EncodeS4URequest(string s4u, string realm, KrbEncryptionKey sessionKey)
+        {
+            var paS4u = new KrbPaForUser
+            {
+                AuthPackage = "Kerberos",
+                UserName = new KrbPrincipalName { Type = PrincipalNameType.NT_ENTERPRISE, Name = new[] { s4u } },
+                UserRealm = realm
+            };
+
+            paS4u.GenerateChecksum(sessionKey.AsKey());
+
+            return paS4u.Encode().AsMemory();
+        }
+
+        private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey, KrbChecksum checksum)
         {
             var tgt = kdcRep.Ticket;
 
@@ -96,7 +123,7 @@ namespace Kerberos.NET.Entities
                 Realm = tgt.Realm,
                 SequenceNumber = KerberosConstants.GetNonce(),
                 Subkey = tgtSessionKey,
-                AuthenticatorVersionNumber = 5
+                Checksum = checksum
             };
 
             var encryptedAuthenticator = KrbEncryptedData.Encrypt(

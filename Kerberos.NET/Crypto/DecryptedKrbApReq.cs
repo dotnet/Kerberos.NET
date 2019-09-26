@@ -88,18 +88,35 @@ namespace Kerberos.NET.Crypto
                 SessionKey = Ticket.Key.AsKey();
             }
 
-            var delegationInfo = Authenticator.Checksum?.DecodeDelegation();
+            var checksum = Authenticator.Checksum;
+
+            if (checksum != null)
+            {
+                DelegationTicket = TryExtractDelegationTicket(checksum);
+            }
+        }
+
+        private KrbEncKrbCredPart TryExtractDelegationTicket(KrbChecksum checksum)
+        {
+            if (checksum.Type != KrbChecksum.ChecksumContainsDelegationType)
+            {
+                return null;
+            }
+
+            var delegationInfo = checksum.DecodeDelegation();
 
             var delegation = delegationInfo?.DelegationTicket;
 
-            if (delegation != null)
+            if (delegation == null)
             {
-                DelegationTicket = delegation.EncryptedPart.Decrypt(
-                    Ticket.Key.AsKey(),
-                    KeyUsage.EncKrbCredPart,
-                    b => KrbEncKrbCredPart.DecodeApplication(b)
-                );
+                return null;
             }
+
+            return delegation.EncryptedPart.Decrypt(
+                Ticket.Key.AsKey(),
+                KeyUsage.EncKrbCredPart,
+                b => KrbEncKrbCredPart.DecodeApplication(b)
+            );
         }
 
         public virtual TimeSpan Skew { get; protected set; } = TimeSpan.FromMinutes(5);

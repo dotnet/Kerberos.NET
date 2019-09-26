@@ -15,7 +15,7 @@ namespace Kerberos.NET
         {
             var longVal = (object)val;
 
-            return AsReadOnly((long)longVal, littleEndian: littleEndian);
+            return AsReadOnly((int)longVal, littleEndian: littleEndian);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,9 +42,9 @@ namespace Kerberos.NET
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long AsLong(this byte[] val)
+        public static long AsLong(this byte[] val, bool littleEndian = false)
         {
-            return AsLong((ReadOnlyMemory<byte>)val);
+            return AsLong((ReadOnlyMemory<byte>)val, littleEndian);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

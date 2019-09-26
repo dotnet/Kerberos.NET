@@ -13,6 +13,16 @@ namespace Tests.Kerberos.NET
     public class DelegationTests : BaseTest
     {
         [TestMethod]
+        public void TestDelegationEncoding()
+        {
+            var delegInfo = new DelegationInfo() { };
+
+            var encoded = delegInfo.Encode();
+
+            Assert.IsNotNull(encoded);
+        }
+
+        [TestMethod]
         public async Task TestDelegationRetrieval()
         {
             var validator = new KerberosValidator(new KerberosKey("P@ssw0rd!")) { ValidateAfterDecrypt = DefaultActions };

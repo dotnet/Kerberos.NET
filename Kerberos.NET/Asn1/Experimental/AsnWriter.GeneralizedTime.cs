@@ -10,6 +10,15 @@ namespace System.Security.Cryptography.Asn1
 {
     internal sealed partial class AsnWriter
     {
+        /*
+            NOTE: Implementation divergence
+
+            @omitFractionalSeconds is false in the corefx implementation.
+
+            https://github.com/dotnet/corefx/blob/2ba68b96b53391a04f1b5362fa65bf48c7d8e44e/src/Common/src/System/Security/Cryptography/Asn1/asn.xsd
+             
+        */
+
         /// <summary>
         ///   Write the provided <see cref="DateTimeOffset"/> as a GeneralizedTime with tag
         ///   UNIVERSAL 24, optionally excluding the fractional seconds.
@@ -21,7 +30,7 @@ namespace System.Security.Cryptography.Asn1
         /// </param>
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         /// <seealso cref="WriteGeneralizedTime(Asn1Tag,DateTimeOffset,bool)"/>
-        public void WriteGeneralizedTime(DateTimeOffset value, bool omitFractionalSeconds = false)
+        public void WriteGeneralizedTime(DateTimeOffset value, bool omitFractionalSeconds = true)
         {
             WriteGeneralizedTimeCore(Asn1Tag.GeneralizedTime, value, omitFractionalSeconds);
         }
@@ -44,7 +53,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         /// <seealso cref="WriteGeneralizedTime(System.Security.Cryptography.Asn1.Asn1Tag,System.DateTimeOffset,bool)"/>
-        public void WriteGeneralizedTime(Asn1Tag tag, DateTimeOffset value, bool omitFractionalSeconds = false)
+        public void WriteGeneralizedTime(Asn1Tag tag, DateTimeOffset value, bool omitFractionalSeconds = true)
         {
             CheckUniversalTag(tag, UniversalTagNumber.GeneralizedTime);
 
