@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
@@ -31,7 +32,7 @@ namespace Tests.Kerberos.NET
 
             public override ProtocolType Protocol => ProtocolType.Unspecified;
 
-            public override Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req)
+            public override Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
             {
                 var cached = QueryDomain(domain);
 

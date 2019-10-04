@@ -29,6 +29,7 @@ namespace Kerberos.NET.Entities
             KrbEncryptionKey tgtSessionKey,
             KrbKdcRep kdcRep,
             KdcOptions options,
+            out KrbEncryptionKey subkey,
             KrbTicket user2UserTicket = null,
             string s4u = null
         )
@@ -50,9 +51,13 @@ namespace Kerberos.NET.Entities
                 Till = KerberosConstants.EndOfTime
             };
 
-            var bodyChecksum = KrbChecksum.Create(body.Encode().AsMemory(), tgtSessionKey.AsKey(), KeyUsage.PaTgsReqChecksum);
+            var bodyChecksum = KrbChecksum.Create(
+                body.Encode().AsMemory(), 
+                tgtSessionKey.AsKey(), 
+                KeyUsage.PaTgsReqChecksum
+            );
 
-            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey, bodyChecksum);
+            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey, bodyChecksum, out subkey);
 
             var pacOptions = new KrbPaPacOptions
             {
@@ -109,22 +114,22 @@ namespace Kerberos.NET.Entities
             return paS4u.Encode().AsMemory();
         }
 
-        private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey, KrbChecksum checksum)
+        private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey, KrbChecksum checksum, out KrbEncryptionKey subkey)
         {
             var tgt = kdcRep.Ticket;
 
-            KerberosConstants.Now(out DateTimeOffset time, out int usec);
+            subkey = KrbEncryptionKey.Generate(tgtSessionKey.EType);
 
             var authenticator = new KrbAuthenticator
             {
                 CName = kdcRep.CName,
-                CTime = time,
-                Cusec = usec,
                 Realm = tgt.Realm,
                 SequenceNumber = KerberosConstants.GetNonce(),
-                Subkey = tgtSessionKey,
+                Subkey = subkey,
                 Checksum = checksum
             };
+
+            KerberosConstants.Now(out authenticator.CTime, out authenticator.Cusec);
 
             var encryptedAuthenticator = KrbEncryptedData.Encrypt(
                 authenticator.EncodeApplication(),

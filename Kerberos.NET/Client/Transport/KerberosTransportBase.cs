@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
@@ -59,14 +60,20 @@ namespace Kerberos.NET.Transport
             return new T().DecodeAsApplication(response);
         }
 
-        public virtual Task<TResponse> SendMessage<TRequest, TResponse>(string domain, IAsn1ApplicationEncoder<TRequest> req)
-            where TResponse : IAsn1ApplicationEncoder<TResponse>, new()
+        public virtual Task<TResponse> SendMessage<TRequest, TResponse>(
+            string domain,
+            IAsn1ApplicationEncoder<TRequest> req,
+            CancellationToken cancellation = default
+        ) where TResponse : IAsn1ApplicationEncoder<TResponse>, new()
         {
             return SendMessage<TResponse>(domain, req.EncodeApplication());
         }
 
-        public abstract Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req)
-            where T : IAsn1ApplicationEncoder<T>, new();
+        public abstract Task<T> SendMessage<T>(
+            string domain,
+            ReadOnlyMemory<byte> req,
+            CancellationToken cancellation = default
+        ) where T : IAsn1ApplicationEncoder<T>, new();
 
         protected DnsRecord QueryDomain(string lookup)
         {

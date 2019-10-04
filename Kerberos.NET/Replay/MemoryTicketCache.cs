@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET
 {
-    internal sealed class MemoryTicketCache : ITicketCache
+    internal sealed class MemoryTicketCache : ITicketCache, IDisposable
     {
         private readonly ILogger logger;
 
@@ -38,22 +38,31 @@ namespace Kerberos.NET
 
             public object Value { get; }
 
+            private Task triggerCleanup;
+
             public void BeginTriggerDelay(TimeSpan lifetime, CancellationToken cancel)
             {
                 LogWrite($"Triggering delay {lifetime} for {Key}");
 
-                Task.Delay(lifetime, cancel).ContinueWith(RemoveSelf);
+                TimeSpan delay = lifetime;
+
+                if (delay > TimeSpan.FromDays(7))
+                {
+                    delay = TimeSpan.FromDays(7);
+                }
+
+                triggerCleanup = Task.Delay(delay, cancel).ContinueWith(RemoveSelf, cancel);
             }
 
             private void LogWrite(string log, Exception ex = null)
             {
                 if (ex == null)
                 {
-                    logger.WriteLine(KerberosLogSource.Cache, log);
+                    logger?.WriteLine(KerberosLogSource.Cache, log);
                 }
                 else
                 {
-                    logger.WriteLine(KerberosLogSource.Cache, log, ex);
+                    logger?.WriteLine(KerberosLogSource.Cache, log, ex);
                 }
             }
 
@@ -67,6 +76,8 @@ namespace Kerberos.NET
                 var removed = cache.TryRemove(Key, out CacheEntry removedEntry);
 
                 LogWrite($"Removal triggered for {removedEntry.Key}. Succeeded: {removed}");
+
+                GC.KeepAlive(triggerCleanup);
             }
         }
 
@@ -103,14 +114,25 @@ namespace Kerberos.NET
 
         public Task<object> Get(string v)
         {
-            if (cache.TryGetValue(v, out CacheEntry entry))
+            if (cache.TryGetValue(TicketCacheEntry.GenerateKey(key: v), out CacheEntry entry))
             {
-                var value = (CacheEntry)entry.Value;
-
-                return Task.FromResult(value.Value);
+                return Task.FromResult(entry.Value);
             }
 
             return Task.FromResult<object>(null);
+        }
+
+        public async Task<T> Get<T>(string v)
+        {
+            var result = await Get(v);
+
+            return result != null ? (T)result : default;
+        }
+
+        public void Dispose()
+        {
+            cancel.Cancel();
+            cancel.Dispose();
         }
     }
 }

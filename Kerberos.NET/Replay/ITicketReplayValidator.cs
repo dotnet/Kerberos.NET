@@ -12,7 +12,12 @@ namespace Kerberos.NET
 
     public class TicketCacheEntry
     {
-        public string Computed { get { return $"kerberos-{Container}-{Key}"; } }
+        public string Computed { get { return GenerateKey(Container, Key); } }
+
+        internal static string GenerateKey(string container = null, string key = null)
+        {
+            return $"kerberos-{container}-{key}";
+        }
 
         public string Key { get; set; }
 

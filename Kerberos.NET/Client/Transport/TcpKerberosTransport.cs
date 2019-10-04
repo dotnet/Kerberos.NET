@@ -1,8 +1,8 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Dns;
 using System;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
@@ -19,7 +19,11 @@ namespace Kerberos.NET.Transport
 
         public override ProtocolType Protocol => ProtocolType.Tcp;
 
-        public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> encoded)
+        public override async Task<T> SendMessage<T>(
+            string domain,
+            ReadOnlyMemory<byte> encoded,
+            CancellationToken cancellation = default
+        )
         {
             var target = LocateKdc(domain);
 
@@ -47,12 +51,23 @@ namespace Kerberos.NET.Transport
                 await stream.WriteAsync(encoded);
                 await stream.FlushAsync();
 
-                await stream.ReadAsync(messageSize.Slice(0, 4));
+                await stream.ReadAsync(messageSize.Slice(0, 4), cancellation);
 
                 var response = new byte[messageSize.Span.AsLong()];
 
                 await stream.FlushAsync();
-                await stream.ReadAsync(response);
+
+                int read = 0;
+
+                while (read < response.Length)
+                {
+                    read += await stream.ReadAsync(
+                        response, 
+                        read, 
+                        response.Length - read, 
+                        cancellation
+                    );
+                }
 
                 return Decode<T>(response);
             }
