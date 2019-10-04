@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
@@ -21,7 +22,11 @@ namespace Kerberos.NET.Transport
 
         public IEnumerable<IKerberosTransport> Transports => transports;
 
-        public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> encoded)
+        public override async Task<T> SendMessage<T>(
+            string domain, 
+            ReadOnlyMemory<byte> encoded, 
+            CancellationToken cancellation = default
+        )
         {
             // basic logic should be 
             // foreach transport 
@@ -33,7 +38,7 @@ namespace Kerberos.NET.Transport
             {
                 try
                 {
-                    return await transport.SendMessage<T>(domain, encoded);
+                    return await transport.SendMessage<T>(domain, encoded, cancellation);
                 }
                 catch (KerberosTransportException tex)
                 {

@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Dns;
 using System;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
@@ -21,7 +22,11 @@ namespace Kerberos.NET.Transport
             Enabled = false;
         }
 
-        public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> encoded)
+        public override async Task<T> SendMessage<T>(
+            string domain, 
+            ReadOnlyMemory<byte> encoded, 
+            CancellationToken cancellation = default
+        )
         {
             var target = LocateKdc(domain);
 
@@ -29,7 +34,11 @@ namespace Kerberos.NET.Transport
             {
                 Log($"UDP connecting to {target.Target}");
 
+                cancellation.ThrowIfCancellationRequested();
+
                 var result = await client.SendAsync(encoded.ToArray(), encoded.Length);
+
+                cancellation.ThrowIfCancellationRequested();
 
                 var response = await client.ReceiveAsync();
 

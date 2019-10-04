@@ -46,6 +46,30 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public async Task TestE2EWithCaching()
+        {
+            var port = new Random().Next(20000, 40000);
+
+            var options = new ListenerOptions
+            {
+                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
+                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
+                IsDebug = true,
+                RealmLocator = realm => LocateRealm(realm),
+                ReceiveTimeout = TimeSpan.FromHours(1)
+            };
+
+            using (KdcServiceListener listener = new KdcServiceListener(options))
+            {
+                _ = listener.Start();
+
+                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}", caching: true);
+
+                listener.Stop();
+            }
+        }
+
+        [TestMethod]
         public async Task TestE2EWithNegotiate()
         {
             var port = new Random().Next(20000, 40000);
@@ -120,7 +144,10 @@ namespace Tests.Kerberos.NET
             var server = new KerberosClient($"127.0.0.1:{port}");
 
             await server.Authenticate(kerbClientCred);
-            var serverTgt = server.TicketGrantingTicket.Ticket;
+
+            var serverEntry = await server.Cache.Get<KerberosClientCacheEntry>($"krbtgt/{server.DefaultDomain}");
+
+            var serverTgt = serverEntry.Ticket.Ticket;
 
             var apReq = await client.GetServiceTicket("host/u2u", ApOptions.MutualRequired | ApOptions.UseSessionKey, serverTgt);
 
@@ -130,7 +157,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNull(decrypted.Ticket);
 
-            decrypted.Decrypt(server.TgtSessionKey.AsKey());
+            decrypted.Decrypt(serverEntry.SessionKey.AsKey());
 
             decrypted.Validate(ValidationActions.All);
 
@@ -199,40 +226,68 @@ namespace Tests.Kerberos.NET
             {
                 _ = listener.Start();
 
+                var exceptions = new List<Exception>();
+
                 var kerbCred = new KerberosPasswordCredential("administrator@corp.identityintervention.com", "P@ssw0rd!");
 
-                KerberosClient client = new KerberosClient($"127.0.0.1:{port}");
+                string kdc = $"127.0.0.1:{port}"; 
+                //string kdc = "10.0.0.21:88";
 
-                await client.Authenticate(kerbCred);
-
-                Task.WaitAll(Enumerable.Range(0, 2).Select(taskNum => Task.Run(async () =>
+                using (KerberosClient client = new KerberosClient(kdc))
                 {
-                    for (var i = 0; i < 10; i++)
+                    client.CacheServiceTickets = false;
+
+                    await client.Authenticate(kerbCred);
+
+                    Task.WaitAll(Enumerable.Range(0, 2).Select(taskNum => Task.Run(async () =>
                     {
-                        if (i % 2 == 0)
+                        for (var i = 0; i < 100; i++)
                         {
-                            await client.Authenticate(kerbCred);
+                            try
+                            {
+                                if (i % 2 == 0)
+                                {
+                                    await client.Authenticate(kerbCred);
+                                }
+
+                                var ticket = await client.GetServiceTicket(
+                                    "host/appservice.corp.identityintervention.com",
+                                    ApOptions.MutualRequired
+                                );
+
+                                Assert.IsNotNull(ticket.Ticket);
+
+                                await ValidateTicket(ticket);
+                            }
+                            catch (Exception ex)
+                            {
+                                exceptions.Add(ex);
+                            }
                         }
+                    })).ToArray());
+                }
 
-                        var ticket = await client.GetServiceTicket(
-                            "host/appservice.corp.identityintervention.com",
-                            ApOptions.MutualRequired
-                        );
-
-                        await ValidateTicket(ticket);
-                    }
-                })).ToArray());
-
-                client.Dispose();
                 listener.Stop();
+
+                if (exceptions.Count > 0)
+                {
+                    throw new AggregateException($"Failed {exceptions.Count}", exceptions.GroupBy(e => e.GetType()).Select(e => e.First()));
+                }
             }
         }
 
-        private static async Task RequestAndValidateTickets(string user, string password, string overrideKdc, string s4u = null, bool encodeNego = false)
+        private static async Task RequestAndValidateTickets(
+            string user, 
+            string password, 
+            string overrideKdc, 
+            string s4u = null, 
+            bool encodeNego = false, 
+            bool caching = false
+        )
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            using (KerberosClient client = new KerberosClient(overrideKdc))
+            using (KerberosClient client = new KerberosClient(overrideKdc) { CacheServiceTickets = caching })
             {
                 await client.Authenticate(kerbCred);
 
