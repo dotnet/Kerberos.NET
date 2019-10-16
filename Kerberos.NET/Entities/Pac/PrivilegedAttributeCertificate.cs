@@ -155,7 +155,7 @@ namespace Kerberos.NET.Entities
                     break;
                 case PacType.CONSTRAINED_DELEGATION_INFO:
                     DelegationInformation = new PacDelegationInfo();
-                    DelegationInformation.ReadBody(pacInfoBuffer);
+                    DelegationInformation.Decode(pacInfoBuffer);
                     break;
                 case PacType.UPN_DOMAIN_INFO:
                     UpnDomainInformation = new UpnDomainInfo();

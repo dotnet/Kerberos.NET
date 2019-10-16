@@ -42,7 +42,7 @@ namespace Kerberos.NET.Transport
             Logger?.WriteLine(KerberosLogSource.Client, log);
         }
 
-        protected static T Decode<T>(byte[] response)
+        protected static T Decode<T>(ReadOnlyMemory<byte> response)
             where T : IAsn1ApplicationEncoder<T>, new()
         {
             if (KrbError.CanDecode(response))

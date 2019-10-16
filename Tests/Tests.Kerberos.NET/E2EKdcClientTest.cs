@@ -149,7 +149,7 @@ namespace Tests.Kerberos.NET
 
             var serverTgt = serverEntry.Ticket.Ticket;
 
-            var apReq = await client.GetServiceTicket("host/u2u", ApOptions.MutualRequired | ApOptions.UseSessionKey, serverTgt);
+            var apReq = await client.GetServiceTicket("host/u2u", ApOptions.MutualRequired | ApOptions.UseSessionKey, u2uServerTicket: serverTgt);
 
             Assert.IsNotNull(apReq);
 
