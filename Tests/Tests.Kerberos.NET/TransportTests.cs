@@ -59,7 +59,7 @@ namespace Tests.Kerberos.NET
                     }
                 }.EncodeApplication();
 
-                return Task.FromResult(Decode<T>(response.ToArray()));
+                return Task.FromResult(Decode<T>(response));
             }
 
             protected override IEnumerable<DnsRecord> Query(string lookup)

@@ -44,33 +44,54 @@ namespace Kerberos.NET.Transport
 
                 var stream = client.GetStream();
 
-                var messageSize = new Memory<byte>(new byte[4]);
-                Endian.ConvertToBigEndian(encoded.Length, messageSize);
+                await WriteMessage(encoded, stream, cancellation);
 
-                await stream.WriteAsync(messageSize);
-                await stream.WriteAsync(encoded);
-                await stream.FlushAsync();
-
-                await stream.ReadAsync(messageSize.Slice(0, 4), cancellation);
-
-                var response = new byte[messageSize.Span.AsLong()];
-
-                await stream.FlushAsync();
-
-                int read = 0;
-
-                while (read < response.Length)
-                {
-                    read += await stream.ReadAsync(
-                        response, 
-                        read, 
-                        response.Length - read, 
-                        cancellation
-                    );
-                }
-
-                return Decode<T>(response);
+                return await ReadResponse<T>(stream, cancellation);
             }
+        }
+
+        private async Task<T> ReadResponse<T>(NetworkStream stream, CancellationToken cancellation)
+            where T : Asn1.IAsn1ApplicationEncoder<T>, new()
+        {
+            var messageSizeBytes = await ReadFromStream(4, stream, cancellation);
+
+            var messageSize = (int)messageSizeBytes.AsLong();
+
+            var response = await ReadFromStream(messageSize, stream, cancellation);
+
+            return Decode<T>(response);
+        }
+
+        private static async Task<byte[]> ReadFromStream(int messageSize, NetworkStream stream, CancellationToken cancellation)
+        {
+            var response = new byte[messageSize];
+
+            int read = 0;
+
+            while (read < response.Length)
+            {
+                read += await stream.ReadAsync(
+                    response,
+                    read,
+                    response.Length - read,
+                    cancellation
+                );
+            }
+
+            return response;
+        }
+
+        private static async Task WriteMessage(ReadOnlyMemory<byte> encoded, NetworkStream stream, CancellationToken cancellation)
+        {
+            var messageSizeBytes = new byte[4];
+
+            Endian.ConvertToBigEndian(encoded.Length, (Span<byte>)messageSizeBytes);
+
+            await stream.WriteAsync(messageSizeBytes, 0, messageSizeBytes.Length, cancellation);
+
+            await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation);
+
+            await stream.FlushAsync();
         }
 
         protected DnsRecord LocateKdc(string domain)

@@ -3,6 +3,8 @@ using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Security;
 
 namespace Kerberos.NET.Entities
 {
@@ -31,11 +33,31 @@ namespace Kerberos.NET.Entities
             KdcOptions options,
             out KrbEncryptionKey subkey,
             KrbTicket user2UserTicket = null,
-            string s4u = null
+            string s4u = null,
+            KrbTicket s4uTicket = null
         )
         {
             var sname = spn.Split('/', '@');
             var tgt = kdcRep.Ticket;
+
+            var additionalTickets = new List<KrbTicket>();
+
+            if (options.HasFlag(KdcOptions.EncTktInSkey) && user2UserTicket != null)
+            {
+                additionalTickets.Add(user2UserTicket);
+            }
+
+            if (!string.IsNullOrWhiteSpace(s4u))
+            {
+                options |= KdcOptions.Forwardable;
+            }
+
+            if (s4uTicket != null)
+            {
+                options |= KdcOptions.ConstrainedDelegation;
+
+                additionalTickets.Add(s4uTicket);
+            }
 
             var body = new KrbKdcReqBody
             {
@@ -51,9 +73,14 @@ namespace Kerberos.NET.Entities
                 Till = KerberosConstants.EndOfTime
             };
 
+            if (additionalTickets.Count > 0)
+            {
+                body.AdditionalTickets = additionalTickets.ToArray();
+            }
+
             var bodyChecksum = KrbChecksum.Create(
-                body.Encode().AsMemory(), 
-                tgtSessionKey.AsKey(), 
+                body.Encode().AsMemory(),
+                tgtSessionKey.AsKey(),
                 KeyUsage.PaTgsReqChecksum
             );
 
@@ -89,13 +116,6 @@ namespace Kerberos.NET.Entities
                 PaData = paData.ToArray(),
                 Body = body
             };
-
-            if (options.HasFlag(KdcOptions.EncTktInSkey) && user2UserTicket != null)
-            {
-                tgs.Body.AdditionalTickets = new[] {
-                    user2UserTicket
-                };
-            }
 
             return tgs;
         }

@@ -14,7 +14,7 @@ namespace Kerberos.NET.Client
         // - transport -> TCP/UDP/injected transport handler
         //
         // - KDC resolution -> specify DC name or use DNS resolution?
-        //                  -> DC resolver tries DC by locator instead?
+        //                  -> DC resolver tries DC by locater instead?
         //
         // - authenticate -> as-rep => TGT
         //                   -> request PAC?
@@ -100,8 +100,9 @@ namespace Kerberos.NET.Client
         public async Task<KrbApReq> GetServiceTicket(
             string spn,
             ApOptions options = DefaultApOptions,
-            KrbTicket u2uServerTicket = null,
-            string s4u = null
+            string s4u = null,
+            KrbTicket s4uTicket = null,
+            KrbTicket u2uServerTicket = null
         )
         {
             cancellation.Token.ThrowIfCancellationRequested();
@@ -117,10 +118,10 @@ namespace Kerberos.NET.Client
 
             if (!string.IsNullOrWhiteSpace(s4u))
             {
-                kdcOptions |= KdcOptions.CNameInAdditionalTicket;
+                kdcOptions |= KdcOptions.Forwardable;
             }
 
-            var serviceTicketCacheEntry = await Cache.Get<KerberosClientCacheEntry>(spn);
+            var serviceTicketCacheEntry = await Cache.Get<KerberosClientCacheEntry>(spn, s4u);
 
             if (serviceTicketCacheEntry.Ticket == null)
             {
@@ -129,6 +130,7 @@ namespace Kerberos.NET.Client
                     tgtEntry,
                     kdcOptions,
                     s4u,
+                    s4uTicket,
                     u2uServerTicket
                 );
             }
@@ -147,6 +149,7 @@ namespace Kerberos.NET.Client
             KerberosClientCacheEntry tgtEntry,
             KdcOptions kdcOptions,
             string s4u,
+            KrbTicket s4uTicket,
             KrbTicket u2uServerTicket
         )
         {
@@ -157,7 +160,8 @@ namespace Kerberos.NET.Client
                 kdcOptions,
                 out KrbEncryptionKey subkey,
                 u2uServerTicket,
-                s4u
+                s4u,
+                s4uTicket
             );
 
             var encodedTgs = tgsReq.EncodeApplication();
@@ -181,6 +185,7 @@ namespace Kerberos.NET.Client
                 await Cache.Add(new TicketCacheEntry
                 {
                     Key = spn,
+                    Container = s4u,
                     Expires = tgsReq.Body.Till,
                     Value = entry
                 });

@@ -4,6 +4,7 @@ using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
+using System.Security;
 using System.Threading.Tasks;
 using static System.Console;
 
@@ -11,7 +12,6 @@ namespace KerberosClientApp
 {
     class Program
     {
-
         static async Task Main(string[] args)
         {
             string user = ReadString("UserName", "administrator@corp.identityintervention.com", args);
@@ -38,6 +38,7 @@ namespace KerberosClientApp
                 catch (Exception ex)
                 {
                     WriteLine(ex.Message);
+                    break;
                 }
             }
         }
@@ -46,16 +47,29 @@ namespace KerberosClientApp
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            KerberosClient client = new KerberosClient(overrideKdc);
+            using KerberosClient client = new KerberosClient(overrideKdc);
 
             await client.Authenticate(kerbCred);
 
-            spn = spn ?? "host/appservice.corp.identityintervention.com";
+            spn ??= "host/appservice.corp.identityintervention.com";
+
+            KrbTicket s4uTicket = null;
+
+            if (!string.IsNullOrWhiteSpace(s4u))
+            {
+                var s4uSelf = await client.GetServiceTicket(
+                    kerbCred.UserName,
+                    ApOptions.MutualRequired,
+                    s4u: s4u
+                );
+
+                s4uTicket = s4uSelf.Ticket;
+            }
 
             var ticket = await client.GetServiceTicket(
                 spn,
                 ApOptions.MutualRequired,
-                s4u: s4u
+                s4uTicket: s4uTicket
             );
 
             var encoded = ticket.EncodeApplication().ToArray();
@@ -87,10 +101,22 @@ namespace KerberosClientApp
             WriteLine($"AuthType: {validated.AuthenticationType}");
             WriteLine($"Validated by: {validated.ValidationMode}");
 
-
-            foreach (var restriction in validated.Restrictions)
+            foreach (var kv in validated.Restrictions)
             {
-                WriteLine($"Restriction: {restriction.Key}");
+                WriteLine($"Restriction: {kv.Key}");
+
+                foreach (var restriction in kv.Value)
+                {
+                    WriteLine($"Type: {restriction.Type}");
+                    WriteLine($"Value: {restriction}");
+
+                    if (restriction is PrivilegedAttributeCertificate pac)
+                    {
+                        WriteLine($"{pac.DelegationInformation}");
+                    }
+                }
+
+                WriteLine();
             }
 
             WriteLine();

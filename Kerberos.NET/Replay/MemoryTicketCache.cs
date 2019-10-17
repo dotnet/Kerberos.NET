@@ -112,9 +112,9 @@ namespace Kerberos.NET
             return Task.FromResult(exists);
         }
 
-        public Task<object> Get(string v)
+        public Task<object> Get(string key, string container = null)
         {
-            if (cache.TryGetValue(TicketCacheEntry.GenerateKey(key: v), out CacheEntry entry))
+            if (cache.TryGetValue(TicketCacheEntry.GenerateKey(key: key, container: container), out CacheEntry entry))
             {
                 return Task.FromResult(entry.Value);
             }
@@ -122,9 +122,9 @@ namespace Kerberos.NET
             return Task.FromResult<object>(null);
         }
 
-        public async Task<T> Get<T>(string v)
+        public async Task<T> Get<T>(string key, string container = null)
         {
-            var result = await Get(v);
+            var result = await Get(key, container);
 
             return result != null ? (T)result : default;
         }

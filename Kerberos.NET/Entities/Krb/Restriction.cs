@@ -34,6 +34,11 @@ namespace Kerberos.NET
         }
 
         public string ServiceName { get; }
+
+        public override string ToString()
+        {
+            return ServiceName;
+        }
     }
 
     public class KerbLocalRestriction : Restriction
@@ -45,6 +50,11 @@ namespace Kerberos.NET
         }
 
         public ReadOnlySequence<byte> Value { get; }
+
+        public override string ToString()
+        {
+            return Convert.ToBase64String(Value.ToArray());
+        }
     }
 
     public class KerbApOptionsRestriction : Restriction
@@ -56,6 +66,11 @@ namespace Kerberos.NET
         }
 
         public ApOptions Options { get; }
+
+        public override string ToString()
+        {
+            return Options.ToString();
+        }
     }
 
     public class KerbAuthDataTokenRestriction : Restriction
@@ -71,7 +86,6 @@ namespace Kerberos.NET
                 Restriction = new LsapTokenInfoIntegrity(data.Data);
                 break;
             }
-
         }
 
         public int RestrictionType { get; }

@@ -26,6 +26,8 @@ namespace Kerberos.NET.Entities.Pac
 
             Header.WriteCommonHeader(stream);
 
+            stream.Align(4);
+
             WriteBody(stream);
 
             stream.WriteDeferred();

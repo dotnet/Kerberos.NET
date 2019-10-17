@@ -8,8 +8,8 @@ namespace Kerberos.NET
 
         Task<bool> Contains(TicketCacheEntry entry);
 
-        Task<object> Get(string v);
+        Task<object> Get(string key, string container = null);
 
-        Task<T> Get<T>(string v);
+        Task<T> Get<T>(string key, string container = null);
     }
 }
