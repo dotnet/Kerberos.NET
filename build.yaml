@@ -5,6 +5,7 @@ pool:
   - visualstudio
   - vstest
 
+name: $(MajorVersion).$(MinorVersion).$(BuildID).$(Rev:r)
 steps:
 - task: UseDotNet@2
   displayName: 'Use dotnet sdk 2.x'
@@ -28,7 +29,7 @@ steps:
   displayName: 'Build solution Build.Kerberos.NET.sln'
   inputs:
     solution: Build.Kerberos.NET.sln
-    msbuildArgs: '-p:Version=$(MajorVersion).$(MinorVersion)'
+    msbuildArgs: '-p:Version=$(MajorVersion).$(MinorVersion).$(BuildID).$(Rev:r)'
     configuration: Release
     createLogFile: true
     logFileVerbosity: diagnostic
