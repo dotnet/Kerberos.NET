@@ -28,7 +28,7 @@ steps:
   displayName: 'Build solution Build.Kerberos.NET.sln'
   inputs:
     solution: Build.Kerberos.NET.sln
-    msbuildArgs: '-p:Version=$(Build.BuildNumber)'
+    msbuildArgs: '-p:Version=$(MajorVersion).$(MinorVersion)'
     configuration: Release
     createLogFile: true
     logFileVerbosity: diagnostic
