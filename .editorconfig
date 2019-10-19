@@ -1,3 +1,5 @@
+# top-most EditorConfig file
+root = true
 
 # Don't use tabs for indentation.
 [*]
