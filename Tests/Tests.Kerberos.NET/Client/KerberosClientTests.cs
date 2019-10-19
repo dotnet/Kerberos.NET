@@ -12,26 +12,28 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void KerberosClientStartup()
         {
-            using var client = new KerberosClient();
+            using (var client = new KerberosClient())
+            {
+                Assert.IsNotNull(client);
 
-            Assert.IsNotNull(client);
-
-            Assert.AreEqual(2, client.Transports.Count());
+                Assert.AreEqual(2, client.Transports.Count());
+            }
         }
 
         [TestMethod]
         public void ServiceTicketsNotCached()
         {
-            using var client = new KerberosClient();
-
-            Assert.IsNotNull(client.Cache);
-            Assert.IsFalse(client.CacheServiceTickets);
+            using (var client = new KerberosClient())
+            {
+                Assert.IsNotNull(client.Cache);
+                Assert.IsFalse(client.CacheServiceTickets);
+            }
         }
 
         [TestMethod, ExpectedException(typeof(InvalidOperationException))]
         public void CacheCannotBeNull()
         {
-            using var client = new KerberosClient
+            var client = new KerberosClient
             {
                 Cache = null
             };
@@ -40,7 +42,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void TcpClientEnabledByDefault()
         {
-            using var client = new KerberosClient();
+            var client = new KerberosClient();
 
             var tcp = client.Transports.FirstOrDefault(t => t.Protocol == ProtocolType.Tcp);
 
@@ -52,7 +54,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void UdpClientDisabledByDefault()
         {
-            using var client = new KerberosClient();
+            var client = new KerberosClient();
 
             var udp = client.Transports.FirstOrDefault(t => t.Protocol == ProtocolType.Udp);
 

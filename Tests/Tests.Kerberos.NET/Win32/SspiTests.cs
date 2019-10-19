@@ -12,26 +12,27 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void TryGettingSspiTicketTest()
         {
-            using var contextSender = new SspiContext($"host/{Environment.MachineName}", "Negotiate");
-            using var contextReceiver = new SspiContext($"host/{Environment.MachineName}", "Negotiate");
+            using (var contextSender = new SspiContext($"host/{Environment.MachineName}", "Negotiate"))
+            using (var contextReceiver = new SspiContext($"host/{Environment.MachineName}", "Negotiate"))
+            {
+                var token = contextSender.RequestToken();
 
-            var token = contextSender.RequestToken();
+                Assert.IsNotNull(token);
 
-            Assert.IsNotNull(token);
+                var contextToken = MessageParser.Parse<NegotiateContextToken>(token);
 
-            var contextToken = MessageParser.Parse<NegotiateContextToken>(token);
+                Assert.IsNotNull(contextToken);
 
-            Assert.IsNotNull(contextToken);
+                contextReceiver.AcceptToken(token, out byte[] serverResponse);
 
-            contextReceiver.AcceptToken(token, out byte[] serverResponse);
+                Assert.IsNotNull(serverResponse);
 
-            Assert.IsNotNull(serverResponse);
+                var serverContext = NegotiationToken.Decode(serverResponse);
 
-            var serverContext = NegotiationToken.Decode(serverResponse);
-
-            Assert.IsNotNull(serverContext);
-            Assert.IsNotNull(serverContext.ResponseToken);
-            Assert.IsNull(serverContext.InitialToken);
+                Assert.IsNotNull(serverContext);
+                Assert.IsNotNull(serverContext.ResponseToken);
+                Assert.IsNull(serverContext.InitialToken);
+            }
         }
     }
 }

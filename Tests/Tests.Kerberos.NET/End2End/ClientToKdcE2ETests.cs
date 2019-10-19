@@ -133,12 +133,12 @@ namespace Tests.Kerberos.NET
             _ = listener.Start();
 
             var kerbClientCred = new KerberosPasswordCredential("administrator@corp.identityintervention.com", "P@ssw0rd!");
-            using var client = new KerberosClient($"127.0.0.1:{port}");
+            var client = new KerberosClient($"127.0.0.1:{port}");
 
             await client.Authenticate(kerbClientCred);
 
             var kerbServerCred = new KerberosPasswordCredential("u2u@corp.identityintervention.com", "P@ssw0rd!");
-            using var server = new KerberosClient($"127.0.0.1:{port}");
+            var server = new KerberosClient($"127.0.0.1:{port}");
 
             await server.Authenticate(kerbClientCred);
 
@@ -282,7 +282,7 @@ namespace Tests.Kerberos.NET
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            using KerberosClient client = new KerberosClient(overrideKdc) { CacheServiceTickets = caching };
+            KerberosClient client = new KerberosClient(overrideKdc) { CacheServiceTickets = caching };
 
             await client.Authenticate(kerbCred);
 
