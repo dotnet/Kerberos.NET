@@ -5,21 +5,12 @@ pool:
   - visualstudio
   - vstest
 
-#Your build pipeline references an undefined variable named ‘Parameters.ArtifactName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
-
 steps:
 - task: UseDotNet@2
   displayName: 'Use dotnet sdk 2.x'
   inputs:
     version: 2.x
     includePreviewVersions: true
-
-- task: UseDotNet@2
-  displayName: 'Use .NET Core SDK 3.0.0'
-  inputs:
-    version: 3.x
-    includePreviewVersions: true
-  enabled: false
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet restore'
@@ -32,16 +23,6 @@ steps:
   inputs:
     command: restore
     projects: '.\tests\Tests.Kerberos.NET\Tests.Kerberos.NET.csproj'
-
-- task: MSBuild@1
-  displayName: 'Build solution Kerberos.NET.sln'
-  inputs:
-    solution: Kerberos.NET.sln
-    msbuildVersion: 16.0
-    configuration: Release
-    msbuildArguments: '-p:Version=$(Build.BuildNumber)'
-    restoreNugetPackages: true
-  enabled: false
 
 - task: VSBuild@1
   displayName: 'Build solution Build.Kerberos.NET.sln'
