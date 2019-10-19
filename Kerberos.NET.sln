@@ -17,7 +17,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KerberosClientApp", "Kerber
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KerberosKdcHostApp", "KerberosKdcHostApp\KerberosKdcHostApp.csproj", "{6963D3CB-B2F1-452B-9339-18851A1C98C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmark.Kerberos.NET", "Benchmark.Kerberos.NET\Benchmark.Kerberos.NET.csproj", "{5115DFE1-AD08-4AF5-B88C-F436744D7A3A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmark.Kerberos.NET", "Benchmark.Kerberos.NET\Benchmark.Kerberos.NET.csproj", "{5115DFE1-AD08-4AF5-B88C-F436744D7A3A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{12F5B8BF-B0E3-4453-B843-DCEE26F2D4E8}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		build.yaml = build.yaml
+		Directory.build.props = Directory.build.props
+		version.json = version.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
