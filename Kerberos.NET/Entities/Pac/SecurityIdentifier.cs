@@ -108,7 +108,7 @@ namespace Kerberos.NET.Entities.Pac
         SE_GROUP_LOGON_ID = 0xC0000000
     }
 
-    public enum IdentifierAuthority 
+    public enum IdentifierAuthority
     {
         NullAuthority = 0,
         WorldAuthority = 1,

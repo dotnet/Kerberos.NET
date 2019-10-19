@@ -252,11 +252,18 @@ namespace Kerberos.NET
 
         protected virtual void AddUser(KrbEncTicketPart ticket, PrivilegedAttributeCertificate pac, List<Claim> claims)
         {
-            claims.Add(new Claim(ClaimTypes.Sid, pac.LogonInfo.UserSid.Value));
+            var logonInfo = pac.LogonInfo;
 
-            if (!string.IsNullOrWhiteSpace(pac.LogonInfo.UserDisplayName))
+            if (logonInfo == null)
             {
-                claims.Add(new Claim(ClaimTypes.GivenName, pac.LogonInfo.UserDisplayName));
+                return;
+            }
+
+            claims.Add(new Claim(ClaimTypes.Sid, logonInfo.UserSid.Value));
+
+            if (!string.IsNullOrWhiteSpace(logonInfo.UserDisplayName))
+            {
+                claims.Add(new Claim(ClaimTypes.GivenName, logonInfo.UserDisplayName));
             }
 
             if (this.UserNameFormat == UserNameFormat.UserPrincipalName)
@@ -267,15 +274,22 @@ namespace Kerberos.NET
             }
             else
             {
-                claims.Add(new Claim(ClaimTypes.NameIdentifier, $"{pac.LogonInfo.DomainName}\\{pac.LogonInfo.UserName}"));
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, $"{logonInfo.DomainName}\\{logonInfo.UserName}"));
             }
         }
 
         protected virtual void AddGroups(PrivilegedAttributeCertificate pac, ICollection<Claim> claims)
         {
-            var domainSid = pac.LogonInfo.DomainSid.Value;
+            var logonInfo = pac.LogonInfo;
 
-            foreach (var g in pac.LogonInfo.GroupSids)
+            if (logonInfo == null)
+            {
+                return;
+            }
+
+            var domainSid = logonInfo.DomainSid.Value;
+
+            foreach (var g in logonInfo.GroupSids)
             {
                 var sid = g.Value;
 

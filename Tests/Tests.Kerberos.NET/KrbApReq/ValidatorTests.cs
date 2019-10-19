@@ -1,8 +1,10 @@
 ﻿using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
@@ -11,7 +13,7 @@ namespace Tests.Kerberos.NET
     public class ValidatorTests : BaseTest
     {
         [TestMethod]
-        public async Task TestKerberosValidator()
+        public async Task KerberosValidator()
         {
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
@@ -24,7 +26,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestKerberosValidatorNone()
+        public async Task KerberosValidatorNone()
         {
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
@@ -37,7 +39,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestKerberosValidatorTimeOffset()
+        public async Task KerberosValidatorTimeOffset()
         {
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
@@ -52,7 +54,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(KerberosValidationException))]
-        public async Task TestKerberosValidatorExpiredTicket()
+        public async Task KerberosValidatorExpiredTicket()
         {
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
@@ -63,7 +65,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(ReplayException))]
-        public async Task TestValidatorReplayCache()
+        public async Task ValidatorReplayCache()
         {
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
@@ -78,39 +80,10 @@ namespace Tests.Kerberos.NET
             await validator.Validate(data);
         }
 
-        internal class TestLogger : ILogger
-        {
-            public TestLogger()
-            {
-                Logs = new List<string>();
-            }
-
-            public LogLevel Level { get; set; } = LogLevel.Debug;
-
-            public bool Enabled { get; set; } = true;
-
-            public List<string> Logs { get; }
-
-            public void WriteLine(KerberosLogSource source, string value)
-            {
-                Logs.Add($"[{source}] {value}");
-            }
-
-            public void WriteLine(KerberosLogSource source, string value, Exception ex)
-            {
-                Logs.Add($"[{source}] {value} {ex}");
-            }
-
-            public void WriteLine(KerberosLogSource source, Exception ex)
-            {
-                Logs.Add($"[{source}] {ex}");
-            }
-        }
-
         [TestMethod]
-        public async Task TestValidatorMemoryCacheExpiration()
+        public async Task ValidatorMemoryCacheExpiration()
         {
-            var logger = new TestLogger();
+            var logger = new FakeExceptionLoggerFactory();
 
             var replay = new TicketReplayValidator(logger);
 
@@ -124,7 +97,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(added);
 
-            Assert.AreEqual(1, logger.Logs.Count);
+            Assert.AreEqual(1, logger.Logs.Count());
 
             added = await replay.Add(entry);
 
@@ -132,9 +105,9 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestValidatorMemoryCacheExpirationExpired()
+        public async Task ValidatorMemoryCacheExpirationExpired()
         {
-            var logger = new TestLogger();
+            var logger = new FakeExceptionLoggerFactory();
 
             var replay = new TicketReplayValidator(logger);
 
@@ -154,7 +127,25 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(added);
 
-            Assert.AreEqual(2, logger.Logs.Count);
+            Assert.AreEqual(2, logger.Logs.Count());
+        }
+
+        [TestMethod]
+        public void KrbEncApRepPartRoundtrip()
+        {
+            var encPart = new KrbEncApRepPart
+            {
+                CTime = DateTimeOffset.UtcNow,
+                CuSec = 123,
+                SequenceNumber = 123,
+                SubSessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96)
+            };
+
+            var encoded = encPart.Encode();
+
+            var decoded = KrbEncApRepPart.DecodeApplication(encoded.AsMemory());
+
+            Assert.IsNotNull(decoded);
         }
     }
 }

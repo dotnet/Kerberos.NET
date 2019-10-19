@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -16,6 +18,8 @@ namespace Kerberos.NET.Server
 
         private readonly Socket socket;
 
+        private readonly ILogger<SocketWorkerBase> logger;
+
         protected Pipe RequestPipe { get; }
 
         protected Pipe ResponsePipe { get; }
@@ -24,6 +28,7 @@ namespace Kerberos.NET.Server
             : base(options)
         {
             this.socket = socket;
+            this.logger = options.Log.CreateLoggerSafe<SocketWorkerBase>();
 
             RequestPipe = new Pipe(new PipeOptions(
                 readerScheduler: scheduler,
@@ -53,37 +58,48 @@ namespace Kerberos.NET.Server
 
         public async Task HandleMessage()
         {
-            using (var timeoutSource = new CancellationTokenSource())
-            using (var receiveTimeoutSource = new CancellationTokenSource())
-            using (var acceptTimeoutSource = new CancellationTokenSource(Options.AcceptTimeout))
+            Trace.CorrelationManager.StartLogicalOperation();
+
+            try
             {
-                receiveTimeoutSource.Token.Register(timeoutSource.Cancel);
-                acceptTimeoutSource.Token.Register(timeoutSource.Cancel);
 
-                var timeoutCompletion = new TaskCompletionSource<object>();
-
-                timeoutSource.Token.Register(() => timeoutCompletion.TrySetResult(timeoutSource.Token));
-
-                try
+                using (logger.BeginRequestScope(Options.NextScopeId()))
+                using (var timeoutSource = new CancellationTokenSource())
+                using (var receiveTimeoutSource = new CancellationTokenSource())
+                using (var acceptTimeoutSource = new CancellationTokenSource(Options.AcceptTimeout))
                 {
-                    receiveTimeoutSource.CancelAfter(Options.ReceiveTimeout);
+                    receiveTimeoutSource.Token.Register(timeoutSource.Cancel);
+                    acceptTimeoutSource.Token.Register(timeoutSource.Cancel);
 
-                    var receiving = Receive(timeoutSource.Token);
-                    var responding = Respond(timeoutSource.Token);
+                    var timeoutCompletion = new TaskCompletionSource<object>();
 
-                    var waitAll = Task.WhenAll(receiving, responding);
+                    timeoutSource.Token.Register(() => timeoutCompletion.TrySetResult(timeoutSource.Token));
 
-                    if (await Task.WhenAny(waitAll, timeoutCompletion.Task) == timeoutCompletion.Task)
+                    try
                     {
-                        throw new TimeoutException();
+                        receiveTimeoutSource.CancelAfter(Options.ReceiveTimeout);
+
+                        var receiving = Receive(timeoutSource.Token);
+                        var responding = Respond(timeoutSource.Token);
+
+                        var waitAll = Task.WhenAll(receiving, responding);
+
+                        if (await Task.WhenAny(waitAll, timeoutCompletion.Task) == timeoutCompletion.Task)
+                        {
+                            throw new TimeoutException();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Worker could not complete message handling");
+
+                        Dispose();
                     }
                 }
-                catch (Exception ex)
-                {
-                    Log(ex);
-
-                    Dispose();
-                }
+            }
+            finally
+            {
+                Trace.CorrelationManager.StopLogicalOperation();
             }
         }
 
@@ -98,15 +114,15 @@ namespace Kerberos.NET.Server
             catch (SocketException sx)
                 when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
             {
-                LogVerbose(sx);
+                logger.LogTrace(sx, "Worker response failed with socket error {Error}", sx.SocketErrorCode);
             }
             catch (ObjectDisposedException ex)
             {
-                LogVerbose(ex);
+                logger.LogTrace(ex, "Response exception raised because object was used after dispose");
             }
             catch (Exception ex)
             {
-                Log(ex);
+                logger.LogWarning(ex, "Response exception raised");
                 throw;
             }
         }
@@ -210,11 +226,11 @@ namespace Kerberos.NET.Server
             catch (SocketException sx)
                 when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
             {
-                LogVerbose(sx);
+                logger.LogTrace(sx, "Worker receive failed with socket error {Error}", sx.SocketErrorCode);
             }
             catch (Exception ex)
             {
-                Log(ex);
+                logger.LogWarning(ex, "Receive exception raised");
             }
             finally
             {

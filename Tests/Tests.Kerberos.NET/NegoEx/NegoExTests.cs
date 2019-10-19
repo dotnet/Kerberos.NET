@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Threading.Tasks;
 
-namespace Tests.Kerberos.NET.NegoEx
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class NegoExTests : BaseTest
@@ -16,7 +16,7 @@ namespace Tests.Kerberos.NET.NegoEx
             "RsPV0VMTEtOT1dOOlBLVTJVoRwwGqADAgGAoRMwERsPZGVza3RvcC1tOHFuYjAx";
 
         [TestMethod, ExpectedException(typeof(NotSupportedException))]
-        public async Task TestNegoExFirstClassUnsupported()
+        public async Task NegoExFirstClassUnsupported()
         {
             var validator = new KerberosValidator(new KerberosKey())
             {

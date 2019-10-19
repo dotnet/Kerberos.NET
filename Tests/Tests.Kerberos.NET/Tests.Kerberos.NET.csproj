@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
 
     <DebugType>Full</DebugType>
   </PropertyGroup>
@@ -57,6 +57,12 @@
     <None Update="Data\Messages\krb-error-preauth-required">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\Messages\tgs-rep-app2-s4u-proxy">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\Messages\tgs-rep-app2-s4u-self">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\Messages\tgs-rep-testuser-host-app03">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -64,6 +70,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\Messages\tgs-rep-testuser-krbtgt-renew">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\Messages\tgs-req-app2-s4u-proxy">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\Messages\tgs-req-app2-s4u-self">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\Messages\tgs-req-testuser-host-app03">

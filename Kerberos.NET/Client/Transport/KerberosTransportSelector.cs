@@ -9,22 +9,18 @@ namespace Kerberos.NET.Transport
 {
     public class KerberosTransportSelector : KerberosTransportBase
     {
-        private readonly IEnumerable<IKerberosTransport> transports;
-
-        public KerberosTransportSelector(IEnumerable<IKerberosTransport> transports, ILogger logger = null)
+        public KerberosTransportSelector(IEnumerable<IKerberosTransport> transports)
         {
-            this.transports = transports;
-
-            Logger = logger ?? new DebugLogger();
+            this.Transports = transports;
         }
 
         public override ProtocolType Protocol => ProtocolType.Unspecified;
 
-        public IEnumerable<IKerberosTransport> Transports => transports;
+        public IEnumerable<IKerberosTransport> Transports { get; }
 
         public override async Task<T> SendMessage<T>(
-            string domain, 
-            ReadOnlyMemory<byte> encoded, 
+            string domain,
+            ReadOnlyMemory<byte> encoded,
             CancellationToken cancellation = default
         )
         {
@@ -34,7 +30,7 @@ namespace Kerberos.NET.Transport
             // if try = fail for transport reasons move on to next
             // if try = fail or protocol reasons, throw and bail
 
-            foreach (var transport in transports.Where(t => t.Enabled && !t.TransportFailed))
+            foreach (var transport in Transports.Where(t => t.Enabled && !t.TransportFailed))
             {
                 try
                 {
@@ -48,19 +44,6 @@ namespace Kerberos.NET.Transport
             }
 
             throw LastError ?? new KerberosTransportException("No transport could be used to send the message");
-        }
-
-        public override void Dispose()
-        {
-            foreach (var transport in transports)
-            {
-                if (transport is IDisposable disposable)
-                {
-                    disposable.Dispose();
-                }
-            }
-
-            base.Dispose();
         }
     }
 }

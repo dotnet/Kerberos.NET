@@ -16,20 +16,6 @@ namespace Kerberos.NET.Server
         public abstract void Dispose();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Log(Exception ex)
-        {
-            Options?.Log?.WriteLine(KerberosLogSource.ServiceListener, ex);
-        }
-
-        protected void LogVerbose(Exception ex)
-        {
-            if (Options.Log != null && Options.Log.Level >= LogLevel.Verbose)
-            {
-                Log(ex);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static bool IsSocketError(SocketError errorCode)
         {
             return errorCode == SocketError.ConnectionReset ||

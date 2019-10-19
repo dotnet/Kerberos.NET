@@ -250,6 +250,15 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to AS-REQ nonce {0} does not match {1}.
+        /// </summary>
+        internal static string KRB_ERROR_AS_NONCE_MISMATCH {
+            get {
+                return ResourceManager.GetString("KRB_ERROR_AS_NONCE_MISMATCH", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Requested protocol version number not supported.
         /// </summary>
         internal static string KRB_ERROR_KDC_ERR_BAD_PVNO {

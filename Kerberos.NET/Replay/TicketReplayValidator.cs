@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Kerberos.NET
 {
@@ -6,7 +7,7 @@ namespace Kerberos.NET
     {
         private readonly MemoryTicketCache cache;
 
-        public TicketReplayValidator(ILogger logger)
+        public TicketReplayValidator(ILoggerFactory logger)
         {
             this.cache = new MemoryTicketCache(logger);
         }

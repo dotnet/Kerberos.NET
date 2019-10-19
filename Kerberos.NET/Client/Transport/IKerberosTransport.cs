@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
 {
-    public interface IKerberosTransport : IDisposable
+    public interface IKerberosTransport
     {
         bool TransportFailed { get; set; }
 
@@ -17,14 +17,14 @@ namespace Kerberos.NET.Transport
         bool Enabled { get; set; }
 
         Task<TResponse> SendMessage<TRequest, TResponse>(
-            string domain, 
-            IAsn1ApplicationEncoder<TRequest> req, 
+            string domain,
+            IAsn1ApplicationEncoder<TRequest> req,
             CancellationToken cancellation = default
         ) where TResponse : IAsn1ApplicationEncoder<TResponse>, new();
 
         Task<T> SendMessage<T>(
-            string domain, 
-            ReadOnlyMemory<byte> req, 
+            string domain,
+            ReadOnlyMemory<byte> req,
             CancellationToken cancellation = default
         ) where T : IAsn1ApplicationEncoder<T>, new();
     }

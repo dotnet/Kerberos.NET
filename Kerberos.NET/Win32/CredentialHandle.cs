@@ -31,7 +31,7 @@ namespace Kerberos.NET.Win32
         }
 
         public override bool IsInvalid => base.handle == IntPtr.Zero;
-        
+
         protected override bool ReleaseHandle()
         {
             return true;

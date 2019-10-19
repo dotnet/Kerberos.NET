@@ -248,8 +248,6 @@ namespace KerbDump
 
             var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.Pac };
 
-            validator.Logger.Enabled = false;
-
             var ticketBytes = Convert.FromBase64String(ticket);
 
             var decrypted = await validator.Validate(ticketBytes);

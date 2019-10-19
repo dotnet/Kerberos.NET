@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Client;
+﻿using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using System;

@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
@@ -19,12 +20,14 @@ namespace Kerberos.NET.Server
 
         public int MaxWriteBufferSize { get; set; } = 64 * 1024;
 
-        public ILogger Log { get; set; } = new DebugLogger();
+        public ILoggerFactory Log { get; set; }
 
         public string DefaultRealm { get; set; }
 
         public bool IsDebug { get; set; }
 
         public Func<string, Task<IRealmService>> RealmLocator { get; set; }
+
+        public Func<Guid> NextScopeId { get; set; } = KerberosConstants.GetRequestActivityId;
     }
 }

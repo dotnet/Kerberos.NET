@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Tests.Kerberos.NET.Pac
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class NdrTests : BaseTest

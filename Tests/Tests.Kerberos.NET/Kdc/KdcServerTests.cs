@@ -3,20 +3,17 @@ using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace Tests.Kerberos.NET.Kdc
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class KdcServerTests
     {
         [TestMethod]
-        public async Task TestKdcTagPeekFailureApplication()
+        public async Task KdcTagPeekFailureApplication()
         {
-            var kdc = new KdcServer(new ListenerOptions { DefaultRealm = "domain.com", IsDebug = true, Log = new ValidatorTests.TestLogger() });
+            var kdc = new KdcServer(new ListenerOptions { DefaultRealm = "domain.com", IsDebug = true, Log = new FakeExceptionLoggerFactory() });
 
             var checksum = new KrbChecksum { };
 
@@ -33,7 +30,7 @@ namespace Tests.Kerberos.NET.Kdc
         }
 
         [TestMethod]
-        public async Task TestKdcTagPeekFailureUnknownHandler()
+        public async Task KdcTagPeekFailureUnknownHandler()
         {
             var kdc = new KdcServer(new ListenerOptions { DefaultRealm = "domain.com", IsDebug = true });
 
@@ -52,7 +49,7 @@ namespace Tests.Kerberos.NET.Kdc
         }
 
         [TestMethod]
-        public async Task TestKdcTagPeekFailureNullBuilder()
+        public async Task KdcTagPeekFailureNullBuilder()
         {
             var kdc = new KdcServer(new ListenerOptions { DefaultRealm = "domain.com", IsDebug = true });
             kdc.RegisterMessageHandler((MessageType)27, (b, o) => null);
@@ -72,7 +69,7 @@ namespace Tests.Kerberos.NET.Kdc
         }
 
         [TestMethod, ExpectedException(typeof(InvalidOperationException))]
-        public void TestRegisterHandlerInvalidHigh()
+        public void RegisterHandlerInvalidHigh()
         {
             var kdc = new KdcServer(new ListenerOptions { });
 
@@ -80,7 +77,7 @@ namespace Tests.Kerberos.NET.Kdc
         }
 
         [TestMethod, ExpectedException(typeof(InvalidOperationException))]
-        public void TestRegisterHandlerInvalidLow()
+        public void RegisterHandlerInvalidLow()
         {
             var kdc = new KdcServer(new ListenerOptions { });
 

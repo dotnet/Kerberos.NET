@@ -3,8 +3,6 @@ using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using System.Security;
 
 namespace Kerberos.NET.Entities
 {
@@ -27,42 +25,38 @@ namespace Kerberos.NET.Entities
         }
 
         public static KrbTgsReq CreateTgsReq(
-            string spn,
+            RequestServiceTicket rst,
             KrbEncryptionKey tgtSessionKey,
             KrbKdcRep kdcRep,
-            KdcOptions options,
-            out KrbEncryptionKey subkey,
-            KrbTicket user2UserTicket = null,
-            string s4u = null,
-            KrbTicket s4uTicket = null
+            out KrbEncryptionKey subkey
         )
         {
-            var sname = spn.Split('/', '@');
+            var sname = rst.ServicePrincipalName.Split('/', '@');
             var tgt = kdcRep.Ticket;
 
             var additionalTickets = new List<KrbTicket>();
 
-            if (options.HasFlag(KdcOptions.EncTktInSkey) && user2UserTicket != null)
+            if (rst.KdcOptions.HasFlag(KdcOptions.EncTktInSkey) && rst.UserToUserTicket != null)
             {
-                additionalTickets.Add(user2UserTicket);
+                additionalTickets.Add(rst.UserToUserTicket);
             }
 
-            if (!string.IsNullOrWhiteSpace(s4u))
+            if (!string.IsNullOrWhiteSpace(rst.S4uTarget))
             {
-                options |= KdcOptions.Forwardable;
+                rst.KdcOptions |= KdcOptions.Forwardable;
             }
 
-            if (s4uTicket != null)
+            if (rst.S4uTicket != null)
             {
-                options |= KdcOptions.ConstrainedDelegation;
+                rst.KdcOptions |= KdcOptions.ConstrainedDelegation;
 
-                additionalTickets.Add(s4uTicket);
+                additionalTickets.Add(rst.S4uTicket);
             }
 
             var body = new KrbKdcReqBody
             {
                 EType = KerberosConstants.ETypes.ToArray(),
-                KdcOptions = options,
+                KdcOptions = rst.KdcOptions,
                 Nonce = KerberosConstants.GetNonce(),
                 Realm = tgt.Realm,
                 SName = new KrbPrincipalName()
@@ -102,12 +96,12 @@ namespace Kerberos.NET.Entities
                 }
             };
 
-            if (!string.IsNullOrWhiteSpace(s4u))
+            if (!string.IsNullOrWhiteSpace(rst.S4uTarget))
             {
                 paData.Add(new KrbPaData
                 {
                     Type = PaDataType.PA_FOR_USER,
-                    Value = EncodeS4URequest(s4u, tgt.Realm, tgtSessionKey)
+                    Value = EncodeS4URequest(rst.S4uTarget, tgt.Realm, tgtSessionKey)
                 });
             }
 
@@ -149,7 +143,7 @@ namespace Kerberos.NET.Entities
                 Checksum = checksum
             };
 
-            KerberosConstants.Now(out authenticator.CTime, out authenticator.Cusec);
+            KerberosConstants.Now(out authenticator.CTime, out authenticator.CuSec);
 
             var encryptedAuthenticator = KrbEncryptedData.Encrypt(
                 authenticator.EncodeApplication(),

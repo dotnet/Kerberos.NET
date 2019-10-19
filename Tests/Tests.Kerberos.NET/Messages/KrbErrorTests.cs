@@ -6,13 +6,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Tests.Kerberos.NET.Data
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class KrbErrorTests : BaseTest
     {
         [TestMethod]
-        public void TestErrorPreAuthRoundtrip()
+        public void ErrorPreAuthRoundtrip()
         {
             var krbErrBin = ReadDataFile("messages\\krb-error-preauth-required").Skip(4).ToArray();
 
@@ -24,7 +24,7 @@ namespace Tests.Kerberos.NET.Data
         }
 
         [TestMethod]
-        public void TestKrbErrorParseEtypeInfo()
+        public void KrbErrorParseEtypeInfo()
         {
             var krbErrBin = ReadDataFile("messages\\krb-error-preauth-required").Skip(4).ToArray();
 
@@ -51,7 +51,7 @@ namespace Tests.Kerberos.NET.Data
         }
 
         [TestMethod]
-        public void TestKrbErrorRoundtrip()
+        public void KrbErrorRoundtrip()
         {
             var err = new KrbError
             {

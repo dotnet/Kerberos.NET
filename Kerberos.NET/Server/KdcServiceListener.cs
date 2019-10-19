@@ -1,6 +1,4 @@
-﻿using System.Net.Sockets;
-
-namespace Kerberos.NET.Server
+﻿namespace Kerberos.NET.Server
 {
     public class KdcServiceListener : ServiceListenerBase
     {

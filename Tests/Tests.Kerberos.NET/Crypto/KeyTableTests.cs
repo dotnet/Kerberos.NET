@@ -12,7 +12,7 @@ namespace Tests.Kerberos.NET
     public class KeyTableTests : BaseTest
     {
         [TestMethod]
-        public void Test32BitKeyVersionOverride()
+        public void KeyVersionOverride_32Bit()
         {
             var keyTable = new KeyTable(ReadDataFile("sample_with_32_bit_version_override.keytab"));
 
@@ -21,7 +21,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestTrailingPadding()
+        public void TrailingPadding()
         {
             var keyTable = new KeyTable(ReadDataFile("sample_with_padding.keytab"));
 
@@ -32,7 +32,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestRoundtrip32bOverride()
+        public void Roundtrip32bOverride()
         {
             var keytable = new KeyTable(ReadDataFile("sample_with_32_bit_version_override.keytab"));
 
@@ -52,7 +52,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestRoundtripTrailingPadding()
+        public void RoundtripTrailingPadding()
         {
             var keytable = new KeyTable(ReadDataFile("sample_with_padding.keytab"));
 
@@ -72,7 +72,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestRoundtripSimple()
+        public void RoundtripSimple()
         {
             var keytable = new KeyTable(ReadDataFile("sample.keytab"));
 
@@ -100,7 +100,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestKeyGeneration()
+        public void KeyGeneration()
         {
             var keys = new[] {
                 new KerberosKey(
@@ -123,7 +123,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestAuthenticator_SerializedKeytab()
+        public async Task Authenticator_SerializedKeytab()
         {
             var key = new KerberosKey(
                 password: "P@ssw0rd!",
@@ -159,7 +159,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestAuthenticator_RoundtripKeytab()
+        public async Task Authenticator_RoundtripKeytab()
         {
             var keytab = new KeyTable(ReadDataFile("sample.keytab"));
 

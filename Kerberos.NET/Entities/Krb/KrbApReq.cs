@@ -20,22 +20,23 @@ namespace Kerberos.NET.Entities
             return DecodeApplication(data);
         }
 
-        public static KrbApReq CreateApReq(KrbKdcRep tgsRep, KerberosKey authenticatorKey, ApOptions options)
+        internal static KrbApReq CreateApReq(
+            KrbKdcRep tgsRep, 
+            KerberosKey authenticatorKey, 
+            ApOptions options, out KrbAuthenticator authenticator)
         {
             var ticket = tgsRep.Ticket;
 
-            KerberosConstants.Now(out DateTimeOffset time, out int usec);
-
-            var authenticator = new KrbAuthenticator
+            authenticator = new KrbAuthenticator
             {
                 CName = tgsRep.CName,
-                CTime = time,
-                Cusec = usec,
                 Realm = ticket.Realm,
                 SequenceNumber = KerberosConstants.GetNonce(),
-                Subkey = null,
+                Subkey = KrbEncryptionKey.Generate(authenticatorKey.EncryptionType),
                 Checksum = KrbChecksum.EncodeDelegationChecksum(new DelegationInfo())
             };
+
+            KerberosConstants.Now(out authenticator.CTime, out authenticator.CuSec);
 
             var apReq = new KrbApReq
             {

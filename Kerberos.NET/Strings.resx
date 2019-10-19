@@ -384,4 +384,7 @@
   <data name="KRB_ERROR_KRB_ERR_RESPONSE_TOO_BIG" xml:space="preserve">
     <value>Response too big for UDP; retry with TCP</value>
   </data>
+  <data name="KRB_ERROR_AS_NONCE_MISMATCH" xml:space="preserve">
+    <value>AS-REQ nonce {0} does not match {1}</value>
+  </data>
 </root>

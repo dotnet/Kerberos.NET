@@ -13,7 +13,7 @@ namespace Tests.Kerberos.NET
     public class DelegationTests : BaseTest
     {
         [TestMethod]
-        public void TestDelegationEncoding()
+        public void DelegationEncoding()
         {
             var delegInfo = new DelegationInfo() { };
 
@@ -23,7 +23,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestDelegationRetrieval()
+        public async Task DelegationRetrieval()
         {
             var validator = new KerberosValidator(new KerberosKey("P@ssw0rd!")) { ValidateAfterDecrypt = DefaultActions };
 
@@ -47,7 +47,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestCredPartRoundtrip()
+        public void CredPartRoundtrip()
         {
             KrbEncKrbCredPart part = new KrbEncKrbCredPart
             {

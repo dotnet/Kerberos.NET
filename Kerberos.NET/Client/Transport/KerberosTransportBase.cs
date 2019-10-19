@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
 {
-    public abstract class KerberosTransportBase : IKerberosTransport, IDisposable
+    public abstract class KerberosTransportBase : IKerberosTransport
     {
         private const int DefaultKerberosPort = 88;
 
@@ -25,8 +25,6 @@ namespace Kerberos.NET.Transport
         private static readonly ConcurrentDictionary<string, DnsRecord> DomainCache
             = new ConcurrentDictionary<string, DnsRecord>();
 
-        protected ILogger Logger { get; set; }
-
         public virtual bool TransportFailed { get; set; }
 
         public virtual KerberosTransportException LastError { get; set; }
@@ -34,13 +32,6 @@ namespace Kerberos.NET.Transport
         public abstract ProtocolType Protocol { get; }
 
         public bool Enabled { get; set; }
-
-        public virtual void Dispose() { }
-
-        protected void Log(string log)
-        {
-            Logger?.WriteLine(KerberosLogSource.Client, log);
-        }
 
         protected static T Decode<T>(ReadOnlyMemory<byte> response)
             where T : IAsn1ApplicationEncoder<T>, new()
@@ -75,7 +66,7 @@ namespace Kerberos.NET.Transport
             CancellationToken cancellation = default
         ) where T : IAsn1ApplicationEncoder<T>, new();
 
-        protected DnsRecord QueryDomain(string lookup)
+        protected virtual DnsRecord QueryDomain(string lookup)
         {
             if (!string.IsNullOrWhiteSpace(kdc))
             {

@@ -4,7 +4,7 @@ using Kerberos.NET.Win32;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
-namespace Tests.Kerberos.NET.Win32
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class SspiTests
@@ -12,27 +12,26 @@ namespace Tests.Kerberos.NET.Win32
         [TestMethod]
         public void TryGettingSspiTicketTest()
         {
-            using (var contextSender = new SspiContext($"host/{Environment.MachineName}", "Negotiate"))
-            using (var contextReceiver = new SspiContext($"host/{Environment.MachineName}", "Negotiate"))
-            {
-                var token = contextSender.RequestToken();
+            using var contextSender = new SspiContext($"host/{Environment.MachineName}", "Negotiate");
+            using var contextReceiver = new SspiContext($"host/{Environment.MachineName}", "Negotiate");
 
-                Assert.IsNotNull(token);
+            var token = contextSender.RequestToken();
 
-                var contextToken = MessageParser.Parse<NegotiateContextToken>(token);
+            Assert.IsNotNull(token);
 
-                Assert.IsNotNull(contextToken);
+            var contextToken = MessageParser.Parse<NegotiateContextToken>(token);
 
-                contextReceiver.AcceptToken(token, out byte[] serverResponse);
+            Assert.IsNotNull(contextToken);
 
-                Assert.IsNotNull(serverResponse);
+            contextReceiver.AcceptToken(token, out byte[] serverResponse);
 
-                var serverContext = NegotiationToken.Decode(serverResponse);
+            Assert.IsNotNull(serverResponse);
 
-                Assert.IsNotNull(serverContext);
-                Assert.IsNotNull(serverContext.ResponseToken);
-                Assert.IsNull(serverContext.InitialToken);
-            }
+            var serverContext = NegotiationToken.Decode(serverResponse);
+
+            Assert.IsNotNull(serverContext);
+            Assert.IsNotNull(serverContext.ResponseToken);
+            Assert.IsNull(serverContext.InitialToken);
         }
     }
 }

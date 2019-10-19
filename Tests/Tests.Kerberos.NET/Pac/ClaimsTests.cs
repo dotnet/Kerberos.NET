@@ -11,7 +11,7 @@ namespace Tests.Kerberos.NET
     public class ClaimsTests : BaseTest
     {
         [TestMethod]
-        public async Task TestParseClaims()
+        public async Task ParseClaims()
         {
             var validator = new KerberosValidator(new KeyTable(ReadDataFile("sample.keytab"))) { ValidateAfterDecrypt = DefaultActions };
 
@@ -29,7 +29,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestValidatorClaimsPresent()
+        public async Task ValidatorClaimsPresent()
         {
             var validator = new KerberosValidator(new KeyTable(ReadDataFile("sample.keytab"))) { ValidateAfterDecrypt = DefaultActions };
 

@@ -1,5 +1,4 @@
 ﻿using Kerberos.NET;
-using Kerberos.NET.Asn1;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -19,7 +18,7 @@ namespace Tests.Kerberos.NET
             "KAO5CAAAAD0RFU0tUT1AtUThSRTBVRVdPUktHUk9VUA==";
 
         [TestMethod, ExpectedException(typeof(NotSupportedException))]
-        public async Task TestNtlmFirstClassUnsupported()
+        public async Task NtlmFirstClassUnsupported()
         {
             var validator = new KerberosValidator(new KerberosKey())
             {
@@ -30,7 +29,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(NotSupportedException))]
-        public async Task TestSPNegoNtlmFirstClassUnsupported()
+        public async Task SPNegoNtlmFirstClassUnsupported()
         {
             var validator = new KerberosValidator(new KerberosKey())
             {
@@ -41,7 +40,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(CryptographicException))]
-        public void TestChoiceEncoding()
+        public void ChoiceEncoding()
         {
             NegotiationToken negToken = new NegotiationToken
             {
@@ -62,7 +61,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestSPNegoInitTokenRoundtrip()
+        public void SPNegoInitTokenRoundtrip()
         {
             NegotiationToken negToken = new NegotiationToken
             {
@@ -83,7 +82,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestSPNegoResponseTokenRoundtrip()
+        public void SPNegoResponseTokenRoundtrip()
         {
             NegotiationToken negToken = new NegotiationToken
             {

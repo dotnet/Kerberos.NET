@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers;
 using System.Linq;
@@ -9,9 +10,12 @@ namespace Kerberos.NET.Server
 {
     internal class KdcTgsReqMessageHandler : KdcMessageHandlerBase
     {
+        private readonly ILogger<KdcTgsReqMessageHandler> logger;
+
         public KdcTgsReqMessageHandler(ReadOnlySequence<byte> message, ListenerOptions options)
             : base(message, options)
         {
+            logger = options.Log.CreateLoggerSafe<KdcTgsReqMessageHandler>();
         }
 
         // a krbtgt ticket will be replayed repeatedly, so maybe lets not fail validation on that
@@ -43,6 +47,8 @@ namespace Kerberos.NET.Server
             var tgsReq = (KrbTgsReq)message;
 
             var apReq = ExtractApReq(tgsReq);
+
+            logger.LogInformation("TGS-REQ incoming. SPN = {SPN}", tgsReq.Body.SName.FullyQualifiedName);
 
             var krbtgtIdentity = await RealmService.Principals.RetrieveKrbtgt();
             var krbtgtKey = await krbtgtIdentity.RetrieveLongTermCredential();
@@ -115,6 +121,8 @@ namespace Kerberos.NET.Server
             DecryptedKrbApReq apReqDecrypted
         )
         {
+            logger.LogDebug("Evaluating policy for {User} to {Service}", principal.PrincipalName, servicePrincipal.PrincipalName);
+
             // good place to check whether the incoming principal is allowed to access the service principal
             // TODO: also maybe a good place to evaluate cross-realm requirements?
 

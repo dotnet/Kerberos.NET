@@ -48,7 +48,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestETypeNegotiation()
+        public async Task RestrictionType_ETypeNegotiation()
         {
             var restrictionsSet = AssertAllAreRestrictionType<ETypeNegotiationRestriction>(
                 await GenerateAuthZ(),
@@ -69,7 +69,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestTokenRestrictions()
+        public async Task RestrictionType_TokenRestrictions()
         {
             var restrictionsSet = AssertAllAreRestrictionType<KerbAuthDataTokenRestriction>(
                 await GenerateAuthZ(),
@@ -88,7 +88,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestKerbLocal()
+        public async Task RestrictionType_KerbLocal()
         {
             var restrictionsSet = AssertAllAreRestrictionType<KerbLocalRestriction>(
                 await GenerateAuthZ(),
@@ -103,7 +103,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestApOptions()
+        public async Task RestrictionType_ApOptions()
         {
             var restrictionsSet = AssertAllAreRestrictionType<KerbApOptionsRestriction>(
                 await GenerateAuthZ(),
@@ -118,7 +118,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestKerbServiceTarget()
+        public async Task RestrictionType_KerbServiceTarget()
         {
             var restrictionsSet = AssertAllAreRestrictionType<KerbServiceTargetRestriction>(
                 await GenerateAuthZ(),

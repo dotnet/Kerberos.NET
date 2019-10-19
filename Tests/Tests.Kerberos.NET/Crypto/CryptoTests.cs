@@ -21,7 +21,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestAes128Roundtrip()
+        public void Aes128Roundtrip()
         {
             var data = new Memory<byte>(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 });
 
@@ -37,7 +37,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestAes256Roundtrip()
+        public void Aes256Roundtrip()
         {
             var data = new Memory<byte>(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 });
 
@@ -53,7 +53,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestRC4Roundtrip()
+        public void RC4Roundtrip()
         {
             var data = new Memory<byte>(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 });
 
@@ -69,61 +69,61 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestRC4Kerberos()
+        public async Task RC4Kerberos()
         {
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            await TestDecode(data, key, EncryptionType.RC4_HMAC_NT);
+            await AssertDecode(data, key, EncryptionType.RC4_HMAC_NT);
         }
 
         [TestMethod]
-        public async Task TestRC4SPNego()
+        public async Task RC4SPNego()
         {
             var data = ReadDataFile("rc4-spnego-data");
             var key = ReadDataFile("rc4-key-data");
 
-            await TestDecode(data, key, EncryptionType.RC4_HMAC_NT);
+            await AssertDecode(data, key, EncryptionType.RC4_HMAC_NT);
         }
 
         [TestMethod]
-        public async Task TestAES128Kerberos()
+        public async Task AES128Kerberos()
         {
             var data = ReadDataFile("aes128-kerberos-data");
             var key = ReadDataFile("aes128-key-data");
 
-            await TestDecode(data, key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
+            await AssertDecode(data, key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
         }
 
         [TestMethod]
-        public async Task TestAES128SPNego()
+        public async Task AES128SPNego()
         {
             var data = ReadDataFile("aes128-spnego-data");
             var key = ReadDataFile("aes128-key-data");
 
-            await TestDecode(data, key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
+            await AssertDecode(data, key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
         }
 
         [TestMethod]
-        public async Task TestAES256Kerberos()
+        public async Task AES256Kerberos()
         {
             var data = ReadDataFile("aes256-kerberos-data");
             var key = ReadDataFile("aes256-key-data");
 
-            await TestDecode(data, key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
+            await AssertDecode(data, key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
         }
 
         [TestMethod]
-        public async Task TestAES256SPNego()
+        public async Task AES256SPNego()
         {
             var data = ReadDataFile("aes256-spnego-data");
             var key = ReadDataFile("aes256-key-data");
 
-            await TestDecode(data, key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
+            await AssertDecode(data, key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
         }
 
         [TestMethod]
-        public void TestAes128ADServiceSalt()
+        public void Aes128ADServiceSalt()
         {
             var expectedKey = new byte[] {
                 0x8d, 0x5b, 0xaf, 0xed, 0x84, 0xe0, 0xdd, 0x15,
@@ -134,7 +134,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestAes128ADUserSalt()
+        public void Aes128ADUserSalt()
         {
             var expectedKey = new byte[] {
                 0x0f, 0xbc, 0xd2, 0xcc, 0x43, 0x65, 0x29, 0x13,
@@ -145,7 +145,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestAes128Rfc4120Salt()
+        public void Aes128Rfc4120Salt()
         {
             var expectedKey = new byte[] {
                 0x88, 0xc8, 0xa5, 0xfc, 0xe3, 0x0a, 0x96, 0x97,
@@ -156,7 +156,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestAes256ADServiceSalt()
+        public void Aes256ADServiceSalt()
         {
             var expectedKey = new byte[] {
                 0x37, 0x17, 0x8c, 0x78, 0xc2, 0xf4, 0xad, 0xa2,
@@ -169,7 +169,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestAes256ADUserSalt()
+        public void Aes256ADUserSalt()
         {
             var expectedKey = new byte[] {
                 0xb3, 0xf9, 0xca, 0x1b, 0x81, 0xc5, 0x38, 0xe5,
@@ -182,7 +182,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestAes256Rfc4120Salt()
+        public void Aes256Rfc4120Salt()
         {
             var expectedKey = new byte[] {
                 0x0e, 0x1a, 0xff, 0xd8, 0x90, 0xb5, 0x91, 0x2a,
@@ -238,7 +238,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestMsKileInterop()
+        public void MsKileInterop()
         {
             var rawKey = new byte[] {
                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -275,7 +275,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestRfc4120Iteration1()
+        public void Rfc4120Iteration1()
         {
             Rfc4120TestCase(
                 iterationCount: 1,
@@ -289,7 +289,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestRfc4120Iteration2()
+        public void Rfc4120Iteration2()
         {
             Rfc4120TestCase(
                 iterationCount: 2,
@@ -303,7 +303,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestRfc4120Iteration1200()
+        public void Rfc4120Iteration1200()
         {
             Rfc4120TestCase(
                 iterationCount: 1200,
@@ -325,11 +325,11 @@ namespace Tests.Kerberos.NET
             byte[] aes256key
         )
         {
-            TestRfc4120TestCase(iterationCount, password, salt, principal, aes128key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
-            TestRfc4120TestCase(iterationCount, password, salt, principal, aes256key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
+            Rfc4120TestCase(iterationCount, password, salt, principal, aes128key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
+            Rfc4120TestCase(iterationCount, password, salt, principal, aes256key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
         }
 
-        private static void TestRfc4120TestCase(
+        private static void Rfc4120TestCase(
             int iterationCount,
             string password,
             string salt,
@@ -366,7 +366,7 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(derived, expectedKey));
         }
 
-        private static async Task TestDecode(byte[] data, byte[] key, EncryptionType etype)
+        private static async Task AssertDecode(byte[] data, byte[] key, EncryptionType etype)
         {
             var validator = new IntrospectiveValidator(key) { ValidateAfterDecrypt = DefaultActions };
 

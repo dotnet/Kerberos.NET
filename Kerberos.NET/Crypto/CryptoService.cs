@@ -55,8 +55,8 @@ namespace Kerberos.NET.Crypto
         }
 
         internal static KerberosChecksum CreateChecksum(
-            ChecksumType type, 
-            ReadOnlyMemory<byte> signature = default, 
+            ChecksumType type,
+            ReadOnlyMemory<byte> signature = default,
             ReadOnlyMemory<byte> signatureData = default
         )
         {

@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Server;
 using System;
 using System.Collections.Generic;
@@ -113,7 +112,7 @@ namespace Kerberos.NET.Entities
             encKdcRepPart.Flags = encTicketPart.Flags;
             encKdcRepPart.CAddr = encTicketPart.CAddr;
             encKdcRepPart.Key = sessionKey;
-            encKdcRepPart.Nonce = KerberosConstants.GetNonce();
+            encKdcRepPart.Nonce = request.Nonce;
             encKdcRepPart.LastReq = new[] { new KrbLastReq { Type = 0, Value = request.Now } };
             encKdcRepPart.EncryptedPaData = new KrbMethodData
             {

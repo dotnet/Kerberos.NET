@@ -4,7 +4,6 @@ using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
-using System.Security;
 using System.Threading.Tasks;
 using static System.Console;
 
@@ -37,7 +36,7 @@ namespace KerberosClientApp
                 }
                 catch (Exception ex)
                 {
-                    WriteLine(ex.Message);
+                    WriteLine(ex);
                     break;
                 }
             }

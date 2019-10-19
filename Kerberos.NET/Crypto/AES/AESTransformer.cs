@@ -193,7 +193,7 @@ namespace Kerberos.NET.Crypto.AES
             }
 
             var pepperBytes = KerberosConstants.UnicodeStringToUtf8(pepper);
-            
+
             var results = new Span<byte>(new byte[saltBytes.Length + 1 + pepperBytes.Length]);
 
             pepperBytes.CopyTo(results);

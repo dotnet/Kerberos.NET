@@ -1,5 +1,6 @@
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -14,30 +15,26 @@ namespace Kerberos.NET
 
         private readonly KeyTable keytab;
 
-        public KerberosValidator(byte[] key, ITicketReplayValidator ticketCache = null)
-            : this(new KerberosKey(key), ticketCache)
+        public KerberosValidator(byte[] key, ILoggerFactory logger = null, ITicketReplayValidator ticketCache = null)
+            : this(new KerberosKey(key), logger, ticketCache)
         { }
 
-        public KerberosValidator(KerberosKey key, ITicketReplayValidator ticketCache = null)
-            : this(new KeyTable(key), ticketCache)
+        public KerberosValidator(KerberosKey key, ILoggerFactory logger = null, ITicketReplayValidator ticketCache = null)
+            : this(new KeyTable(key), logger, ticketCache)
         { }
 
-        public KerberosValidator(KeyTable keytab, ITicketReplayValidator ticketCache = null)
+        public KerberosValidator(KeyTable keytab, ILoggerFactory logger = null, ITicketReplayValidator ticketCache = null)
         {
             this.keytab = keytab;
 
-            TokenCache = ticketCache ?? new TicketReplayValidator(Logger);
+            this.logger = logger.CreateLoggerSafe<KerberosValidator>();
+
+            TokenCache = ticketCache ?? new TicketReplayValidator(logger);
 
             ValidateAfterDecrypt = ValidationActions.All;
         }
 
-        private ILogger logger;
-
-        public ILogger Logger
-        {
-            get { return logger ?? (logger = new DebugLogger()); }
-            set { logger = value; }
-        }
+        private readonly ILogger<KerberosValidator> logger;
 
         public ValidationActions ValidateAfterDecrypt { get; set; }
 
@@ -53,7 +50,7 @@ namespace Kerberos.NET
         {
             var kerberosRequest = MessageParser.ParseContext(requestBytes);
 
-            Logger.WriteLine(KerberosLogSource.Validator, kerberosRequest.ToString());
+            logger.LogTrace("Validating Kerberos request {Request}", kerberosRequest);
 
             var decryptedToken = kerberosRequest.DecryptApReq(keytab);
 
@@ -62,7 +59,7 @@ namespace Kerberos.NET
                 return null;
             }
 
-            Logger.WriteLine(KerberosLogSource.Validator, decryptedToken.ToString());
+            logger.LogTrace("Kerberos request decrypted {Request}", decryptedToken);
 
             decryptedToken.Now = Now;
 

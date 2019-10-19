@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static Kerberos.NET.Win32.NativeMethods;
 
 namespace Kerberos.NET.Win32
 {
+    [ExcludeFromCodeCoverage]
     internal partial class SspiSecurityContext : IDisposable
     {
         private const int SECPKG_CRED_BOTH = 0x00000003;

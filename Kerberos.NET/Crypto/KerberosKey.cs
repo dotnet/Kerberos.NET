@@ -60,7 +60,7 @@ namespace Kerberos.NET.Crypto
             IterationParameter = iterationParams;
         }
 
-        private readonly ConcurrentDictionary<string, ReadOnlyMemory<byte>> DerivedKeyCache 
+        private readonly ConcurrentDictionary<string, ReadOnlyMemory<byte>> DerivedKeyCache
             = new ConcurrentDictionary<string, ReadOnlyMemory<byte>>();
 
         internal ReadOnlySpan<byte> GetOrDeriveKey(

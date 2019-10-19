@@ -3,7 +3,7 @@
 namespace Kerberos.NET.Entities
 {
     [Flags]
-    public enum TicketFlags 
+    public enum TicketFlags
     {
         None = -1,
         Reserved = 1 << 31,
