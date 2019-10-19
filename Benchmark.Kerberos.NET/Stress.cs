@@ -1,19 +1,19 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
-using Kerberos.NET.Server;
-using System;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
-using System.Net;
-using System.Threading.Tasks;
-using static Tests.Kerberos.NET.E2EKdcClientTest;
-using System.Linq;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Server;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
+using System.Net;
 using System.Threading;
-using System.Buffers;
-using Kerberos.NET.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Threading.Tasks;
+using Tests.Kerberos.NET;
 
 namespace Benchmark.Kerberos.NET
 {

@@ -47,6 +47,7 @@ namespace System.Security.Cryptography.Asn1
         }
     }
 
+    [ExcludeFromCodeCoverage]
     internal abstract class SpanBasedEncoding : Text.Encoding
     {
         protected SpanBasedEncoding()

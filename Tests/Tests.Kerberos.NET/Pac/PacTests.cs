@@ -67,7 +67,7 @@ namespace Tests.Kerberos.NET
             "AABAAAAAAAAAAAAAAAAAAAAB2////AAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
         [TestMethod, ExpectedException(typeof(SecurityException))]
-        public async Task TestKerberosValidatorBadKey()
+        public async Task KerberosValidatorBadKey()
         {
             var data = ReadDataFile("aes128-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
@@ -78,7 +78,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(SecurityException))]
-        public void TestKerberosValidatorAes128ModifiedPac()
+        public void KerberosValidatorAes128ModifiedPac()
         {
             var key = ReadDataFile("aes128-key-data");
 
@@ -96,7 +96,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(SecurityException))]
-        public void TestKerberosValidatorAes256ModifiedPac()
+        public void KerberosValidatorAes256ModifiedPac()
         {
             var key = ReadDataFile("aes256-key-data");
 
@@ -114,7 +114,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(SecurityException))]
-        public void TestKerberosValidatorRC4ModifiedPac()
+        public void KerberosValidatorRC4ModifiedPac()
         {
             var key = ReadDataFile("rc4-key-data");
             var kerbKey = new KerberosKey(key);
@@ -168,7 +168,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestPacRoundtrip()
+        public async Task PacRoundtrip()
         {
             var keyBytes = ReadDataFile("rc4-key-data");
             var key = new KerberosKey(keyBytes, etype: EncryptionType.RC4_HMAC_NT);
@@ -186,7 +186,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestValidatorCheckPacLogonInfo()
+        public async Task ValidatorCheckPacLogonInfo()
         {
             var cert = await GeneratePac();
 
@@ -247,7 +247,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestClientInfo()
+        public async Task ClientInfo()
         {
             var cert = await GeneratePac();
 
@@ -258,7 +258,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestUpnDomainInfo()
+        public async Task UpnDomainInfo()
         {
             var cert = await GeneratePac();
 

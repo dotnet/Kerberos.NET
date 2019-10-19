@@ -18,7 +18,7 @@ namespace Kerberos.NET.Entities
         public string Realm;
         public KrbPrincipalName CName;
         public KrbChecksum Checksum;
-        public int Cusec;
+        public int CuSec;
         public DateTimeOffset CTime;
         public KrbEncryptionKey Subkey;
         public int? SequenceNumber;
@@ -61,7 +61,7 @@ namespace Kerberos.NET.Entities
             }
 
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
-            writer.WriteInteger(Cusec);
+            writer.WriteInteger(CuSec);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
             writer.WriteGeneralizedTime(CTime);
@@ -239,7 +239,7 @@ namespace Kerberos.NET.Entities
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
 
-            if (!explicitReader.TryReadInt32(out decoded.Cusec))
+            if (!explicitReader.TryReadInt32(out decoded.CuSec))
             {
                 explicitReader.ThrowIfNotEmpty();
             }

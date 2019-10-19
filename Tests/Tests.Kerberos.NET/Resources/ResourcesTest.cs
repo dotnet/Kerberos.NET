@@ -9,7 +9,7 @@ namespace Tests.Kerberos.NET
     public class ResourcesTest : BaseTest
     {
         [TestMethod, ExpectedException(typeof(CryptographicException))]
-        public void TestResourceManagerFormattedResource()
+        public void ResourceManagerFormattedResource()
         {
             var asReq = ReadDataFile("messages\\as-req");
 

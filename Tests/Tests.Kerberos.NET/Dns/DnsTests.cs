@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.ComponentModel;
 using System.Linq;
 
-namespace Tests.Kerberos.NET.Dns
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class DnsTests
@@ -15,7 +15,7 @@ namespace Tests.Kerberos.NET.Dns
         public const string BadSrvRecord = "_sip._tls.internal#$@%$^&R*.fake";
 
         [TestMethod]
-        public void TestQuerySrvRecordHittingInternet()
+        public void QuerySrvRecordHittingInternet()
         {
             DnsQuery.Debug = true;
 
@@ -30,7 +30,7 @@ namespace Tests.Kerberos.NET.Dns
         }
 
         [TestMethod]
-        public void TestFailedLookup()
+        public void FailedLookup()
         {
             DnsQuery.Debug = true;
 
@@ -40,7 +40,7 @@ namespace Tests.Kerberos.NET.Dns
         }
 
         [TestMethod, ExpectedException(typeof(Win32Exception))]
-        public void TestBadDataLookup()
+        public void BadDataLookup()
         {
             DnsQuery.QuerySrv(BadSrvRecord);
         }

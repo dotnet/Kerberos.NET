@@ -1,6 +1,6 @@
 ﻿namespace Kerberos.NET.Entities
 {
-    public enum ApOptions 
+    public enum ApOptions
     {
         Reserved = 0,
         ChannelBindingSupported = 1 << 14,

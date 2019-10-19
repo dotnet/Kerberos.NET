@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,9 +10,9 @@ namespace Kerberos.NET
     {
         private readonly ILogger logger;
 
-        public MemoryTicketCache(ILogger logger)
+        public MemoryTicketCache(ILoggerFactory logger)
         {
-            this.logger = logger;
+            this.logger = logger.CreateLoggerSafe<MemoryTicketCache>();
         }
 
         private readonly CancellationTokenSource cancel = new CancellationTokenSource();
@@ -56,14 +57,7 @@ namespace Kerberos.NET
 
             private void LogWrite(string log, Exception ex = null)
             {
-                if (ex == null)
-                {
-                    logger?.WriteLine(KerberosLogSource.Cache, log);
-                }
-                else
-                {
-                    logger?.WriteLine(KerberosLogSource.Cache, log, ex);
-                }
+                logger.LogTrace(ex, log);
             }
 
             private void RemoveSelf(Task task)

@@ -28,5 +28,7 @@ namespace Kerberos.NET.Entities
         public DateTimeOffset EndTime { get; set; }
 
         public DateTimeOffset? RenewTill { get; set; }
+        
+        public int Nonce { get; set; }
     }
 }

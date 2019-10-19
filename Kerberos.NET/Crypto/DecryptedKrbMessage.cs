@@ -16,7 +16,14 @@ namespace Kerberos.NET.Crypto
 
         public abstract void Validate(ValidationActions validation);
 
-        public abstract void Decrypt(KeyTable keytab);
+        public virtual void Decrypt(KeyTable keytab)
+        {
+            throw new NotSupportedException();
+        }
+
+        public abstract void Decrypt(KerberosKey key);
+
+        public virtual TimeSpan Skew { get; protected set; } = TimeSpan.FromMinutes(5);
 
         protected virtual void ValidateTicketEnd(DateTimeOffset endTime, DateTimeOffset now, TimeSpan skew)
         {

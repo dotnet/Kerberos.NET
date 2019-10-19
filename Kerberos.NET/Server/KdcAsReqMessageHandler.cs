@@ -1,4 +1,5 @@
 ﻿using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -15,9 +16,13 @@ namespace Kerberos.NET.Server
         private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> postProcessAuthHandlers =
                 new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
 
+        private readonly ILogger<KdcAsReqMessageHandler> logger;
+
         public KdcAsReqMessageHandler(ReadOnlySequence<byte> message, ListenerOptions options)
             : base(message, options)
         {
+            this.logger = options.Log.CreateLoggerSafe<KdcAsReqMessageHandler>();
+
             postProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);
 
             RegisterPreAuthHandlers(postProcessAuthHandlers);
@@ -43,7 +48,16 @@ namespace Kerberos.NET.Server
 
             KrbAsReq asReq = (KrbAsReq)message;
 
-            var principal = await RealmService.Principals.Find(asReq.Body.CName.FullyQualifiedName);
+            var username = asReq.Body.CName.FullyQualifiedName;
+
+            var principal = await RealmService.Principals.Find(username);
+
+            if (principal == null)
+            {
+                logger.LogInformation("User {User} not found in realm {Realm}", username, RealmService.Name);
+
+                return GenerateError(KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN, null, RealmService.Name, username);
+            }
 
             try
             {
@@ -56,7 +70,7 @@ namespace Kerberos.NET.Server
             }
             catch (KerberosValidationException kex)
             {
-                Log(kex);
+                logger.LogWarning(kex, "AS-REQ failed processing for principal {Principal}", principal);
 
                 return PreAuthFailed(kex, principal);
             }
@@ -100,6 +114,8 @@ namespace Kerberos.NET.Server
 
         private ReadOnlyMemory<byte> RequirePreAuth(IEnumerable<KrbPaData> preAuthRequests, IKerberosPrincipal principal)
         {
+            logger.LogTrace("AS-REQ requires pre-auth for user {User}", principal.PrincipalName);
+
             var err = new KrbError
             {
                 ErrorCode = KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED,

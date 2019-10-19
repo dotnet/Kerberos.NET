@@ -49,7 +49,8 @@ namespace Kerberos.NET.Entities
                     StartTime = now - realmService.Settings.MaximumSkew,
                     EndTime = now + realmService.Settings.SessionLifetime,
                     Flags = DefaultFlags,
-                    RealmName = realmService.Name
+                    RealmName = realmService.Name,
+                    Nonce = asReq.Nonce
                 }
             );
 

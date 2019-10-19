@@ -26,7 +26,7 @@ namespace Kerberos.NET.Entities.Pac
         {
             stream.WriteClaimEntry(this, deferredFurther);
         }
-        
+
         internal void EncodeType(object val, ClaimType type, NdrBinaryStream stream)
         {
             if (type == ClaimType.CLAIM_TYPE_STRING)
@@ -38,7 +38,7 @@ namespace Kerberos.NET.Entities.Pac
                 stream.WriteUnsignedLong(Convert.ToInt64(val));
             }
         }
-        
+
         public string Id { get; private set; }
 
         public ClaimType Type { get; set; }

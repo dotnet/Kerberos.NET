@@ -2,8 +2,11 @@
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Security;
+using System.Security.Cryptography.Asn1;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,9 +26,8 @@ namespace Kerberos.NET.Client
         //                   -> request ticket for self to get local authz?
         //                   -> cache TGT/cache service ticket?
 
-        public KerberosClient(string kdc = null)
-            : this(new UdpKerberosTransport(kdc),
-                   new TcpKerberosTransport(kdc))
+        public KerberosClient(string kdc = null, ILoggerFactory logger = null)
+            : this(logger, new UdpKerberosTransport(kdc), new TcpKerberosTransport(logger, kdc))
         {
         }
 
@@ -39,12 +41,17 @@ namespace Kerberos.NET.Client
         private const ApOptions DefaultApOptions = 0;
 
         private readonly KerberosTransportSelector transport;
+        private readonly ILogger<KerberosClient> logger;
+        private readonly IDisposable clientLoggingScope;
 
-        public KerberosClient(params IKerberosTransport[] transports)
+        public KerberosClient(ILoggerFactory logger = null, params IKerberosTransport[] transports)
         {
+            this.logger = logger.CreateLoggerSafe<KerberosClient>();
+            this.clientLoggingScope = this.logger.BeginScope("KerberosClient");
+
             transport = new KerberosTransportSelector(transports);
 
-            Cache = new MemoryTicketCache(null);
+            Cache = new MemoryTicketCache(logger);
         }
 
         private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
@@ -67,6 +74,14 @@ namespace Kerberos.NET.Client
 
         public string DefaultDomain { get; private set; }
 
+        private Guid? scopeId;
+
+        public Guid ScopeId
+        {
+            get => scopeId ?? (scopeId = KerberosConstants.GetRequestActivityId()).Value;
+            set => scopeId = value;
+        }
+
         public async Task Authenticate(KerberosCredential credential)
         {
             credential.Validate();
@@ -75,26 +90,83 @@ namespace Kerberos.NET.Client
 
             AuthenticationOptions &= ~AuthenticationOptions.PreAuthenticate;
 
-            do
+            using (logger.BeginRequestScope(ScopeId))
             {
-                try
+                do
                 {
-                    await RequestTgt(credential);
-                    break;
-                }
-                catch (KerberosProtocolException pex)
-                {
-                    if (++preauthAttempts > 3 || pex?.Error?.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
+                    try
                     {
-                        throw;
+                        await RequestTgt(credential);
+                        break;
                     }
+                    catch (KerberosProtocolException pex)
+                    {
+                        if (++preauthAttempts > 3 || pex?.Error?.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
+                        {
+                            logger.LogKerberosProtocolException(pex);
+                            throw;
+                        }
 
-                    credential.IncludePreAuthenticationHints(pex?.Error?.DecodePreAuthentication());
+                        credential.IncludePreAuthenticationHints(pex?.Error?.DecodePreAuthentication());
 
-                    AuthenticationOptions |= AuthenticationOptions.PreAuthenticate;
+                        AuthenticationOptions |= AuthenticationOptions.PreAuthenticate;
+                    }
                 }
+                while (true);
             }
-            while (true);
+        }
+
+        public async Task<ApplicationSessionContext> GetServiceTicket(RequestServiceTicket rst, CancellationToken cancellation = default)
+        {
+            using (logger.BeginRequestScope(ScopeId))
+            {
+                cancellation.ThrowIfCancellationRequested();
+
+                var tgtEntry = await CopyTgt($"krbtgt/{DefaultDomain}");
+
+                if (rst.KdcOptions == 0)
+                {
+                    rst.KdcOptions = KdcOptions;
+                }
+
+                if (rst.UserToUserTicket != null)
+                {
+                    rst.KdcOptions |= KdcOptions.EncTktInSkey;
+                }
+
+                if (!string.IsNullOrWhiteSpace(rst.S4uTarget))
+                {
+                    rst.KdcOptions |= KdcOptions.Forwardable;
+                }
+
+                var serviceTicketCacheEntry = await Cache.Get<KerberosClientCacheEntry>(rst.ServicePrincipalName, rst.S4uTarget);
+
+                if (serviceTicketCacheEntry.Ticket == null || !CacheServiceTickets)
+                {
+                    serviceTicketCacheEntry = await RequestTgs(rst, tgtEntry, cancellation);
+                }
+
+                var encKdcRepPart = serviceTicketCacheEntry.Ticket.EncPart.Decrypt(
+                    serviceTicketCacheEntry.SessionKey.AsKey(),
+                    KeyUsage.EncTgsRepPartSubSessionKey,
+                    d => KrbEncTgsRepPart.DecodeApplication(d)
+                );
+
+                return new ApplicationSessionContext
+                {
+                    ApReq = KrbApReq.CreateApReq(
+                        serviceTicketCacheEntry.Ticket,
+                        encKdcRepPart.Key.AsKey(),
+                        rst.ApOptions,
+                        out KrbAuthenticator authenticator
+                    ),
+                    SessionKey = authenticator.Subkey,
+                    CTime = authenticator.CTime,
+                    CuSec = authenticator.CuSec,
+                    SequenceNumber = authenticator.SequenceNumber
+
+                };
+            }
         }
 
         public async Task<KrbApReq> GetServiceTicket(
@@ -105,73 +177,44 @@ namespace Kerberos.NET.Client
             KrbTicket u2uServerTicket = null
         )
         {
-            cancellation.Token.ThrowIfCancellationRequested();
-
-            var tgtEntry = await CopyTgt($"krbtgt/{DefaultDomain}");
-
-            var kdcOptions = KdcOptions;
-
-            if (u2uServerTicket != null)
-            {
-                kdcOptions |= KdcOptions.EncTktInSkey;
-            }
-
-            if (!string.IsNullOrWhiteSpace(s4u))
-            {
-                kdcOptions |= KdcOptions.Forwardable;
-            }
-
-            var serviceTicketCacheEntry = await Cache.Get<KerberosClientCacheEntry>(spn, s4u);
-
-            if (serviceTicketCacheEntry.Ticket == null)
-            {
-                serviceTicketCacheEntry = await RequestTgs(
-                    spn,
-                    tgtEntry,
-                    kdcOptions,
-                    s4u,
-                    s4uTicket,
-                    u2uServerTicket
-                );
-            }
-
-            var encKdcRepPart = serviceTicketCacheEntry.Ticket.EncPart.Decrypt(
-                serviceTicketCacheEntry.SessionKey.AsKey(),
-                KeyUsage.EncTgsRepPartSubSessionKey,
-                d => KrbEncTgsRepPart.DecodeApplication(d)
+            var session = await GetServiceTicket(
+                new RequestServiceTicket
+                {
+                    ServicePrincipalName = spn,
+                    ApOptions = options,
+                    S4uTarget = s4u,
+                    S4uTicket = s4uTicket,
+                    UserToUserTicket = u2uServerTicket
+                },
+                cancellation.Token
             );
 
-            return KrbApReq.CreateApReq(serviceTicketCacheEntry.Ticket, encKdcRepPart.Key.AsKey(), options);
+            return session.ApReq;
         }
 
         private async Task<KerberosClientCacheEntry> RequestTgs(
-            string spn,
-            KerberosClientCacheEntry tgtEntry,
-            KdcOptions kdcOptions,
-            string s4u,
-            KrbTicket s4uTicket,
-            KrbTicket u2uServerTicket
+            RequestServiceTicket rst, 
+            KerberosClientCacheEntry tgtEntry, 
+            CancellationToken cancellation
         )
         {
-            var tgsReq = KrbTgsReq.CreateTgsReq(
-                spn,
-                tgtEntry.SessionKey,
-                tgtEntry.Ticket,
-                kdcOptions,
-                out KrbEncryptionKey subkey,
-                u2uServerTicket,
-                s4u,
-                s4uTicket
+            logger.LogInformation(
+                "Requesting TGS for {SPN}; S4U = {S4U}; S4UTicket = {S4UTicketSPN}",
+                rst.ServicePrincipalName,
+                rst.S4uTarget,
+                rst.S4uTicket?.SName
             );
+
+            var tgsReq = KrbTgsReq.CreateTgsReq(rst, tgtEntry.SessionKey, tgtEntry.Ticket, out KrbEncryptionKey subkey);
 
             var encodedTgs = tgsReq.EncodeApplication();
 
-            cancellation.Token.ThrowIfCancellationRequested();
+            cancellation.ThrowIfCancellationRequested();
 
             var tgsRep = await transport.SendMessage<KrbTgsRep>(
                 tgsReq.Body.Realm,
                 encodedTgs,
-                cancellation.Token
+                cancellation
             );
 
             var entry = new KerberosClientCacheEntry
@@ -180,16 +223,13 @@ namespace Kerberos.NET.Client
                 SessionKey = subkey
             };
 
-            if (CacheServiceTickets)
+            await Cache.Add(new TicketCacheEntry
             {
-                await Cache.Add(new TicketCacheEntry
-                {
-                    Key = spn,
-                    Container = s4u,
-                    Expires = tgsReq.Body.Till,
-                    Value = entry
-                });
-            }
+                Key = rst.ServicePrincipalName,
+                Container = rst.S4uTarget,
+                Expires = tgsReq.Body.Till,
+                Value = entry
+            });
 
             return entry;
         }
@@ -218,7 +258,16 @@ namespace Kerberos.NET.Client
         {
             var entry = await CopyTgt($"krbtgt/{DefaultDomain}");
 
-            var tgs = KrbTgsReq.CreateTgsReq("krbtgt", entry.SessionKey, entry.Ticket, KdcOptions, out KrbEncryptionKey subkey);
+            var tgs = KrbTgsReq.CreateTgsReq(
+                new RequestServiceTicket
+                {
+                    ServicePrincipalName = "krbtgt",
+                    KdcOptions = KdcOptions
+                },
+                entry.SessionKey,
+                entry.Ticket,
+                out KrbEncryptionKey subkey
+            );
 
             var encodedTgs = tgs.EncodeApplication();
 
@@ -247,11 +296,29 @@ namespace Kerberos.NET.Client
 
         private async Task RequestTgt(KerberosCredential credential)
         {
-            var asReq = KrbAsReq.CreateAsReq(credential, AuthenticationOptions).EncodeApplication();
+            var asReqMessage = KrbAsReq.CreateAsReq(credential, AuthenticationOptions);
+
+            var asReq = asReqMessage.EncodeApplication();
+
+            logger.LogTrace(
+                "Attempting AS-REQ. UserName = {UserName}; Domain = {Domain}; Nonce = {Nonce}",
+                credential.UserName,
+                credential.Domain,
+                asReqMessage.Body.Nonce
+            );
 
             var asRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq);
 
-            var decrypted = DecryptAsRep(asRep, credential);
+            var decrypted = asRep.EncPart.Decrypt(
+                credential.CreateKey(),
+                KeyUsage.EncAsRepPart,
+                d => KrbEncAsRepPart.DecodeApplication(d)
+            );
+
+            if (decrypted.Nonce != asReqMessage.Body.Nonce)
+            {
+                throw new SecurityException(SR.Resource("KRB_ERROR_AS_NONCE_MISMATCH", asReqMessage.Body.Nonce, decrypted.Nonce));
+            }
 
             DefaultDomain = credential.Domain;
 
@@ -267,21 +334,31 @@ namespace Kerberos.NET.Client
             });
         }
 
-        private static KrbEncAsRepPart DecryptAsRep(KrbKdcRep asRep, KerberosCredential credential)
-        {
-            var key = credential.CreateKey();
+        private bool disposed = false;
 
-            return asRep.EncPart.Decrypt(key, KeyUsage.EncAsRepPart, d => KrbEncAsRepPart.DecodeApplication(d));
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    clientLoggingScope.Dispose();
+                    cancellation.Dispose();
+                }
+
+                disposed = true;
+            }
+        }
+
+        ~KerberosClient()
+        {
+            Dispose(false);
         }
 
         public void Dispose()
         {
-            if (transport != null)
-            {
-                transport.Dispose();
-            }
-
-            cancellation.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

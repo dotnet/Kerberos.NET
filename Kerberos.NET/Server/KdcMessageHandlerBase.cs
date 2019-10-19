@@ -1,4 +1,5 @@
 ﻿using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -73,25 +74,25 @@ namespace Kerberos.NET.Server
             }
         }
 
-        protected virtual void Log(Exception ex)
-        {
-            Options.Log?.WriteLine(KerberosLogSource.Kdc, ex);
-        }
-
         protected abstract Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message);
 
         internal static ReadOnlyMemory<byte> GenerateGenericError(Exception ex, ListenerOptions options)
         {
+            return GenerateError(KerberosErrorCode.KRB_ERR_GENERIC, options.IsDebug ? $"[Server] {ex}" : null, options.DefaultRealm, "krbtgt");
+        }
+
+        internal static ReadOnlyMemory<byte> GenerateError(KerberosErrorCode code, string error, string realm, string sname)
+        {
             var krbErr = new KrbError()
             {
-                ErrorCode = KerberosErrorCode.KRB_ERR_GENERIC,
-                EText = options.IsDebug ? $"[Server] {ex}" : null,
-                Realm = options.DefaultRealm,
+                ErrorCode = code,
+                EText = error,
+                Realm = realm,
                 SName = new KrbPrincipalName
                 {
                     Type = PrincipalNameType.NT_SRV_INST,
                     Name = new[] {
-                        "krbtgt", options.DefaultRealm.ToLower()
+                        sname, realm
                     }
                 }
             };

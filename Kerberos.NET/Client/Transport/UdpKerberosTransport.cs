@@ -23,8 +23,8 @@ namespace Kerberos.NET.Transport
         }
 
         public override async Task<T> SendMessage<T>(
-            string domain, 
-            ReadOnlyMemory<byte> encoded, 
+            string domain,
+            ReadOnlyMemory<byte> encoded,
             CancellationToken cancellation = default
         )
         {
@@ -32,8 +32,6 @@ namespace Kerberos.NET.Transport
 
             using (var client = new UdpClient(target.Target, target.Port))
             {
-                Log($"UDP connecting to {target.Target}");
-
                 cancellation.ThrowIfCancellationRequested();
 
                 var result = await client.SendAsync(encoded.ToArray(), encoded.Length);

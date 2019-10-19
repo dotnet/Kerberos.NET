@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,16 +21,21 @@ namespace Kerberos.NET.Server
 
         private readonly Stack<SocketListener> openListeners = new Stack<SocketListener>();
 
-        public ListenerOptions Options { get; }
+        private readonly ILogger<ServiceListenerBase> logger;
 
         protected ServiceListenerBase(
-            ListenerOptions options, 
+            ListenerOptions options,
             Func<Socket, ListenerOptions, SocketWorkerBase> workerFunc
         )
         {
             Options = options;
+
+            logger = options.Log.CreateLoggerSafe<ServiceListenerBase>();
             socketListener = new SocketListener(options, workerFunc);
         }
+
+        public ListenerOptions Options { get; }
+
 
         public Task Start()
         {
@@ -79,18 +84,12 @@ namespace Kerberos.NET.Server
             }
             catch (Exception ex)
             {
-                Log(ex);
+                logger.LogWarning(ex, "Accept connection failed with exception");
             }
             finally
             {
                 Stop();
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Log(Exception ex)
-        {
-            Options?.Log?.WriteLine(KerberosLogSource.ServiceListener, ex);
         }
 
         public virtual void Dispose()

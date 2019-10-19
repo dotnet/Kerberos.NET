@@ -1,13 +1,13 @@
 ﻿using Kerberos.NET.Credentials;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Tests.Kerberos.NET.Credentials
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class KerberosPasswordTests
     {
         [TestMethod]
-        public void TestParsePasswordCredential()
+        public void ParsePasswordCredential()
         {
             var cred = new KerberosPasswordCredential("username", "password", "domain.com");
 
@@ -16,7 +16,7 @@ namespace Tests.Kerberos.NET.Credentials
         }
 
         [TestMethod]
-        public void TestParsePasswordCredentialWithDomainInUser()
+        public void ParsePasswordCredentialWithDomainInUser()
         {
             var cred = new KerberosPasswordCredential("username@domain.com", "password");
 
@@ -25,7 +25,7 @@ namespace Tests.Kerberos.NET.Credentials
         }
 
         [TestMethod]
-        public void TestParsePasswordCredentialWithDomainInUserAndDomainParam()
+        public void ParsePasswordCredentialWithDomainInUserAndDomainParam()
         {
             var cred = new KerberosPasswordCredential("username@domain.com", "password", "domain2.com");
 

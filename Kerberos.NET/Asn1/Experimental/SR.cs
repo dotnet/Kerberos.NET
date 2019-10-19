@@ -1,8 +1,10 @@
 ﻿using Kerberos.NET;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace System.Security.Cryptography.Asn1
 {
+    [ExcludeFromCodeCoverage]
     internal static class SR
     {
         public static string Resource(string name, params object[] args)

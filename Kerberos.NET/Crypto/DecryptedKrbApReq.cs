@@ -31,12 +31,11 @@ namespace Kerberos.NET.Crypto
 
         public KrbApRep CreateResponseMessage()
         {
-            KerberosConstants.Now(out DateTimeOffset ctime, out int usec);
-
             var apRepPart = new KrbEncApRepPart
             {
-                CTime = ctime,
-                CuSec = usec
+                CTime = Authenticator.CTime,
+                CuSec = Authenticator.CuSec,
+                SequenceNumber = Authenticator.SequenceNumber
             };
 
             var apRep = new KrbApRep
@@ -58,7 +57,7 @@ namespace Kerberos.NET.Crypto
             Decrypt(key);
         }
 
-        public void Decrypt(KerberosKey key)
+        public override void Decrypt(KerberosKey key)
         {
             Ticket = token.Ticket.EncryptedPart.Decrypt(
                 key,
@@ -119,8 +118,6 @@ namespace Kerberos.NET.Crypto
             );
         }
 
-        public virtual TimeSpan Skew { get; protected set; } = TimeSpan.FromMinutes(5);
-
         public override void Validate(ValidationActions validation)
         {
             // As defined in https://tools.ietf.org/html/rfc4120 KRB_AP_REQ verification
@@ -137,7 +134,7 @@ namespace Kerberos.NET.Crypto
 
             var now = Now();
 
-            var ctime = Authenticator.CTime.AddTicks(Authenticator.Cusec / 10);
+            var ctime = Authenticator.CTime.AddTicks(Authenticator.CuSec / 10);
 
             if (validation.HasFlag(ValidationActions.TokenWindow))
             {

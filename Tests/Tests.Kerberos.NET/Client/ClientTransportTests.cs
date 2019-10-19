@@ -2,6 +2,7 @@
 using Kerberos.NET.Dns;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -12,10 +13,10 @@ using System.Threading.Tasks;
 namespace Tests.Kerberos.NET
 {
     [TestClass]
-    public class TransportTests : BaseTest
+    public class ClientTransportTests : BaseTest
     {
         [TestMethod]
-        public async Task TestTransportBase()
+        public async Task TransportBase()
         {
             var transport = new NoopTransport();
 
@@ -24,6 +25,26 @@ namespace Tests.Kerberos.NET
             var resp = await transport.SendMessage<KrbApReq, KrbAsRep>("sdf", encoded);
 
             Assert.IsNotNull(resp);
+        }
+
+        [TestMethod, ExpectedException(typeof(KerberosTransportException))]
+        public async Task TcpClientConnectExceptional()
+        {
+            var tcp = new NoDnsTcpTransport(new FakeExceptionLoggerFactory());
+
+            await tcp.SendMessage<KrbApReq>("blah.com", new ReadOnlyMemory<byte>());
+        }
+
+        private class NoDnsTcpTransport : TcpKerberosTransport
+        {
+            public NoDnsTcpTransport(ILoggerFactory logger)
+            : base(logger)
+            { }
+
+            protected override DnsRecord QueryDomain(string lookup)
+            {
+                return new DnsRecord { Target = "127.0.0.1", Port = 12345 };
+            }
         }
 
         private class NoopTransport : KerberosTransportBase

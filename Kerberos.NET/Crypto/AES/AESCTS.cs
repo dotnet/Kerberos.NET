@@ -11,8 +11,8 @@ namespace Kerberos.NET.Crypto
     internal static class AESCTS
     {
         public static ReadOnlySpan<byte> Encrypt(
-            ReadOnlySpan<byte> plainText, 
-            ReadOnlySpan<byte> key, 
+            ReadOnlySpan<byte> plainText,
+            ReadOnlySpan<byte> key,
             ReadOnlySpan<byte> iv
         )
         {

@@ -42,10 +42,10 @@ namespace Kerberos.NET.Crypto
         }
 
         public virtual ReadOnlySpan<byte> MakeChecksum(
-            ReadOnlySpan<byte> data, 
-            KerberosKey key, 
-            KeyUsage usage, 
-            KeyDerivationMode kdf, 
+            ReadOnlySpan<byte> data,
+            KerberosKey key,
+            KeyUsage usage,
+            KeyDerivationMode kdf,
             int hashSize)
         {
             throw new NotImplementedException();

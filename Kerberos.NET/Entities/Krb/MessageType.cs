@@ -1,6 +1,6 @@
 ﻿namespace Kerberos.NET.Entities
 {
-    public enum MessageType 
+    public enum MessageType
     {
         // Request for initial authentication
         KRB_AS_REQ = 10,

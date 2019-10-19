@@ -1,4 +1,5 @@
 ﻿using Kerberos.NET.Crypto;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers;
 using System.IO.Pipelines;
@@ -14,10 +15,13 @@ namespace Kerberos.NET.Server
 
         private readonly KdcServer kdc;
 
+        private readonly ILogger<KdcSocketWorker> logger;
+
         public KdcSocketWorker(Socket socket, ListenerOptions options)
             : base(socket, options)
         {
             kdc = new KdcServer(options);
+            logger = options.Log.CreateLoggerSafe<KdcSocketWorker>();
         }
 
         protected override async Task ReadRequest(CancellationToken cancellation)
@@ -90,12 +94,12 @@ namespace Kerberos.NET.Server
 
         private async Task ProcessMessage(ReadOnlySequence<byte> message, CancellationToken cancellation)
         {
-            if (Options.Log != null && Options.Log.Level >= LogLevel.Debug)
-            {
-                Options.Log.WriteLine(KerberosLogSource.ServiceListener, Environment.NewLine + message.ToArray().HexDump());
-            }
+            logger.LogTrace("Message incoming. Request length = {RequestLength}", message.Length);
+            logger.TraceBinary(message);
 
             var response = await kdc.ProcessMessage(message);
+
+            logger.LogTrace("Message processed. Response length = {ResponseLength}", response.Length);
 
             await FillResponse(ResponsePipe.Writer, response, cancellation);
         }

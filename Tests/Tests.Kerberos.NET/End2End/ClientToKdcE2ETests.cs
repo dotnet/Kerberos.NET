@@ -3,26 +3,23 @@ using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using Kerberos.NET.Entities.Pac;
 using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 
 {
     [TestClass]
-    public class E2EKdcClientTest
+    public class ClientToKdcE2ETests
     {
         [TestMethod]
-        public async Task TestE2E()
+        public async Task E2E()
         {
             var port = new Random().Next(20000, 40000);
 
@@ -46,7 +43,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestE2EWithCaching()
+        public async Task E2EWithCaching()
         {
             var port = new Random().Next(20000, 40000);
 
@@ -70,7 +67,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestE2EWithNegotiate()
+        public async Task E2EWithNegotiate()
         {
             var port = new Random().Next(20000, 40000);
 
@@ -94,7 +91,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestE2ES4U()
+        public async Task E2ES4U()
         {
             var port = new Random().Next(20000, 40000);
 
@@ -118,7 +115,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestU2U()
+        public async Task U2U()
         {
             var port = new Random().Next(20000, 40000);
 
@@ -169,10 +166,10 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(TimeoutException))]
-        public async Task TestReceiveTimeout()
+        public async Task ReceiveTimeout()
         {
             var port = new Random().Next(20000, 40000);
-            var log = new ExceptionTraceLog();
+            var log = new FakeExceptionLoggerFactory();
 
             var options = new ListenerOptions
             {
@@ -183,9 +180,6 @@ namespace Tests.Kerberos.NET
                 ReceiveTimeout = TimeSpan.FromMilliseconds(1),
                 Log = log
             };
-
-            options.Log.Enabled = true;
-            options.Log.Level = LogLevel.Verbose;
 
             KdcServiceListener listener = new KdcServiceListener(options);
 
@@ -209,7 +203,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task TestE2EMultithreadedClient()
+        public async Task E2EMultithreadedClient()
         {
             var port = new Random().Next(20000, 40000);
 
@@ -230,7 +224,7 @@ namespace Tests.Kerberos.NET
 
                 var kerbCred = new KerberosPasswordCredential("administrator@corp.identityintervention.com", "P@ssw0rd!");
 
-                string kdc = $"127.0.0.1:{port}"; 
+                string kdc = $"127.0.0.1:{port}";
                 //string kdc = "10.0.0.21:88";
 
                 using (KerberosClient client = new KerberosClient(kdc))
@@ -250,12 +244,13 @@ namespace Tests.Kerberos.NET
                                     await client.Authenticate(kerbCred);
                                 }
 
-                                var ticket = await client.GetServiceTicket(
-                                    "host/appservice.corp.identityintervention.com",
-                                    ApOptions.MutualRequired
-                                );
+                                var ticket = await client.GetServiceTicket(new RequestServiceTicket
+                                {
+                                    ServicePrincipalName = "host/appservice.corp.identityintervention.com",
+                                    ApOptions = ApOptions.MutualRequired
+                                });
 
-                                Assert.IsNotNull(ticket.Ticket);
+                                Assert.IsNotNull(ticket.ApReq);
 
                                 await ValidateTicket(ticket);
                             }
@@ -277,48 +272,60 @@ namespace Tests.Kerberos.NET
         }
 
         private static async Task RequestAndValidateTickets(
-            string user, 
-            string password, 
-            string overrideKdc, 
-            string s4u = null, 
-            bool encodeNego = false, 
+            string user,
+            string password,
+            string overrideKdc,
+            string s4u = null,
+            bool encodeNego = false,
             bool caching = false
         )
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            using (KerberosClient client = new KerberosClient(overrideKdc) { CacheServiceTickets = caching })
-            {
-                await client.Authenticate(kerbCred);
+            KerberosClient client = new KerberosClient(overrideKdc) { CacheServiceTickets = caching };
 
-                var ticket = await client.GetServiceTicket(
-                    "host/appservice.corp.identityintervention.com",
-                    ApOptions.MutualRequired
-                );
+            await client.Authenticate(kerbCred);
 
-                await ValidateTicket(ticket);
+            var spn = "host/appservice.corp.identityintervention.com";
 
-                await client.RenewTicket();
+            var ticket = await client.GetServiceTicket(
+                new RequestServiceTicket
+                {
+                    ServicePrincipalName = spn,
+                    ApOptions = ApOptions.MutualRequired
+                }
+            );
 
-                ticket = await client.GetServiceTicket(
-                    "host/appservice.corp.identityintervention.com",
-                    ApOptions.MutualRequired
-                );
+            await ValidateTicket(ticket);
 
-                await ValidateTicket(ticket, encodeNego);
+            await client.RenewTicket();
 
-                ticket = await client.GetServiceTicket(
-                    "host/appservice.corp.identityintervention.com",
-                    ApOptions.MutualRequired,
-                    s4u: s4u
-                );
+            ticket = await client.GetServiceTicket(
+                new RequestServiceTicket
+                {
+                    ServicePrincipalName = "host/appservice.corp.identityintervention.com",
+                    ApOptions = ApOptions.MutualRequired
+                }
+            );
 
-                await ValidateTicket(ticket);
-            }
+            await ValidateTicket(ticket, encodeNego);
+
+            ticket = await client.GetServiceTicket(
+                new RequestServiceTicket
+                {
+                    ServicePrincipalName = "host/appservice.corp.identityintervention.com",
+                    ApOptions = ApOptions.MutualRequired,
+                    S4uTarget = s4u
+                }
+            );
+
+            await ValidateTicket(ticket);
         }
 
-        private static async Task ValidateTicket(KrbApReq ticket, bool encodeNego = false)
+        private static async Task ValidateTicket(ApplicationSessionContext context, bool encodeNego = false)
         {
+            var ticket = context.ApReq;
+
             byte[] encoded;
 
             if (encodeNego)
@@ -349,6 +356,10 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(validated);
 
             Assert.AreEqual(validated.FindFirst(ClaimTypes.Sid).Value, "S-1-5-123-456-789-12-321-888");
+
+            var sessionKey = context.AuthenticateServiceResponse(validated.ApRep);
+
+            Assert.IsNotNull(sessionKey);
         }
 
         private static async Task<IRealmService> LocateRealm(string realm, bool slow = false)
@@ -361,200 +372,6 @@ namespace Tests.Kerberos.NET
             }
 
             return service;
-        }
-
-        private class ExceptionTraceLog : ILogger
-        {
-            private readonly ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
-
-            public IEnumerable<Exception> Exceptions => exceptions;
-
-            public LogLevel Level { get; set; } = LogLevel.Verbose;
-            public bool Enabled { get; set; } = true;
-
-            public void WriteLine(KerberosLogSource source, string value)
-            {
-
-            }
-
-            public void WriteLine(KerberosLogSource source, Exception ex)
-            {
-                WriteLine(source, "", ex);
-            }
-
-            public void WriteLine(KerberosLogSource source, string value, Exception ex)
-            {
-                exceptions.Add(ex);
-            }
-        }
-
-        public class FakeRealmService : IRealmService
-        {
-            private readonly string realm;
-
-            public FakeRealmService(string realm)
-            {
-                this.realm = realm;
-            }
-
-            public IRealmSettings Settings => new FakeRealmSettings();
-
-            public IPrincipalService Principals => new FakePrincipalService();
-
-            public string Name => realm;
-
-            public DateTimeOffset Now()
-            {
-                return DateTimeOffset.UtcNow;
-            }
-        }
-
-        internal class FakePrincipalService : IPrincipalService
-        {
-            public Task<IKerberosPrincipal> Find(string principalName)
-            {
-                IKerberosPrincipal principal = new FakeKerberosPrincipal(principalName);
-
-                return Task.FromResult(principal);
-            }
-
-            public Task<IKerberosPrincipal> RetrieveKrbtgt()
-            {
-                IKerberosPrincipal krbtgt = new FakeKerberosPrincipal("krbtgt");
-
-                return Task.FromResult(krbtgt);
-            }
-        }
-
-        internal class FakeKerberosPrincipal : IKerberosPrincipal
-        {
-            private static readonly byte[] KrbTgtKey = new byte[] {
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0
-            };
-
-            private static readonly SecurityIdentifier domainSid = new SecurityIdentifier(IdentifierAuthority.NTAuthority, new int[] {
-                123,456,789,012,321
-            }, 0);
-
-            private readonly SecurityIdentifier userSid = new SecurityIdentifier(
-                IdentifierAuthority.NTAuthority,
-                domainSid.SubAuthorities.Concat(new[] { 888 }).ToArray(),
-                0
-            );
-
-            private readonly SecurityIdentifier groupSid = new SecurityIdentifier(
-                IdentifierAuthority.NTAuthority,
-                domainSid.SubAuthorities.Concat(new[] { 513 }).ToArray(),
-                0
-            );
-
-            private readonly static byte[] FakePassword = Encoding.Unicode.GetBytes("P@ssw0rd!");
-
-            private const string realm = "CORP.IDENTITYINTERVENTION.COM";
-
-            public FakeKerberosPrincipal(string principalName)
-            {
-                PrincipalName = principalName;
-                Expires = DateTimeOffset.UtcNow.AddMonths(9999);
-            }
-
-            public SupportedEncryptionTypes SupportedEncryptionTypes { get; set; }
-                 = SupportedEncryptionTypes.Aes128CtsHmacSha196 |
-                   SupportedEncryptionTypes.Aes256CtsHmacSha196 |
-                   SupportedEncryptionTypes.Rc4Hmac |
-                   SupportedEncryptionTypes.DesCbcCrc |
-                   SupportedEncryptionTypes.DesCbcMd5;
-
-            public IEnumerable<PaDataType> SupportedPreAuthenticationTypes { get; set; } = new[] { PaDataType.PA_ENC_TIMESTAMP };
-
-            public string PrincipalName { get; set; }
-
-            public DateTimeOffset? Expires { get; set; }
-
-            public Task<PrivilegedAttributeCertificate> GeneratePac()
-            {
-                var pac = new PrivilegedAttributeCertificate()
-                {
-                    LogonInfo = new PacLogonInfo
-                    {
-                        DomainName = realm,
-                        UserName = PrincipalName,
-                        UserDisplayName = PrincipalName,
-                        BadPasswordCount = 12,
-                        SubAuthStatus = 0,
-                        DomainSid = domainSid,
-                        UserSid = userSid,
-                        GroupSid = groupSid,
-                        LogonTime = DateTimeOffset.UtcNow,
-                        ServerName = "server"
-                    }
-                };
-
-                return Task.FromResult(pac);
-            }
-
-            private static readonly KerberosKey TgtKey = new KerberosKey(
-                password: KrbTgtKey,
-                principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { "krbtgt" }),
-                etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
-                saltType: SaltType.ActiveDirectoryUser
-            );
-
-            private static readonly ConcurrentDictionary<string, KerberosKey> KeyCache = new ConcurrentDictionary<string, KerberosKey>();
-
-            public Task<KerberosKey> RetrieveLongTermCredential()
-            {
-                KerberosKey key;
-
-                if (PrincipalName == "krbtgt")
-                {
-                    key = TgtKey;
-                }
-                else
-                {
-                    key = KeyCache.GetOrAdd(PrincipalName, pn =>
-                    {
-                        EncryptionType etype = ExtractEType(PrincipalName);
-
-                        return new KerberosKey(
-                            password: FakePassword,
-                            principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { PrincipalName }),
-                            etype: etype,
-                            saltType: SaltType.ActiveDirectoryUser
-                        );
-                    });
-                }
-
-                return Task.FromResult(key);
-            }
-
-            private EncryptionType ExtractEType(string principalName)
-            {
-                if (principalName.StartsWith("RC4"))
-                {
-                    return EncryptionType.RC4_HMAC_NT;
-                }
-                else if (principalName.StartsWith("AES128"))
-                {
-                    return EncryptionType.AES128_CTS_HMAC_SHA1_96;
-                }
-                else if (principalName.StartsWith("AES256"))
-                {
-                    return EncryptionType.AES256_CTS_HMAC_SHA1_96;
-                }
-
-                return EncryptionType.AES256_CTS_HMAC_SHA1_96;
-            }
-        }
-
-        internal class FakeRealmSettings : IRealmSettings
-        {
-            public TimeSpan MaximumSkew => TimeSpan.FromMinutes(5);
-
-            public TimeSpan SessionLifetime => TimeSpan.FromHours(10);
-
-            public TimeSpan MaximumRenewalWindow => TimeSpan.FromDays(7);
         }
     }
 }

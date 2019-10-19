@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Dns;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Net.Sockets;
 using System.Threading;
@@ -11,9 +12,13 @@ namespace Kerberos.NET.Transport
     {
         private const string TcpServiceTemplate = "_kerberos._tcp.{0}";
 
-        public TcpKerberosTransport(string kdc = null)
+        private readonly ILogger<TcpKerberosTransport> logger;
+
+        public TcpKerberosTransport(ILoggerFactory logger, string kdc = null)
             : base(kdc)
         {
+            this.logger = logger.CreateLoggerSafe<TcpKerberosTransport>();
+
             Enabled = true;
         }
 
@@ -27,7 +32,7 @@ namespace Kerberos.NET.Transport
         {
             var target = LocateKdc(domain);
 
-            Log($"TCP connecting to {target.Target}");
+            logger.LogInformation("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
 
             using (var client = new TcpClient(AddressFamily.InterNetwork))
             {

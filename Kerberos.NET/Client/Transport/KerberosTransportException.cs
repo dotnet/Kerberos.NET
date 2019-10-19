@@ -1,10 +1,11 @@
 ﻿using Kerberos.NET.Entities;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 namespace Kerberos.NET.Transport
 {
-
+    [ExcludeFromCodeCoverage]
     [Serializable]
     public class KerberosTransportException : KerberosProtocolException
     {

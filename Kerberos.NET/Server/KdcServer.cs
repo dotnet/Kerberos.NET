@@ -1,8 +1,8 @@
 ﻿using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
 
@@ -15,9 +15,12 @@ namespace Kerberos.NET.Server
     {
         private readonly ListenerOptions options;
 
+        private readonly ILogger<KdcServer> logger;
+
         public KdcServer(ListenerOptions options)
         {
             this.options = options;
+            this.logger = options.Log.CreateLoggerSafe<KdcServer>();
 
             RegisterMessageHandler(MessageType.KRB_AS_REQ, (message, op) => new KdcAsReqMessageHandler(message, op));
             RegisterMessageHandler(MessageType.KRB_TGS_REQ, (message, op) => new KdcTgsReqMessageHandler(message, op));
@@ -58,12 +61,21 @@ namespace Kerberos.NET.Server
             try
             {
                 messageHandler = LocateMessageHandler(request);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Message handler could not be located for message");
 
+                return KdcMessageHandlerBase.GenerateGenericError(ex, options);
+            }
+
+            try
+            {
                 return await messageHandler.Execute();
             }
             catch (Exception ex)
             {
-                Log(ex);
+                logger.LogWarning(ex, "Message handler {MessageHandler} could not process message", messageHandler.GetType());
 
                 return KdcMessageHandlerBase.GenerateGenericError(ex, options);
             }
@@ -102,12 +114,6 @@ namespace Kerberos.NET.Server
             AsnReader reader = new AsnReader(request.First, AsnEncodingRules.DER);
 
             return reader.PeekTag();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Log(Exception ex)
-        {
-            options?.Log?.WriteLine(KerberosLogSource.Kdc, ex);
         }
     }
 }

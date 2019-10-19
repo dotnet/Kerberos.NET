@@ -1,6 +1,5 @@
 ﻿using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Linq;
 
 namespace Tests.Kerberos.NET
@@ -9,7 +8,7 @@ namespace Tests.Kerberos.NET
     public class KdcReqTests : BaseTest
     {
         [TestMethod]
-        public void TestParseAsReq()
+        public void ParseAsReq()
         {
             var asReqBin = ReadDataFile("messages\\as-req").Skip(4).ToArray();
 
@@ -23,7 +22,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TestParseAsReqWithPaData()
+        public void ParseAsReqWithPaData()
         {
             var asReqBin = ReadDataFile("messages\\as-req-preauth").Skip(4).ToArray();
 

@@ -4,7 +4,7 @@ using Kerberos.NET.Win32;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
-namespace Tests.Kerberos.NET.Win32
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class SspiTests

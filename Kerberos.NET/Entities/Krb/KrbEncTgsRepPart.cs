@@ -7,4 +7,3 @@ namespace Kerberos.NET.Entities
         public override KeyUsage KeyUsage => KeyUsage.EncTgsRepPartSubSessionKey;
     }
 }
-  

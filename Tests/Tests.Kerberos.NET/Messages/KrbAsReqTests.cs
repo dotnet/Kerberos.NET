@@ -1,4 +1,5 @@
-﻿using Kerberos.NET.Client;
+﻿using Kerberos.NET;
+using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
@@ -6,15 +7,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 using System.Text;
-using Kerberos.NET;
 
-namespace Tests.Kerberos.NET.Messages
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class KrbAsReqTests : BaseTest
     {
         [TestMethod]
-        public void TestAsReqRoundtripParse()
+        public void AsReqRoundtripParse()
         {
             var creds = new KerberosPasswordCredential("sdfsdfsdf", "sdfsdfsdf", "sdfsdfsdf");
 
@@ -28,7 +28,7 @@ namespace Tests.Kerberos.NET.Messages
         }
 
         [TestMethod]
-        public void TestParseAsReqApplicationMessage()
+        public void ParseAsReqApplicationMessage()
         {
             var asReqBin = ReadDataFile("messages\\as-req").Skip(4).ToArray();
 
@@ -43,7 +43,7 @@ namespace Tests.Kerberos.NET.Messages
         }
 
         [TestMethod]
-        public void TestDecryptAsReqApplicationMessage()
+        public void DecryptAsReqApplicationMessage()
         {
             var asReqBin = ReadDataFile("messages\\as-req-preauth").Skip(4).ToArray();
 
@@ -75,7 +75,7 @@ namespace Tests.Kerberos.NET.Messages
         }
 
         [TestMethod]
-        public void TestGenerateAsReqApplicationMessage()
+        public void GenerateAsReqApplicationMessage()
         {
             var ts = new KrbPaEncTsEnc
             {

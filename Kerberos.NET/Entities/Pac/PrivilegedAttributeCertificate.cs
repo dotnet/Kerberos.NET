@@ -114,8 +114,6 @@ namespace Kerberos.NET.Entities
             }
 
             DecodingErrors = errors;
-
-            HasRequiredFields = ServerSignature != null && KdcSignature != null;
         }
 
         public IEnumerable<PacDecodeError> DecodingErrors { get; }
@@ -194,7 +192,7 @@ namespace Kerberos.NET.Entities
 
         public PacDelegationInfo DelegationInformation { get; set; }
 
-        public bool HasRequiredFields { get; private set; }
+        public bool HasRequiredFields => ServerSignature != null && KdcSignature != null;
 
         public ReadOnlyMemory<byte> Encode(KerberosKey kdcKey, KerberosKey serverKey)
         {

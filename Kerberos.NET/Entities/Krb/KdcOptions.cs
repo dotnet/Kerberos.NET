@@ -3,7 +3,7 @@
 namespace Kerberos.NET.Entities
 {
     [Flags]
-    public enum KdcOptions 
+    public enum KdcOptions
     {
         Reserved = 1 << 31,
         Forwardable = 1 << 30,

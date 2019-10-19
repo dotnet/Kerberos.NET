@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Kerberos.NET.Crypto;
+using System;
 using System.Runtime.InteropServices;
-using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -90,7 +90,7 @@ namespace Kerberos.NET.Entities.Pac
             Validator = CryptoService.CreateChecksum(Type, Signature, pacUnsigned);
 
             Validator.Sign(key);
-            
+
             Signature = MemoryMarshal.AsMemory(Validator.Signature);
 
             IsDirty = true;
