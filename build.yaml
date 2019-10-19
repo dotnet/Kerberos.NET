@@ -1,0 +1,83 @@
+pool:
+  name: Hosted Windows 2019 with VS2019
+  demands:
+  - msbuild
+  - visualstudio
+  - vstest
+
+#Your build pipeline references an undefined variable named ‘Parameters.ArtifactName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Use dotnet sdk 2.x'
+  inputs:
+    version: 2.x
+    includePreviewVersions: true
+
+- task: UseDotNet@2
+  displayName: 'Use .NET Core SDK 3.0.0'
+  inputs:
+    version: 3.x
+    includePreviewVersions: true
+  enabled: false
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: restore
+    projects: '.\Kerberos.NET\Kerberos.NET.csproj'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore tests (DO NOT DISABLE IDIOT)'
+  inputs:
+    command: restore
+    projects: '.\tests\Tests.Kerberos.NET\Tests.Kerberos.NET.csproj'
+
+- task: MSBuild@1
+  displayName: 'Build solution Kerberos.NET.sln'
+  inputs:
+    solution: Kerberos.NET.sln
+    msbuildVersion: 16.0
+    configuration: Release
+    msbuildArguments: '-p:Version=$(Build.BuildNumber)'
+    restoreNugetPackages: true
+  enabled: false
+
+- task: VSBuild@1
+  displayName: 'Build solution Build.Kerberos.NET.sln'
+  inputs:
+    solution: Build.Kerberos.NET.sln
+    msbuildArgs: '-p:Version=$(Build.BuildNumber)'
+    configuration: Release
+    createLogFile: true
+    logFileVerbosity: diagnostic
+
+- task: VSTest@2
+  displayName: VsTest
+  inputs:
+    testAssemblyVer2: |
+     **\tests.kerberos.net.dll
+     !**\obj\**
+    codeCoverageEnabled: false
+    otherConsoleOptions: '/framework:".NETCoreApp,Version=v2.1"'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet package'
+  inputs:
+    command: pack
+    packagesToPack: Kerberos.NET/Kerberos.NET.csproj
+    nobuild: true
+    versioningScheme: byBuildNumber
+
+- task: PublishSymbols@2
+  displayName: 'Publish symbols path'
+  inputs:
+    SearchPattern: '**\bin\**\*.pdb'
+    SymbolServerType: TeamServices
+  continueOnError: true
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+    ArtifactName: '$(Parameters.ArtifactName)'
+  condition: succeededOrFailed()
