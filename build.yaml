@@ -1,65 +1,67 @@
-pool:
-  name: Hosted Windows 2019 with VS2019
-  demands:
-  - msbuild
-  - visualstudio
-  - vstest
+trigger:
+- master
+- rel/*
 
-name: $(MajorVersion).$(MinorVersion).$(BuildID).$(Rev:r)
+pr:
+- master
+- rel/*
+
+pool:
+  vmImage: windows-latest
+
+variables:
+  BuildConfiguration: Release
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
 steps:
 - task: UseDotNet@2
-  displayName: 'Use dotnet sdk 2.x'
+  displayName: 'Use .NET Core SDK 3.0.x'
   inputs:
-    version: 2.x
-    includePreviewVersions: true
+    version: 3.0.x
+    performMultiLevelLookup: true
 
 - task: DotNetCoreCLI@2
-  displayName: 'dotnet restore'
   inputs:
-    command: restore
-    projects: '.\Kerberos.NET\Kerberos.NET.csproj'
+    command: custom
+    custom: tool
+    arguments: install --tool-path . nbgv
+  displayName: Install NBGV tool
+
+- script: nbgv cloud
+  displayName: Set Version
+
+- task: MSBuild@1
+  displayName: 'Build solution Kerberos.NET.sln'
+  inputs:
+    solution: Kerberos.NET.sln
+    configuration: $(BuildConfiguration)
+    msbuildArguments: /restore /p:CreatePackage=true
+    maximumCpuCount: true
+
 
 - task: DotNetCoreCLI@2
-  displayName: 'dotnet restore tests (DO NOT DISABLE IDIOT)'
   inputs:
-    command: restore
-    projects: '.\tests\Tests.Kerberos.NET\Tests.Kerberos.NET.csproj'
-
-- task: VSBuild@1
-  displayName: 'Build solution Build.Kerberos.NET.sln'
-  inputs:
-    solution: Build.Kerberos.NET.sln
-    msbuildArgs: '-p:Version=$(MajorVersion).$(MinorVersion).$(BuildID).$(Rev:r)'
-    configuration: Release
-    createLogFile: true
-    logFileVerbosity: diagnostic
-
-- task: VSTest@2
-  displayName: VsTest
-  inputs:
-    testAssemblyVer2: |
-     **\tests.kerberos.net.dll
-     !**\obj\**
-    codeCoverageEnabled: false
-    otherConsoleOptions: '/framework:".NETCoreApp,Version=v2.1"'
+    command: test
+    projects: Tests/**/*.csproj
+    arguments: -c $(BuildConfiguration) --no-build --no-restore --settings CodeCoverage.runsettings --collect:"XPlat Code Coverage" 
+  displayName: Run Unit Tests
 
 - task: DotNetCoreCLI@2
-  displayName: 'dotnet package'
   inputs:
-    command: pack
-    packagesToPack: Kerberos.NET/Kerberos.NET.csproj
-    nobuild: true
-    versioningScheme: byBuildNumber
+    command: custom
+    custom: tool
+    arguments: install --tool-path . dotnet-reportgenerator-globaltool
+  displayName: Install ReportGenerator tool
 
-- task: PublishSymbols@2
-  displayName: 'Publish symbols path'
-  inputs:
-    SearchPattern: '**\bin\**\*.pdb'
-    SymbolServerType: TeamServices
-  continueOnError: true
+- script: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/coverlet/reports -reporttypes:"Cobertura"
+  displayName: Create reports
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact'
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish code coverage'
   inputs:
-    ArtifactName: '$(Parameters.ArtifactName)'
-  condition: succeededOrFailed()
+    codeCoverageTool: Cobertura
+    summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml
+
+- publish: artifacts
+  displayName: Publish build packages
+  artifact: BuildPackages

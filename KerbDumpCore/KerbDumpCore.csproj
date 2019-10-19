@@ -16,6 +16,10 @@
   </ItemGroup>
     
   <ItemGroup>
+    <Compile Remove="..\KerbDump\Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+    
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3-beta2" />
   </ItemGroup>
     
