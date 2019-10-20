@@ -18,7 +18,6 @@ namespace KerberosKdcHostApp
                 {
                     factory.AddConsole(opt => opt.IncludeScopes = true);
                     factory.AddFilter<ConsoleLoggerProvider>(level => level >= LogLevel.Trace);
-
                 });
 
             var host = builder.Build();

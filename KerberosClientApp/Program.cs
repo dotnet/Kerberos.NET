@@ -46,50 +46,51 @@ namespace KerberosClientApp
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            using KerberosClient client = new KerberosClient(overrideKdc);
-
-            await client.Authenticate(kerbCred);
-
-            spn ??= "host/appservice.corp.identityintervention.com";
-
-            KrbTicket s4uTicket = null;
-
-            if (!string.IsNullOrWhiteSpace(s4u))
+            using (KerberosClient client = new KerberosClient(overrideKdc))
             {
-                var s4uSelf = await client.GetServiceTicket(
-                    kerbCred.UserName,
+                await client.Authenticate(kerbCred);
+
+                spn = spn ?? "host/appservice.corp.identityintervention.com";
+
+                KrbTicket s4uTicket = null;
+
+                if (!string.IsNullOrWhiteSpace(s4u))
+                {
+                    var s4uSelf = await client.GetServiceTicket(
+                        kerbCred.UserName,
+                        ApOptions.MutualRequired,
+                        s4u: s4u
+                    );
+
+                    s4uTicket = s4uSelf.Ticket;
+                }
+
+                var ticket = await client.GetServiceTicket(
+                    spn,
                     ApOptions.MutualRequired,
-                    s4u: s4u
+                    s4uTicket: s4uTicket
                 );
 
-                s4uTicket = s4uSelf.Ticket;
-            }
+                var encoded = ticket.EncodeApplication().ToArray();
 
-            var ticket = await client.GetServiceTicket(
-                spn,
-                ApOptions.MutualRequired,
-                s4uTicket: s4uTicket
-            );
-
-            var encoded = ticket.EncodeApplication().ToArray();
-
-            var authenticator = new KerberosAuthenticator(
-                new KeyTable(
-                    new KerberosKey(
-                        "P@ssw0rd!",
-                        principalName: new PrincipalName(
-                            PrincipalNameType.NT_PRINCIPAL,
-                            "CORP.IDENTITYINTERVENTION.com",
-                            new[] { spn }
-                        ),
-                        saltType: SaltType.ActiveDirectoryUser
+                var authenticator = new KerberosAuthenticator(
+                    new KeyTable(
+                        new KerberosKey(
+                            "P@ssw0rd!",
+                            principalName: new PrincipalName(
+                                PrincipalNameType.NT_PRINCIPAL,
+                                "CORP.IDENTITYINTERVENTION.com",
+                                new[] { spn }
+                            ),
+                            saltType: SaltType.ActiveDirectoryUser
+                        )
                     )
-                )
-            );
+                );
 
-            var validated = (KerberosIdentity)await authenticator.Authenticate(encoded);
+                var validated = (KerberosIdentity)await authenticator.Authenticate(encoded);
 
-            DumpClaims(validated);
+                DumpClaims(validated);
+            }
         }
 
         private static void DumpClaims(KerberosIdentity validated)
