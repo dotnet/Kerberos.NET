@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="AsnXmlGenerator">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
@@ -8,54 +8,55 @@
     <Product>Kerberos.NET library</Product>
     <Description>A cross-platform, pure managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
     <PackageTags>security kerberos</PackageTags>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>    
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <ItemGroup>
-    <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
-    <AsnXml Include="Entities\Krb\KrbApReq.xml" />
-    <AsnXml Include="Entities\Krb\KrbApRep.xml" />
-    <AsnXml Include="Entities\Krb\KrbAsReq.xml" />
-    <AsnXml Include="Entities\Krb\KrbAsRep.xml" />
-    <AsnXml Include="Entities\Krb\KrbAuthenticator.xml" />
-    <AsnXml Include="Entities\Krb\KrbAuthorizationData.xml" />
-    <AsnXml Include="Entities\Krb\KrbAuthorizationDataSequence.xml" />
-    <AsnXml Include="Entities\Krb\KrbChecksum.xml" />
-    <AsnXml Include="Entities\Krb\KrbCred.xml" />
-    <AsnXml Include="Entities\Krb\KrbCredInfo.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncKrbCredPart.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncryptedData.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncryptionKey.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncAsRepPart.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncApRepPart.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncKdcRepPart.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncTgsRepPart.xml" />
-    <AsnXml Include="Entities\Krb\KrbEncTicketPart.xml" />
-    <AsnXml Include="Entities\Krb\KrbError.xml" />
-    <AsnXml Include="Entities\Krb\KrbETypeInfo2.xml" />
-    <AsnXml Include="Entities\Krb\KrbETypeInfo2Entry.xml" />
-    <AsnXml Include="Entities\Krb\KrbETypeInfoEntry.xml" />
-    <AsnXml Include="Entities\Krb\KrbHostAddress.xml" />
-    <AsnXml Include="Entities\Krb\KrbKdcRep.xml" />
-    <AsnXml Include="Entities\Krb\KrbKdcReq.xml" />
-    <AsnXml Include="Entities\Krb\KrbKdcReqBody.xml" />
-    <AsnXml Include="Entities\Krb\KrbLastReq.xml" />
-    <AsnXml Include="Entities\Krb\KrbMethodData.xml" />
-    <AsnXml Include="Entities\Krb\KrbPaData.xml" />
-    <AsnXml Include="Entities\Krb\KrbPaEncTsEnc.xml" />
-    <AsnXml Include="Entities\Krb\KrbPaForUser.xml" />
-    <AsnXml Include="Entities\Krb\KrbPaPacOptions.xml" />
-    <AsnXml Include="Entities\Krb\KrbPaPacRequest.xml" />
-    <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
-    <AsnXml Include="Entities\Krb\KrbTgsReq.xml" />
-    <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
-    <AsnXml Include="Entities\Krb\KrbTicket.xml" />
-    <AsnXml Include="Entities\Krb\KrbTransitedEncoding.xml" />
-    <AsnXml Include="Entities\SpNego\NegotiationToken.xml" />
-    <AsnXml Include="Entities\SpNego\NegTokenInit.xml" />
-    <AsnXml Include="Entities\SpNego\NegTokenResp.xml" />
-
-  </ItemGroup>
+  <Target Name="AsnXmlGenerator">
+    <ItemGroup>
+      <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
+      <AsnXml Include="Entities\Krb\KrbApReq.xml" />
+      <AsnXml Include="Entities\Krb\KrbApRep.xml" />
+      <AsnXml Include="Entities\Krb\KrbAsReq.xml" />
+      <AsnXml Include="Entities\Krb\KrbAsRep.xml" />
+      <AsnXml Include="Entities\Krb\KrbAuthenticator.xml" />
+      <AsnXml Include="Entities\Krb\KrbAuthorizationData.xml" />
+      <AsnXml Include="Entities\Krb\KrbAuthorizationDataSequence.xml" />
+      <AsnXml Include="Entities\Krb\KrbChecksum.xml" />
+      <AsnXml Include="Entities\Krb\KrbCred.xml" />
+      <AsnXml Include="Entities\Krb\KrbCredInfo.xml" />
+      <AsnXml Include="Entities\Krb\KrbEncKrbCredPart.xml" />
+      <AsnXml Include="Entities\Krb\KrbEncryptedData.xml" />
+      <AsnXml Include="Entities\Krb\KrbEncryptionKey.xml" />
+      <AsnXml Include="Entities\Krb\KrbEncAsRepPart.xml" />
+      <AsnXml Include="Entities\Krb\KrbEncApRepPart.xml" />
+      <AsnXml Include="Entities\Krb\KrbEncKdcRepPart.xml" />
+      <AsnXml Include="Entities\Krb\KrbEncTgsRepPart.xml" />
+      <AsnXml Include="Entities\Krb\KrbEncTicketPart.xml" />
+      <AsnXml Include="Entities\Krb\KrbError.xml" />
+      <AsnXml Include="Entities\Krb\KrbETypeInfo2.xml" />
+      <AsnXml Include="Entities\Krb\KrbETypeInfo2Entry.xml" />
+      <AsnXml Include="Entities\Krb\KrbETypeInfoEntry.xml" />
+      <AsnXml Include="Entities\Krb\KrbHostAddress.xml" />
+      <AsnXml Include="Entities\Krb\KrbKdcRep.xml" />
+      <AsnXml Include="Entities\Krb\KrbKdcReq.xml" />
+      <AsnXml Include="Entities\Krb\KrbKdcReqBody.xml" />
+      <AsnXml Include="Entities\Krb\KrbLastReq.xml" />
+      <AsnXml Include="Entities\Krb\KrbMethodData.xml" />
+      <AsnXml Include="Entities\Krb\KrbPaData.xml" />
+      <AsnXml Include="Entities\Krb\KrbPaEncTsEnc.xml" />
+      <AsnXml Include="Entities\Krb\KrbPaForUser.xml" />
+      <AsnXml Include="Entities\Krb\KrbPaPacOptions.xml" />
+      <AsnXml Include="Entities\Krb\KrbPaPacRequest.xml" />
+      <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
+      <AsnXml Include="Entities\Krb\KrbTgsReq.xml" />
+      <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
+      <AsnXml Include="Entities\Krb\KrbTicket.xml" />
+      <AsnXml Include="Entities\Krb\KrbTransitedEncoding.xml" />
+      <AsnXml Include="Entities\SpNego\NegotiationToken.xml" />
+      <AsnXml Include="Entities\SpNego\NegTokenInit.xml" />
+      <AsnXml Include="Entities\SpNego\NegTokenResp.xml" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
