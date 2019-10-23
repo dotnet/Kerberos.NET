@@ -68,6 +68,14 @@ namespace Kerberos.NET.Entities
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Now(out DateTimeOffset time, out int? usec)
+        {
+            Now(out time, out int usecExplicit);
+
+            usec = usecExplicit;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlySpan<byte> UnicodeBytesToUtf8(byte[] str)
         {
             return Encoding.Convert(Encoding.Unicode, Encoding.UTF8, str, 0, str.Length);

@@ -18,157 +18,252 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class ClientToKdcE2ETests
     {
+        private const string AdminAtCorpUserName = "administrator@corp.identityintervention.com";
+        private const string FakeAdminAtCorpPassword = "P@ssw0rd!";
+        private const string FakeAppServiceSpn = "host/appservice.corp.identityintervention.com";
+
+        private const int ConcurrentThreads = 5;
+        private const int RequestsPerThread = 100;
+
+        private static readonly Random rng = new Random();
+
+        private static int NextPort()
+        {
+            return rng.Next(20000, 40000);
+        }
+
         [TestMethod]
         public async Task E2E()
         {
-            var port = new Random().Next(20000, 40000);
+            var port = NextPort();
 
-            var options = new ListenerOptions
+            using (var listener = StartListener(port))
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
-                IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
-                ReceiveTimeout = TimeSpan.FromHours(1)
-            };
-
-            using (KdcServiceListener listener = new KdcServiceListener(options))
-            {
-                _ = listener.Start();
-
-                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}");
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}"
+                );
 
                 listener.Stop();
             }
         }
 
         [TestMethod]
-        public async Task E2EWithCaching()
+        public async Task E2E_NoPac()
         {
-            var port = new Random().Next(20000, 40000);
+            var port = NextPort();
 
-            var options = new ListenerOptions
+            using (var listener = StartListener(port))
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
-                IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
-                ReceiveTimeout = TimeSpan.FromHours(1)
-            };
-
-            using (KdcServiceListener listener = new KdcServiceListener(options))
-            {
-                _ = listener.Start();
-
-                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}", caching: true);
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    includePac: false
+                );
 
                 listener.Stop();
             }
         }
 
         [TestMethod]
-        public async Task E2EWithNegotiate()
+        public async Task E2E_WithCaching()
         {
-            var port = new Random().Next(20000, 40000);
+            var port = NextPort();
 
-            var options = new ListenerOptions
+            using (var listener = StartListener(port))
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
-                IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
-                ReceiveTimeout = TimeSpan.FromHours(1)
-            };
-
-            using (KdcServiceListener listener = new KdcServiceListener(options))
-            {
-                _ = listener.Start();
-
-                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}", encodeNego: true);
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    caching: true
+                );
 
                 listener.Stop();
             }
         }
 
         [TestMethod]
-        public async Task E2ES4U()
+        public async Task E2E_WithCaching_NoPac()
         {
-            var port = new Random().Next(20000, 40000);
+            var port = NextPort();
 
-            var options = new ListenerOptions
+            using (var listener = StartListener(port))
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
-                IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
-                ReceiveTimeout = TimeSpan.FromHours(1)
-            };
-
-            using (KdcServiceListener listener = new KdcServiceListener(options))
-            {
-                _ = listener.Start();
-
-                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}", s4u: "blah@corp.identityintervention.com");
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    caching: true,
+                    includePac: false
+                );
 
                 listener.Stop();
             }
         }
 
         [TestMethod]
-        public async Task U2U()
+        public async Task E2E_WithNegotiate()
         {
-            var port = new Random().Next(20000, 40000);
+            var port = NextPort();
 
-            var options = new ListenerOptions
+            using (var listener = StartListener(port))
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
-                IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
-                ReceiveTimeout = TimeSpan.FromHours(1)
-            };
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    encodeNego: true
+                );
 
-            KdcServiceListener listener = new KdcServiceListener(options);
+                listener.Stop();
+            }
+        }
 
-            _ = listener.Start();
 
-            var kerbClientCred = new KerberosPasswordCredential("administrator@corp.identityintervention.com", "P@ssw0rd!");
-            var client = new KerberosClient($"127.0.0.1:{port}");
+        [TestMethod]
+        public async Task E2E_WithNegotiate_NoCache()
+        {
+            var port = NextPort();
 
-            await client.Authenticate(kerbClientCred);
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    encodeNego: true,
+                    caching: false
+                );
 
-            var kerbServerCred = new KerberosPasswordCredential("u2u@corp.identityintervention.com", "P@ssw0rd!");
-            var server = new KerberosClient($"127.0.0.1:{port}");
+                listener.Stop();
+            }
+        }
 
-            await server.Authenticate(kerbClientCred);
+        [TestMethod]
+        public async Task E2E_WithNegotiate_NoCache_NoPac()
+        {
+            var port = NextPort();
 
-            var serverEntry = await server.Cache.Get<KerberosClientCacheEntry>($"krbtgt/{server.DefaultDomain}");
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    encodeNego: true,
+                    caching: false,
+                    includePac: false
+                );
 
-            var serverTgt = serverEntry.Ticket.Ticket;
+                listener.Stop();
+            }
+        }
 
-            var apReq = await client.GetServiceTicket("host/u2u", ApOptions.MutualRequired | ApOptions.UseSessionKey, u2uServerTicket: serverTgt);
+        [TestMethod]
+        public async Task E2E_WithNegotiate_NoPac()
+        {
+            var port = NextPort();
 
-            Assert.IsNotNull(apReq);
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    encodeNego: true,
+                    includePac: false
+                );
 
-            var decrypted = new DecryptedKrbApReq(apReq);
+                listener.Stop();
+            }
+        }
 
-            Assert.IsNull(decrypted.Ticket);
+        [TestMethod]
+        public async Task E2E_S4U()
+        {
+            var port = NextPort();
 
-            decrypted.Decrypt(serverEntry.SessionKey.AsKey());
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    s4u: "blah@corp.identityintervention.com"
+                );
 
-            decrypted.Validate(ValidationActions.All);
+                listener.Stop();
+            }
+        }
 
-            Assert.IsNotNull(decrypted.Ticket);
+        [TestMethod]
+        public async Task E2E_S4U_NoPac()
+        {
+            var port = NextPort();
 
-            Assert.AreEqual("host/u2u/CORP.IDENTITYINTERVENTION.COM", decrypted.SName.FullyQualifiedName);
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    s4u: "blah@corp.identityintervention.com",
+                    includePac: false
+                );
 
-            listener.Stop();
+                listener.Stop();
+            }
+        }
+
+        [TestMethod]
+        public async Task E2E_U2U()
+        {
+            var port = NextPort();
+
+            using (var listener = StartListener(port))
+            {
+                var kerbClientCred = new KerberosPasswordCredential(AdminAtCorpUserName, FakeAdminAtCorpPassword);
+                var kerbServerCred = new KerberosPasswordCredential("u2u@corp.identityintervention.com", FakeAdminAtCorpPassword);
+
+                using (var client = new KerberosClient($"127.0.0.1:{port}"))
+                using (var server = new KerberosClient($"127.0.0.1:{port}"))
+                {
+                    await client.Authenticate(kerbClientCred);
+
+                    await server.Authenticate(kerbClientCred);
+
+                    var serverEntry = await server.Cache.Get<KerberosClientCacheEntry>($"krbtgt/{server.DefaultDomain}");
+
+                    var serverTgt = serverEntry.Ticket.Ticket;
+
+                    var apReq = await client.GetServiceTicket("host/u2u", ApOptions.MutualRequired | ApOptions.UseSessionKey, u2uServerTicket: serverTgt);
+
+                    Assert.IsNotNull(apReq);
+
+                    var decrypted = new DecryptedKrbApReq(apReq);
+
+                    Assert.IsNull(decrypted.Ticket);
+
+                    decrypted.Decrypt(serverEntry.SessionKey.AsKey());
+
+                    decrypted.Validate(ValidationActions.All);
+
+                    Assert.IsNotNull(decrypted.Ticket);
+
+                    Assert.AreEqual("host/u2u/CORP.IDENTITYINTERVENTION.COM", decrypted.SName.FullyQualifiedName);
+                }
+
+                listener.Stop();
+            }
         }
 
         [TestMethod, ExpectedException(typeof(TimeoutException))]
         public async Task ReceiveTimeout()
         {
-            var port = new Random().Next(20000, 40000);
+            var port = NextPort();
             var log = new FakeExceptionLoggerFactory();
 
             var options = new ListenerOptions
@@ -187,7 +282,7 @@ namespace Tests.Kerberos.NET
 
             try
             {
-                await RequestAndValidateTickets("administrator@corp.identityintervention.com", "P@ssw0rd!", $"127.0.0.1:{port}");
+                await RequestAndValidateTickets(AdminAtCorpUserName, FakeAdminAtCorpPassword, $"127.0.0.1:{port}");
             }
             catch
             {
@@ -203,39 +298,104 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task E2EMultithreadedClient()
+        public async Task E2E_MultithreadedClient()
         {
-            var port = new Random().Next(20000, 40000);
+            var port = NextPort();
 
-            var options = new ListenerOptions
+            var threads = ConcurrentThreads;
+            var requests = RequestsPerThread;
+
+            var cacheTickets = false;
+            var encodeNego = false;
+            var includePac = false;
+
+            string kdc = $"127.0.0.1:{port}";
+            //string kdc = "10.0.0.21:88";
+
+            await MultithreadedRequests(port, threads, requests, cacheTickets, encodeNego, includePac, kdc);
+        }
+
+        [TestMethod]
+        public async Task E2E_MultithreadedClient_Cache()
+        {
+            var port = NextPort();
+
+            var threads = ConcurrentThreads;
+            var requests = RequestsPerThread;
+            var cacheTickets = true;
+            var encodeNego = false;
+            var includePac = false;
+
+            string kdc = $"127.0.0.1:{port}";
+            //string kdc = "10.0.0.21:88";
+
+            await MultithreadedRequests(port, threads, requests, cacheTickets, encodeNego, includePac, kdc);
+        }
+
+        [TestMethod]
+        public async Task E2E_MultithreadedClient_Cache_Nego()
+        {
+            var port = NextPort();
+
+            var threads = ConcurrentThreads;
+            var requests = RequestsPerThread;
+            var cacheTickets = true;
+            var encodeNego = true;
+            var includePac = false;
+
+            string kdc = $"127.0.0.1:{port}";
+            //string kdc = "10.0.0.21:88";
+
+            await MultithreadedRequests(port, threads, requests, cacheTickets, encodeNego, includePac, kdc);
+        }
+
+        [TestMethod]
+        public async Task E2E_MultithreadedClient_Cache_Nego_Pac()
+        {
+            var port = NextPort();
+
+            var threads = ConcurrentThreads;
+            var requests = RequestsPerThread;
+            var cacheTickets = true;
+            var encodeNego = true;
+            var includePac = true;
+
+            string kdc = $"127.0.0.1:{port}";
+            //string kdc = "10.0.0.21:88";
+
+            await MultithreadedRequests(port, threads, requests, cacheTickets, encodeNego, includePac, kdc);
+        }
+
+        private static async Task MultithreadedRequests(
+            int port,
+            int threads,
+            int requests,
+            bool cacheTickets,
+            bool encodeNego,
+            bool includePac,
+            string kdc
+        )
+        {
+            using (var listener = StartListener(port))
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
-                IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
-                ReceiveTimeout = TimeSpan.FromHours(1)
-            };
-
-            using (KdcServiceListener listener = new KdcServiceListener(options))
-            {
-                _ = listener.Start();
-
                 var exceptions = new List<Exception>();
 
-                var kerbCred = new KerberosPasswordCredential("administrator@corp.identityintervention.com", "P@ssw0rd!");
-
-                string kdc = $"127.0.0.1:{port}";
-                //string kdc = "10.0.0.21:88";
+                var kerbCred = new KerberosPasswordCredential(AdminAtCorpUserName, FakeAdminAtCorpPassword);
 
                 using (KerberosClient client = new KerberosClient(kdc))
                 {
-                    client.CacheServiceTickets = false;
+                    client.CacheServiceTickets = cacheTickets;
+
+                    if (!includePac)
+                    {
+                        client.AuthenticationOptions &= ~AuthenticationOptions.IncludePacRequest;
+                    }
 
                     await client.Authenticate(kerbCred);
 
-                    Task.WaitAll(Enumerable.Range(0, 2).Select(taskNum => Task.Run(async () =>
+                    Task.WaitAll(Enumerable.Range(0, threads).Select(taskNum => Task.Run(async () =>
                     {
-                        for (var i = 0; i < 100; i++)
+                        for (var i = 0; i < requests; i++)
                         {
                             try
                             {
@@ -246,13 +406,13 @@ namespace Tests.Kerberos.NET
 
                                 var ticket = await client.GetServiceTicket(new RequestServiceTicket
                                 {
-                                    ServicePrincipalName = "host/appservice.corp.identityintervention.com",
+                                    ServicePrincipalName = FakeAppServiceSpn,
                                     ApOptions = ApOptions.MutualRequired
                                 });
 
                                 Assert.IsNotNull(ticket.ApReq);
 
-                                await ValidateTicket(ticket);
+                                await ValidateTicket(ticket, encodeNego: encodeNego, includePac: includePac);
                             }
                             catch (Exception ex)
                             {
@@ -277,52 +437,59 @@ namespace Tests.Kerberos.NET
             string overrideKdc,
             string s4u = null,
             bool encodeNego = false,
-            bool caching = false
+            bool caching = false,
+            bool includePac = true
         )
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            KerberosClient client = new KerberosClient(overrideKdc) { CacheServiceTickets = caching };
-
-            await client.Authenticate(kerbCred);
-
-            var spn = "host/appservice.corp.identityintervention.com";
-
-            var ticket = await client.GetServiceTicket(
-                new RequestServiceTicket
+            using (var client = new KerberosClient(overrideKdc) { CacheServiceTickets = caching })
+            {
+                if (!includePac)
                 {
-                    ServicePrincipalName = spn,
-                    ApOptions = ApOptions.MutualRequired
+                    client.AuthenticationOptions &= ~AuthenticationOptions.IncludePacRequest;
                 }
-            );
 
-            await ValidateTicket(ticket);
+                await client.Authenticate(kerbCred);
 
-            await client.RenewTicket();
+                var spn = FakeAppServiceSpn;
 
-            ticket = await client.GetServiceTicket(
-                new RequestServiceTicket
-                {
-                    ServicePrincipalName = "host/appservice.corp.identityintervention.com",
-                    ApOptions = ApOptions.MutualRequired
-                }
-            );
+                var ticket = await client.GetServiceTicket(
+                    new RequestServiceTicket
+                    {
+                        ServicePrincipalName = spn,
+                        ApOptions = ApOptions.MutualRequired
+                    }
+                );
 
-            await ValidateTicket(ticket, encodeNego);
+                await ValidateTicket(ticket, includePac: includePac);
 
-            ticket = await client.GetServiceTicket(
-                new RequestServiceTicket
-                {
-                    ServicePrincipalName = "host/appservice.corp.identityintervention.com",
-                    ApOptions = ApOptions.MutualRequired,
-                    S4uTarget = s4u
-                }
-            );
+                await client.RenewTicket();
 
-            await ValidateTicket(ticket);
+                ticket = await client.GetServiceTicket(
+                    new RequestServiceTicket
+                    {
+                        ServicePrincipalName = FakeAppServiceSpn,
+                        ApOptions = ApOptions.MutualRequired
+                    }
+                );
+
+                await ValidateTicket(ticket, encodeNego, includePac: includePac);
+
+                ticket = await client.GetServiceTicket(
+                    new RequestServiceTicket
+                    {
+                        ServicePrincipalName = FakeAppServiceSpn,
+                        ApOptions = ApOptions.MutualRequired,
+                        S4uTarget = s4u
+                    }
+                );
+
+                await ValidateTicket(ticket, includePac: includePac);
+            }
         }
 
-        private static async Task ValidateTicket(ApplicationSessionContext context, bool encodeNego = false)
+        private static async Task ValidateTicket(ApplicationSessionContext context, bool encodeNego = false, bool includePac = true)
         {
             var ticket = context.ApReq;
 
@@ -340,11 +507,11 @@ namespace Tests.Kerberos.NET
             var authenticator = new KerberosAuthenticator(
                 new KeyTable(
                     new KerberosKey(
-                        "P@ssw0rd!",
+                        FakeAdminAtCorpPassword,
                         principalName: new PrincipalName(
                             PrincipalNameType.NT_PRINCIPAL,
                             "CORP.IDENTITYINTERVENTION.com",
-                            new[] { "host/appservice.corp.identityintervention.com" }
+                            new[] { FakeAppServiceSpn }
                         ),
                         saltType: SaltType.ActiveDirectoryUser
                     )
@@ -355,7 +522,16 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(validated);
 
-            Assert.AreEqual(validated.FindFirst(ClaimTypes.Sid).Value, "S-1-5-123-456-789-12-321-888");
+            var sidClaim = validated.FindFirst(ClaimTypes.Sid);
+
+            if (includePac)
+            {
+                Assert.AreEqual("S-1-5-123-456-789-12-321-888", sidClaim?.Value);
+            }
+            else
+            {
+                Assert.IsNull(sidClaim);
+            }
 
             var sessionKey = context.AuthenticateServiceResponse(validated.ApRep);
 
@@ -372,6 +548,24 @@ namespace Tests.Kerberos.NET
             }
 
             return service;
+        }
+
+        private static KdcServiceListener StartListener(int port)
+        {
+            var options = new ListenerOptions
+            {
+                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
+                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
+                IsDebug = true,
+                RealmLocator = realm => LocateRealm(realm),
+                ReceiveTimeout = TimeSpan.FromHours(1)
+            };
+
+            var listener = new KdcServiceListener(options);
+
+            _ = listener.Start();
+
+            return listener;
         }
     }
 }

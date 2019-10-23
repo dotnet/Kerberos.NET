@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Kerberos.NET.Entities
 {
-    public class ServiceTicketRequest
+    public struct ServiceTicketRequest
     {
         public IKerberosPrincipal Principal { get; set; }
 
@@ -28,7 +28,9 @@ namespace Kerberos.NET.Entities
         public DateTimeOffset EndTime { get; set; }
 
         public DateTimeOffset? RenewTill { get; set; }
-        
+
         public int Nonce { get; set; }
+
+        public bool IncludePac { get; set; }
     }
 }

@@ -164,7 +164,6 @@ namespace Kerberos.NET.Client
                     CTime = authenticator.CTime,
                     CuSec = authenticator.CuSec,
                     SequenceNumber = authenticator.SequenceNumber
-
                 };
             }
         }
@@ -193,8 +192,8 @@ namespace Kerberos.NET.Client
         }
 
         private async Task<KerberosClientCacheEntry> RequestTgs(
-            RequestServiceTicket rst, 
-            KerberosClientCacheEntry tgtEntry, 
+            RequestServiceTicket rst,
+            KerberosClientCacheEntry tgtEntry,
             CancellationToken cancellation
         )
         {

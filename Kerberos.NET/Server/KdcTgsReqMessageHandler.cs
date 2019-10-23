@@ -90,7 +90,8 @@ namespace Kerberos.NET.Server
                     StartTime = now - RealmService.Settings.MaximumSkew,
                     EndTime = now + RealmService.Settings.SessionLifetime,
                     Flags = KrbKdcRep.DefaultFlags,
-                    Now = now
+                    Now = now,
+                    IncludePac = krbtgtApReqDecrypted.Ticket.AuthorizationData.Any(a => a.Type == AuthorizationDataType.AdIfRelevant)
                 }
             );
 

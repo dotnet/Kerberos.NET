@@ -27,26 +27,23 @@ namespace Kerberos.NET.Entities
 
             var hostAddress = Environment.MachineName;
 
-            var padata = new List<KrbPaData>() {
+            var pacRequest = new KrbPaPacRequest
+            {
+                IncludePac = options.HasFlag(AuthenticationOptions.IncludePacRequest)
+            };
+
+            var padata = new List<KrbPaData>()
+            {
                 new KrbPaData
                 {
                     Type = PaDataType.PA_PAC_REQUEST,
-                    Value = new KrbPaPacRequest
-                    {
-                        IncludePac = options.HasFlag(AuthenticationOptions.IncludePacRequest)
-                    }.Encode().AsMemory()
+                    Value = pacRequest.Encode().AsMemory()
                 }
             };
 
             if (options.HasFlag(AuthenticationOptions.PreAuthenticate))
             {
-                KerberosConstants.Now(out DateTimeOffset timestamp, out int usec);
-
-                var ts = new KrbPaEncTsEnc
-                {
-                    PaTimestamp = timestamp,
-                    PaUSec = usec
-                };
+                var ts = KrbPaEncTsEnc.Now();
 
                 var tsEncoded = ts.Encode().AsMemory();
 

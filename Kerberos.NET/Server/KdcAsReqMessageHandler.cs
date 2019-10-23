@@ -78,7 +78,7 @@ namespace Kerberos.NET.Server
             return await GenerateAsRep(asReq, principal);
         }
 
-        private async Task<ReadOnlyMemory<byte>> GenerateAsRep(KrbKdcReq asReq, IKerberosPrincipal principal)
+        private async Task<ReadOnlyMemory<byte>> GenerateAsRep(KrbAsReq asReq, IKerberosPrincipal principal)
         {
             // 1. detect if specific PAC contents are requested (claims)
             // 2. if requested generate PAC for user
@@ -94,7 +94,25 @@ namespace Kerberos.NET.Server
                 await InvokePreAuthHandler(null, principal, requirements, handler.Value);
             }
 
-            var asRep = await KrbAsRep.GenerateTgt(principal, requirements, RealmService, asReq.Body);
+            var rst = new ServiceTicketRequest
+            {
+                Addresses = asReq.Body.Addresses,
+                Nonce = asReq.Body.Nonce,
+                IncludePac = true
+            };
+
+            var pacRequest = asReq.PaData.FirstOrDefault(pa => pa.Type == PaDataType.PA_PAC_REQUEST);
+
+            if (pacRequest != null)
+            {
+                var paPacRequest = KrbPaPacRequest.Decode(pacRequest.Value);
+
+                rst.IncludePac = paPacRequest.IncludePac;
+            }
+
+            var asRep = await KrbAsRep.GenerateTgt(principal, RealmService, rst);
+
+            asRep.PaData = requirements.ToArray();
 
             return asRep.EncodeApplication();
         }

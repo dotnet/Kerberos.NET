@@ -21,9 +21,11 @@ namespace Kerberos.NET.Entities
         }
 
         internal static KrbApReq CreateApReq(
-            KrbKdcRep tgsRep, 
-            KerberosKey authenticatorKey, 
-            ApOptions options, out KrbAuthenticator authenticator)
+            KrbKdcRep tgsRep,
+            KerberosKey authenticatorKey,
+            ApOptions options,
+            out KrbAuthenticator authenticator
+        )
         {
             var ticket = tgsRep.Ticket;
 
