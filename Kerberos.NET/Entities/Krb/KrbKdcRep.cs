@@ -23,7 +23,7 @@ namespace Kerberos.NET.Entities
         {
             var sessionKey = KrbEncryptionKey.Generate(request.ServicePrincipalKey.EncryptionType);
 
-            var authz = await GenerateAuthorizationData(request.Principal, request.ServicePrincipalKey);
+            var authz = await GenerateAuthorizationData(request.Principal, request);
 
             var cname = KrbPrincipalName.FromPrincipal(request.Principal, realm: request.RealmName);
 
@@ -144,7 +144,7 @@ namespace Kerberos.NET.Entities
 
         private static async Task<IEnumerable<KrbAuthorizationData>> GenerateAuthorizationData(
             IKerberosPrincipal principal,
-            KerberosKey krbtgt
+            ServiceTicketRequest request
         )
         {
             // authorization-data is annoying because it's a sequence of 
@@ -166,27 +166,30 @@ namespace Kerberos.NET.Entities
             //   ...
             // ]
 
-            var pac = await principal.GeneratePac();
-
             var authz = new List<KrbAuthorizationData>();
 
-            var sequence = new KrbAuthorizationDataSequence
+            if (request.IncludePac)
             {
-                AuthorizationData = new[]
+                var pac = await principal.GeneratePac();
+
+                var sequence = new KrbAuthorizationDataSequence
                 {
+                    AuthorizationData = new[]
+                    {
                     new KrbAuthorizationData
                     {
                         Type = AuthorizationDataType.AdWin2kPac,
-                        Data = pac.Encode(krbtgt, krbtgt)
+                        Data = pac.Encode(request.ServicePrincipalKey, request.ServicePrincipalKey)
                     }
                 }
-            };
+                };
 
-            authz.Add(new KrbAuthorizationData
-            {
-                Type = AuthorizationDataType.AdIfRelevant,
-                Data = sequence.Encode().AsMemory()
-            });
+                authz.Add(new KrbAuthorizationData
+                {
+                    Type = AuthorizationDataType.AdIfRelevant,
+                    Data = sequence.Encode().AsMemory()
+                });
+            }
 
             return authz;
         }

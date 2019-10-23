@@ -1,5 +1,4 @@
 ﻿using Kerberos.NET.Entities;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;

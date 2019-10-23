@@ -1,8 +1,6 @@
 ﻿using Kerberos.NET.Asn1;
 using Kerberos.NET.Server;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Entities
@@ -21,9 +19,8 @@ namespace Kerberos.NET.Entities
 
         public static async Task<KrbAsRep> GenerateTgt(
             IKerberosPrincipal principal,
-            IEnumerable<KrbPaData> requirements,
             IRealmService realmService,
-            KrbKdcReqBody asReq
+            ServiceTicketRequest rst
         )
         {
             // This is approximately correct such that a client doesn't barf on it
@@ -34,27 +31,24 @@ namespace Kerberos.NET.Entities
             var servicePrincipal = await realmService.Principals.RetrieveKrbtgt();
             var servicePrincipalKey = await servicePrincipal.RetrieveLongTermCredential();
 
+            rst.RealmName = realmService.Name;
+
+            rst.Principal = principal;
+            rst.EncryptedPartKey = longTermKey;
+
+            rst.ServicePrincipal = servicePrincipal;
+            rst.ServicePrincipalKey = servicePrincipalKey;
+
             var now = realmService.Now();
 
-            KrbAsRep asRep = await GenerateServiceTicket<KrbAsRep>(
-                new ServiceTicketRequest
-                {
-                    Principal = principal,
-                    EncryptedPartKey = longTermKey,
-                    ServicePrincipal = servicePrincipal,
-                    ServicePrincipalKey = servicePrincipalKey,
-                    Now = now,
-                    Addresses = asReq.Addresses,
-                    RenewTill = now + realmService.Settings.MaximumRenewalWindow,
-                    StartTime = now - realmService.Settings.MaximumSkew,
-                    EndTime = now + realmService.Settings.SessionLifetime,
-                    Flags = DefaultFlags,
-                    RealmName = realmService.Name,
-                    Nonce = asReq.Nonce
-                }
-            );
+            rst.Now = now;
+            rst.RenewTill = now + realmService.Settings.MaximumRenewalWindow;
+            rst.StartTime = now - realmService.Settings.MaximumSkew;
+            rst.EndTime = now + realmService.Settings.SessionLifetime;
 
-            asRep.PaData = requirements.ToArray();
+            rst.Flags = DefaultFlags;
+
+            KrbAsRep asRep = await GenerateServiceTicket<KrbAsRep>(rst);
 
             return asRep;
         }

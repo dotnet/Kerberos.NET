@@ -39,3 +39,8 @@ end_of_line = lf
 
 [*.{cmd,bat}]
 end_of_line = crlf
+
+[*.cs]
+
+# IDE0063: Use simple 'using' statement
+csharp_prefer_simple_using_statement = true:silent
