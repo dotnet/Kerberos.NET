@@ -48,6 +48,7 @@ namespace Kerberos.NET.Server
                 catch (Exception ex)
                 {
                     logger.LogTrace(ex, "Accept exception raised");
+                    throw;
                 }
             }
         }

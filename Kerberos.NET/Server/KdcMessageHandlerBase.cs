@@ -14,7 +14,8 @@ namespace Kerberos.NET.Server
         private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> preAuthHandlers =
             new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
 
-        protected ReadOnlyMemory<byte> Message { get; }
+        private readonly IMemoryOwner<byte> messagePool;
+        private readonly int messageLength;
 
         protected ListenerOptions Options { get; }
 
@@ -29,7 +30,11 @@ namespace Kerberos.NET.Server
 
         protected KdcMessageHandlerBase(ReadOnlySequence<byte> message, ListenerOptions options)
         {
-            Message = message.First;
+            messageLength = (int)message.Length;
+            messagePool = MemoryPool<byte>.Shared.Rent(messageLength);
+
+            message.CopyTo(messagePool.Memory.Span.Slice(0, messageLength));
+
             Options = options;
         }
 
@@ -63,13 +68,17 @@ namespace Kerberos.NET.Server
         {
             try
             {
-                var message = await DecodeMessage(Message);
+                var message = await DecodeMessage(messagePool.Memory.Slice(0, messageLength));
 
                 return await ExecuteCore(message);
             }
             catch (Exception ex)
             {
                 return GenerateGenericError(ex, Options);
+            }
+            finally
+            {
+                messagePool.Dispose();
             }
         }
 
