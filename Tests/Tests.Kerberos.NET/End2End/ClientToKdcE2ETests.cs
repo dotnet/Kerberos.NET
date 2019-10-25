@@ -253,7 +253,7 @@ namespace Tests.Kerberos.NET
 
                     Assert.IsNotNull(decrypted.Ticket);
 
-                    Assert.AreEqual("host/u2u/CORP.IDENTITYINTERVENTION.COM", decrypted.SName.FullyQualifiedName);
+                    Assert.AreEqual("host/u2u@CORP.IDENTITYINTERVENTION.COM", decrypted.SName.FullyQualifiedName);
                 }
 
                 listener.Stop();

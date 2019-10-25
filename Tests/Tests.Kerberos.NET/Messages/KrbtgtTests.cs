@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Linq;
 
 namespace Tests.Kerberos.NET

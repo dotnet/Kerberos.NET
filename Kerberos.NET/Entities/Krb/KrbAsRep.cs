@@ -20,24 +20,24 @@ namespace Kerberos.NET.Entities
         public static async Task<KrbAsRep> GenerateTgt(
             IKerberosPrincipal principal,
             IRealmService realmService,
-            ServiceTicketRequest rst
+            ServiceTicketRequest rst = default
         )
         {
             // This is approximately correct such that a client doesn't barf on it
             // The krbtgt Ticket structure is probably correct as far as AD thinks
             // Modulo the PAC, at least.
 
-            var longTermKey = await principal.RetrieveLongTermCredential();
-            var servicePrincipal = await realmService.Principals.RetrieveKrbtgt();
-            var servicePrincipalKey = await servicePrincipal.RetrieveLongTermCredential();
-
             rst.RealmName = realmService.Name;
-
             rst.Principal = principal;
-            rst.EncryptedPartKey = longTermKey;
 
-            rst.ServicePrincipal = servicePrincipal;
-            rst.ServicePrincipalKey = servicePrincipalKey;
+            rst.EncryptedPartKey = await principal.RetrieveLongTermCredential();
+
+            rst.ServicePrincipal = await realmService.Principals.RetrieveKrbtgt();
+
+            if (rst.ServicePrincipalKey == null)
+            {
+                rst.ServicePrincipalKey = await rst.ServicePrincipal.RetrieveLongTermCredential();
+            }
 
             var now = realmService.Now();
 
@@ -48,9 +48,7 @@ namespace Kerberos.NET.Entities
 
             rst.Flags = DefaultFlags;
 
-            KrbAsRep asRep = await GenerateServiceTicket<KrbAsRep>(rst);
-
-            return asRep;
+            return await GenerateServiceTicket<KrbAsRep>(rst);
         }
     }
 }

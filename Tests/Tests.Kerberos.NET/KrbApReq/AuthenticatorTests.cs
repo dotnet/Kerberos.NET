@@ -12,13 +12,15 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class AuthenticatorTests : BaseTest
     {
-        private const string ApReqWithoutPacLogonInfo = "boIDTDCCA0igAwIBBaEDAgEOogcDBQAgAAAAo4ICN2GCAjMwggIvoAMCAQWhHxsdQ09SUC5JREVOVElUWUlOVEVSVkVOVElPTi5DT02iWDBWoAMCAQKhTz" + "BNGyxob3N0L2Rvd25sZXZlbC5jb3JwLmlkZW50aXR5aW50ZXJ2ZW50aW9uLmNvbRsdQ09SUC5JREVOVElUWUlOVEVSVkVOVElPTi5DT02jggGrMIIBp6ADAgESooIBngSCAZqAOMK78AL7VMUY05BE51mLKAYYWwIicv" +
-            "kQj8XEg7GMGhxNqDtmcEOwTbAARjW0HU8gnOHs69xOwCJKC0PWXoO3pG7MrXL1jWke5VxpRy8cfAyNtMAmw2+UgxR72C7ypROT7TaJnubNr/2Rm6M9a/Ahd3HHb1TUa4WYpnDYnzjJsVKA6+FZMEG4OXuMtq89j8mK" +
-            "sLPlMeuIpw5afr+3Td9Js/hnR5DhkN1ePlIQtW++POYlVENpWn/qDy6fDyNjmeh/ctUJK32aE6yrQb4ONo37J+PETLeB5kDWmx6qS1sjdXODQCMgixD+2+pC+uvYTqOtcK4KBikaQbShT/UaEwBwr6JLuZ4sg+f9lV" +
-            "SwaZ5DR9zvcd6MK3/M85y3huzmKrlv/nwTcn6Q6Psh6s7KRfM28Q3aCn52njFomk9hlQBZMqoiHCwQijXeiI8MnHtYSyq79DKJHkYG9B/nwkY+4ZpD72fAxiA19uidl2TyEGhT1t0hn+Vn/IpND64DPBOS5x33qXw/" +
-            "uf8lmT8jrpH9rspN+VtyNzUsryAeBKSB9zCB9KADAgESooHsBIHpB4XGJsImULSllCH6s+tXNu/SF2LzfAk2YQsxn2crw3tNzGpGqJX/ilfLgEsugPrt+p45yLd6yvu56IpPI/KZ4BKQDcjRmyCRj+RA7SlrEV+pvU" +
-            "vHbjMfqkMS2VujYh/7fidiBB+st3gYxfL3rzrytj5bqVSnXzhfLnMV/ewtaGzFNwDOUMR/kAHbJMKS+2pT3+K1B17gquN+vFPdGDEk9D7OmaeUL0bNnBxR/uyjfL9fXdOetS0Ri7TIuy89sOwkGzG7tVHkisDYyjFW" +
-            "yrQxaW4pHerPIOncMt0wd7pLr1gabCayo+94ajo=";
+        private const string ApReqWithoutPacLogonInfo = "YIIDFwYGKwYBBQUCoIIDCzCCAwegDTALBgkqhkiG9xIBAgKiggL0BIIC8GCCAuwGCSqGSIb3EgECA" +            "gEAboIC2zCCAtegAwIBBaEDAgEOogcDBQAgAAAAo4IBtGGCAbAwggGsoAMCAQWhHxsdQ09SUC5JREVOVElUWUlOVEVSVkVOVElPTi5DT02iWjBYoAMCAQKhUTBP" +
+            "GwRob3N0GyhhcHBzZXJ2aWNlLmNvcnAuaWRlbnRpdHlpbnRlcnZlbnRpb24uY29tGx1DT1JQLklERU5USVRZSU5URVJWRU5USU9OLkNPTaOCASYwggEioAMCA" +
+            "RKiggEZBIIBFQ/VQjHzHo8Pjug4HAJMQ8sovdyLuCIiviMWD52cjBhpHlrWx+GX1ZLXpoXu0V95+T+VoVzdDulxPwBeeIMZRt5pKck1SphlRPlPqtpoOBgZdR" +
+            "qmZ3nFWKAg8VjE/bZIZGsQJasWoDc3brZcou64pp0Xwt6gc+VCkcVBbyicoHm32WpbJx0htgp1pdHEwsuDBn73ul36s/04uMq30iGW04DOY99/C3zTo6dMc2Z" +
+            "B7tqAhZk7WMHzQ4nNsRp/Cp0WIkBQEAIDVllwI44vtnpMlESgiGgYWnjLOLnc+BX07m5IzWIxUISJSvJwydvMx6DC4ZTY3jG7fDCeLzqRju+NpqiAmTxJpwoJ" +
+            "E6+aEGjDvYqZZySLnv2kggEIMIIBBKADAgESooH8BIH5GG37GRQ4n6lrqYIQErjUAwMfe4DJtOp9U+CIGt/K1Oz9VbnVhj/o1Z3o/5hT29kIMocZ1UneO6siY" +
+            "gAqe9EWQxk4L0oro+9rLXBU48WGIytopEd6gs0PEdW/zya/pdW/evyb1JLuyqkMKYZlF6rXeSdgoMhq6bSnkJPTAdT7Baw5R3eCAu6jW/Ad/7Yyp7Y2/nfke0" +
+            "P5Nfw135/dhEuPMcDs/2HBHHgKEV9sAMqKQQKKTt9ZB6jFJE0wSk4ULPUgfJrGIeouxHjv2lgrG42rPehB+8wvyHoucocwUlgMsgwthDtrynae4KxDKX9k2RX" +
+            "lv1dmdYUHwQ3M";
 
         [TestMethod]
         public async Task AuthenticatorGetsAsRep()
@@ -106,8 +108,8 @@ namespace Tests.Kerberos.NET
                     "P@ssw0rd!",
                     principalName: new PrincipalName(
                         PrincipalNameType.NT_PRINCIPAL,
-                        "CORP.IDENTITYINTERVENTION.com",
-                        new[] { "host/downlevel.corp.identityintervention.com" }
+                        "corp.identityintervention.com",
+                        new[] { "host/appservice.corp.identityintervention.com" }
                     ),
                     saltType: SaltType.ActiveDirectoryUser
                 )
@@ -121,7 +123,7 @@ namespace Tests.Kerberos.NET
 
             Assert.AreEqual(1, result.Claims.Count());
 
-            Assert.AreEqual("administrator/CORP.IDENTITYINTERVENTION.COM/CORP.IDENTITYINTERVENTION.COM", result.Name);
+            Assert.AreEqual("administrator@CORP.IDENTITYINTERVENTION.COM", result.Name);
         }
     }
 }
