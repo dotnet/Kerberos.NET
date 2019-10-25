@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace Kerberos.NET.Entities
@@ -10,13 +11,13 @@ namespace Kerberos.NET.Entities
     [DebuggerDisplay("{Type} {FullyQualifiedName}")]
     public partial class KrbPrincipalName
     {
-        public string FullyQualifiedName => MakeFullName();
+        public string FullyQualifiedName => MakeFullName(Name, Type);
 
-        private string MakeFullName()
+        private static string MakeFullName(IEnumerable<string> names, PrincipalNameType type)
         {
-            IEnumerable<string> name = Name;
+            var seperator = NameTypeSeperator[(int)type];
 
-            using (var enumerator = name.GetEnumerator())
+            using (var enumerator = names.GetEnumerator())
             {
                 if (!enumerator.MoveNext())
                 {
@@ -32,7 +33,7 @@ namespace Kerberos.NET.Entities
 
                 if (enumerator.MoveNext())
                 {
-                    sb.Append(NameTypeSeperator[(int)Type]);
+                    sb.Append(seperator);
 
                     sb.Append(enumerator.Current);
                 }
@@ -41,7 +42,14 @@ namespace Kerberos.NET.Entities
                 {
                     if (enumerator.Current != null)
                     {
-                        sb.Append("@");
+                        if (seperator != ",")
+                        {
+                            sb.Append("@");
+                        }
+                        else
+                        {
+                            sb.Append(seperator);
+                        }
 
                         sb.Append(enumerator.Current);
                     }
@@ -58,7 +66,7 @@ namespace Kerberos.NET.Entities
             "/", // NT_SRV_HST = 3,
             "/", // NT_SRV_XHST = 4,
             "@", // NT_UID = 5,
-            "/", // NT_X500_PRINCIPAL = 6,
+            ",", // NT_X500_PRINCIPAL = 6,
             "@", // NT_SMTP_NAME = 7,
             "@", // 8
             "@", // 9
@@ -98,10 +106,42 @@ namespace Kerberos.NET.Entities
             {
                 return SplitAsUpn(principal, realm, type);
             }
+            else if (splitOn == ',')
+            {
+                return SplitX500(principal, realm, type);
+            }
             else
             {
                 return SplitAsService(principal, realm, type);
             }
+        }
+
+        private static KrbPrincipalName SplitX500(string principal, string realm, PrincipalNameType type)
+        {
+            var x500 = new X500DistinguishedName(principal);
+
+            var nameSplit = x500.Name.Split(',').ToList();
+
+            if (!string.IsNullOrWhiteSpace(realm))
+            {
+                var last = nameSplit.Last();
+
+                if (!last.StartsWith("DC="))
+                {
+                    var realmSplit = realm.Split('.');
+
+                    foreach (var sub in realmSplit)
+                    {
+                        nameSplit.Add($"DC={sub}");
+                    }
+                }
+            }
+
+            return new KrbPrincipalName
+            {
+                Type = type,
+                Name = nameSplit.ToArray()
+            };
         }
 
         private static KrbPrincipalName SplitAsService(string principal, string realm, PrincipalNameType type)
@@ -138,27 +178,24 @@ namespace Kerberos.NET.Entities
         {
             var nameSplit = principal.Split('@').ToList();
 
-            if (!string.IsNullOrWhiteSpace(realm))
+            if (!string.IsNullOrWhiteSpace(realm) && nameSplit.Count == 1)
             {
-                if (nameSplit.Count == 1)
-                {
-                    nameSplit.Add(realm);
-                }
-                else
-                {
-                    var last = nameSplit.Last();
+                nameSplit.Add(realm);
+            }
 
-                    if (!string.Equals(realm, last, StringComparison.OrdinalIgnoreCase))
-                    {
-                        nameSplit.Add(realm);
-                    }
-                }
+            if (type == PrincipalNameType.NT_SRV_INST)
+            {
+                return new KrbPrincipalName
+                {
+                    Type = type,
+                    Name = nameSplit.ToArray()
+                };
             }
 
             return new KrbPrincipalName
             {
                 Type = type,
-                Name = nameSplit.ToArray()
+                Name = new[] { MakeFullName(nameSplit, type) }
             };
         }
 
