@@ -121,7 +121,7 @@ namespace Tests.Kerberos.NET
 
             Assert.AreEqual(1, result.Claims.Count());
 
-            Assert.AreEqual("administrator/CORP.IDENTITYINTERVENTION.COM/CORP.IDENTITYINTERVENTION.COM", result.Name);
+            Assert.AreEqual("administrator/CORP.IDENTITYINTERVENTION.COM@CORP.IDENTITYINTERVENTION.COM", result.Name);
         }
     }
 }
