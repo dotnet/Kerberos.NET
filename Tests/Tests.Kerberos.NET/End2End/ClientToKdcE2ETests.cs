@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using static Tests.Kerberos.NET.KdcListener;
 
 namespace Tests.Kerberos.NET
 
@@ -24,13 +25,6 @@ namespace Tests.Kerberos.NET
 
         private const int ConcurrentThreads = 5;
         private const int RequestsPerThread = 100;
-
-        private static readonly Random rng = new Random();
-
-        private static int NextPort()
-        {
-            return rng.Next(20000, 40000);
-        }
 
         [TestMethod]
         public async Task E2E()
@@ -536,36 +530,6 @@ namespace Tests.Kerberos.NET
             var sessionKey = context.AuthenticateServiceResponse(validated.ApRep);
 
             Assert.IsNotNull(sessionKey);
-        }
-
-        private static async Task<IRealmService> LocateRealm(string realm, bool slow = false)
-        {
-            IRealmService service = new FakeRealmService(realm);
-
-            if (slow)
-            {
-                await Task.Delay(500);
-            }
-
-            return service;
-        }
-
-        private static KdcServiceListener StartListener(int port)
-        {
-            var options = new ListenerOptions
-            {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
-                IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
-                ReceiveTimeout = TimeSpan.FromHours(1)
-            };
-
-            var listener = new KdcServiceListener(options);
-
-            _ = listener.Start();
-
-            return listener;
         }
     }
 }

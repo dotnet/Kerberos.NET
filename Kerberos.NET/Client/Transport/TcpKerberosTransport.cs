@@ -40,10 +40,14 @@ namespace Kerberos.NET.Transport
 
                 try
                 {
+                    client.SendTimeout = (int)ConnectTimeout.TotalMilliseconds;
+                    client.ReceiveTimeout = (int)ConnectTimeout.TotalMilliseconds;
+
                     await client.ConnectAsync(target.Target, target.Port);
                 }
                 catch (SocketException sx)
                 {
+                    logger.LogDebug(sx, "TCP Socket exception during Connect {SocketCode}", sx.SocketErrorCode);
                     throw new KerberosTransportException("TCP Connect failed", sx);
                 }
 

@@ -32,6 +32,8 @@ namespace Kerberos.NET.Transport
 
             foreach (var transport in Transports.Where(t => t.Enabled && !t.TransportFailed))
             {
+                transport.ConnectTimeout = ConnectTimeout;
+
                 try
                 {
                     return await transport.SendMessage<T>(domain, encoded, cancellation);

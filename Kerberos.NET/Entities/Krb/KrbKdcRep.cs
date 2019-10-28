@@ -15,7 +15,6 @@ namespace Kerberos.NET.Entities
         }
 
         internal const TicketFlags DefaultFlags = TicketFlags.Renewable |
-                                                  TicketFlags.Initial |
                                                   TicketFlags.Forwardable;
 
         public static async Task<T> GenerateServiceTicket<T>(ServiceTicketRequest request)
@@ -29,19 +28,9 @@ namespace Kerberos.NET.Entities
 
             var flags = request.Flags;
 
-            if (request.Principal.SupportedPreAuthenticationTypes.Any())
+            if (request.PreAuthenticationData?.Any(r => r.Type == PaDataType.PA_REQ_ENC_PA_REP) ?? false)
             {
-                // This is not strictly an accurate way of detecting if the user was pre-authenticated.
-                // If pre-auth handlers are registered and the principal has PA-Types available, a request
-                // will never make it to this point without getting authenticated.
-                //
-                // However if no pre-auth handlers are registered, then the PA check is skipped
-                // and this isn't technically accurate anymore.
-                //
-                // TODO: this should tie into the make-believe policy check being used in the 
-                // auth handler section
-
-                flags |= TicketFlags.EncryptedPreAuthentication | TicketFlags.PreAuthenticated;
+                flags |= TicketFlags.EncryptedPreAuthentication;
             }
 
             var addresses = request.Addresses;
@@ -176,12 +165,12 @@ namespace Kerberos.NET.Entities
                 {
                     AuthorizationData = new[]
                     {
-                    new KrbAuthorizationData
-                    {
-                        Type = AuthorizationDataType.AdWin2kPac,
-                        Data = pac.Encode(request.ServicePrincipalKey, request.ServicePrincipalKey)
+                        new KrbAuthorizationData
+                        {
+                            Type = AuthorizationDataType.AdWin2kPac,
+                            Data = pac.Encode(request.ServicePrincipalKey, request.ServicePrincipalKey)
+                        }
                     }
-                }
                 };
 
                 authz.Add(new KrbAuthorizationData

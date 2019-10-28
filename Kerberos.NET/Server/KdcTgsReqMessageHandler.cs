@@ -77,6 +77,18 @@ namespace Kerberos.NET.Server
 
             var now = RealmService.Now();
 
+            TicketFlags flags = 0;
+
+            if (tgsReq.Body.KdcOptions.HasFlag(KdcOptions.Forwardable))
+            {
+                flags |= TicketFlags.Forwardable;
+            }
+
+            if (krbtgtApReqDecrypted.Ticket.Flags.HasFlag(TicketFlags.PreAuthenticated))
+            {
+                flags |= TicketFlags.PreAuthenticated;
+            }
+
             var tgsRep = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(
                 new ServiceTicketRequest
                 {
@@ -89,7 +101,7 @@ namespace Kerberos.NET.Server
                     RenewTill = krbtgtApReqDecrypted.Ticket.RenewTill,
                     StartTime = now - RealmService.Settings.MaximumSkew,
                     EndTime = now + RealmService.Settings.SessionLifetime,
-                    Flags = KrbKdcRep.DefaultFlags,
+                    Flags = flags,
                     Now = now,
                     IncludePac = krbtgtApReqDecrypted.Ticket.AuthorizationData.Any(a => a.Type == AuthorizationDataType.AdIfRelevant)
                 }

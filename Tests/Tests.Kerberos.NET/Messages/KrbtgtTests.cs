@@ -1,8 +1,8 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 {
@@ -34,6 +34,79 @@ namespace Tests.Kerberos.NET
             var krbtgt = encTicket.Decrypt(krbtgtKey, KeyUsage.Ticket, bytes => new KrbEncTicketPart().DecodeAsApplication(bytes));
 
             Assert.IsNotNull(krbtgt);
+        }
+
+        internal static readonly byte[] FakeKey = new byte[] {
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        };
+
+        private static readonly byte[] TgtKey = FakeKey;
+        private const string Realm = "corp.test.internal";
+        private const string KrbtgtSpn = "krbtgt/" + Realm;
+        private const string UserUpn = "user@test.internal";
+
+        [TestMethod]
+        public async Task GeneratedTgtMatchesActiveDirectory()
+        {
+            var realmService = new FakeRealmService(Realm);
+            var principal = await realmService.Principals.Find(UserUpn);
+
+            var principalKey = await principal.RetrieveLongTermCredential();
+
+            var rst = new ServiceTicketRequest
+            {
+                Flags = ExpectedFlags,
+                Principal = principal,
+                EncryptedPartKey = principalKey,
+                ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96)
+            };
+
+            var tgt = await KrbAsRep.GenerateTgt(rst, realmService);
+
+            Assert.IsNotNull(tgt);
+
+            var encoded = tgt.EncodeApplication();
+
+            AssertIsExpectedKrbtgt(principalKey, rst.ServicePrincipalKey, encoded.ToArray());
+        }
+
+        private const TicketFlags ExpectedFlags = TicketFlags.EncryptedPreAuthentication | TicketFlags.Renewable | TicketFlags.Forwardable;
+
+        private static void AssertIsExpectedKrbtgt(KerberosKey clientKey, KerberosKey tgtKey, byte[] message)
+        {
+            var asRep = new KrbAsRep().DecodeAsApplication(message);
+
+            Assert.IsNotNull(asRep);
+
+            var encPart = asRep.EncPart.Decrypt(
+                clientKey,
+                KeyUsage.EncAsRepPart,
+                b => KrbEncAsRepPart.DecodeApplication(b)
+            );
+
+            Assert.IsNotNull(encPart);
+
+            Assert.AreEqual(KrbtgtSpn, encPart.SName.FullyQualifiedName, true);
+            Assert.AreEqual(Realm, encPart.Realm);
+
+            Assert.IsNotNull(encPart.Key);
+
+            Assert.AreEqual(ExpectedFlags, encPart.Flags);
+
+            var krbtgt = asRep.Ticket.EncryptedPart.Decrypt(
+                tgtKey,
+                KeyUsage.Ticket,
+                d => new KrbEncTicketPart().DecodeAsApplication(d)
+            );
+
+            Assert.IsNotNull(krbtgt);
+
+            Assert.AreEqual(UserUpn, krbtgt.CName.FullyQualifiedName, true);
+            Assert.AreEqual(Realm, krbtgt.CRealm);
+            Assert.AreEqual(ExpectedFlags, krbtgt.Flags);
+
+            Assert.IsTrue(Enumerable.SequenceEqual(krbtgt.Key.KeyValue.ToArray(), encPart.Key.KeyValue.ToArray()));
         }
     }
 }

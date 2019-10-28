@@ -96,10 +96,14 @@ namespace Kerberos.NET.Server
 
             var rst = new ServiceTicketRequest
             {
+                Principal = principal,
                 Addresses = asReq.Body.Addresses,
                 Nonce = asReq.Body.Nonce,
-                IncludePac = true
+                IncludePac = true,
+                Flags = TicketFlags.Initial | KrbKdcRep.DefaultFlags
             };
+
+            rst.EncryptedPartKey = await principal.RetrieveLongTermCredential();
 
             var pacRequest = asReq.PaData.FirstOrDefault(pa => pa.Type == PaDataType.PA_PAC_REQUEST);
 
@@ -110,7 +114,7 @@ namespace Kerberos.NET.Server
                 rst.IncludePac = paPacRequest.IncludePac;
             }
 
-            var asRep = await KrbAsRep.GenerateTgt(principal, RealmService, rst);
+            var asRep = await KrbAsRep.GenerateTgt(rst, RealmService);
 
             asRep.PaData = requirements.ToArray();
 

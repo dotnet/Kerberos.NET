@@ -32,5 +32,7 @@ namespace Kerberos.NET.Entities
         public int Nonce { get; set; }
 
         public bool IncludePac { get; set; }
+
+        public IEnumerable<KrbPaData> PreAuthenticationData { get; set; }
     }
 }

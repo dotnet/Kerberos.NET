@@ -33,6 +33,8 @@ namespace Kerberos.NET.Transport
 
         public bool Enabled { get; set; }
 
+        public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
         protected static T Decode<T>(ReadOnlyMemory<byte> response)
             where T : IAsn1ApplicationEncoder<T>, new()
         {

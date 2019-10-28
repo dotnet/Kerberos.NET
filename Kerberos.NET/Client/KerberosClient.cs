@@ -66,6 +66,12 @@ namespace Kerberos.NET.Client
             set => ticketCache = value ?? throw new InvalidOperationException("Cache cannot be null");
         }
 
+        public TimeSpan ConnectTimeout
+        {
+            get => transport.ConnectTimeout;
+            set => transport.ConnectTimeout = value;
+        }
+
         public bool CacheServiceTickets { get; set; }
 
         public AuthenticationOptions AuthenticationOptions { get; set; } = DefaultAuthentication;
