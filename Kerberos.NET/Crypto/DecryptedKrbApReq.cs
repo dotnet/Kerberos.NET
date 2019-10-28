@@ -1,4 +1,5 @@
 ﻿using Kerberos.NET.Entities;
+using System;
 
 namespace Kerberos.NET.Crypto
 {
@@ -8,7 +9,8 @@ namespace Kerberos.NET.Crypto
 
         public DecryptedKrbApReq(KrbApReq token, MessageType incomingMessageType = MessageType.KRB_AP_REQ)
         {
-            this.token = token;
+            this.token = token ?? throw new ArgumentNullException(nameof(token));
+
             this.incomingMessageType = incomingMessageType;
         }
 

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
 {
@@ -15,7 +14,7 @@ namespace Kerberos.NET.Entities
                 throw new InvalidOperationException($"Cannot parse EType Info because type is {Type}");
             }
 
-            var info = KrbETypeInfo2.Decode(Value, AsnEncodingRules.DER);
+            var info = KrbETypeInfo2.Decode(Value);
 
             return info.ETypeInfo;
         }

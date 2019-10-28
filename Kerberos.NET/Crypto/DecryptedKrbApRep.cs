@@ -17,7 +17,7 @@ namespace Kerberos.NET.Crypto
 
         public DecryptedKrbApRep(KrbApRep response)
         {
-            this.response = response;
+            this.response = response ?? throw new ArgumentNullException(nameof(response));
         }
 
         public override void Decrypt(KerberosKey key)

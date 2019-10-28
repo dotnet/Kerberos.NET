@@ -13,13 +13,47 @@ namespace Tests.Kerberos.NET
     public class DelegationTests : BaseTest
     {
         [TestMethod]
-        public void DelegationEncoding()
+        public void DelegationEncoding_NoTicket()
         {
             var delegInfo = new DelegationInfo() { };
 
             var encoded = delegInfo.Encode();
 
             Assert.IsNotNull(encoded);
+        }
+
+        [TestMethod]
+        public void DelegationEncoding_Roundtrip()
+        {
+            var delegInfo = new DelegationInfo()
+            {
+                DelegationTicket = new KrbCred
+                {
+                    Tickets = new[] {
+                        new KrbTicket {
+                            EncryptedPart = new KrbEncryptedData { Cipher = new byte[16], EType = EncryptionType.AES128_CTS_HMAC_SHA1_96 },
+                            Realm = "blah.test.com",
+                            SName = KrbPrincipalName.FromString("blah@test.com"),
+                            TicketNumber = 245
+                        }
+                    },
+                    EncryptedPart = new KrbEncryptedData { Cipher = new byte[16], EType = EncryptionType.AES128_CTS_HMAC_SHA1_96 }
+                }
+            };
+
+            var encoded = delegInfo.Encode();
+
+            Assert.IsNotNull(encoded);
+
+            var decoded = new DelegationInfo().Decode(encoded);
+
+            Assert.IsNotNull(decoded);
+            Assert.IsNotNull(decoded.DelegationTicket);
+            Assert.IsNotNull(decoded.DelegationTicket.Tickets);
+
+            Assert.AreEqual(1, decoded.DelegationTicket.Tickets.Length);
+
+            Assert.IsNotNull(decoded.DelegationTicket.EncryptedPart);
         }
 
         [TestMethod]

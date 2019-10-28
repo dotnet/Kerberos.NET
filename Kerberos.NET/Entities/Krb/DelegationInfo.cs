@@ -48,9 +48,23 @@ namespace Kerberos.NET.Entities
                 writer.Write(ChannelBinding?.Length ?? 0);
                 writer.Write(ChannelBinding);
 
+                if (DelegationTicket != null)
+                {
+                    Flags |= ChecksumFlag.GSS_C_DELEG_FLAG;
+                }
+
                 writer.Write((int)Flags);
 
-                // TODO: Encode DelegationTicket
+                if (DelegationTicket != null)
+                {
+                    writer.Write((short)DelegationOption);
+
+                    var deleg = DelegationTicket.EncodeApplication();
+
+                    writer.Write((short)deleg.Length);
+
+                    writer.Write(deleg.ToArray());
+                }
 
                 return stream.ToArray();
             }
@@ -60,7 +74,6 @@ namespace Kerberos.NET.Entities
         {
             using (var reader = new BinaryReader(new MemoryStream(value.ToArray())))
             {
-
                 Length = reader.ReadInt32();
 
                 ChannelBinding = reader.ReadBytes(Length);

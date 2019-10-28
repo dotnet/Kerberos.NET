@@ -1,7 +1,9 @@
-﻿using Kerberos.NET.Crypto;
+﻿using Kerberos.NET;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
+using System.Security;
 
 namespace Tests.Kerberos.NET
 {
@@ -21,15 +23,79 @@ namespace Tests.Kerberos.NET
 
             var tgsReq = KrbTgsReq.DecodeApplication(tgsReqBytes);
 
+            KrbEncTicketPart krbtgt = ExtractTgt(tgsReq);
+
+            Assert.AreEqual("testuser", krbtgt.CName.FullyQualifiedName);
+        }
+
+        [TestMethod]
+        public void ValidateS4uSelf()
+        {
+            RetrieveS4u(out KrbTgsReq tgsReq, out KrbEncTicketPart krbtgt);
+
+            var sessionKey = krbtgt.Key;
+
+            var paForUserPaData = tgsReq.PaData.FirstOrDefault(pa => pa.Type == PaDataType.PA_FOR_USER);
+
+            Assert.IsNotNull(paForUserPaData);
+
+            var paForUser = KrbPaForUser.Decode(paForUserPaData.Value);
+
+            paForUser.ValidateChecksum(sessionKey.AsKey());
+        }
+
+        [TestMethod]
+        public void ValidateS4uSelfPacOptions()
+        {
+            RetrieveS4u(out KrbTgsReq tgsReq, out KrbEncTicketPart krbtgt);
+
+            var paPacOptions = tgsReq.PaData.FirstOrDefault(pa => pa.Type == PaDataType.PA_PAC_OPTIONS);
+
+            Assert.IsNotNull(paPacOptions);
+
+            var pacOptions = KrbPaPacOptions.Decode(paPacOptions.Value);
+
+            Assert.AreEqual(PacOptions.BranchAware | PacOptions.Claims | PacOptions.ResourceBasedConstrainedDelegation, pacOptions.Flags);
+        }
+
+        private static void RetrieveS4u(out KrbTgsReq tgsReq, out KrbEncTicketPart krbtgt)
+        {
+            var tgsReqBytes = ReadDataFile("messages\\tgs-req-app2-s4u-self").Skip(4).ToArray();
+
+            tgsReq = KrbTgsReq.DecodeApplication(tgsReqBytes);
+            Assert.IsNotNull(tgsReq);
+
+            krbtgt = ExtractTgt(tgsReq);
+            Assert.IsNotNull(krbtgt);
+        }
+
+        [TestMethod, ExpectedException(typeof(SecurityException))]
+        public void ValidateS4uSelf_Modified()
+        {
+            RetrieveS4u(out KrbTgsReq tgsReq, out KrbEncTicketPart krbtgt);
+
+            var sessionKey = krbtgt.Key;
+
+            var paForUserPaData = tgsReq.PaData.FirstOrDefault(pa => pa.Type == PaDataType.PA_FOR_USER);
+
+            Assert.IsNotNull(paForUserPaData);
+
+            var paForUser = KrbPaForUser.Decode(paForUserPaData.Value);
+
+            paForUser.UserName = KrbPrincipalName.FromString("administrator@test.com");
+
+            paForUser.ValidateChecksum(sessionKey.AsKey());
+        }
+
+        private static KrbEncTicketPart ExtractTgt(KrbTgsReq tgsReq)
+        {
             var paData = tgsReq.PaData.First(p => p.Type == PaDataType.PA_TGS_REQ);
 
             var apReq = paData.DecodeApReq();
 
             var krbtgtKey = new KerberosKey(key: key);
 
-            var krbtgt = apReq.Ticket.EncryptedPart.Decrypt(krbtgtKey, KeyUsage.Ticket, b => new KrbEncTicketPart().DecodeAsApplication(b));
-
-            Assert.AreEqual("testuser", krbtgt.CName.FullyQualifiedName);
+            return apReq.Ticket.EncryptedPart.Decrypt(krbtgtKey, KeyUsage.Ticket, b => new KrbEncTicketPart().DecodeAsApplication(b));
         }
     }
 }

@@ -20,11 +20,31 @@ namespace Kerberos.NET.Entities
         public static async Task<T> GenerateServiceTicket<T>(ServiceTicketRequest request)
             where T : KrbKdcRep, new()
         {
-            var sessionKey = KrbEncryptionKey.Generate(request.ServicePrincipalKey.EncryptionType);
+            if (request.EncryptedPartKey == null)
+            {
+                throw new ArgumentException("A session key must be provided to encrypt the response", nameof(request.EncryptedPartKey));
+            }
+
+            if (request.Principal == null)
+            {
+                throw new ArgumentException("A Principal identity must be provided", nameof(request.Principal));
+            }
+
+            if (request.ServicePrincipal == null)
+            {
+                throw new ArgumentException("A service principal must be provided", nameof(request.ServicePrincipal));
+            }
+
+            if (request.ServicePrincipalKey == null)
+            {
+                throw new ArgumentException("A service principal key must be provided", nameof(request.ServicePrincipalKey));
+            }
 
             var authz = await GenerateAuthorizationData(request.Principal, request);
 
             var cname = KrbPrincipalName.FromPrincipal(request.Principal, realm: request.RealmName);
+
+            var sessionKey = KrbEncryptionKey.Generate(request.ServicePrincipalKey.EncryptionType);
 
             var flags = request.Flags;
 
