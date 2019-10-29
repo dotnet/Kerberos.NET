@@ -3,7 +3,7 @@ using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
-namespace Tests.Kerberos.NET.Crypto
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class DecryptedMessageTests

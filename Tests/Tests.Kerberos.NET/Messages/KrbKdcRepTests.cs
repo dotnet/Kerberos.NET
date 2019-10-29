@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Threading.Tasks;
 
-namespace Tests.Kerberos.NET.Messages
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class KrbKdcRepTests

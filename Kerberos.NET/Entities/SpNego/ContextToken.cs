@@ -36,11 +36,6 @@ namespace Kerberos.NET.Entities
         {
             var mechType = token.ThisMech.Value;
 
-            if (string.IsNullOrWhiteSpace(mechType))
-            {
-                throw new UnknownMechTypeException();
-            }
-
             if (!KnownMessageTypes.TryGetValue(mechType, out Func<GssApiToken, ContextToken> tokenFunc))
             {
                 throw new UnknownMechTypeException(mechType);

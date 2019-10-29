@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 {
@@ -33,34 +34,44 @@ namespace Tests.Kerberos.NET
         [TestMethod, ExpectedException(typeof(InvalidOperationException))]
         public void CacheCannotBeNull()
         {
-            var client = new KerberosClient
-            {
-                Cache = null
-            };
+#pragma warning disable IDE0067 // Dispose objects before losing scope
+            _ = new KerberosClient { Cache = null };
+#pragma warning restore IDE0067 // Dispose objects before losing scope
         }
 
         [TestMethod]
         public void TcpClientEnabledByDefault()
         {
-            var client = new KerberosClient();
+            using (var client = new KerberosClient())
+            {
+                var tcp = client.Transports.FirstOrDefault(t => t.Protocol == ProtocolType.Tcp);
 
-            var tcp = client.Transports.FirstOrDefault(t => t.Protocol == ProtocolType.Tcp);
+                Assert.IsNotNull(tcp);
 
-            Assert.IsNotNull(tcp);
-
-            Assert.IsTrue(tcp.Enabled);
+                Assert.IsTrue(tcp.Enabled);
+            }
         }
 
         [TestMethod]
         public void UdpClientDisabledByDefault()
         {
-            var client = new KerberosClient();
+            using (var client = new KerberosClient())
+            {
+                var udp = client.Transports.FirstOrDefault(t => t.Protocol == ProtocolType.Udp);
 
-            var udp = client.Transports.FirstOrDefault(t => t.Protocol == ProtocolType.Udp);
+                Assert.IsNotNull(udp);
 
-            Assert.IsNotNull(udp);
+                Assert.IsFalse(udp.Enabled);
+            }
+        }
 
-            Assert.IsFalse(udp.Enabled);
+        [TestMethod, ExpectedException(typeof(InvalidOperationException))]
+        public async Task ClientRequestsServiceTicketBeforeAuthentication()
+        {
+            using (var client = new KerberosClient())
+            {
+                await client.GetServiceTicket("host/test.com");
+            }
         }
     }
 }

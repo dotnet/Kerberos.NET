@@ -6,8 +6,6 @@ namespace Kerberos.NET
     [Serializable]
     public class KerberosValidationException : SecurityException
     {
-        public KerberosValidationException() { }
-
         public KerberosValidationException(string message)
             : base(message) { }
 
