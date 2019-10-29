@@ -6,7 +6,7 @@
 
   <PropertyGroup>
     <Product>Kerberos.NET library</Product>
-    <Description>A cross-platform, pure managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
+    <Description>A cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
     <PackageTags>security kerberos</PackageTags>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>    
   </PropertyGroup>
@@ -34,7 +34,6 @@
     <AsnXml Include="Entities\Krb\KrbError.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2Entry.xml" />
-    <AsnXml Include="Entities\Krb\KrbETypeInfoEntry.xml" />
     <AsnXml Include="Entities\Krb\KrbHostAddress.xml" />
     <AsnXml Include="Entities\Krb\KrbKdcRep.xml" />
     <AsnXml Include="Entities\Krb\KrbKdcReq.xml" />

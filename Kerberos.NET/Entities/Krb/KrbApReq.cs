@@ -20,7 +20,7 @@ namespace Kerberos.NET.Entities
             return DecodeApplication(data);
         }
 
-        internal static KrbApReq CreateApReq(
+        public static KrbApReq CreateApReq(
             KrbKdcRep tgsRep,
             KerberosKey authenticatorKey,
             ApOptions options,
@@ -72,19 +72,5 @@ namespace Kerberos.NET.Entities
 
         private static readonly Oid Kerberos5Oid = new Oid(MechType.KerberosV5);
         private static readonly Oid SPNegoOid = new Oid(MechType.SPNEGO);
-
-        public ReadOnlyMemory<byte> EncodeNegotiate()
-        {
-            var negoToken = new NegotiationToken
-            {
-                InitialToken = new NegTokenInit
-                {
-                    MechTypes = new[] { SPNegoOid },
-                    MechToken = EncodeApplication()
-                }
-            };
-
-            return negoToken.Encode().AsMemory();
-        }
     }
 }

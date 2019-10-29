@@ -12,7 +12,7 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class AuthenticatorTests : BaseTest
     {
-        private const string ApReqWithoutPacLogonInfo = "YIIDFwYGKwYBBQUCoIIDCzCCAwegDTALBgkqhkiG9xIBAgKiggL0BIIC8GCCAuwGCSqGSIb3EgECA" +            "gEAboIC2zCCAtegAwIBBaEDAgEOogcDBQAgAAAAo4IBtGGCAbAwggGsoAMCAQWhHxsdQ09SUC5JREVOVElUWUlOVEVSVkVOVElPTi5DT02iWjBYoAMCAQKhUTBP" +
+        private const string ApReqWithoutPacLogonInfo = "YIIDFwYGKwYBBQUCoIIDCzCCAwegDTALBgkqhkiG9xIBAgKiggL0BIIC8GCCAuwGCSqGSIb3EgECA" + "gEAboIC2zCCAtegAwIBBaEDAgEOogcDBQAgAAAAo4IBtGGCAbAwggGsoAMCAQWhHxsdQ09SUC5JREVOVElUWUlOVEVSVkVOVElPTi5DT02iWjBYoAMCAQKhUTBP" +
             "GwRob3N0GyhhcHBzZXJ2aWNlLmNvcnAuaWRlbnRpdHlpbnRlcnZlbnRpb24uY29tGx1DT1JQLklERU5USVRZSU5URVJWRU5USU9OLkNPTaOCASYwggEioAMCA" +
             "RKiggEZBIIBFQ/VQjHzHo8Pjug4HAJMQ8sovdyLuCIiviMWD52cjBhpHlrWx+GX1ZLXpoXu0V95+T+VoVzdDulxPwBeeIMZRt5pKck1SphlRPlPqtpoOBgZdR" +
             "qmZ3nFWKAg8VjE/bZIZGsQJasWoDc3brZcou64pp0Xwt6gc+VCkcVBbyicoHm32WpbJx0htgp1pdHEwsuDBn73ul36s/04uMq30iGW04DOY99/C3zTo6dMc2Z" +
@@ -124,6 +124,32 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(1, result.Claims.Count());
 
             Assert.AreEqual("administrator@CORP.IDENTITYINTERVENTION.COM", result.Name);
+        }
+
+        [TestMethod]
+        public void KrbAuthenticator_Roundtrip()
+        {
+            var auth = new KrbAuthenticator
+            {
+                AuthorizationData = new[] { new KrbAuthorizationData { Data = new byte[16], Type = AuthorizationDataType.AdAndOr } },
+                Checksum = KrbChecksum.Create(new byte[16], new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96), KeyUsage.AcceptorSeal),
+                CName = KrbPrincipalName.FromString("blah@blah.com"),
+                CTime = DateTimeOffset.UtcNow,
+                CuSec = 1234,
+                Realm = "blah.com",
+                SequenceNumber = 123456,
+                Subkey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96)
+            };
+
+            var encoded = auth.EncodeApplication();
+
+            var decoded = KrbAuthenticator.DecodeApplication(encoded);
+
+            Assert.IsNotNull(decoded);
+            Assert.IsNotNull(decoded.AuthorizationData);
+            Assert.AreEqual(1, decoded.AuthorizationData.Length);
+            Assert.AreEqual(AuthorizationDataType.AdAndOr, decoded.AuthorizationData[0].Type);
+            Assert.AreEqual("blah@blah.com", decoded.CName.FullyQualifiedName);
         }
     }
 }

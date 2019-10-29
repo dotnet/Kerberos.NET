@@ -17,6 +17,11 @@ namespace Kerberos.NET.Dns
                 throw new InvalidOperationException("DNS query is not supported on non-Win32 platforms yet");
             }
 
+            if (Debug)
+            {
+                System.Diagnostics.Debug.WriteLine($"Trying to query for {query}");
+            }
+
             return DnsQueryWin32.QuerySrvRecord(query);
         }
 
@@ -67,8 +72,7 @@ namespace Kerberos.NET.Dns
         MulticastVerify = 0x40000,
         DontResetTtlValues = 0x100000,
         DisableIdnEncoding = 0x200000,
-        AppendMultiLabel = 0x800000,
-        // RESERVED = unchecked((int)0xF0000000)
+        AppendMultiLabel = 0x800000
     }
 
     public enum DnsRecordType : ushort

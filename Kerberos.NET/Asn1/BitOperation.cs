@@ -68,14 +68,6 @@ namespace Kerberos.NET
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long AsLong(this Span<byte> val, bool littleEndian = false)
-        {
-            var bytes = val;
-
-            return AsLong((ReadOnlySpan<byte>)bytes, littleEndian);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long AsLong(this ReadOnlyMemory<byte> val, bool littleEndian = false)
         {
             return AsLong(val.Span, littleEndian);

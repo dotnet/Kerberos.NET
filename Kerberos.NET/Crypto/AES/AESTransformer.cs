@@ -139,7 +139,7 @@ namespace Kerberos.NET.Crypto.AES
 
             var iterations = GetIterations(param, 4096);
 
-            var saltBytes = GetSaltBytes(salt, null);
+            var saltBytes = KerberosConstants.UnicodeStringToUtf8(salt);
 
             var random = PBKDF2(passwordBytes, saltBytes, iterations, KeySize);
 
@@ -181,26 +181,6 @@ namespace Kerberos.NET.Crypto.AES
             val += (bytes[offset + 3] & 0xff);
 
             return val;
-        }
-
-        private static ReadOnlySpan<byte> GetSaltBytes(string salt, string pepper)
-        {
-            var saltBytes = KerberosConstants.UnicodeStringToUtf8(salt);
-
-            if (string.IsNullOrWhiteSpace(pepper))
-            {
-                return saltBytes;
-            }
-
-            var pepperBytes = KerberosConstants.UnicodeStringToUtf8(pepper);
-
-            var results = new Span<byte>(new byte[saltBytes.Length + 1 + pepperBytes.Length]);
-
-            pepperBytes.CopyTo(results);
-
-            saltBytes.CopyTo(results.Slice(pepperBytes.Length + 1, saltBytes.Length));
-
-            return results;
         }
 
         private static ReadOnlySpan<byte> DR(ReadOnlySpan<byte> key, ReadOnlySpan<byte> constant, int keySize, int blockSize)

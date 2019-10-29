@@ -145,7 +145,7 @@ namespace Tests.Kerberos.NET
 
             var encodedAsReq = asreq.Encode().ToArray();
 
-            var roundtrip = KrbAsReq.Decode(encodedAsReq);
+            var roundtrip = KrbKdcReq.Decode(encodedAsReq);
 
             Assert.IsNotNull(roundtrip);
         }

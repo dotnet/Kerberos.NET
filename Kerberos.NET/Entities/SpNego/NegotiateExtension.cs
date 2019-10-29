@@ -39,6 +39,8 @@ namespace Kerberos.NET.Entities
 
             AuthSchemes = new AuthScheme(reader);
             Extensions = new ExtensionVector(reader);
+
+            reader.Dispose();
         }
     }
 

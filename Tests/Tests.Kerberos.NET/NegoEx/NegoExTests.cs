@@ -15,6 +15,8 @@ namespace Tests.Kerberos.NET
             "UYBPME0xSzBJBgNVBAMeQgBNAFMALQBPAHIAZwBhAG4AaQB6AGEAdABpAG8AbgAtAFAAMgBQAC0AQQBjAGMAZQBzAHMAIABbADIAMAAxADgAXaEzMDGgE" +
             "RsPV0VMTEtOT1dOOlBLVTJVoRwwGqADAgGAoRMwERsPZGVza3RvcC1tOHFuYjAx";
 
+        private const string U2UStart = "YFcGCiqGSIb3EgECAgMEADBHoAMCAQWhAwIBEKIaMBigAwIBAaERMA8bDWFkbWluaXN0cmF0b3KjHxsdY29ycC5pZGVudGl0eWludGVydmVudGlvbi5jb20=";
+
         [TestMethod, ExpectedException(typeof(NotSupportedException))]
         public async Task NegoExFirstClassUnsupported()
         {
@@ -24,6 +26,17 @@ namespace Tests.Kerberos.NET
             };
 
             await validator.Validate(Convert.FromBase64String(NegoExStart));
+        }
+
+        [TestMethod, ExpectedException(typeof(NotSupportedException))]
+        public async Task User2UserFirstClassUnsupported()
+        {
+            var validator = new KerberosValidator(new KerberosKey())
+            {
+                ValidateAfterDecrypt = DefaultActions
+            };
+
+            await validator.Validate(Convert.FromBase64String(U2UStart));
         }
     }
 }

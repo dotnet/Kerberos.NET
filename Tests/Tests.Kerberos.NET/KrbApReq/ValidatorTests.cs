@@ -147,5 +147,100 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(decoded);
         }
+
+        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        public async Task DecryptedKrbApReq_Validate_NotBefore()
+        {
+            // generate ticket for the future
+
+            var now = DateTimeOffset.UtcNow;
+            var notBefore = DateTimeOffset.UtcNow.AddMinutes(30);
+            var notAfter = DateTimeOffset.UtcNow;
+            var renewUntil = DateTimeOffset.UtcNow;
+
+            DecryptedKrbApReq decrypted = await CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
+
+            decrypted.Validate(ValidationActions.All);
+        }
+
+        private static async Task<DecryptedKrbApReq> CreateDecryptedApReq(DateTimeOffset now, DateTimeOffset notBefore, DateTimeOffset notAfter, DateTimeOffset renewUntil)
+        {
+            var key = new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96);
+
+            var tgsRep = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            {
+                EncryptedPartKey = key,
+                Principal = new FakeKerberosPrincipal("test@test.com"),
+                ServicePrincipal = new FakeKerberosPrincipal("host/test.com"),
+                ServicePrincipalKey = key,
+                IncludePac = false,
+                RealmName = "test.com",
+                Now = now,
+                StartTime = notBefore,
+                EndTime = notAfter,
+                RenewTill = renewUntil,
+                Flags = TicketFlags.Renewable
+            });
+
+            var encKdcRepPart = tgsRep.EncPart.Decrypt(
+                key,
+                KeyUsage.EncTgsRepPartSubSessionKey,
+                d => KrbEncTgsRepPart.DecodeApplication(d)
+            );
+
+            var apReq = KrbApReq.CreateApReq(tgsRep, encKdcRepPart.Key.AsKey(), 0, out KrbAuthenticator authenticator);
+
+            var decrypted = new DecryptedKrbApReq(apReq);
+
+            decrypted.Decrypt(key);
+            return decrypted;
+        }
+
+        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        public async Task DecryptedKrbApReq_Validate_NotAfter()
+        {
+            // generate ticket for the past
+
+            var now = DateTimeOffset.UtcNow;
+            var notBefore = DateTimeOffset.UtcNow.AddMinutes(-45);
+            var notAfter = DateTimeOffset.UtcNow.AddMinutes(-30);
+            var renewUntil = DateTimeOffset.UtcNow;
+
+            DecryptedKrbApReq decrypted = await CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
+
+            decrypted.Validate(ValidationActions.All);
+        }
+
+        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        public async Task DecryptedKrbApReq_Validate_RenewUntil()
+        {
+            // generate ticket for the future
+
+            var now = DateTimeOffset.UtcNow;
+            var notBefore = DateTimeOffset.UtcNow;
+            var notAfter = DateTimeOffset.UtcNow.AddMinutes(30);
+            var renewUntil = DateTimeOffset.UtcNow.AddMinutes(-30);
+
+            DecryptedKrbApReq decrypted = await CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
+
+            decrypted.Validate(ValidationActions.All);
+        }
+
+        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        public async Task DecryptedKrbApReq_Validate_Skew()
+        {
+            // generate ticket where now is ten minutes ago
+
+            var now = DateTimeOffset.UtcNow;
+            var notBefore = DateTimeOffset.UtcNow.AddHours(-1);
+            var notAfter = DateTimeOffset.UtcNow.AddMinutes(30);
+            var renewUntil = DateTimeOffset.UtcNow.AddMinutes(30);
+
+            DecryptedKrbApReq decrypted = await CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
+
+            decrypted.Now = () => DateTimeOffset.UtcNow.AddMinutes(-10);
+
+            decrypted.Validate(ValidationActions.All);
+        }
     }
 }
