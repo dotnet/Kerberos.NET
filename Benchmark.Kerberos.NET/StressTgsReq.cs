@@ -1,5 +1,4 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Entities;
@@ -11,11 +10,8 @@ using Tests.Kerberos.NET;
 
 namespace Benchmark.Kerberos.NET
 {
-    [EtwProfiler]
-    public class KdcTcpClientEtwTraced : KdcTcpClient { }
-
     [RPlotExporter, RankColumn]
-    public class KdcTcpClient
+    public class StressTgsReq
     {
         private int port;
 
@@ -43,7 +39,7 @@ namespace Benchmark.Kerberos.NET
             _ = listener.Start();
         }
 
-        [Params(1)]
+        [Params(1, 10, 100, 1000, 10000)]
         public int AuthenticationAttempts;
 
         [GlobalCleanup]
@@ -64,33 +60,21 @@ namespace Benchmark.Kerberos.NET
         [Arguments("RC4")]
         [Arguments("AES128")]
         [Arguments("AES256")]
-        public async Task RequestTgt(string algo)
+        public async Task RequestServiceTicket(string algo)
         {
-            var cred = new KerberosPasswordCredential(algo + user, password);
+            var kerbCred = new KerberosPasswordCredential(algo + user, password);
 
-            var client = new KerberosClient($"{overrideKdc}:{port}");
-
-            for (var i = 0; i < AuthenticationAttempts; i++)
+            using (var client = new KerberosClient($"{overrideKdc}:{port}"))
             {
-                await client.Authenticate(cred);
-            }
-        }
+                await client.Authenticate(kerbCred);
 
-        [Benchmark]
-        public async Task RequestServiceTicket()
-        {
-            var kerbCred = new KerberosPasswordCredential(user, password);
-
-            var client = new KerberosClient($"{overrideKdc}:{port}");
-
-            await client.Authenticate(kerbCred);
-
-            for (var i = 0; i < AuthenticationAttempts; i++)
-            {
-                await client.GetServiceTicket(
-                    "host/appservice.corp.identityintervention.com",
-                    ApOptions.MutualRequired
-                );
+                for (var i = 0; i < AuthenticationAttempts; i++)
+                {
+                    await client.GetServiceTicket(
+                        "host/appservice.corp.identityintervention.com",
+                        ApOptions.MutualRequired
+                    );
+                }
             }
         }
     }

@@ -13,18 +13,16 @@ namespace Tests.Kerberos.NET
 {
     public class FakeRealmService : IRealmService
     {
-        private readonly string realm;
-
         public FakeRealmService(string realm)
         {
-            this.realm = realm;
+            Name = realm;
         }
 
         public IRealmSettings Settings => new FakeRealmSettings();
 
         public IPrincipalService Principals => new FakePrincipalService();
 
-        public string Name => realm;
+        public string Name { get; }
 
         public DateTimeOffset Now()
         {
@@ -39,6 +37,11 @@ namespace Tests.Kerberos.NET
             IKerberosPrincipal principal = new FakeKerberosPrincipal(principalName);
 
             return Task.FromResult(principal);
+        }
+
+        public Task<IKerberosPrincipal> Find(KrbPrincipalName principalName)
+        {
+            return Find(principalName.FullyQualifiedName);
         }
 
         public Task<IKerberosPrincipal> RetrieveKrbtgt()

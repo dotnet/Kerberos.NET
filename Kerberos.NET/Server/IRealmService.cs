@@ -11,6 +11,7 @@ namespace Kerberos.NET.Server
         IRealmSettings Settings { get; }
 
         IPrincipalService Principals { get; }
+
         string Name { get; }
 
         DateTimeOffset Now();
@@ -19,6 +20,8 @@ namespace Kerberos.NET.Server
     public interface IPrincipalService
     {
         Task<IKerberosPrincipal> Find(string principalName);
+
+        Task<IKerberosPrincipal> Find(KrbPrincipalName principalName);
 
         Task<IKerberosPrincipal> RetrieveKrbtgt();
     }

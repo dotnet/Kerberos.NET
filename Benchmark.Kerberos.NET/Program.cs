@@ -6,13 +6,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Benchmark.Kerberos.NET
 {
     public enum BenchmarkType
     {
         None,
-        Etl,
+        Stress,
         Timing
     }
 
@@ -130,14 +131,26 @@ namespace Benchmark.Kerberos.NET
     {
         private static readonly EventWaitHandle WaitForAllProcessesToStart = new EventWaitHandle(false, EventResetMode.ManualReset, "KerbBenchmarkRunnerWaitForAllProcesses");
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var cmd = CommandLineParameters.Parse(args);
 
-            if (cmd == null || cmd.Benchmark != BenchmarkType.None)
+            if (cmd == null)
             {
-                BenchmarkRunner.Run<Stress>();
+                BenchmarkRunner.Run(typeof(Program).Assembly);
+                return;
+            }
 
+            if (cmd.Benchmark == BenchmarkType.Timing)
+            {
+                BenchmarkRunner.Run<MessageBenchmarks>();
+                return;
+            }
+
+            if (cmd.Benchmark == BenchmarkType.Stress)
+            {
+                BenchmarkRunner.Run<StressAsReq>();
+                BenchmarkRunner.Run<StressTgsReq>();
                 return;
             }
 
@@ -145,7 +158,7 @@ namespace Benchmark.Kerberos.NET
 
             if (cmd.IsServer)
             {
-                StartServer();
+                await StartServer();
 
                 StartClients(cmd);
             }
@@ -170,7 +183,7 @@ namespace Benchmark.Kerberos.NET
             }
         }
 
-        private static readonly Stress Stresser = new Stress();
+        private static readonly StressAsReq Stresser = new StressAsReq();
 
         private static void Teardown()
         {
@@ -229,9 +242,9 @@ namespace Benchmark.Kerberos.NET
             });
         }
 
-        private static void StartServer()
+        private static async Task StartServer()
         {
-            Stresser.Setup();
+            await Stresser.Setup();
         }
     }
 }
