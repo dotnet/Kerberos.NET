@@ -11,9 +11,15 @@ namespace System.Security.Cryptography
     {
         internal const int ClearAll = -1;
 
-        internal static byte[] Rent(int minimumLength) => ArrayPool<byte>.Shared.Rent(minimumLength);
+        internal static byte[] Rent(int minimumLength) => SharedRent<byte>(minimumLength);
 
-        internal static void Return(byte[] array, int clearSize = ClearAll)
+        internal static T[] SharedRent<T>(int minimumLength) => ArrayPool<T>.Shared.Rent(minimumLength);
+
+        internal static IMemoryOwner<T> Rent<T>(int minimumLength) => new CryptoMemoryOwner<T>(minimumLength);
+
+        internal static IMemoryOwner<T> RentUnsafe<T>(int minimumLength) => new CryptoMemoryOwner<T>(minimumLength, false);
+
+        internal static void Return<T>(T[] array, int clearSize = ClearAll)
         {
             Debug.Assert(clearSize <= array.Length);
             bool clearWholeArray = clearSize < 0;
@@ -23,7 +29,28 @@ namespace System.Security.Cryptography
                 Array.Clear(array, 0, clearSize);
             }
 
-            ArrayPool<byte>.Shared.Return(array, clearWholeArray);
+            ArrayPool<T>.Shared.Return(array, clearWholeArray);
+        }
+    }
+
+    internal struct CryptoMemoryOwner<T> : IMemoryOwner<T>
+    {
+        private readonly T[] memory;
+        private readonly bool clearAll;
+
+        public CryptoMemoryOwner(int minimumLength, bool clearAll = true)
+        {
+            memory = CryptoPool.SharedRent<T>(minimumLength);
+            this.clearAll = clearAll;
+
+            Memory = new Memory<T>(memory);
+        }
+
+        public Memory<T> Memory { get; }
+
+        public void Dispose()
+        {
+            CryptoPool.Return(memory, clearAll ? -1 : 0);
         }
     }
 }

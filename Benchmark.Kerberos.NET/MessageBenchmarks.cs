@@ -1,4 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
@@ -12,10 +13,11 @@ using Tests.Kerberos.NET;
 
 namespace Benchmark.Kerberos.NET
 {
-    //[EtwProfiler]
-    [RankColumn]
-    [RPlotExporter]
+    [EtwProfiler]
+    //[MemoryDiagnoser]
+    //[NativeMemoryProfiler]
     //[ConcurrencyVisualizerProfiler]
+    [RankColumn, RPlotExporter]
     public class MessageBenchmarks
     {
         private readonly string user = "administrator@corp.identityintervention.com";
@@ -36,8 +38,10 @@ namespace Benchmark.Kerberos.NET
         [Params("RC4", "AES128", "AES256")]
         public string AlgorithmType;
 
+        private EncryptionType etype;
+
         [GlobalSetup]
-        public Task Setup()
+        public void Setup()
         {
             options = new ListenerOptions
             {
@@ -49,7 +53,18 @@ namespace Benchmark.Kerberos.NET
 
             asReq = new ReadOnlySequence<byte>(KrbAsReq.CreateAsReq(credential, DefaultAuthentication).EncodeApplication());
 
-            return Task.CompletedTask;
+            switch (AlgorithmType)
+            {
+                case "RC4":
+                    etype = EncryptionType.RC4_HMAC_NT;
+                    break;
+                case "AES128":
+                    etype = EncryptionType.AES128_CTS_HMAC_SHA1_96;
+                    break;
+                case "AES256":
+                    etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
+                    break;
+            }
         }
 
         private ListenerOptions options;
@@ -95,7 +110,7 @@ namespace Benchmark.Kerberos.NET
                 Flags = TicketFlags.EncryptedPreAuthentication | TicketFlags.Renewable | TicketFlags.Forwardable,
                 Principal = principal,
                 EncryptedPartKey = principalKey,
-                ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96)
+                ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: etype, kvno: 123)
             };
 
             for (var i = 0; i < AuthenticationAttempts; i++)

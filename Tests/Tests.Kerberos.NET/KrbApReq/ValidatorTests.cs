@@ -143,7 +143,7 @@ namespace Tests.Kerberos.NET
 
             var encoded = encPart.Encode();
 
-            var decoded = KrbEncApRepPart.DecodeApplication(encoded.AsMemory());
+            var decoded = KrbEncApRepPart.DecodeApplication(encoded);
 
             Assert.IsNotNull(decoded);
         }

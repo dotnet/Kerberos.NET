@@ -16,12 +16,12 @@ namespace Kerberos.NET.Crypto
 
         public override int KeySize => HashSize;
 
-        public override ReadOnlySpan<byte> String2Key(KerberosKey key)
+        public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
         {
             return MD4(key.PasswordBytes);
         }
 
-        private static ReadOnlySpan<byte> MD4(byte[] key)
+        private static ReadOnlyMemory<byte> MD4(byte[] key)
         {
             using (var md4 = new MD4())
             {
@@ -51,14 +51,14 @@ namespace Kerberos.NET.Crypto
 
             var ciphertext = new Memory<byte>(new byte[plaintext.Length + checksum.Length]);
 
-            RC4.Transform(k3, plaintext.Span, ciphertext.Span.Slice(checksum.Length));
+            RC4.Transform(k3.Span, plaintext.Span, ciphertext.Span.Slice(checksum.Length));
 
-            checksum.CopyTo(ciphertext.Span);
+            checksum.CopyTo(ciphertext);
 
             return ciphertext;
         }
 
-        public override ReadOnlySpan<byte> Decrypt(ReadOnlyMemory<byte> ciphertext, KerberosKey key, KeyUsage usage)
+        public override ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ciphertext, KerberosKey key, KeyUsage usage)
         {
             var k1 = key.GetKey(this);
 
@@ -68,17 +68,17 @@ namespace Kerberos.NET.Crypto
 
             var checksum = ciphertext.Slice(0, HashSize);
 
-            var k3 = HMACMD5(k2, checksum.Span);
+            var k3 = HMACMD5(k2, checksum);
 
             var ciphertextOffset = ciphertext.Slice(HashSize);
 
-            var plaintext = new Span<byte>(new byte[ciphertextOffset.Length]);
+            var plaintext = new Memory<byte>(new byte[ciphertextOffset.Length]);
 
-            RC4.Transform(k3, ciphertextOffset.Span, plaintext);
+            RC4.Transform(k3.Span, ciphertextOffset.Span, plaintext.Span);
 
             var actualChecksum = HMACMD5(k2, plaintext);
 
-            if (!AreEqualSlow(checksum.Span, ciphertext.Span, actualChecksum.Length))
+            if (!AreEqualSlow(checksum.Span, ciphertext.Span.Slice(0, actualChecksum.Length)))
             {
                 throw new SecurityException("Invalid Checksum");
             }
@@ -88,9 +88,9 @@ namespace Kerberos.NET.Crypto
 
         private static readonly ReadOnlyMemory<byte> ChecksumSignatureKey = Encoding.ASCII.GetBytes("signaturekey\0");
 
-        public override ReadOnlySpan<byte> MakeChecksum(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data, KeyUsage keyUsage)
+        public override ReadOnlyMemory<byte> MakeChecksum(ReadOnlyMemory<byte> key, ReadOnlySpan<byte> data, KeyUsage keyUsage)
         {
-            var ksign = HMACMD5(key, ChecksumSignatureKey.Span);
+            var ksign = HMACMD5(key, ChecksumSignatureKey);
 
             var span = new Span<byte>(new byte[4 + data.Length]);
 
@@ -103,7 +103,7 @@ namespace Kerberos.NET.Crypto
             return HMACMD5(ksign, tmp);
         }
 
-        private static ReadOnlySpan<byte> MD5(ReadOnlySpan<byte> data)
+        private static ReadOnlyMemory<byte> MD5(ReadOnlySpan<byte> data)
         {
             using (var md5 = new MD5())
             {
@@ -137,11 +137,14 @@ namespace Kerberos.NET.Crypto
             return salt;
         }
 
-        private static ReadOnlySpan<byte> HMACMD5(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data)
+        private static ReadOnlyMemory<byte> HMACMD5(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
         {
-            using (HMACMD5 hmac = new HMACMD5(key.ToArray()))
+            var keyArray = TryGetArrayFast(key);
+            var dataArray = TryGetArrayFast(data);
+
+            using (HMACMD5 hmac = new HMACMD5(keyArray))
             {
-                return hmac.ComputeHash(data.ToArray());
+                return hmac.ComputeHash(dataArray, 0, data.Length);
             }
         }
     }

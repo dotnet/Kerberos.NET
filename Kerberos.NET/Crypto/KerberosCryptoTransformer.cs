@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 namespace Kerberos.NET.Crypto
@@ -26,9 +28,9 @@ namespace Kerberos.NET.Crypto
             return GenerateRandomBytes(KeySize);
         }
 
-        public abstract ReadOnlySpan<byte> String2Key(KerberosKey key);
+        public abstract ReadOnlyMemory<byte> String2Key(KerberosKey key);
 
-        public abstract ReadOnlySpan<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage);
+        public abstract ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage);
 
         public abstract ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage);
 
@@ -41,8 +43,8 @@ namespace Kerberos.NET.Crypto
             return new ReadOnlyMemory<byte>(arr);
         }
 
-        public virtual ReadOnlySpan<byte> MakeChecksum(
-            ReadOnlySpan<byte> data,
+        public virtual ReadOnlyMemory<byte> MakeChecksum(
+            ReadOnlyMemory<byte> data,
             KerberosKey key,
             KeyUsage usage,
             KeyDerivationMode kdf,
@@ -51,25 +53,15 @@ namespace Kerberos.NET.Crypto
             throw new NotImplementedException();
         }
 
-        public virtual ReadOnlySpan<byte> MakeChecksum(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data, KeyUsage keyUsage)
+        public virtual ReadOnlyMemory<byte> MakeChecksum(ReadOnlyMemory<byte> key, ReadOnlySpan<byte> data, KeyUsage keyUsage)
         {
             throw new NotImplementedException();
         }
 
-        protected virtual ReadOnlySpan<byte> Random2Key(ReadOnlySpan<byte> randomBits)
-        {
-            return randomBits;
-        }
-
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        public static bool AreEqualSlow(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right, int rightLength = 0)
+        public static bool AreEqualSlow(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
         {
-            if (rightLength <= 0)
-            {
-                rightLength = right.Length;
-            }
-
-            var diff = left.Length ^ rightLength;
+            var diff = left.Length ^ right.Length;
 
             for (var i = 0; i < left.Length; i++)
             {
@@ -77,6 +69,19 @@ namespace Kerberos.NET.Crypto
             }
 
             return diff == 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static byte[] TryGetArrayFast(ReadOnlyMemory<byte> bytes)
+        {
+            if (MemoryMarshal.TryGetArray(bytes, out ArraySegment<byte> segment) && segment.Array.Length == bytes.Length)
+            {
+                return segment.Array;
+            }
+            else
+            {
+                return bytes.ToArray();
+            }
         }
     }
 }

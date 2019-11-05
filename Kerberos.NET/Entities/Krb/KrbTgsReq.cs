@@ -73,7 +73,7 @@ namespace Kerberos.NET.Entities
             }
 
             var bodyChecksum = KrbChecksum.Create(
-                body.Encode().AsMemory(),
+                body.Encode(),
                 tgtSessionKey.AsKey(),
                 KeyUsage.PaTgsReqChecksum
             );
@@ -92,7 +92,7 @@ namespace Kerberos.NET.Entities
                 },
                 new KrbPaData {
                     Type = PaDataType.PA_PAC_OPTIONS,
-                    Value = pacOptions.AsMemory()
+                    Value = pacOptions
                 }
             };
 
@@ -125,7 +125,7 @@ namespace Kerberos.NET.Entities
 
             paS4u.GenerateChecksum(sessionKey.AsKey());
 
-            return paS4u.Encode().AsMemory();
+            return paS4u.Encode();
         }
 
         private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey, KrbChecksum checksum, out KrbEncryptionKey subkey)

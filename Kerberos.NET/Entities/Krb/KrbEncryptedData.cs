@@ -11,7 +11,7 @@ namespace Kerberos.NET.Entities
 
             var decrypted = crypto.Decrypt(this.Cipher, key, usage);
 
-            return func(decrypted.AsMemory());
+            return func(decrypted);
         }
 
         public static KrbEncryptedData Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)

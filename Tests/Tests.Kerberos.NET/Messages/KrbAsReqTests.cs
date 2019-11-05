@@ -88,12 +88,12 @@ namespace Tests.Kerberos.NET
             var tsEncoded = ts.Encode();
 
             KrbEncryptedData encData = KrbEncryptedData.Encrypt(
-                tsEncoded.AsMemory(),
+                tsEncoded,
                 key,
                 KeyUsage.PaEncTs
             );
 
-            Assert.IsTrue(tsEncoded.SequenceEqual(encData.Decrypt(key, KeyUsage.PaEncTs, d => KrbPaEncTsEnc.Decode(d)).Encode()));
+            Assert.IsTrue(tsEncoded.Span.SequenceEqual(encData.Decrypt(key, KeyUsage.PaEncTs, d => KrbPaEncTsEnc.Decode(d)).Encode().Span));
 
             var asreq = new KrbAsReq()
             {

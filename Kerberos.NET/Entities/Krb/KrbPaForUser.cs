@@ -56,7 +56,7 @@ namespace Kerberos.NET.Entities
 
         private static void Concat(Memory<byte> checksumData, ref int position, ref string value)
         {
-            KerberosConstants.UnicodeStringToUtf8(value).CopyTo(checksumData.Span.Slice(position, value.Length));
+            KerberosConstants.UnicodeStringToUtf8(value).CopyTo(checksumData.Slice(position, value.Length));
 
             position += value.Length;
         }

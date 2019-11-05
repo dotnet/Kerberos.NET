@@ -196,7 +196,7 @@ namespace Kerberos.NET.Entities
                 authz.Add(new KrbAuthorizationData
                 {
                     Type = AuthorizationDataType.AdIfRelevant,
-                    Data = sequence.Encode().AsMemory()
+                    Data = sequence.Encode()
                 });
             }
 

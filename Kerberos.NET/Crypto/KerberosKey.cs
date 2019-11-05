@@ -19,8 +19,9 @@ namespace Kerberos.NET.Crypto
             string salt = null,
             EncryptionType etype = 0,
             SaltType saltType = SaltType.ActiveDirectoryService,
-            byte[] iterationParams = null
-        ) : this(null, password, null, principalName, host, salt, etype, saltType, iterationParams)
+            byte[] iterationParams = null,
+            int? kvno = null
+        ) : this(null, password, null, principalName, host, salt, etype, saltType, iterationParams, kvno)
         {
         }
 
@@ -32,8 +33,9 @@ namespace Kerberos.NET.Crypto
             string salt = null,
             EncryptionType etype = 0,
             SaltType saltType = SaltType.ActiveDirectoryService,
-            byte[] iterationParams = null
-            ) : this(key, null, password, principal, host, salt, etype, saltType, iterationParams)
+            byte[] iterationParams = null,
+            int? kvno = null
+            ) : this(key, null, password, principal, host, salt, etype, saltType, iterationParams, kvno)
         {
         }
 
@@ -46,7 +48,8 @@ namespace Kerberos.NET.Crypto
             string salt = null,
             EncryptionType etype = 0,
             SaltType saltFormat = SaltType.ActiveDirectoryService,
-            byte[] iterationParams = null
+            byte[] iterationParams = null,
+            int? kvno = null
         )
         {
             this.key = key;
@@ -58,20 +61,21 @@ namespace Kerberos.NET.Crypto
             this.EncryptionType = etype;
             this.SaltFormat = saltFormat;
             IterationParameter = iterationParams;
+            this.Version = kvno;
         }
 
         private readonly ConcurrentDictionary<string, ReadOnlyMemory<byte>> DerivedKeyCache
             = new ConcurrentDictionary<string, ReadOnlyMemory<byte>>();
 
-        internal ReadOnlySpan<byte> GetOrDeriveKey(
+        internal ReadOnlyMemory<byte> GetOrDeriveKey(
             KerberosCryptoTransformer transformer,
             string cacheKey,
             Func<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>> dk
         )
         {
-            var derived = DerivedKeyCache.GetOrAdd(cacheKey, str => dk(GetKey(transformer).AsMemory()));
+            var derived = DerivedKeyCache.GetOrAdd(cacheKey, str => dk(GetKey(transformer)));
 
-            return derived.Span;
+            return derived;
         }
 
         private string salt;
@@ -81,6 +85,8 @@ namespace Kerberos.NET.Crypto
         public string Host { get; }
 
         public PrincipalName PrincipalName { get; }
+
+        public int? Version { get; }
 
         public string Salt
         {
@@ -126,13 +132,11 @@ namespace Kerberos.NET.Crypto
 
         public SaltType SaltFormat { get; }
 
-        public int? Version { get; set; }
-
         private readonly object _keyLock = new object();
 
         private ReadOnlyMemory<byte> keyCache = null;
 
-        public ReadOnlySpan<byte> GetKey(KerberosCryptoTransformer transformer = null)
+        public ReadOnlyMemory<byte> GetKey(KerberosCryptoTransformer transformer = null)
         {
             if (key != null && key.Length > 0)
             {
@@ -155,12 +159,12 @@ namespace Kerberos.NET.Crypto
                 {
                     if (keyCache.Length <= 0)
                     {
-                        keyCache = transformer.String2Key(this).AsMemory();
+                        keyCache = transformer.String2Key(this);
                     }
                 }
             }
 
-            return keyCache.Span;
+            return keyCache;
         }
 
         public override bool Equals(object obj)
@@ -172,13 +176,14 @@ namespace Kerberos.NET.Crypto
                 return base.Equals(obj);
             }
 
-            return KerberosCryptoTransformer.AreEqualSlow(this.GetKey(), key.GetKey()) &&
+            return KerberosCryptoTransformer.AreEqualSlow(this.GetKey().Span, key.GetKey().Span) &&
                    this.EncryptionType == key.EncryptionType;
         }
 
         public override int GetHashCode()
         {
             return base.GetHashCode() ^
+                   Version ?? 0 ^
                   (key ?? new byte[0]).GetHashCode() ^
                    PasswordBytes.GetHashCode() ^
                   (Host ?? "").GetHashCode() ^

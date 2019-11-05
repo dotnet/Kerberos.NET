@@ -147,7 +147,7 @@ namespace Kerberos.NET.Server
                 EData = new KrbMethodData
                 {
                     MethodData = preAuthRequests.ToArray()
-                }.Encode().AsMemory()
+                }.Encode()
             };
 
             return err.EncodeApplication();

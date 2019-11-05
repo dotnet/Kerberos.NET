@@ -98,7 +98,7 @@ namespace Kerberos.NET.Crypto
 
         public int HashSize { get; }
 
-        public ReadOnlySpan<byte> ComputeHash(ReadOnlySpan<byte> data)
+        public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
         {
             fixed (byte* pData = data)
             {
@@ -117,7 +117,7 @@ namespace Kerberos.NET.Crypto
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
 
-            return new ReadOnlySpan<byte>(hashValue);
+            return new ReadOnlyMemory<byte>(hashValue);
         }
 
         public void Dispose()

@@ -30,7 +30,7 @@ namespace Kerberos.NET.Crypto.AES
 
         public override int KeySize { get; }
 
-        public override ReadOnlySpan<byte> String2Key(KerberosKey key)
+        public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
         {
             return String2Key(
                 key.PasswordBytes,
@@ -44,45 +44,57 @@ namespace Kerberos.NET.Crypto.AES
             var Ke = kerberosKey.GetOrDeriveKey(
                 this,
                 $"{usage}|Ke|{KeySize}|{BlockSize}",
-                key => DK(key.Span, usage, KeyDerivationMode.Ke, KeySize, BlockSize).AsMemory()
+                key => DK(key.Span, usage, KeyDerivationMode.Ke, KeySize, BlockSize)
             );
 
             var confounder = GenerateRandomBytes(ConfounderSize);
 
-            var cleartext = Concat(confounder.Span, data.Span);
+            var concatLength = confounder.Length + data.Length;
 
-            var encrypted = AESCTS.Encrypt(
-                cleartext.Span,
-                Ke,
-                AllZerosInitVector.Span
-            );
+            using (var cleartextPool = CryptoPool.Rent<byte>(concatLength))
+            {
+                var cleartext = Concat(confounder.Span, data.Span, cleartextPool.Memory.Slice(0, concatLength));
 
-            var checksum = MakeChecksum(cleartext.Span, kerberosKey, usage, KeyDerivationMode.Ki, ChecksumSize);
+                var encrypted = AESCTS.Encrypt(
+                    cleartext,
+                    Ke.Span,
+                    AllZerosInitVector.Span
+                );
 
-            return Concat(encrypted, checksum);
+                var checksum = MakeChecksum(cleartext, kerberosKey, usage, KeyDerivationMode.Ki, ChecksumSize);
+
+                return Concat(encrypted.Span, checksum.Span);
+            }
         }
 
-        private static ReadOnlyMemory<byte> Concat(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ReadOnlyMemory<byte> Concat(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2, Memory<byte> array)
         {
-            var array = new byte[s1.Length + s2.Length];
-            s1.CopyTo(array);
-            s2.CopyTo(array.AsSpan(s1.Length));
+            s1.CopyTo(array.Span);
+            s2.CopyTo(array.Span.Slice(s1.Length));
+
             return array;
         }
 
-        public override ReadOnlySpan<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey kerberosKey, KeyUsage usage)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ReadOnlyMemory<byte> Concat(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2)
+        {
+            return Concat(s1, s2, new Memory<byte>(new byte[s1.Length + s2.Length]));
+        }
+
+        public override ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey kerberosKey, KeyUsage usage)
         {
             var cipherLength = cipher.Length - ChecksumSize;
 
             var Ke = kerberosKey.GetOrDeriveKey(
                 this,
                 $"{usage}|Ke|{KeySize}|{BlockSize}",
-                key => DK(key.Span, usage, KeyDerivationMode.Ke, KeySize, BlockSize).AsMemory()
+                key => DK(key.Span, usage, KeyDerivationMode.Ke, KeySize, BlockSize)
             );
 
             var decrypted = AESCTS.Decrypt(
-                cipher.Span.Slice(0, cipherLength),
-                Ke,
+                cipher.Slice(0, cipherLength),
+                Ke.Span,
                 AllZerosInitVector.Span
             );
 
@@ -90,7 +102,7 @@ namespace Kerberos.NET.Crypto.AES
 
             var expectedChecksum = cipher.Slice(cipherLength, ChecksumSize);
 
-            if (!AreEqualSlow(expectedChecksum.Span, actualChecksum))
+            if (!AreEqualSlow(expectedChecksum.Span, actualChecksum.Span))
             {
                 throw new SecurityException("Invalid checksum");
             }
@@ -98,8 +110,8 @@ namespace Kerberos.NET.Crypto.AES
             return decrypted.Slice(ConfounderSize, cipherLength - ConfounderSize);
         }
 
-        public override ReadOnlySpan<byte> MakeChecksum(
-            ReadOnlySpan<byte> data,
+        public override ReadOnlyMemory<byte> MakeChecksum(
+            ReadOnlyMemory<byte> data,
             KerberosKey key,
             KeyUsage usage,
             KeyDerivationMode kdf,
@@ -109,31 +121,36 @@ namespace Kerberos.NET.Crypto.AES
             var ki = key.GetOrDeriveKey(
                 this,
                 $"{usage}|{kdf}|{KeySize}|{BlockSize}",
-                k => DK(k.Span, usage, kdf, KeySize, BlockSize).AsMemory()
+                k => DK(k.Span, usage, kdf, KeySize, BlockSize)
             );
 
             return Hmac(ki, data).Slice(0, hashSize);
         }
 
-        private static ReadOnlySpan<byte> DK(ReadOnlySpan<byte> key, KeyUsage usage, KeyDerivationMode kdf, int keySize, int blockSize)
+        private static ReadOnlyMemory<byte> DK(ReadOnlySpan<byte> key, KeyUsage usage, KeyDerivationMode kdf, int keySize, int blockSize)
         {
-            var constant = new Span<byte>(new byte[5]);
+            using (var constantPool = CryptoPool.RentUnsafe<byte>(5))
+            {
+                var constant = constantPool.Memory.Slice(0, 5);
 
-            Endian.ConvertToBigEndian((int)usage, constant);
+                constant.Span.Fill(0);
 
-            constant[4] = (byte)kdf;
+                Endian.ConvertToBigEndian((int)usage, constant.Span);
 
-            return DK(key, constant, keySize, blockSize);
+                constant.Span[4] = (byte)kdf;
+
+                return DK(key, constant, keySize, blockSize);
+            }
         }
 
-        private static ReadOnlySpan<byte> DK(ReadOnlySpan<byte> key, ReadOnlySpan<byte> constant, int keySize, int blockSize)
+        private static ReadOnlyMemory<byte> DK(ReadOnlySpan<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
         {
             //return Random2Key( DR(...) );
 
             return DR(key, constant, keySize, blockSize);
         }
 
-        private ReadOnlySpan<byte> String2Key(byte[] password, string salt, byte[] param)
+        private ReadOnlyMemory<byte> String2Key(byte[] password, string salt, byte[] param)
         {
             var passwordBytes = KerberosConstants.UnicodeBytesToUtf8(password);
 
@@ -143,9 +160,7 @@ namespace Kerberos.NET.Crypto.AES
 
             var random = PBKDF2(passwordBytes, saltBytes, iterations, KeySize);
 
-            var tmpKey = Random2Key(random);
-
-            return DK(tmpKey, KerberosConstant.Span, KeySize, BlockSize);
+            return DK(random, KerberosConstant, KeySize, BlockSize);
         }
 
         private static int GetIterations(byte[] param, int defCount)
@@ -183,19 +198,19 @@ namespace Kerberos.NET.Crypto.AES
             return val;
         }
 
-        private static ReadOnlySpan<byte> DR(ReadOnlySpan<byte> key, ReadOnlySpan<byte> constant, int keySize, int blockSize)
+        private static ReadOnlyMemory<byte> DR(ReadOnlySpan<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
         {
-            var keyBytes = new Span<byte>(new byte[keySize]);
+            var keyBytes = new Memory<byte>(new byte[keySize]);
 
-            ReadOnlySpan<byte> Ki;
+            ReadOnlyMemory<byte> Ki;
 
             if (constant.Length != blockSize)
             {
-                Ki = NFold(constant, blockSize);
+                Ki = NFold(constant.Span, blockSize);
             }
             else
             {
-                Ki = constant.Slice(0);
+                Ki = constant;
             }
 
             var n = 0;
@@ -276,17 +291,23 @@ namespace Kerberos.NET.Crypto.AES
             return outBytes;
         }
 
-        private static ReadOnlySpan<byte> Hmac(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data)
+        private static ReadOnlyMemory<byte> Hmac(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
         {
-            using (var hmac = new HMACSHA1(key.ToArray()))
+            var keyArray = TryGetArrayFast(key);
+            var dataArray = TryGetArrayFast(data);
+
+            using (var hmac = new HMACSHA1(keyArray))
             {
-                return hmac.ComputeHash(data.ToArray());
+                return hmac.ComputeHash(dataArray, 0, data.Length);
             }
         }
 
-        private static ReadOnlySpan<byte> PBKDF2(ReadOnlySpan<byte> passwordBytes, ReadOnlySpan<byte> salt, int iterations, int keySize)
+        private static ReadOnlySpan<byte> PBKDF2(ReadOnlyMemory<byte> passwordBytes, ReadOnlyMemory<byte> salt, int iterations, int keySize)
         {
-            using (var derive = new Rfc2898DeriveBytes(passwordBytes.ToArray(), salt.ToArray(), iterations))
+            var passwordArray = TryGetArrayFast(passwordBytes);
+            var saltArray = TryGetArrayFast(salt);
+
+            using (var derive = new Rfc2898DeriveBytes(passwordArray, saltArray, iterations))
             {
                 return derive.GetBytes(keySize);
             }
