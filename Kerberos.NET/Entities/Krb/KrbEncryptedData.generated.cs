@@ -38,7 +38,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)EType);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (HasValue(KeyVersionNumber))
+            if (Asn1Extension.HasValue(KeyVersionNumber))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteInteger(KeyVersionNumber.Value);
@@ -162,11 +162,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

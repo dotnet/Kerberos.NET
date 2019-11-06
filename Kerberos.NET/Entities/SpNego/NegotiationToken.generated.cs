@@ -46,7 +46,7 @@ namespace Kerberos.NET.Entities
         {
             bool wroteValue = false; 
             
-            if (HasValue(InitialToken))
+            if (Asn1Extension.HasValue(InitialToken))
             {
                 if (wroteValue)
                     throw new CryptographicException();
@@ -57,7 +57,7 @@ namespace Kerberos.NET.Entities
                 wroteValue = true;
             }
 
-            if (HasValue(ResponseToken))
+            if (Asn1Extension.HasValue(ResponseToken))
             {
                 if (wroteValue)
                     throw new CryptographicException();
@@ -134,11 +134,6 @@ namespace Kerberos.NET.Entities
             {
                 throw new CryptographicException();
             }
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

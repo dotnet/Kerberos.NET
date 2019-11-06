@@ -49,7 +49,7 @@ namespace Kerberos.NET.Entities
             writer.WriteBitString(KdcOptions.AsReadOnly());
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (HasValue(CName))
+            if (Asn1Extension.HasValue(CName))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 CName?.Encode(writer);
@@ -60,7 +60,7 @@ namespace Kerberos.NET.Entities
             writer.WriteCharacterString(UniversalTagNumber.GeneralString, Realm);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
 
-            if (HasValue(SName))
+            if (Asn1Extension.HasValue(SName))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 SName?.Encode(writer);
@@ -68,7 +68,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(From))
+            if (Asn1Extension.HasValue(From))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
                 writer.WriteGeneralizedTime(From.Value);
@@ -79,7 +79,7 @@ namespace Kerberos.NET.Entities
             writer.WriteGeneralizedTime(Till);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
 
-            if (HasValue(RTime))
+            if (Asn1Extension.HasValue(RTime))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
                 writer.WriteGeneralizedTime(RTime.Value);
@@ -100,7 +100,7 @@ namespace Kerberos.NET.Entities
 
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
 
-            if (HasValue(Addresses))
+            if (Asn1Extension.HasValue(Addresses))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 9));
 
@@ -115,7 +115,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(EncAuthorizationData))
+            if (Asn1Extension.HasValue(EncAuthorizationData))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
                 EncAuthorizationData?.Encode(writer);
@@ -123,7 +123,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(AdditionalTickets))
+            if (Asn1Extension.HasValue(AdditionalTickets))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 11));
 
@@ -365,11 +365,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

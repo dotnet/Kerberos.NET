@@ -37,7 +37,7 @@ namespace Kerberos.NET.Entities
             writer.WriteGeneralizedTime(PaTimestamp);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (HasValue(PaUSec))
+            if (Asn1Extension.HasValue(PaUSec))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteInteger(PaUSec.Value);
@@ -139,11 +139,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

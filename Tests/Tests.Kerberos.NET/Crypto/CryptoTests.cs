@@ -4,6 +4,7 @@ using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
+using System.Security;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
@@ -86,11 +87,29 @@ namespace Tests.Kerberos.NET
             await AssertDecode(data, key, EncryptionType.RC4_HMAC_NT);
         }
 
+        [TestMethod, ExpectedException(typeof(SecurityException))]
+        public async Task RC4SPNego_IncorrectKey()
+        {
+            var data = ReadDataFile("rc4-spnego-data");
+            var key = ReadDataFile("aes128-key-data");
+
+            await AssertDecode(data, key, EncryptionType.RC4_HMAC_NT);
+        }
+
         [TestMethod]
         public async Task AES128Kerberos()
         {
             var data = ReadDataFile("aes128-kerberos-data");
             var key = ReadDataFile("aes128-key-data");
+
+            await AssertDecode(data, key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
+        }
+
+        [TestMethod, ExpectedException(typeof(SecurityException))]
+        public async Task AES128Kerberos_IncorrectKey()
+        {
+            var data = ReadDataFile("aes128-kerberos-data");
+            var key = ReadDataFile("aes256-key-data");
 
             await AssertDecode(data, key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
         }
@@ -109,6 +128,15 @@ namespace Tests.Kerberos.NET
         {
             var data = ReadDataFile("aes256-kerberos-data");
             var key = ReadDataFile("aes256-key-data");
+
+            await AssertDecode(data, key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
+        }
+
+        [TestMethod, ExpectedException(typeof(SecurityException))]
+        public async Task AES256Kerberos_IncorrectKey()
+        {
+            var data = ReadDataFile("aes256-kerberos-data");
+            var key = ReadDataFile("aes128-key-data");
 
             await AssertDecode(data, key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
         }

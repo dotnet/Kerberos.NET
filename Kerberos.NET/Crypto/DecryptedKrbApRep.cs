@@ -9,11 +9,11 @@ namespace Kerberos.NET.Crypto
 
         public KrbEncApRepPart Response { get; set; }
 
-        public DateTimeOffset CTime { get; internal set; }
+        public DateTimeOffset CTime { get; set; }
 
-        public int CuSec { get; internal set; }
+        public int CuSec { get; set; }
 
-        public int? SequenceNumber { get; internal set; }
+        public int? SequenceNumber { get; set; }
 
         public DecryptedKrbApRep(KrbApRep response)
         {
@@ -43,21 +43,24 @@ namespace Kerberos.NET.Crypto
             if (KerberosConstants.TimeEquals(CTime, Response.CTime))
             {
                 throw new KerberosValidationException(
-                    $"CTime does not match. Sent: {CTime.Ticks}; Received: {Response.CTime.Ticks}"
+                    $"CTime does not match. Sent: {CTime.Ticks}; Received: {Response.CTime.Ticks}",
+                    nameof(CTime)
                 );
             }
 
             if (CuSec != Response.CuSec)
             {
                 throw new KerberosValidationException(
-                    $"CuSec does not match. Sent: {CuSec}; Received: {Response.CuSec}"
+                    $"CuSec does not match. Sent: {CuSec}; Received: {Response.CuSec}",
+                    nameof(CuSec)
                 );
             }
 
             if (SequenceNumber != Response.SequenceNumber)
             {
                 throw new KerberosValidationException(
-                    $"SequenceNumber does not match. Sent: {SequenceNumber}; Received: {Response.SequenceNumber}"
+                    $"SequenceNumber does not match. Sent: {SequenceNumber}; Received: {Response.SequenceNumber}",
+                    nameof(SequenceNumber)
                 );
             }
         }

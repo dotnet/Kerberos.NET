@@ -38,7 +38,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)EType);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (HasValue(Salt))
+            if (Asn1Extension.HasValue(Salt))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, Salt);
@@ -46,7 +46,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(S2kParams))
+            if (Asn1Extension.HasValue(S2kParams))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 writer.WriteOctetString(S2kParams.Value.Span);
@@ -161,11 +161,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

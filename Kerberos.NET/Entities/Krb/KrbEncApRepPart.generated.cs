@@ -33,7 +33,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger(CuSec);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
 
-            if (HasValue(SubSessionKey))
+            if (Asn1Extension.HasValue(SubSessionKey))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 SubSessionKey?.Encode(writer);
@@ -41,7 +41,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(SequenceNumber))
+            if (Asn1Extension.HasValue(SequenceNumber))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 writer.WriteInteger(SequenceNumber.Value);
@@ -187,11 +187,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

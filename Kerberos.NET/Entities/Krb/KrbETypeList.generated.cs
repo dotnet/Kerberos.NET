@@ -134,10 +134,5 @@ namespace Kerberos.NET.Entities
                 throw new CryptographicException();
             }
         }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
-        }
     }
 }

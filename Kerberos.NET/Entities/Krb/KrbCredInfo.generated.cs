@@ -48,7 +48,7 @@ namespace Kerberos.NET.Entities
             Key?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (HasValue(Realm))
+            if (Asn1Extension.HasValue(Realm))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, Realm);
@@ -56,7 +56,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(PName))
+            if (Asn1Extension.HasValue(PName))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 PName?.Encode(writer);
@@ -67,7 +67,7 @@ namespace Kerberos.NET.Entities
             writer.WriteBitString(Flags.AsReadOnly());
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
 
-            if (HasValue(AuthTime))
+            if (Asn1Extension.HasValue(AuthTime))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
                 writer.WriteGeneralizedTime(AuthTime.Value);
@@ -75,7 +75,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(StartTime))
+            if (Asn1Extension.HasValue(StartTime))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
                 writer.WriteGeneralizedTime(StartTime.Value);
@@ -83,7 +83,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(EndTime))
+            if (Asn1Extension.HasValue(EndTime))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
                 writer.WriteGeneralizedTime(EndTime.Value);
@@ -91,7 +91,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(RenewTill))
+            if (Asn1Extension.HasValue(RenewTill))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 7));
                 writer.WriteGeneralizedTime(RenewTill.Value);
@@ -99,7 +99,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(SRealm))
+            if (Asn1Extension.HasValue(SRealm))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, SRealm);
@@ -107,7 +107,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(SName))
+            if (Asn1Extension.HasValue(SName))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 9));
                 SName?.Encode(writer);
@@ -115,7 +115,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(AuthorizationData))
+            if (Asn1Extension.HasValue(AuthorizationData))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
 
@@ -315,11 +315,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

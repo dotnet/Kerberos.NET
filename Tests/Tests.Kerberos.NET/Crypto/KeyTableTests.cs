@@ -183,5 +183,23 @@ namespace Tests.Kerberos.NET
 
             Assert.AreEqual("Administrator@identityintervention.com", result.Name);
         }
+
+        [TestMethod]
+        public void KeyEntry_NotEquals()
+        {
+            var key = new KeyEntry(new KerberosKey(password: "blah"));
+
+            Assert.IsFalse(key.Equals(123));
+        }
+
+        [TestMethod]
+        public void KeyEntry_ToString()
+        {
+            var key = new KeyEntry(new KerberosKey(password: "blah", etype: EncryptionType.AES128_CTS_HMAC_SHA1_96));
+
+            var str = key.ToString();
+
+            Assert.AreEqual("V5 AES128_CTS_HMAC_SHA1_96", str);
+        }
     }
 }

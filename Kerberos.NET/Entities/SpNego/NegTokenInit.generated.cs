@@ -48,7 +48,7 @@ namespace Kerberos.NET.Entities
 
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (HasValue(RequestFlags))
+            if (Asn1Extension.HasValue(RequestFlags))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteBitString(RequestFlags.Value.Span);
@@ -56,7 +56,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(MechToken))
+            if (Asn1Extension.HasValue(MechToken))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 writer.WriteOctetString(MechToken.Value.Span);
@@ -64,7 +64,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(MechListMic))
+            if (Asn1Extension.HasValue(MechListMic))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 writer.WriteOctetString(MechListMic.Value.Span);
@@ -216,11 +216,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

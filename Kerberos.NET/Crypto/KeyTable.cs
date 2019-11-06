@@ -374,7 +374,7 @@ namespace Kerberos.NET.Crypto
 
         public override string ToString()
         {
-            return $"V{Version} {EncryptionType} {Principal?.Realm}";
+            return $"V{Version} {EncryptionType} {Principal?.Realm}".Trim();
         }
     }
 }
