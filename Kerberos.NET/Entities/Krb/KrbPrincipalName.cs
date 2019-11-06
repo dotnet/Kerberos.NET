@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Server;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,9 +12,68 @@ namespace Kerberos.NET.Entities
     [DebuggerDisplay("{Type} {FullyQualifiedName}")]
     public partial class KrbPrincipalName
     {
+        private const string HostServiceName = "host";
+
+        public static readonly IDictionary<string, string> ServiceAliases = new ConcurrentDictionary<string, string>(new Dictionary<string, string>()
+        {
+            { "alerter", HostServiceName },
+            { "appmgmt", HostServiceName },
+            { "cisvc", HostServiceName },
+            { "clipsrv", HostServiceName },
+            { "browser", HostServiceName },
+            { "dhcp", HostServiceName },
+            { "dnscache", HostServiceName },
+            { "replicator", HostServiceName },
+            { "eventlog", HostServiceName },
+            { "eventsystem", HostServiceName },
+            { "policyagent", HostServiceName },
+            { "oakley", HostServiceName },
+            { "dmserver", HostServiceName },
+            { "dns", HostServiceName },
+            { "mcsvc", HostServiceName },
+            { "fax", HostServiceName },
+            { "msiserver", HostServiceName },
+            { "ias", HostServiceName },
+            { "messenger", HostServiceName },
+            { "netlogon", HostServiceName },
+            { "netman", HostServiceName },
+            { "netdde", HostServiceName },
+            { "netddedsm", HostServiceName },
+            { "nmagent", HostServiceName },
+            { "plugplay", HostServiceName },
+            { "protectedstorage", HostServiceName },
+            { "rasman", HostServiceName },
+            { "rpclocator", HostServiceName },
+            { "rpc", HostServiceName },
+            { "rpcss", HostServiceName },
+            { "remoteaccess", HostServiceName },
+            { "rsvp", HostServiceName },
+            { "samss", HostServiceName },
+            { "scardsvr", HostServiceName },
+            { "scesrv", HostServiceName },
+            { "seclogon", HostServiceName },
+            { "scm", HostServiceName },
+            { "dcom", HostServiceName },
+            { "cifs", HostServiceName },
+            { "spooler", HostServiceName },
+            { "snmp", HostServiceName },
+            { "schedule", HostServiceName },
+            { "tapisrv", HostServiceName },
+            { "trksvr", HostServiceName },
+            { "trkwks", HostServiceName },
+            { "ups", HostServiceName },
+            { "time", HostServiceName },
+            { "wins", HostServiceName },
+            { "www", HostServiceName },
+            { "http", HostServiceName },
+            { "w3svc", HostServiceName },
+            { "iisadmin", HostServiceName },
+            { "msdtc", HostServiceName }
+        });
+
         public string FullyQualifiedName => MakeFullName(Name, Type);
 
-        private static string MakeFullName(IEnumerable<string> names, PrincipalNameType type)
+        private static string MakeFullName(IEnumerable<string> names, PrincipalNameType type, bool normalizeAlias = false)
         {
             var seperator = NameTypeSeperator[(int)type];
 
@@ -26,10 +86,17 @@ namespace Kerberos.NET.Entities
 
                 var sb = new StringBuilder();
 
-                if (enumerator.Current != null)
+                string firstPortion = enumerator.Current;
+
+                if (seperator == "/" && normalizeAlias)
                 {
-                    sb.Append(enumerator.Current);
+                    if (ServiceAliases.TryGetValue(firstPortion.ToLowerInvariant(), out string alias))
+                    {
+                        firstPortion = alias;
+                    }
                 }
+
+                sb.Append(firstPortion);
 
                 if (enumerator.MoveNext())
                 {
@@ -75,45 +142,64 @@ namespace Kerberos.NET.Entities
 
         public bool Matches(object obj)
         {
-            var other = obj as KrbPrincipalName;
-
-            if (other == null)
+            if (obj is null)
             {
                 return false;
             }
 
-            // Any NameType is allowed.  Names collection in two objects must contain at least one common name
-
-            var namesIntersected = other.Name.Intersect(Name);
-
-            if (namesIntersected.Count() == 0)
+            if (!(obj is KrbPrincipalName other))
             {
                 return false;
             }
 
-            return true;
+            var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
+            var otherName = MakeFullName(other.Name, other.Type, normalizeAlias: true);
+
+            return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
         }
 
         public static KrbPrincipalName FromString(
             string principal,
-            PrincipalNameType type = PrincipalNameType.NT_PRINCIPAL,
+            PrincipalNameType? type = null,
             string realm = null
         )
         {
-            var splitOn = NameTypeSeperator[(int)type][0];
+            var actualType = type ?? TryDetectType(principal);
+
+            var splitOn = NameTypeSeperator[(int)actualType][0];
 
             if (splitOn == '@')
             {
-                return SplitAsUpn(principal, realm, type);
+                return SplitAsUpn(principal, realm, actualType);
             }
             else if (splitOn == ',')
             {
-                return SplitX500(principal, realm, type);
+                return SplitX500(principal, realm, actualType);
             }
             else
             {
-                return SplitAsService(principal, realm, type);
+                return SplitAsService(principal, realm, actualType);
             }
+        }
+
+        private static PrincipalNameType TryDetectType(string principal)
+        {
+            if (principal.Contains('/'))
+            {
+                return PrincipalNameType.NT_SRV_HST;
+            }
+
+            if (principal.Contains('@'))
+            {
+                return PrincipalNameType.NT_PRINCIPAL;
+            }
+
+            if (principal.Contains(','))
+            {
+                return PrincipalNameType.NT_X500_PRINCIPAL;
+            }
+
+            return PrincipalNameType.NT_ENTERPRISE;
         }
 
         private static KrbPrincipalName SplitX500(string principal, string realm, PrincipalNameType type)
@@ -195,7 +281,7 @@ namespace Kerberos.NET.Entities
             return new KrbPrincipalName
             {
                 Type = type,
-                Name = new[] { MakeFullName(nameSplit, type) }
+                Name = new[] { MakeFullName(nameSplit, PrincipalNameType.NT_PRINCIPAL) }
             };
         }
 
