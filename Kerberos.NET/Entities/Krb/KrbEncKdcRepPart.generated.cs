@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 using Kerberos.NET.Crypto;
@@ -40,7 +39,6 @@ namespace Kerberos.NET.Entities
         
         internal void Encode(AsnWriter writer)
         {
-            
             Encode(writer, Asn1Tag.Sequence);
         }
         
@@ -131,18 +129,14 @@ namespace Kerberos.NET.Entities
         
         internal void EncodeApplication(AsnWriter writer, Asn1Tag tag)
         {
-                writer.PushSequence(tag);
-                
-                this.Encode(writer, Asn1Tag.Sequence);
-
-                writer.PopSequence(tag);
+            writer.PushSequence(tag);
+            
+            this.Encode(writer, Asn1Tag.Sequence);
+            
+            writer.PopSequence(tag);
         }       
         
-        public virtual ReadOnlyMemory<byte> EncodeApplication() 
-        {
-          return new ReadOnlyMemory<byte>();
-        }
-        
+        public virtual ReadOnlyMemory<byte> EncodeApplication() => new ReadOnlyMemory<byte>();
          
         internal ReadOnlyMemory<byte> EncodeApplication(Asn1Tag tag)
         {
@@ -163,7 +157,7 @@ namespace Kerberos.NET.Entities
         {
             return Decode(Asn1Tag.Sequence, encoded, ruleSet);
         }
-
+        
         internal static KrbEncKdcRepPart Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded)
         {
             AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);

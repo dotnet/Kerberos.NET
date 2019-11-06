@@ -74,8 +74,7 @@ namespace <xsl:value-of select="@namespace" />
             reader.ThrowIfNotEmpty();
 
             return decoded;
-        }
-        </xsl:if>     
+        }</xsl:if>
     }
 }
   </xsl:template>
@@ -86,7 +85,6 @@ namespace <xsl:value-of select="@namespace" />
 
 using System;<xsl:if test="asn:SequenceOf | asn:SetOf">
 using System.Collections.Generic;</xsl:if>
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 using Kerberos.NET.Crypto;
@@ -105,7 +103,7 @@ namespace <xsl:value-of select="@namespace" />
             AsnReader collectionReader;</xsl:if><xsl:apply-templates mode="DefaultFieldVerify" />
         }
 #endif
- </xsl:if>
+ </xsl:if><xsl:if test="not(@explicitTag)">
         public ReadOnlyMemory&lt;byte&gt; Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -114,11 +112,10 @@ namespace <xsl:value-of select="@namespace" />
 
             return writer.EncodeAsMemory();
         }
-        
+        </xsl:if>
         internal void Encode(AsnWriter writer)
         {
-            <xsl:if test="@explicitTag">EncodeApplication(writer, ApplicationTag);</xsl:if>
-            <xsl:if test="not(@explicitTag)">Encode(writer, Asn1Tag.Sequence);</xsl:if>
+            <xsl:if test="@explicitTag">EncodeApplication(writer, ApplicationTag);</xsl:if><xsl:if test="not(@explicitTag)">Encode(writer, Asn1Tag.Sequence);</xsl:if>
         }
         
         internal void Encode(AsnWriter writer, Asn1Tag tag)
@@ -130,19 +127,15 @@ namespace <xsl:value-of select="@namespace" />
         
         internal void EncodeApplication(AsnWriter writer, Asn1Tag tag)
         {
-                writer.PushSequence(tag);
-                
-                this.Encode(writer, Asn1Tag.Sequence);
-
-                writer.PopSequence(tag);
+            writer.PushSequence(tag);
+            
+            this.Encode(writer, Asn1Tag.Sequence);
+            
+            writer.PopSequence(tag);
         }       
         <xsl:if test="not(@explicitTag)">
-        public virtual ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
-        {
-          return new ReadOnlyMemory&lt;byte&gt;();
-        }
-        </xsl:if>
-        <xsl:if test="@explicitTag">
+        public virtual ReadOnlyMemory&lt;byte&gt; EncodeApplication() => new ReadOnlyMemory&lt;byte&gt;();
+        </xsl:if><xsl:if test="@explicitTag">
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, <xsl:value-of select="@explicitTag" />);
         
         public virtual ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
@@ -187,7 +180,7 @@ namespace <xsl:value-of select="@namespace" />
                 return writer.EncodeAsMemory();
             }
         }
-        
+        <xsl:if test="not(@explicitTag)">
         public static <xsl:value-of select="@name" /> Decode(ReadOnlyMemory&lt;byte&gt; data)
         {
             return Decode(data, AsnEncodingRules.DER);
@@ -197,7 +190,7 @@ namespace <xsl:value-of select="@namespace" />
         {
             return Decode(Asn1Tag.Sequence, encoded, ruleSet);
         }
-
+        </xsl:if>
         internal static <xsl:value-of select="@name" /> Decode(Asn1Tag expectedTag, ReadOnlyMemory&lt;byte&gt; encoded)
         {
             AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);

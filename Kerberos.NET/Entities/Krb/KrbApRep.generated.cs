@@ -3,7 +3,6 @@
 // The generation template has been modified from .NET Foundation implementation
 
 using System;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 using Kerberos.NET.Crypto;
@@ -17,19 +16,9 @@ namespace Kerberos.NET.Entities
         public MessageType MessageType;
         public KrbEncryptedData EncryptedPart;
       
-        public ReadOnlyMemory<byte> Encode()
-        {
-            var writer = new AsnWriter(AsnEncodingRules.DER);
-
-            Encode(writer);
-
-            return writer.EncodeAsMemory();
-        }
-        
         internal void Encode(AsnWriter writer)
         {
             EncodeApplication(writer, ApplicationTag);
-            
         }
         
         internal void Encode(AsnWriter writer, Asn1Tag tag)
@@ -50,13 +39,12 @@ namespace Kerberos.NET.Entities
         
         internal void EncodeApplication(AsnWriter writer, Asn1Tag tag)
         {
-                writer.PushSequence(tag);
-                
-                this.Encode(writer, Asn1Tag.Sequence);
-
-                writer.PopSequence(tag);
+            writer.PushSequence(tag);
+            
+            this.Encode(writer, Asn1Tag.Sequence);
+            
+            writer.PopSequence(tag);
         }       
-        
         
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 15);
         
@@ -103,16 +91,6 @@ namespace Kerberos.NET.Entities
             }
         }
         
-        public static KrbApRep Decode(ReadOnlyMemory<byte> data)
-        {
-            return Decode(data, AsnEncodingRules.DER);
-        }
-
-        internal static KrbApRep Decode(ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)
-        {
-            return Decode(Asn1Tag.Sequence, encoded, ruleSet);
-        }
-
         internal static KrbApRep Decode(Asn1Tag expectedTag, ReadOnlyMemory<byte> encoded)
         {
             AsnReader reader = new AsnReader(encoded, AsnEncodingRules.DER);

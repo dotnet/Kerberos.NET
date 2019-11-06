@@ -29,7 +29,6 @@ namespace Kerberos.NET.Entities
 
             return decoded;
         }
-             
     }
 }
   

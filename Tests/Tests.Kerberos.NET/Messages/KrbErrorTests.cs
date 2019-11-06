@@ -68,7 +68,7 @@ namespace Tests.Kerberos.NET
                 Susc = 2345356
             };
 
-            var encoded = err.Encode();
+            var encoded = err.EncodeApplication();
 
             var decoded = KrbError.DecodeApplication(encoded);
 
