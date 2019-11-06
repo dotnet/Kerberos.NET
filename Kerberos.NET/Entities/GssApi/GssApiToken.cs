@@ -36,7 +36,7 @@ namespace Kerberos.NET.Entities
 
                 writer.WriteObjectIdentifier(oid);
 
-                writer.WriteEncodedValue(token.Encode());
+                writer.WriteEncodedValue(token.Encode().Span);
 
                 writer.PopSequence(ApplicationTag);
 

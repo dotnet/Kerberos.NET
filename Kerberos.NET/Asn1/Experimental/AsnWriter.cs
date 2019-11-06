@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -176,6 +176,11 @@ namespace System.Security.Cryptography.Asn1
 
         internal ReadOnlySpan<byte> EncodeAsSpan()
         {
+            return EncodeAsMemory().Span;
+        }
+
+        internal ReadOnlyMemory<byte> EncodeAsMemory()
+        {
             CheckDisposed();
 
             if ((_nestingStack?.Count ?? 0) != 0)
@@ -185,12 +190,17 @@ namespace System.Security.Cryptography.Asn1
 
             if (_offset == 0)
             {
-                return ReadOnlySpan<byte>.Empty;
+                return ReadOnlyMemory<byte>.Empty;
             }
 
             // If the stack is closed out then everything is a definite encoding (BER, DER) or a
             // required indefinite encoding (CER). So we're correctly sized up, and ready to copy.
-            return new ReadOnlySpan<byte>(_buffer, 0, _offset);
+
+            var memory = new Memory<byte>(new byte[_buffer.Length]);
+
+            _buffer.CopyTo(memory);
+
+            return memory.Slice(0, _offset);
         }
 
         /// <summary>

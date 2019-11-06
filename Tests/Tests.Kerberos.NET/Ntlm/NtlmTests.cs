@@ -74,7 +74,7 @@ namespace Tests.Kerberos.NET
 
             var encoded = negToken.Encode();
 
-            var decoded = NegotiationToken.Decode(encoded.AsMemory());
+            var decoded = NegotiationToken.Decode(encoded);
 
             Assert.IsNotNull(decoded);
             Assert.IsNotNull(decoded.InitialToken);
@@ -96,7 +96,7 @@ namespace Tests.Kerberos.NET
 
             var encoded = negToken.Encode();
 
-            var decoded = NegotiationToken.Decode(encoded.AsMemory());
+            var decoded = NegotiationToken.Decode(encoded);
 
             Assert.IsNotNull(decoded);
             Assert.IsNull(decoded.InitialToken);

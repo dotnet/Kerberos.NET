@@ -16,13 +16,13 @@ namespace Kerberos.NET.Entities
         public PacOptions Flags;
     
       
-        public ReadOnlySpan<byte> Encode()
+        public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
 
             Encode(writer);
 
-            return writer.EncodeAsSpan();
+            return writer.EncodeAsMemory();
         }
         
         internal void Encode(AsnWriter writer)
@@ -62,9 +62,7 @@ namespace Kerberos.NET.Entities
             {
                 EncodeApplication(writer, tag);
 
-                var span = writer.EncodeAsSpan();
-
-                return span.AsMemory();
+                return writer.EncodeAsMemory();
             }
         }
         

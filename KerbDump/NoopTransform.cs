@@ -16,12 +16,12 @@ namespace KerbDump
             return data;
         }
 
-        public override ReadOnlySpan<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage)
+        public override ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage)
         {
             return cipher.ToArray();
         }
 
-        public override ReadOnlySpan<byte> String2Key(KerberosKey key)
+        public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
         {
             return key.PasswordBytes;
         }

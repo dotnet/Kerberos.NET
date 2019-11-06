@@ -76,13 +76,13 @@ namespace Kerberos.NET.Entities
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReadOnlySpan<byte> UnicodeBytesToUtf8(byte[] str)
+        public static ReadOnlyMemory<byte> UnicodeBytesToUtf8(byte[] str)
         {
             return Encoding.Convert(Encoding.Unicode, Encoding.UTF8, str, 0, str.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReadOnlySpan<byte> UnicodeStringToUtf8(string str)
+        public static ReadOnlyMemory<byte> UnicodeStringToUtf8(string str)
         {
             return UnicodeBytesToUtf8(Encoding.Unicode.GetBytes(str));
         }

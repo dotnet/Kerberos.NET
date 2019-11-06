@@ -27,10 +27,10 @@ namespace Kerberos.NET.Crypto
 
         public void Sign(KerberosKey key)
         {
-            Signature = SignInternal(key).AsMemory();
+            Signature = SignInternal(key);
         }
 
-        protected abstract ReadOnlySpan<byte> SignInternal(KerberosKey key);
+        protected abstract ReadOnlyMemory<byte> SignInternal(KerberosKey key);
 
         protected abstract bool ValidateInternal(KerberosKey key);
     }
@@ -61,10 +61,10 @@ namespace Kerberos.NET.Crypto
             this.decryptor = decryptor;
         }
 
-        protected override ReadOnlySpan<byte> SignInternal(KerberosKey key)
+        protected override ReadOnlyMemory<byte> SignInternal(KerberosKey key)
         {
             return decryptor.MakeChecksum(
-                Data.Span,
+                Data,
                 key,
                 Usage,
                 KeyDerivationMode.Kc,
@@ -76,7 +76,7 @@ namespace Kerberos.NET.Crypto
         {
             var actualChecksum = SignInternal(key);
 
-            return KerberosCryptoTransformer.AreEqualSlow(actualChecksum, Signature.Span);
+            return KerberosCryptoTransformer.AreEqualSlow(actualChecksum.Span, Signature.Span);
         }
     }
 
@@ -87,7 +87,7 @@ namespace Kerberos.NET.Crypto
         {
         }
 
-        protected override ReadOnlySpan<byte> SignInternal(KerberosKey key)
+        protected override ReadOnlyMemory<byte> SignInternal(KerberosKey key)
         {
             var crypto = CryptoService.CreateTransform(EncryptionType.RC4_HMAC_NT);
 
@@ -102,7 +102,7 @@ namespace Kerberos.NET.Crypto
         {
             var actualChecksum = SignInternal(key);
 
-            return KerberosCryptoTransformer.AreEqualSlow(actualChecksum, Signature.Span);
+            return KerberosCryptoTransformer.AreEqualSlow(actualChecksum.Span, Signature.Span);
         }
     }
 }

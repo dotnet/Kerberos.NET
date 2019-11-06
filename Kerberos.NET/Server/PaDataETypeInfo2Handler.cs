@@ -36,7 +36,7 @@ namespace Kerberos.NET.Server
             var infoPaData = new KrbPaData
             {
                 Type = PaDataType.PA_ETYPE_INFO2,
-                Value = etypeInfo.Encode().AsMemory()
+                Value = etypeInfo.Encode()
             };
 
             preAuthRequirements.Add(infoPaData);

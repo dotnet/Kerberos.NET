@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -10,172 +11,160 @@ namespace Kerberos.NET.Crypto
 {
     internal static class AESCTS
     {
-        public static ReadOnlySpan<byte> Encrypt(
-            ReadOnlySpan<byte> plainText,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> iv
-        )
-        {
-            var padSize = 16 - (plainText.Length % 16);
+        private const int BlockSize = 16;
+        private const int TwoBlockSizes = BlockSize * 2;
 
-            if (plainText.Length < 16)
+        public static ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> plainText, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv)
+        {
+            if (!CalculateLength(plainText.Length, out int padSize, out int maxLength))
             {
                 return plainText;
             }
 
-            Span<byte> data;
-            Span<byte> encrypted;
-
-            if (padSize == 16)
+            using (var rental = MemoryPool<byte>.Shared.Rent(maxLength))
             {
-                if (plainText.Length > 16)
+                Memory<byte> plaintextRented;
+
+                if (padSize == BlockSize)
                 {
-                    iv = new byte[iv.Length];
+                    plaintextRented = rental.Memory.Slice(0, plainText.Length);
+                    plainText.CopyTo(plaintextRented);
+                }
+                else
+                {
+                    plaintextRented = rental.Memory.Slice(0, maxLength);
+                    plainText.CopyTo(plaintextRented);
+
+                    plaintextRented.Span.Slice(plaintextRented.Length - padSize).Fill(0);
                 }
 
-                data = plainText.ToArray();
-            }
-            else
-            {
-                data = new byte[plainText.Length + padSize];
+                var encrypted = Transform(plaintextRented.Span, key, iv, true);
 
-                plainText.CopyTo(data);
-
-                for (var i = 0; i < padSize; i++)
+                if (plainText.Length >= TwoBlockSizes)
                 {
-                    data[data.Length - padSize + i] = 0;
-                }
-            }
-
-            encrypted = Transform(data, key, iv, true);
-
-            if (plainText.Length >= 32)
-            {
-                SwapLastTwoBlocks(encrypted);
-            }
-
-            return encrypted.Slice(0, plainText.Length);
-        }
-
-        private static AESAlgorithm algorithm;
-        private static readonly object _lockAlgorithm = new object();
-
-        private static AESAlgorithm Algorithm
-        {
-            get
-            {
-                if (algorithm == null)
-                {
-                    lock (_lockAlgorithm)
-                    {
-                        if (algorithm == null)
-                        {
-                            var impl = AESAlgorithm.Create();
-                            impl.Padding = PaddingMode.None;
-                            impl.Mode = CipherMode.CBC;
-                            algorithm = impl;
-                        }
-                    }
+                    SwapLastTwoBlocks(encrypted.Span);
                 }
 
-                return algorithm;
+                return encrypted.Slice(0, plainText.Length);
             }
         }
 
-        private static Span<byte> Transform(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv, bool encrypt)
+        private static readonly Lazy<AESAlgorithm> lazyAlgorithm = new Lazy<AESAlgorithm>(() =>
         {
+            var impl = AESAlgorithm.Create();
+            impl.Padding = PaddingMode.None;
+            impl.Mode = CipherMode.CBC;
+            return impl;
+        });
+
+        private static AESAlgorithm Algorithm => lazyAlgorithm.Value;
+
+        private static Memory<byte> Transform(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv, bool encrypt)
+        {
+            var keyArray = key.ToArray();
+            var ivArray = iv.ToArray();
+            var dataArray = data.ToArray();
+
             ICryptoTransform transform;
 
             if (encrypt)
             {
-                transform = Algorithm.CreateEncryptor(key.ToArray(), iv.ToArray());
+                transform = Algorithm.CreateEncryptor(keyArray, ivArray);
             }
             else
             {
-                transform = Algorithm.CreateDecryptor(key.ToArray(), iv.ToArray());
+                transform = Algorithm.CreateDecryptor(keyArray, ivArray);
             }
 
             using (transform)
-            using (var stream = new MemoryStream())
+            using (var stream = new MemoryStream(data.Length))
             {
                 using (var cryptoStream = new CryptoStream(stream, transform, CryptoStreamMode.Write))
                 {
-                    cryptoStream.Write(data.ToArray(), 0, data.Length);
+                    cryptoStream.Write(dataArray, 0, data.Length);
                 }
 
-                return stream.ToArray();
+                return stream.GetBuffer();
             }
         }
 
-        public static ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv)
+        public static ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ciphertext, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv)
         {
-            var padSize = 16 - (ciphertext.Length % 16);
-
-            if (ciphertext.Length < 16)
+            if (!CalculateLength(ciphertext.Length, out int padSize, out int maxLength))
             {
                 return ciphertext;
             }
 
-            if (padSize == 16)
+            using (var rental = CryptoPool.Rent<byte>(maxLength))
             {
-                var data = new Span<byte>(new byte[ciphertext.Length]);
+                Memory<byte> ciphertextRented;
 
-                ciphertext.CopyTo(data);
-
-                if (ciphertext.Length >= 32)
+                if (padSize == BlockSize)
                 {
-                    SwapLastTwoBlocks(data);
+                    ciphertextRented = rental.Memory.Slice(0, ciphertext.Length);
+
+                    ciphertext.CopyTo(ciphertextRented);
+                }
+                else
+                {
+                    var depadded = Depad(ciphertext, padSize);
+
+                    var decryptedPad = Transform(
+                        depadded.Span,
+                        key,
+                        iv,
+                        false
+                    );
+
+                    ciphertextRented = rental.Memory.Slice(0, maxLength);
+
+                    ciphertext.CopyTo(ciphertextRented);
+
+                    decryptedPad.Slice(decryptedPad.Length - padSize)
+                                .CopyTo(
+                                    ciphertextRented.Slice(ciphertext.Length)
+                                );
                 }
 
-                if (data.Length == 16)
+                if (ciphertext.Length >= TwoBlockSizes)
                 {
-                    iv = new byte[iv.Length];
+                    SwapLastTwoBlocks(ciphertextRented.Span);
                 }
 
-                return Transform(data, key, iv, false);
-            }
-            else
-            {
-                var depadded = Depad(ciphertext, padSize);
-
-                var dn = Transform(
-                    depadded,
-                    key,
-                    new byte[iv.Length],
-                    false
-                );
-
-                var data = new Span<byte>(new byte[ciphertext.Length + padSize]);
-
-                ciphertext.CopyTo(data);
-
-                dn.Slice(dn.Length - padSize).CopyTo(data.Slice(ciphertext.Length, padSize));
-
-                SwapLastTwoBlocks(data);
-
-                var transformed = Transform(data, key, iv, false);
-
-                return transformed.Slice(0, ciphertext.Length);
+                return Transform(ciphertextRented.Span, key, iv, false).Slice(0, ciphertext.Length);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ReadOnlySpan<byte> Depad(ReadOnlySpan<byte> ciphertext, int padSize)
+        private static bool CalculateLength(int len, out int padSize, out int maxLength)
         {
-            var offset = ciphertext.Length - 32 + padSize;
+            padSize = BlockSize - (len % BlockSize);
 
-            return ciphertext.Slice(offset, 16);
+            maxLength = len + padSize;
+
+            return len >= BlockSize;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ReadOnlyMemory<byte> Depad(ReadOnlyMemory<byte> ciphertext, int padSize)
+        {
+            var offset = ciphertext.Length - TwoBlockSizes + padSize;
+
+            return ciphertext.Slice(offset, BlockSize);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SwapLastTwoBlocks(Span<byte> data)
         {
-            for (var i = 0; i < 16; i++)
-            {
-                var temp = data[i + data.Length - 32];
+            var blockOne = data.Length - TwoBlockSizes;
+            var blockTwo = data.Length - BlockSize;
 
-                data[i + data.Length - 32] = data[i + data.Length - 16];
-                data[i + data.Length - 16] = temp;
+            for (var i = 0; i < BlockSize; i++)
+            {
+                var temp = data[i + blockOne];
+
+                data[i + blockOne] = data[i + blockTwo];
+                data[i + blockTwo] = temp;
             }
         }
     }

@@ -252,8 +252,8 @@ namespace Kerberos.NET.Client
                     throw new InvalidOperationException("Cannot request a service ticket until a user is authenticated");
                 }
 
-                entry.SessionKey = KrbEncryptionKey.Decode(entry.SessionKey.Encode().AsMemory());
-                entry.Ticket = KrbKdcRep.Decode(entry.Ticket.Encode().AsMemory());
+                entry.SessionKey = KrbEncryptionKey.Decode(entry.SessionKey.Encode());
+                entry.Ticket = KrbKdcRep.Decode(entry.Ticket.Encode());
             }
 
             return entry;

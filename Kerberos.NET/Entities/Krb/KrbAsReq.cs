@@ -37,7 +37,7 @@ namespace Kerberos.NET.Entities
                 new KrbPaData
                 {
                     Type = PaDataType.PA_PAC_REQUEST,
-                    Value = pacRequest.Encode().AsMemory()
+                    Value = pacRequest.Encode()
                 }
             };
 
@@ -45,7 +45,7 @@ namespace Kerberos.NET.Entities
             {
                 var ts = KrbPaEncTsEnc.Now();
 
-                var tsEncoded = ts.Encode().AsMemory();
+                var tsEncoded = ts.Encode();
 
                 KrbEncryptedData encData = KrbEncryptedData.Encrypt(
                     tsEncoded,
@@ -56,7 +56,7 @@ namespace Kerberos.NET.Entities
                 padata.Add(new KrbPaData
                 {
                     Type = PaDataType.PA_ENC_TIMESTAMP,
-                    Value = encData.Encode().AsMemory()
+                    Value = encData.Encode()
                 });
             }
 

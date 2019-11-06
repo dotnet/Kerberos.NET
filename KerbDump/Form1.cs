@@ -287,12 +287,12 @@ namespace KerbDump
 
             var keys = keytab.Entries.Select(k =>
             {
+                var keyBytes = k.Key.GetKey(
+                    CryptoService.CreateTransform(EncryptionType.NULL)
+                );
+
                 var key = new KerberosKey(
-                    Encoding.Unicode.GetString(
-                        k.Key.GetKey(
-                            CryptoService.CreateTransform(EncryptionType.NULL)
-                        )
-                    ),
+                    Encoding.Unicode.GetString(keyBytes.ToArray()),
                     k.Principal
                 );
 

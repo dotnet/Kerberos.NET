@@ -70,7 +70,7 @@ namespace Tests.Kerberos.NET
 
             var encoded = err.Encode();
 
-            var decoded = KrbError.DecodeApplication(encoded.AsMemory());
+            var decoded = KrbError.DecodeApplication(encoded);
 
             Assert.IsNotNull(decoded);
 

@@ -1,4 +1,4 @@
-using Kerberos.NET;
+﻿using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -33,7 +33,7 @@ namespace Tests.Kerberos.NET
 
             var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.PaEncTs);
 
-            Assert.IsTrue(data.Span.SequenceEqual(decrypted));
+            Assert.IsTrue(data.Span.SequenceEqual(decrypted.Span));
         }
 
         [TestMethod]
@@ -49,7 +49,7 @@ namespace Tests.Kerberos.NET
 
             var decrypted = aesTransformer.Decrypt(encrypted, key, KeyUsage.PaEncTs);
 
-            Assert.IsTrue(data.Span.SequenceEqual(decrypted));
+            Assert.IsTrue(data.Span.SequenceEqual(decrypted.Span));
         }
 
         [TestMethod]
@@ -65,7 +65,7 @@ namespace Tests.Kerberos.NET
 
             var decrypted = rc4Transformer.Decrypt(encrypted, key, KeyUsage.PaEncTs);
 
-            Assert.IsTrue(data.Span.SequenceEqual(decrypted));
+            Assert.IsTrue(data.Span.SequenceEqual(decrypted.Span));
         }
 
         [TestMethod]
@@ -208,7 +208,7 @@ namespace Tests.Kerberos.NET
 
             var gen = key.GetKey();
 
-            Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(gen, expectedKey));
+            Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(gen.Span, expectedKey));
         }
 
         [TestMethod]
@@ -234,7 +234,7 @@ namespace Tests.Kerberos.NET
 
             var upperCase = upperCaseKey.GetKey();
 
-            Assert.IsFalse(KerberosCryptoTransformer.AreEqualSlow(lowerCase, upperCase));
+            Assert.IsFalse(KerberosCryptoTransformer.AreEqualSlow(lowerCase.Span, upperCase.Span));
         }
 
         [TestMethod]
@@ -271,7 +271,7 @@ namespace Tests.Kerberos.NET
 
             var gen = key.GetKey();
 
-            Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(gen, expectedKey));
+            Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(gen.Span, expectedKey));
         }
 
         [TestMethod]
@@ -351,7 +351,7 @@ namespace Tests.Kerberos.NET
 
             var fixedKey = keyFixedSalt.GetKey();
 
-            Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(fixedKey, expectedKey));
+            Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(fixedKey.Span, expectedKey));
 
             var keyDerivedSalt = new KerberosKey(
                 password: password,
@@ -363,7 +363,7 @@ namespace Tests.Kerberos.NET
 
             var derived = keyDerivedSalt.GetKey();
 
-            Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(derived, expectedKey));
+            Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(derived.Span, expectedKey));
         }
 
         private static async Task AssertDecode(byte[] data, byte[] key, EncryptionType etype)

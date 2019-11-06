@@ -106,13 +106,13 @@ namespace <xsl:value-of select="@namespace" />
         }
 #endif
  </xsl:if>
-        public ReadOnlySpan&lt;byte&gt; Encode()
+        public ReadOnlyMemory&lt;byte&gt; Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
 
             Encode(writer);
 
-            return writer.EncodeAsSpan();
+            return writer.EncodeAsMemory();
         }
         
         internal void Encode(AsnWriter writer)
@@ -184,9 +184,7 @@ namespace <xsl:value-of select="@namespace" />
             {
                 EncodeApplication(writer, tag);
 
-                var span = writer.EncodeAsSpan();
-
-                return span.AsMemory();
+                return writer.EncodeAsMemory();
             }
         }
         
@@ -283,13 +281,13 @@ namespace <xsl:value-of select="@namespace" />
             <xsl:apply-templates mode="EnsureUniqueTag" />
         }
 #endif
-        public ReadOnlySpan&lt;byte&gt; Encode()
+        public ReadOnlyMemory&lt;byte&gt; Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
 
             Encode(writer);
 
-            return writer.EncodeAsSpan();
+            return writer.EncodeAsMemory();
         }
 
         internal void Encode(AsnWriter writer)
@@ -334,9 +332,7 @@ namespace <xsl:value-of select="@namespace" />
 
                 writer.PopSequence(tag);
 
-                var span = writer.EncodeAsSpan();
-
-                return span.AsMemory();
+                return writer.EncodeAsMemory();
             }
         }
         
