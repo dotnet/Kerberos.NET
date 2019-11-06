@@ -63,7 +63,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger(Nonce);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
 
-            if (HasValue(KeyExpiration))
+            if (Asn1Extension.HasValue(KeyExpiration))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 writer.WriteGeneralizedTime(KeyExpiration.Value);
@@ -77,7 +77,7 @@ namespace Kerberos.NET.Entities
             writer.WriteGeneralizedTime(AuthTime);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
 
-            if (HasValue(StartTime))
+            if (Asn1Extension.HasValue(StartTime))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
                 writer.WriteGeneralizedTime(StartTime.Value);
@@ -88,7 +88,7 @@ namespace Kerberos.NET.Entities
             writer.WriteGeneralizedTime(EndTime);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 7));
 
-            if (HasValue(RenewTill))
+            if (Asn1Extension.HasValue(RenewTill))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
                 writer.WriteGeneralizedTime(RenewTill.Value);
@@ -102,7 +102,7 @@ namespace Kerberos.NET.Entities
             SName?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
 
-            if (HasValue(CAddr))
+            if (Asn1Extension.HasValue(CAddr))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 11));
 
@@ -117,7 +117,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(EncryptedPaData))
+            if (Asn1Extension.HasValue(EncryptedPaData))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 12));
                 EncryptedPaData?.Encode(writer);
@@ -325,11 +325,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

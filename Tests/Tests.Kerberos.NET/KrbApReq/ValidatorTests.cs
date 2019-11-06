@@ -164,6 +164,31 @@ namespace Tests.Kerberos.NET
             decrypted.Validate(ValidationActions.All);
         }
 
+        private static DecryptedKrbApRep CreateResponseMessage(DateTimeOffset ctime, int cusec, int sequence, KerberosKey sessionKey)
+        {
+            var apRepPart = new KrbEncApRepPart
+            {
+                CTime = ctime,
+                CuSec = cusec,
+                SequenceNumber = sequence
+            };
+
+            var apRep = new KrbApRep
+            {
+                EncryptedPart = KrbEncryptedData.Encrypt(
+                    apRepPart.EncodeApplication(),
+                    sessionKey,
+                    KeyUsage.EncApRepPart
+                )
+            };
+
+            var decrypted = new DecryptedKrbApRep(apRep);
+
+            decrypted.Decrypt(sessionKey);
+
+            return decrypted;
+        }
+
         private static async Task<DecryptedKrbApReq> CreateDecryptedApReq(DateTimeOffset now, DateTimeOffset notBefore, DateTimeOffset notAfter, DateTimeOffset renewUntil)
         {
             var key = new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96);
@@ -240,6 +265,63 @@ namespace Tests.Kerberos.NET
             DecryptedKrbApReq decrypted = await CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
 
             decrypted.Now = () => DateTimeOffset.UtcNow.AddMinutes(-10);
+
+            decrypted.Validate(ValidationActions.All);
+        }
+
+        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        public void DecryptedKrbApRep_Validate_Skew()
+        {
+            // generate ticket where now is ten minutes ago
+
+            var now = DateTimeOffset.UtcNow;
+
+            var sessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96);
+
+            var decrypted = CreateResponseMessage(now, 0, 123, sessionKey.AsKey());
+
+            decrypted.Now = () => DateTimeOffset.UtcNow.AddMinutes(-10);
+
+            decrypted.Validate(ValidationActions.All);
+        }
+
+        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        public void DecryptedKrbApRep_Validate_CTime()
+        {
+            var now = DateTimeOffset.UtcNow;
+
+            var sessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96);
+
+            var decrypted = CreateResponseMessage(now, 0, 123, sessionKey.AsKey());
+
+            decrypted.Validate(ValidationActions.All);
+        }
+
+        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        public void DecryptedKrbApRep_Validate_CuSec()
+        {
+            var now = DateTimeOffset.UtcNow;
+
+            var sessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96);
+
+            var decrypted = CreateResponseMessage(now, 111, 123, sessionKey.AsKey());
+
+            decrypted.CTime = now;
+
+            decrypted.Validate(ValidationActions.All);
+        }
+
+        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        public void DecryptedKrbApRep_Validate_Sequence()
+        {
+            var now = DateTimeOffset.UtcNow;
+
+            var sessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96);
+
+            var decrypted = CreateResponseMessage(now, 111, 123, sessionKey.AsKey());
+
+            decrypted.CTime = now;
+            decrypted.CuSec = 111;
 
             decrypted.Validate(ValidationActions.All);
         }

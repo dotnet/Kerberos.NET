@@ -30,7 +30,8 @@ namespace Kerberos.NET.Crypto
             if (endTime < (now - skew))
             {
                 throw new KerberosValidationException(
-                    $"Token has expired. End: {endTime}; Now: {now}; Skew: {skew}"
+                    $"Token has expired. End: {endTime}; Now: {now}; Skew: {skew}",
+                    nameof(endTime)
                 );
             }
         }
@@ -40,7 +41,8 @@ namespace Kerberos.NET.Crypto
             if (renewTill == null || renewTill < (now - skew))
             {
                 throw new KerberosValidationException(
-                    $"Token cannot be renewed any further. Renew Till: {renewTill}; Now: {now}; Skew: {skew}"
+                    $"Token cannot be renewed any further. Renew Till: {renewTill}; Now: {now}; Skew: {skew}",
+                    nameof(renewTill)
                 );
             }
         }
@@ -50,7 +52,8 @@ namespace Kerberos.NET.Crypto
             if (startTime > (now + skew))
             {
                 throw new KerberosValidationException(
-                    $"Token Start isn't valid yet. Start: {startTime}; Now: {now}; Skew: {skew}"
+                    $"Token Start isn't valid yet. Start: {startTime}; Now: {now}; Skew: {skew}",
+                    nameof(startTime)
                 );
             }
         }
@@ -72,7 +75,8 @@ namespace Kerberos.NET.Crypto
             if (skewed > skew)
             {
                 throw new KerberosValidationException(
-                    $"Token window is greater than allowed skew. Start: {ctime}; End: {now}; Allowed Skew: {skew}; Actual Skew: {skewed}"
+                    $"Token window is greater than allowed skew. Start: {ctime}; End: {now}; Allowed Skew: {skew}; Actual Skew: {skewed}",
+                    nameof(skew)
                 );
             }
         }
@@ -85,7 +89,8 @@ namespace Kerberos.NET.Crypto
                     "Ticket CName " +
                     $"({leftName.Type}: {leftName.Type})" +
                     " does not match Authenticator CName " +
-                    $"({rightName.Type}: {rightName.Name})"
+                    $"({rightName.Type}: {rightName.Name})",
+                    nameof(KrbPrincipalName)
                 );
             }
         }

@@ -141,10 +141,5 @@ namespace Kerberos.NET.Entities
 
             sequenceReader.ThrowIfNotEmpty();
         }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
-        }
     }
 }

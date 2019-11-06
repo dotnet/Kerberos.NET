@@ -66,9 +66,9 @@ namespace Kerberos.NET.Crypto
 
             var k2 = HMACMD5(k1, salt);
 
-            var checksum = ciphertext.Slice(0, HashSize);
+            var incomingChecksum = ciphertext.Slice(0, HashSize);
 
-            var k3 = HMACMD5(k2, checksum);
+            var k3 = HMACMD5(k2, incomingChecksum);
 
             var ciphertextOffset = ciphertext.Slice(HashSize);
 
@@ -78,7 +78,7 @@ namespace Kerberos.NET.Crypto
 
             var actualChecksum = HMACMD5(k2, plaintext);
 
-            if (!AreEqualSlow(checksum.Span, ciphertext.Span.Slice(0, actualChecksum.Length)))
+            if (!AreEqualSlow(incomingChecksum.Span, actualChecksum.Span.Slice(0, actualChecksum.Length)))
             {
                 throw new SecurityException("Invalid Checksum");
             }

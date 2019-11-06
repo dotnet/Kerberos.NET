@@ -233,11 +233,6 @@ namespace <xsl:value-of select="@namespace" />
 
             sequenceReader.ThrowIfNotEmpty();
         }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
-        }
     }
 }
 </xsl:template>
@@ -359,11 +354,6 @@ namespace <xsl:value-of select="@namespace" />
                 throw new CryptographicException();
             }
         }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
-        }
     }
 }
 </xsl:template>
@@ -434,7 +424,7 @@ namespace <xsl:value-of select="@namespace" />
   <!-- Struct OPTIONAL -->
   <xsl:template match="asn:AsnType | asn:AnyValue | asn:Boolean | asn:Integer | asn:BitString | asn:NamedBitList | asn:OctetString | asn:Enumerated | asn:UtcTime | asn:GeneralizedTime" mode="EncodeOptional">
 
-            if (HasValue(<xsl:value-of select="@name"/>))
+            if (Asn1Extension.HasValue(<xsl:value-of select="@name"/>))
             {<xsl:apply-templates select="." mode="EncodeValue"><xsl:with-param name="indent" select="'    '"/></xsl:apply-templates>
             }
 </xsl:template>
@@ -442,14 +432,14 @@ namespace <xsl:value-of select="@namespace" />
   <!-- Class OPTIONAL -->
   <xsl:template match="asn:ObjectIdentifier | asn:UTF8String | asn:SequenceOf | asn:SetOf | asn:PrintableString | asn:T61String | asn:IA5String | asn:GeneralString | asn:VisibleString | asn:BMPString" mode="EncodeOptional">
 
-            if (HasValue(<xsl:value-of select="@name"/>))
+            if (Asn1Extension.HasValue(<xsl:value-of select="@name"/>))
             {<xsl:apply-templates select="." mode="EncodeValue"><xsl:with-param name="indent" select="'    '"/></xsl:apply-templates>
             }
 </xsl:template>
 
   <!-- Struct CHOICE -->
   <xsl:template match="asn:AsnType | asn:AnyValue | asn:Boolean | asn:Integer | asn:BitString | asn:NamedBitList | asn:OctetString | asn:Enumerated | asn:UtcTime | asn:GeneralizedTime" mode="EncodeChoice">
-            if (HasValue(<xsl:value-of select="@name"/>))
+            if (Asn1Extension.HasValue(<xsl:value-of select="@name"/>))
             {
                 if (wroteValue)
                     throw new CryptographicException();

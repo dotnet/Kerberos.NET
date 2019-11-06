@@ -36,7 +36,7 @@ namespace Kerberos.NET.Entities
             writer.PushSequence(tag);
             
 
-            if (HasValue(State))
+            if (Asn1Extension.HasValue(State))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
                 writer.WriteEnumeratedValue(State);
@@ -44,7 +44,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(SupportedMech))
+            if (Asn1Extension.HasValue(SupportedMech))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteObjectIdentifier(SupportedMech);
@@ -52,7 +52,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(ResponseToken))
+            if (Asn1Extension.HasValue(ResponseToken))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 writer.WriteOctetString(ResponseToken.Value.Span);
@@ -60,7 +60,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(MechListMic))
+            if (Asn1Extension.HasValue(MechListMic))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 writer.WriteOctetString(MechListMic.Value.Span);
@@ -190,11 +190,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }

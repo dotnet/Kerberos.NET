@@ -42,7 +42,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)MessageType);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
 
-            if (HasValue(CTime))
+            if (Asn1Extension.HasValue(CTime))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
                 writer.WriteGeneralizedTime(CTime.Value);
@@ -50,7 +50,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(Cusec))
+            if (Asn1Extension.HasValue(Cusec))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 writer.WriteInteger(Cusec.Value);
@@ -67,7 +67,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)ErrorCode);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
 
-            if (HasValue(CRealm))
+            if (Asn1Extension.HasValue(CRealm))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 7));
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, CRealm);
@@ -75,7 +75,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(CName))
+            if (Asn1Extension.HasValue(CName))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
                 CName?.Encode(writer);
@@ -89,7 +89,7 @@ namespace Kerberos.NET.Entities
             SName?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
 
-            if (HasValue(EText))
+            if (Asn1Extension.HasValue(EText))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 11));
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, EText);
@@ -97,7 +97,7 @@ namespace Kerberos.NET.Entities
             }
 
 
-            if (HasValue(EData))
+            if (Asn1Extension.HasValue(EData))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 12));
                 writer.WriteOctetString(EData.Value.Span);
@@ -324,11 +324,6 @@ namespace Kerberos.NET.Entities
 
 
             sequenceReader.ThrowIfNotEmpty();
-        }
-        
-        private static bool HasValue(object thing) 
-        {
-            return thing != null;
         }
     }
 }
