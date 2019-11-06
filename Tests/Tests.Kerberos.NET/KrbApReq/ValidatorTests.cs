@@ -141,11 +141,12 @@ namespace Tests.Kerberos.NET
                 SubSessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96)
             };
 
-            var encoded = encPart.Encode();
+            var encoded = encPart.EncodeApplication();
 
             var decoded = KrbEncApRepPart.DecodeApplication(encoded);
 
             Assert.IsNotNull(decoded);
+            Assert.AreEqual(123, decoded.CuSec);
         }
 
         [TestMethod, ExpectedException(typeof(KerberosValidationException))]
