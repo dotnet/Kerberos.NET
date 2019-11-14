@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Kerberos.NET.Ndr;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 
 namespace Kerberos.NET.Entities.Pac
@@ -15,28 +15,16 @@ namespace Kerberos.NET.Entities.Pac
     }
 
     [DebuggerDisplay("{Id} {Type} {Count} {RawValues}")]
-    public class ClaimEntry : NdrObject
+    public class ClaimEntry : INdrStruct, INdrUnion
     {
-        public override void WriteBody(NdrBinaryStream stream)
+        public void Marshal(NdrBuffer buffer)
         {
+            buffer.WriteDeferredConformantVaryingArray(Id.AsMemory());
 
-        }
+            buffer.WriteInt16LittleEndian((short)Type);
+            buffer.WriteInt32LittleEndian(Count);
 
-        public override void WriteBody(NdrBinaryStream stream, Queue<Action> deferredFurther)
-        {
-            stream.WriteClaimEntry(this, deferredFurther);
-        }
-
-        internal void EncodeType(object val, ClaimType type, NdrBinaryStream stream)
-        {
-            if (type == ClaimType.CLAIM_TYPE_STRING)
-            {
-                stream.WriteString(val.ToString());
-            }
-            else
-            {
-                stream.WriteUnsignedLong(Convert.ToInt64(val));
-            }
+            buffer.WriteDeferredStructUnion(this);
         }
 
         public string Id { get; private set; }
@@ -44,78 +32,57 @@ namespace Kerberos.NET.Entities.Pac
         public ClaimType Type { get; set; }
 
         [KerberosIgnore]
-        public uint Count { get; set; }
+        public int Count { get; set; }
 
-        private object[] values;
-
-        public IEnumerable<object> RawValues { get { return values; } }
+        public IList<object> Values { get; set; }
 
         public IEnumerable<T> GetValues<T>()
         {
-            return values.Select(v => (T)Convert.ChangeType(v, typeof(T)));
+            return Values.Select(v => (T)Convert.ChangeType(v, typeof(T)));
         }
 
-        internal void ReadValue(NdrBinaryStream stream)
+        public void Unmarshal(NdrBuffer buffer)
         {
-            Id = stream.ReadString();
+            buffer.ReadDeferredConformantVaryingArray<char>(v => Id = v.ToString());
 
-            stream.Align(4);
+            Type = (ClaimType)buffer.ReadInt16LittleEndian();
+            Count = buffer.ReadInt32LittleEndian();
 
-            var count = stream.ReadInt();
-
-            if (count != Count)
-            {
-                throw new InvalidDataException($"ValueCount {Count} doesn't match actual count {count} for claim {Id}.");
-            }
-
-            ReadValues(stream);
+            buffer.ReadDeferredStructUnion(this);
         }
 
-        private void ReadValues(NdrBinaryStream stream)
+        public void UnmarshalUnion(NdrBuffer buffer)
         {
-            if (Type == ClaimType.CLAIM_TYPE_STRING)
+            Values = new List<object>();
+
+            var count = buffer.ReadInt32LittleEndian();
+
+            switch (Type)
             {
-                var pointers = new int[Count];
-
-                for (var i = 0; i < Count; i++)
-                {
-                    pointers[i] = stream.ReadInt();
-                }
-            }
-
-            values = new object[Count];
-
-            for (var i = 0; i < Count; i++)
-            {
-                switch (Type)
-                {
-                    case ClaimType.CLAIM_TYPE_BOOLEAN:
-                        values[i] = Convert.ToBoolean(stream.ReadLong());
-                        break;
-                    case ClaimType.CLAIM_TYPE_INT64:
-                        values[i] = stream.ReadLong();
-                        break;
-                    case ClaimType.CLAIM_TYPE_UINT64:
-                        values[i] = (ulong)stream.ReadLong();
-                        break;
-                    case ClaimType.CLAIM_TYPE_STRING:
-                        values[i] = stream.ReadString();
-                        break;
-                }
+                case ClaimType.CLAIM_TYPE_STRING:
+                    buffer.ReadDeferredArray(count, () => Values.Add(buffer.ReadConformantVaryingCharArray().ToString()));
+                    break;
+                default:
+                    Values = buffer.ReadFixedPrimitiveArray<long>(count).ToArray().Cast<object>().ToList();
+                    break;
             }
         }
 
-        public override void ReadBody(NdrBinaryStream stream)
+        public void MarshalUnion(NdrBuffer buffer)
         {
-            stream.Seek(4); // offset for Id
+            buffer.WriteInt32LittleEndian(Values.Count);
 
-            Type = (ClaimType)stream.ReadShort();
+            switch (Type)
+            {
+                case ClaimType.CLAIM_TYPE_STRING:
+                    var arr = GetValues<string>().Select(v => v.AsMemory());
 
-            stream.Align(4);
-
-            Count = stream.ReadUnsignedInt();
-
-            stream.Seek(4); // offset to values
+                    buffer.WriteDeferredArray(arr, val => buffer.WriteConformantVaryingArray(val.Span));
+                    break;
+                default:
+                    buffer.WriteFixedPrimitiveArray(GetValues<long>().ToArray());
+                    break;
+            }
         }
     }
 }

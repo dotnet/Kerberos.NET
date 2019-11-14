@@ -1,5 +1,4 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;

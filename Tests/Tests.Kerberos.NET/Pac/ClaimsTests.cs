@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -26,6 +27,11 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(result.Claims.Any(c => c.Type == "ad://ext/employeeType:88d4d68c56082042" && c.Value == "lazy"));
 
             Assert.AreEqual(2, result.Claims.Count(c => c.Type == "ad://ext/localeID:88d4d68c6aa51687"));
+
+            foreach (var c in result.Claims)
+            {
+                Debug.WriteLine($"{c.Type}: {c.Value}");
+            }
         }
 
         [TestMethod]

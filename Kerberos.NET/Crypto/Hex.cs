@@ -7,6 +7,8 @@ namespace Kerberos.NET.Crypto
 {
     public static class Hex
     {
+        internal static void Debug(byte[] v) => System.Diagnostics.Debug.WriteLine(DumpHex(v));
+
         public static string DumpHex(this ReadOnlyMemory<byte> bytes, int bytesPerLine = 16)
         {
             return HexDump(bytes.ToArray(), bytesPerLine);
@@ -19,7 +21,7 @@ namespace Kerberos.NET.Crypto
             return HexDump(pBytes, length);
         }
 
-        public static unsafe string HexDump(byte* bytes, uint length, int bytesPerLine = 16)
+        private static unsafe string HexDump(byte* bytes, uint length, int bytesPerLine = 16)
         {
             var managedBytes = new byte[length];
 
@@ -42,7 +44,7 @@ namespace Kerberos.NET.Crypto
 
                 sb.Append(" ");
 
-                sb.Append(new string(lineBytes.Select(b => b < 32 ? '.' : (char)b).ToArray()));
+                sb.Append(new string(lineBytes.Select(b => char.IsControl((char)b) ? '.' : (char)b).ToArray()));
                 sb.AppendLine();
             }
 

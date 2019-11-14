@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Kerberos.NET
+﻿namespace Kerberos.NET
 {
     public class ReplayException : KerberosValidationException
     {

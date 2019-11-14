@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Crypto;
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Kerberos.NET.Entities.Pac
@@ -57,6 +58,32 @@ namespace Kerberos.NET.Entities.Pac
             }
         }
 
+        public SecurityIdentifier(RpcSid domainId, int userId = -1, SidAttributes attributes = 0)
+            : this(domainId.IdentifierAuthority.Authority, Concat(domainId.SubAuthority, userId), attributes)
+        {
+
+        }
+
+        private static int[] Concat(ReadOnlyMemory<uint> subAuthority, int userId)
+        {
+            int[] final;
+
+            if (userId >= 0)
+            {
+                final = new int[subAuthority.Length + 1];
+
+                final[final.Length - 1] = userId;
+            }
+            else
+            {
+                final = new int[subAuthority.Length];
+            }
+
+            MemoryMarshal.Cast<uint, int>(subAuthority.Span).CopyTo(final);
+
+            return final;
+        }
+
         [KerberosIgnore]
         public ReadOnlyMemory<byte> BinaryForm { get; }
 
@@ -86,11 +113,22 @@ namespace Kerberos.NET.Entities.Pac
             return sddl;
         }
 
-        internal SecurityIdentifier AppendTo(SecurityIdentifier sidId)
+        internal RpcSid FromSid()
         {
-            var subs = sidId.SubAuthorities.Union(SubAuthorities).ToArray();
+            var sid = new RpcSid
+            {
+                Revision = 1,
 
-            return new SecurityIdentifier(sidId.authority, subs, this.Attributes);
+                IdentifierAuthority = new RpcSidIdentifierAuthority
+                {
+                    IdentifierAuthority = new byte[] { 0, 0, 0, 0, 0, (byte)authority }
+                },
+
+                SubAuthority = MemoryMarshal.Cast<int, uint>(SubAuthorities).ToArray(),
+                SubAuthorityCount = (byte)SubAuthorities.Count()
+            };
+
+            return sid;
         }
     }
 
@@ -120,5 +158,12 @@ namespace Kerberos.NET.Entities.Pac
         InternetSiteAuthority = 7,
         ExchangeAuthority = 8,
         ResourceManagerAuthority = 9,
+        PassportAuthority = 10,
+        InternetAuthority = 11,
+        AadAuthority = 12,
+        AppPackageAuthority = 15,
+        MandatoryLabelAuthority = 16,
+        ScopedPolicyIdAuthority = 17,
+        AuthenticationAuthority = 18
     }
 }

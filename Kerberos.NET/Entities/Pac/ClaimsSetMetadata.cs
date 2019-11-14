@@ -1,31 +1,31 @@
 ﻿using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Ndr;
 using System;
-using System.IO;
 
 namespace Kerberos.NET.Entities
 {
-    public class ClaimsSetMetadata : NdrMessage, IPacElement
+    public class ClaimsSetMetadata : NdrPacObject, IPacElement
     {
-        public override void WriteBody(NdrBinaryStream stream)
+        public override void Marshal(NdrBuffer buffer)
         {
             var claimsSet = Compress(ClaimsSet, CompressionFormat, out int originalSize);
 
-            stream.WriteDeferredBytes(claimsSet);
+            buffer.WriteInt32LittleEndian(claimsSet.Length);
 
-            stream.WriteUnsignedInt((int)CompressionFormat);
-            stream.WriteUnsignedInt(originalSize);
-            stream.WriteShort(ReservedType);
+            buffer.WriteDeferredConformantArray(claimsSet);
 
-            stream.WriteDeferredBytes(ReservedField);
+            buffer.WriteInt32LittleEndian((int)CompressionFormat);
+            buffer.WriteInt32LittleEndian(originalSize);
+
+            buffer.WriteInt16LittleEndian(ReservedType);
+            buffer.WriteInt32LittleEndian(ReservedFieldSize);
+
+            buffer.WriteDeferredConformantArray<byte>(ReservedField);
         }
 
         private static ReadOnlySpan<byte> Compress(ClaimsSet claimsSet, CompressionFormat compressionFormat, out int originalSize)
         {
-            var stream = new NdrBinaryStream();
-
-            claimsSet.Encode(stream);
-
-            var encoded = stream.ToSpan();
+            var encoded = claimsSet.Marshal();
 
             originalSize = encoded.Length;
 
@@ -37,37 +37,31 @@ namespace Kerberos.NET.Entities
             return encoded;
         }
 
-        public override void ReadBody(NdrBinaryStream Stream)
+        public override void Unmarshal(NdrBuffer buffer)
         {
-            ClaimSetSize = Stream.ReadInt();
+            ClaimSetSize = buffer.ReadInt32LittleEndian();
 
-            Stream.Seek(4);
+            buffer.ReadDeferredConformantArray<byte>(ClaimSetSize, v => ClaimsSet = UnmarshalClaimsSet(v));
 
-            CompressionFormat = (CompressionFormat)Stream.ReadInt();
-            UncompressedClaimSetSize = Stream.ReadInt();
-            ReservedType = Stream.ReadShort();
-            ReservedFieldSize = Stream.ReadInt();
+            CompressionFormat = (CompressionFormat)buffer.ReadInt32LittleEndian();
+            UncompressedClaimSetSize = buffer.ReadInt32LittleEndian();
+            ReservedType = buffer.ReadInt16LittleEndian();
+            ReservedFieldSize = buffer.ReadInt32LittleEndian();
 
-            Stream.Align(8);
+            buffer.ReadDeferredConformantArray<byte>(ReservedFieldSize, v => ReservedField = v.ToArray());
+        }
 
-            var size = Stream.ReadInt();
-
-            if (size != ClaimSetSize)
-            {
-                throw new InvalidDataException($"Data length {size} doesn't match expected ClaimSetSize {ClaimSetSize}");
-            }
-
-            var claimSet = Stream.ReadSpan(ClaimSetSize);
-
+        private ClaimsSet UnmarshalClaimsSet(ReadOnlyMemory<byte> claimSet)
+        {
             if (CompressionFormat != CompressionFormat.COMPRESSION_FORMAT_NONE)
             {
-                claimSet = Compressions.Decompress(claimSet, UncompressedClaimSetSize, CompressionFormat);
+                claimSet = Compressions.Decompress(claimSet.Span, UncompressedClaimSetSize, CompressionFormat);
             }
 
-            ClaimsSet = new ClaimsSet();
-            ClaimsSet.Decode(claimSet.AsMemory());
+            var claimsSet = new ClaimsSet();
+            claimsSet.Unmarshal(claimSet);
 
-            ReservedField = Stream.Read(ReservedFieldSize);
+            return claimsSet;
         }
 
         [KerberosIgnore]

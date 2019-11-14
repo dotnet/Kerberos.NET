@@ -1,4 +1,8 @@
 ﻿using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Ndr;
+using System;
+using System.Buffers.Binary;
+using System.Runtime.InteropServices;
 using System.Text;
 
 #pragma warning disable S2344 // Enumeration type names should not have "Flags" or "Enum" suffixes
@@ -10,47 +14,47 @@ namespace Kerberos.NET.Entities
         U = 1
     }
 
-    public class UpnDomainInfo : NdrObject, IPacElement
+    public class UpnDomainInfo : PacObject, IPacElement
     {
-        public override void WriteBody(NdrBinaryStream stream)
+        public override ReadOnlySpan<byte> Marshal()
         {
+            var buffer = new NdrBuffer();
+
             var upnBytes = Encoding.Unicode.GetBytes(Upn);
             var domainBytes = Encoding.Unicode.GetBytes(Domain);
 
-            stream.WriteShort((short)upnBytes.Length);
-            stream.WriteShort(2 + 2 + 2 + 2 + 4 + 4); // + 4 to align on 8 boundary
+            buffer.WriteInt16LittleEndian((short)upnBytes.Length);
+            buffer.WriteInt16LittleEndian(2 + 2 + 2 + 2 + 4 + 4); // + 4 to align on 8 boundary
 
-            stream.WriteShort((short)domainBytes.Length);
-            stream.WriteShort((short)(2 + 2 + 2 + 2 + 4 + 4 + upnBytes.Length));
+            buffer.WriteInt16LittleEndian((short)domainBytes.Length);
+            buffer.WriteInt16LittleEndian((short)(2 + 2 + 2 + 2 + 4 + 4 + upnBytes.Length));
 
-            stream.WriteUnsignedInt((int)Flags);
+            buffer.WriteInt32LittleEndian((int)Flags);
 
-            stream.Align(8);
+            buffer.WriteInt32LittleEndian(0);
+            buffer.WriteFixedPrimitiveArray(upnBytes);
 
-            stream.WriteBytes(upnBytes);
+            buffer.WriteInt32LittleEndian(0);
+            buffer.WriteFixedPrimitiveArray(domainBytes);
 
-            stream.Align(8);
-
-            stream.WriteBytes(domainBytes);
+            return buffer.ToSpan();
         }
 
-        public override void ReadBody(NdrBinaryStream stream)
+        public override void Unmarshal(ReadOnlyMemory<byte> bytes)
         {
-            UpnLength = stream.ReadShort();
-            UpnOffset = stream.ReadShort();
+            var span = bytes.Span;
 
-            DnsDomainNameLength = stream.ReadShort();
-            DnsDomainNameOffset = stream.ReadShort();
+            UpnLength = BinaryPrimitives.ReadInt16LittleEndian(span.Slice(0, 2));
+            UpnOffset = BinaryPrimitives.ReadInt16LittleEndian(span.Slice(2, 2));
 
-            Flags = (UpnDomainFlags)stream.ReadInt();
+            DnsDomainNameLength = BinaryPrimitives.ReadInt16LittleEndian(span.Slice(4, 2));
+            DnsDomainNameOffset = BinaryPrimitives.ReadInt16LittleEndian(span.Slice(6, 2));
 
-            stream.Align(8);
+            Flags = (UpnDomainFlags)BinaryPrimitives.ReadInt32LittleEndian(span.Slice(8, 4));
 
-            Upn = Encoding.Unicode.GetString(stream.Read(UpnLength));
+            Upn = MemoryMarshal.Cast<byte, char>(span.Slice(UpnOffset, UpnLength)).ToString();
 
-            stream.Align(8);
-
-            Domain = Encoding.Unicode.GetString(stream.Read(DnsDomainNameLength));
+            Domain = MemoryMarshal.Cast<byte, char>(span.Slice(DnsDomainNameOffset, DnsDomainNameLength)).ToString();
         }
 
         public string Upn { get; set; }

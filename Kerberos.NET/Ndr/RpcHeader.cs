@@ -1,84 +1,97 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.Buffers.Binary;
+using System.Diagnostics;
 
-namespace Kerberos.NET.Entities.Pac
+namespace Kerberos.NET.Ndr
 {
-    public class RpcHeader
+    public enum EndianType : byte
     {
-        private static class NdrConstants
+        Big = 0x0,
+        Little = 0x10
+    }
+
+    public sealed class RpcHeader
+    {
+        public const int PROTOCOL_VERSION = 1;
+        public const int COMMON_HEADER_BYTES = 8;
+        public const int HeaderLength = 16;
+
+        private const int ExpectedFiller = unchecked((int)0xcccccccc);
+        private const int ObjectLengthPlaceholder = unchecked((int)0xFFFFFFFF);
+
+        private RpcHeader() { }
+
+        public byte Version { get; private set; } = 1;
+
+        public EndianType Endian { get; private set; } = EndianType.Little;
+
+        public int CommonHeaderLength { get; private set; }
+
+        public int Filler { get; private set; } = ExpectedFiller;
+
+        public int ObjectBufferLength { get; set; }
+
+        public int ConstructedTypeFiller { get; private set; }
+
+        public static void WriteHeader(NdrBuffer buffer)
         {
-            public const int PROTOCOL_VERSION = 1;
-            public const int COMMON_HEADER_BYTES = 8;
+            buffer.WriteByte(PROTOCOL_VERSION);
+            buffer.WriteByte((byte)EndianType.Little);
+            buffer.WriteInt16LittleEndian(COMMON_HEADER_BYTES);
+            buffer.WriteInt32LittleEndian(ExpectedFiller);
+            buffer.WriteInt32LittleEndian(ObjectLengthPlaceholder);
+            buffer.WriteInt32LittleEndian(0);
         }
 
-        public RpcHeader(NdrBinaryStream pacStream)
+        public static bool TryReadHeader(NdrBuffer original, out RpcHeader header)
         {
-            ReadCommonHeader(pacStream);
+            header = new RpcHeader();
 
-            pacStream.Read(4);
-            pacStream.Read(8);
-            pacStream.Read(4);
-        }
-
-        internal RpcHeader() { }
-
-        public byte Version { get; private set; }
-
-        public bool Endian { get; private set; }
-
-        public byte Encoding { get; private set; }
-
-        public int Length { get; private set; }
-
-        public void WriteCommonHeader(NdrBinaryStream stream)
-        {
-            stream.WriteBytes(new byte[] { NdrConstants.PROTOCOL_VERSION });
-
-            byte headerBits = 0;
-
-            headerBits |= Convert.ToByte(Encoding);
-            headerBits |= (byte)((1 << 4) & Convert.ToByte(Endian));
-
-            stream.WriteBytes(new byte[] { headerBits });
-
-            stream.WriteShort(NdrConstants.COMMON_HEADER_BYTES);
-            stream.WriteBytes(Enumerable.Repeat((byte)0, 4 + 8 + 4).ToArray());
-        }
-
-        private void ReadCommonHeader(NdrBinaryStream pacStream)
-        {
-            Version = pacStream.Read(1)[0];
-
-            if (Version != NdrConstants.PROTOCOL_VERSION)
+            if (original.BytesAvailable < HeaderLength)
             {
-                throw new InvalidDataException($"Unknown Protocol version {Version}");
+                return false;
             }
 
-            var headerBits = pacStream.Read(1)[0];
+            var buffer = original.Read(HeaderLength);
 
-            var endian = headerBits >> 4 & 0x0F;
-
-            if (endian != 0 && endian != 1)
+            if (buffer.Length < HeaderLength)
             {
-                throw new InvalidDataException($"Unknown endianness {endian}");
+                return false;
             }
 
-            Endian = Convert.ToBoolean(endian);
+            header.Version = buffer[0];
 
-            Encoding = (byte)(headerBits & 0x0F);
-
-            if (Encoding != 0 && Encoding != 1)
+            if (header.Version != PROTOCOL_VERSION)
             {
-                throw new InvalidDataException($"Unknown encoding {Encoding}");
+                return false;
             }
 
-            Length = pacStream.ReadShort();
+            header.Endian = (EndianType)buffer[1];
 
-            if (Length != NdrConstants.COMMON_HEADER_BYTES)
+            if (header.Endian != EndianType.Big && header.Endian != EndianType.Little)
             {
-                throw new InvalidDataException($"Unknown common header length {Length}");
+                return false;
             }
+
+            header.CommonHeaderLength = BinaryPrimitives.ReadInt16LittleEndian(buffer.Slice(2, 2));
+
+            if (header.CommonHeaderLength != COMMON_HEADER_BYTES)
+            {
+                return false;
+            }
+
+            header.Filler = BinaryPrimitives.ReadInt32LittleEndian(buffer.Slice(4, 4));
+
+            Debug.Assert(header.Filler == ExpectedFiller);
+
+            header.ObjectBufferLength = BinaryPrimitives.ReadInt32LittleEndian(buffer.Slice(8, 4));
+
+            Debug.Assert(header.ObjectBufferLength == original.BytesAvailable);
+
+            header.ConstructedTypeFiller = BinaryPrimitives.ReadInt32LittleEndian(buffer.Slice(12, 4));
+
+            Debug.Assert(header.ConstructedTypeFiller == 0);
+
+            return true;
         }
     }
 }

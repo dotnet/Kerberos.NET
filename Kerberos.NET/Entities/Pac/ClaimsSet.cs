@@ -1,57 +1,30 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using Kerberos.NET.Ndr;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Kerberos.NET.Entities.Pac
 {
-    public class ClaimsSet : NdrMessage
+    public class ClaimsSet : NdrPacObject, INdrStruct
     {
-        public override void WriteBody(NdrBinaryStream stream)
+        public override void Marshal(NdrBuffer buffer)
         {
-            stream.WriteUnsignedInt(ClaimsArray.Count());
-            stream.WriteDeferredArray(ClaimsArray);
+            buffer.WriteInt32LittleEndian(ClaimsArray.Count());
+            buffer.WriteDeferredStructArray(ClaimsArray);
 
-            stream.WriteShort(ReservedType);
-            stream.WriteUnsignedInt(ReservedFieldSize);
-            stream.WriteBytes(ReservedField);
+            buffer.WriteInt16LittleEndian(ReservedType);
+            buffer.WriteInt32LittleEndian(ReservedFieldSize);
+            buffer.WriteDeferredConformantArray<byte>(ReservedField);
         }
 
-        private IEnumerable<ClaimsArray> ReadClaimsArray(NdrBinaryStream stream)
+        public override void Unmarshal(NdrBuffer buffer)
         {
-            var count = stream.ReadInt();
+            Count = buffer.ReadInt32LittleEndian();
 
-            if (count != Count)
-            {
-                throw new InvalidDataException($"Array count {Count} doesn't match actual count {count}");
-            }
+            buffer.ReadDeferredStructArray<ClaimsArray>(Count, v => ClaimsArray = v);
 
-            var claims = new List<ClaimsArray>();
-
-            for (var i = 0; i < Count; i++)
-            {
-                var array = new ClaimsArray();
-                array.ReadBody(stream);
-
-                claims.Add(array);
-            }
-
-            return claims;
-        }
-
-        public override void ReadBody(NdrBinaryStream stream)
-        {
-            Count = stream.ReadInt();
-
-            stream.Seek(4);
-
-            ReservedType = stream.ReadShort();
-            ReservedFieldSize = stream.ReadInt();
-
-            ReservedField = stream.Read(ReservedFieldSize);
-
-            stream.Align(8);
-
-            ClaimsArray = ReadClaimsArray(stream);
+            ReservedType = buffer.ReadInt16LittleEndian();
+            ReservedFieldSize = buffer.ReadInt32LittleEndian();
+            buffer.ReadDeferredConformantArray<byte>(ReservedFieldSize, v => ReservedField = v.ToArray());
         }
 
         [KerberosIgnore]

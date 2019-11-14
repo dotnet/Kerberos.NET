@@ -84,31 +84,13 @@ namespace Tests.Kerberos.NET
         }
 
         private static T TestPacEncoding<T>(T thing)
-            where T : NdrObject, new()
+            where T : PacObject, new()
         {
-            var stream = new NdrBinaryStream();
-
-            if (thing is NdrMessage message)
-            {
-                message.Encode(stream);
-            }
-            else
-            {
-                thing.WriteBody(stream);
-            }
-
-            var encoded = stream.ToMemory();
+            var encoded = thing.Marshal();
 
             var decodedThing = new T();
 
-            if (decodedThing is NdrMessage decodedMessage)
-            {
-                decodedMessage.Decode(encoded);
-            }
-            else
-            {
-                decodedThing.ReadBody(encoded);
-            }
+            decodedThing.Unmarshal(encoded.ToArray());
 
             return decodedThing;
         }
@@ -120,19 +102,28 @@ namespace Tests.Kerberos.NET
 
             var deleg = pac.DelegationInformation;
 
-            Assert.AreEqual("host/down2", deleg.S4U2ProxyTarget);
+            Assert.AreEqual("host/down2", deleg.S4U2ProxyTarget.ToString());
         }
 
-        [TestMethod, ExpectedException(typeof(NotSupportedException))]
-        public async Task PacDelegationInfoRoundtripThrowsNotSupported()
+        [TestMethod]
+        public async Task PacDelegationInfoRoundtrip()
         {
             var pac = await GeneratePac(false);
 
             var deleg = pac.DelegationInformation;
 
-            Assert.AreEqual("host/down2", deleg.S4U2ProxyTarget);
+            Assert.AreEqual("host/down2", deleg.S4U2ProxyTarget.ToString());
 
-            deleg.Encode();
+            var decoded = TestPacEncoding(deleg);
+
+            Assert.IsNotNull(decoded);
+
+            Assert.AreEqual(deleg.S4U2ProxyTarget, decoded.S4U2ProxyTarget);
+
+            for (var i = 0; i < deleg.S4UTransitedServices.Count(); i++)
+            {
+                Assert.AreEqual(deleg.S4UTransitedServices.ElementAt(i), decoded.S4UTransitedServices.ElementAt(i));
+            }
         }
 
         [TestMethod]
@@ -188,9 +179,9 @@ namespace Tests.Kerberos.NET
 
                     Assert.AreEqual(claimLeft.Type, claimRight.Type);
                     Assert.AreEqual(claimLeft.Id, claimRight.Id);
-                    Assert.AreEqual(claimLeft.RawValues.Count(), claimRight.RawValues.Count());
+                    Assert.AreEqual(claimLeft.Values.Count(), claimRight.Values.Count());
 
-                    Assert.IsTrue(claimLeft.RawValues.SequenceEqual(claimRight.RawValues));
+                    Assert.IsTrue(claimLeft.Values.SequenceEqual(claimRight.Values));
                 }
             }
         }
