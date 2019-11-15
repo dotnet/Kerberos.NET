@@ -1,10 +1,11 @@
 ﻿using Kerberos.NET.Crypto;
+using Kerberos.NET.Ndr;
 using System;
 using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Entities.Pac
 {
-    public class PacSignature : NdrObject, IPacElement
+    public class PacSignature : PacObject, IPacElement
     {
         public PacSignature() { }
 
@@ -18,17 +19,14 @@ namespace Kerberos.NET.Entities.Pac
 
         private static byte[] SetSignatureValue(ChecksumType type, Func<int, byte[]> setterFunc)
         {
-            switch (type)
+            return type switch
             {
-                case ChecksumType.KERB_CHECKSUM_HMAC_MD5:
-                    return setterFunc(16);
-                case ChecksumType.HMAC_SHA1_96_AES128:
-                    return setterFunc(12);
-                case ChecksumType.HMAC_SHA1_96_AES256:
-                    return setterFunc(12);
-            }
+                ChecksumType.KERB_CHECKSUM_HMAC_MD5 => setterFunc(16),
+                ChecksumType.HMAC_SHA1_96_AES128 => setterFunc(12),
+                ChecksumType.HMAC_SHA1_96_AES256 => setterFunc(12),
 
-            throw new InvalidOperationException($"Unknown checksum type {type}");
+                _ => throw new InvalidOperationException($"Unknown checksum type {type}"),
+            };
         }
 
         private readonly Memory<byte> signatureData;
@@ -52,28 +50,32 @@ namespace Kerberos.NET.Entities.Pac
 
         public bool Validated { get; private set; }
 
-        public override void ReadBody(NdrBinaryStream stream)
+        public override ReadOnlySpan<byte> Marshal()
         {
-            Type = (ChecksumType)stream.ReadUnsignedInt();
+            var buffer = new NdrBuffer();
 
-            SignaturePosition = (int)stream.Position;
-            Signature = SetSignatureValue(Type, size => stream.Read(size));
+            buffer.WriteInt32LittleEndian((int)Type);
+            buffer.WriteSpan(Signature.Span);
+            buffer.WriteInt16LittleEndian(RODCIdentifier);
+
+            return buffer.ToSpan();
+        }
+
+        public override void Unmarshal(ReadOnlyMemory<byte> bytes)
+        {
+            var stream = new NdrBuffer(bytes);
+
+            Type = (ChecksumType)stream.ReadInt32LittleEndian();
+
+            SignaturePosition = stream.Offset;
+            Signature = SetSignatureValue(Type, size => stream.ReadFixedPrimitiveArray<byte>(size).ToArray());
 
             Validator = CryptoService.CreateChecksum(Type, Signature, signatureData);
 
-            if (stream.Position < stream.Length)
+            if (stream.BytesAvailable > 0)
             {
-                RODCIdentifier = stream.ReadShort();
+                RODCIdentifier = stream.ReadInt16LittleEndian();
             }
-        }
-
-        public override void WriteBody(NdrBinaryStream stream)
-        {
-            stream.WriteUnsignedInt((int)Type);
-
-            stream.WriteBytes(Signature.Span);
-
-            stream.WriteShort(RODCIdentifier);
         }
 
         internal void Validate(KeyTable keytab, KrbPrincipalName sname)

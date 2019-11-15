@@ -113,7 +113,10 @@ namespace Tests.Kerberos.NET
                     UserSid = userSid,
                     GroupSid = groupSid,
                     LogonTime = DateTimeOffset.UtcNow,
-                    ServerName = "server"
+                    ServerName = "server",
+                    UserAccountControl = UserAccountControlFlags.ADS_UF_NORMAL_ACCOUNT,
+                    UserFlags = UserFlags.LOGON_WINLOGON,
+
                 }
             };
 

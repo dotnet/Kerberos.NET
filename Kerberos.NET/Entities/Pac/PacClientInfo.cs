@@ -1,10 +1,10 @@
 ﻿using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Ndr;
 using System;
-using System.Text;
 
 namespace Kerberos.NET.Entities
 {
-    public class PacClientInfo : NdrObject, IPacElement
+    public class PacClientInfo : PacObject, IPacElement
     {
         public DateTimeOffset ClientId { get; set; }
 
@@ -15,23 +15,33 @@ namespace Kerberos.NET.Entities
 
         public PacType PacType => PacType.CLIENT_NAME_TICKET_INFO;
 
-        public override void ReadBody(NdrBinaryStream stream)
+        public override ReadOnlySpan<byte> Marshal()
         {
-            ClientId = stream.ReadFiletime();
-            NameLength = stream.ReadShort();
-            Name = Encoding.Unicode.GetString(stream.Read(NameLength));
+            var buffer = new NdrBuffer();
+
+            buffer.WriteFiletime(ClientId);
+            buffer.WriteInt16LittleEndian((short)(Name.Length * 2));
+
+            if (NameLength > 0)
+            {
+                buffer.WriteFixedPrimitiveArray(Name.ToCharArray());
+            }
+
+            return buffer.ToSpan();
         }
 
-        public override void WriteBody(NdrBinaryStream stream)
+        public override void Unmarshal(ReadOnlyMemory<byte> bytes)
         {
-            stream.WriteFiletime(ClientId);
+            var buffer = new NdrBuffer(bytes);
 
-            var name = Encoding.Unicode.GetBytes(Name);
+            ClientId = buffer.ReadFiletime();
 
-            NameLength = (short)name.Length;
+            NameLength = buffer.ReadInt16LittleEndian();
 
-            stream.WriteShort(NameLength);
-            stream.WriteBytes(name);
+            if (NameLength > 0)
+            {
+                Name = buffer.ReadFixedPrimitiveArray<char>(NameLength / 2).ToString();
+            }
         }
     }
 }

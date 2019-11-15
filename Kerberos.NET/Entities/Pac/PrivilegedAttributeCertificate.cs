@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Ndr;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,7 +23,7 @@ namespace Kerberos.NET.Entities
         DEVICE_CLAIMS = 0x0000000F
     }
 
-    public class PacCredentialInfo : NdrObject, IPacElement
+    public class PacCredentialInfo : PacObject, IPacElement
     {
         public int Version { get; set; }
 
@@ -32,20 +33,26 @@ namespace Kerberos.NET.Entities
 
         public PacType PacType => PacType.CREDENTIAL_TYPE;
 
-        public override void ReadBody(NdrBinaryStream stream)
+        public override ReadOnlySpan<byte> Marshal()
         {
-            Version = stream.ReadInt();
+            var buffer = new NdrBuffer();
 
-            EncryptionType = (EncryptionType)stream.ReadInt();
+            buffer.WriteInt32LittleEndian(Version);
+            buffer.WriteInt32LittleEndian((int)EncryptionType);
+            buffer.WriteSpan(SerializedData);
 
-            SerializedData = stream.ReadToEnd();
+            return buffer.ToSpan();
         }
 
-        public override void WriteBody(NdrBinaryStream stream)
+        public override void Unmarshal(ReadOnlyMemory<byte> bytes)
         {
-            stream.WriteUnsignedInt(Version);
-            stream.WriteUnsignedInt((int)EncryptionType);
-            stream.WriteBytes(SerializedData);
+            var stream = new NdrBuffer(bytes);
+
+            Version = stream.ReadInt32LittleEndian();
+
+            EncryptionType = (EncryptionType)stream.ReadInt32LittleEndian();
+
+            SerializedData = stream.Read(stream.BytesAvailable).ToArray();
         }
     }
 
@@ -55,24 +62,19 @@ namespace Kerberos.NET.Entities
 
         private readonly Memory<byte> pacData;
 
-        public PrivilegedAttributeCertificate()
-        {
-            Stream = new NdrBinaryStream();
-        }
-
-        protected NdrBinaryStream Stream { get; set; }
+        public PrivilegedAttributeCertificate() { }
 
         public PrivilegedAttributeCertificate(KrbAuthorizationData authz)
             : base(authz.Type, AuthorizationDataType.AdWin2kPac)
         {
             var pac = authz.Data;
 
-            Stream = new NdrBinaryStream(pac);
+            var stream = new NdrBuffer(pac, align: false);
 
             pacData = MemoryMarshal.AsMemory(authz.Data);
 
-            var count = Stream.ReadInt();
-            var version = Stream.ReadInt();
+            var count = stream.ReadInt32LittleEndian();
+            var version = stream.ReadInt32LittleEndian();
 
             if (version != PAC_VERSION)
             {
@@ -83,16 +85,15 @@ namespace Kerberos.NET.Entities
 
             for (var i = 0; i < count; i++)
             {
-                var type = (PacType)Stream.ReadInt();
-                var size = Stream.ReadInt();
+                var type = (PacType)stream.ReadInt32LittleEndian();
+                var size = stream.ReadInt32LittleEndian();
 
-                var offset = Stream.ReadLong();
+                var offset = stream.ReadInt64LittleEndian();
 
                 var pacInfoBuffer = pac.Slice((int)offset, size);
 
-                int exclusionStart = 0;
-                int exclusionLength = 0;
-
+                int exclusionStart;
+                int exclusionLength;
                 try
                 {
                     ParsePacType(type, pacInfoBuffer, out exclusionStart, out exclusionLength);
@@ -105,6 +106,8 @@ namespace Kerberos.NET.Entities
                         Data = pacInfoBuffer,
                         Exception = ex
                     });
+
+                    throw;
                 }
 
                 if (exclusionStart > 0 && exclusionLength > 0)
@@ -127,47 +130,47 @@ namespace Kerberos.NET.Entities
             {
                 case PacType.LOGON_INFO:
                     LogonInfo = new PacLogonInfo();
-                    LogonInfo.Decode(pacInfoBuffer);
+                    LogonInfo.Unmarshal(pacInfoBuffer);
                     break;
                 case PacType.CREDENTIAL_TYPE:
                     CredentialType = new PacCredentialInfo();
-                    CredentialType.ReadBody(pacInfoBuffer);
+                    CredentialType.Unmarshal(pacInfoBuffer);
                     break;
                 case PacType.SERVER_CHECKSUM:
                     ServerSignature = new PacSignature(pacData);
-                    ServerSignature.ReadBody(pacInfoBuffer);
+                    ServerSignature.Unmarshal(pacInfoBuffer);
 
                     exclusionStart = ServerSignature.SignaturePosition;
                     exclusionLength = ServerSignature.Signature.Length;
                     break;
                 case PacType.PRIVILEGE_SERVER_CHECKSUM:
                     KdcSignature = new PacSignature(pacData);
-                    KdcSignature.ReadBody(pacInfoBuffer);
+                    KdcSignature.Unmarshal(pacInfoBuffer);
 
                     exclusionStart = KdcSignature.SignaturePosition;
                     exclusionLength = KdcSignature.Signature.Length;
                     break;
                 case PacType.CLIENT_NAME_TICKET_INFO:
                     ClientInformation = new PacClientInfo();
-                    ClientInformation.ReadBody(pacInfoBuffer);
+                    ClientInformation.Unmarshal(pacInfoBuffer);
                     break;
                 case PacType.CONSTRAINED_DELEGATION_INFO:
                     DelegationInformation = new PacDelegationInfo();
-                    DelegationInformation.Decode(pacInfoBuffer);
+                    DelegationInformation.Unmarshal(pacInfoBuffer);
                     break;
                 case PacType.UPN_DOMAIN_INFO:
                     UpnDomainInformation = new UpnDomainInfo();
-                    UpnDomainInformation.ReadBody(pacInfoBuffer);
+                    UpnDomainInformation.Unmarshal(pacInfoBuffer);
                     break;
                 case PacType.CLIENT_CLAIMS:
                     ClientClaims = new ClaimsSetMetadata();
-                    ClientClaims.Decode(pacInfoBuffer);
+                    ClientClaims.Unmarshal(pacInfoBuffer);
                     break;
                 case PacType.DEVICE_INFO:
                     break;
                 case PacType.DEVICE_CLAIMS:
                     DeviceClaims = new ClaimsSetMetadata();
-                    DeviceClaims.Decode(pacInfoBuffer);
+                    DeviceClaims.Unmarshal(pacInfoBuffer);
                     break;
             }
         }

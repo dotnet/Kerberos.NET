@@ -106,9 +106,9 @@ namespace Kerberos.NET.Entities.Pac
             }
         }
 
-        public static ReadOnlySpan<byte> Decompress(ReadOnlySpan<byte> data, long decompressedSize, CompressionFormat format)
+        public static ReadOnlyMemory<byte> Decompress(ReadOnlySpan<byte> data, long decompressedSize, CompressionFormat format)
         {
-            var decompressed = new Span<byte>(new byte[decompressedSize]);
+            var decompressed = new Memory<byte>(new byte[decompressedSize]);
 
             var bufferWorkSize = 0;
             var fragmentWorkSize = 0;
@@ -134,7 +134,7 @@ namespace Kerberos.NET.Entities.Pac
 
             try
             {
-                fixed (byte* pDecompressed = &MemoryMarshal.GetReference(decompressed))
+                fixed (byte* pDecompressed = &MemoryMarshal.GetReference(decompressed.Span))
                 fixed (byte* pData = &MemoryMarshal.GetReference(data))
                 fixed (byte* pWork = &MemoryMarshal.GetReference(work.Memory.Span))
                 {

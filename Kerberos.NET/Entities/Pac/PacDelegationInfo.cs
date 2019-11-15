@@ -1,54 +1,33 @@
 ﻿using Kerberos.NET.Entities.Pac;
-using System;
+using Kerberos.NET.Ndr;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 
 namespace Kerberos.NET.Entities
 {
-    public class PacDelegationInfo : NdrMessage, IPacElement
+    public class PacDelegationInfo : NdrPacObject, IPacElement
     {
-        public override void WriteBody(NdrBinaryStream stream)
+        public override void Marshal(NdrBuffer buffer)
         {
-            throw new NotSupportedException("Not functional yet");
+            buffer.WriteStruct(S4U2ProxyTarget);
+
+            buffer.WriteInt32LittleEndian(S4UTransitedServices.Count());
+
+            buffer.WriteDeferredStructArray(S4UTransitedServices);
         }
 
-        public override void ReadBody(NdrBinaryStream stream)
+        public override void Unmarshal(NdrBuffer buffer)
         {
-            var s4uProxyTargetString = stream.ReadRPCUnicodeString();
+            S4U2ProxyTarget = buffer.ReadStruct<RpcString>();
 
-            var transitListSize = stream.ReadInt();
+            var transitedListSize = buffer.ReadInt32LittleEndian();
 
-            stream.ReadInt(); // transit pointer
-
-            S4U2ProxyTarget = s4uProxyTargetString.ReadString(stream);
-
-            var realCount = stream.ReadInt();
-
-            if (realCount != transitListSize)
-            {
-                throw new InvalidDataException($"Expected S4UTransitedServices count {transitListSize} doesn't match actual count {realCount}");
-            }
-
-            var transitRpcStrings = new NdrString[realCount];
-
-            for (var i = 0; i < realCount; i++)
-            {
-                transitRpcStrings[i] = stream.ReadRPCUnicodeString();
-            }
-
-            var transits = new List<string>();
-
-            for (var i = 0; i < transitRpcStrings.Length; i++)
-            {
-                transits.Add(transitRpcStrings[i].ReadString(stream));
-            }
-
-            S4UTransitedServices = transits;
+            buffer.ReadDeferredStructArray<RpcString>(transitedListSize, v => S4UTransitedServices = v);
         }
 
-        public string S4U2ProxyTarget { get; set; }
+        public RpcString S4U2ProxyTarget { get; set; }
 
-        public IEnumerable<string> S4UTransitedServices { get; set; }
+        public IEnumerable<RpcString> S4UTransitedServices { get; set; }
 
         public PacType PacType => PacType.CONSTRAINED_DELEGATION_INFO;
 

@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using Kerberos.NET.Ndr;
+using System.Collections.Generic;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -9,49 +9,29 @@ namespace Kerberos.NET.Entities.Pac
         CLAIMS_SOURCE_TYPE_CERTIFICATE
     }
 
-    public class ClaimsArray : NdrObject
+    public class ClaimsArray : INdrStruct
     {
-        public override void WriteBody(NdrBinaryStream stream)
+        public void Marshal(NdrBuffer buffer)
         {
-            stream.WriteClaimsArray(this);
+            buffer.WriteInt32LittleEndian((int)ClaimSource);
+
+            buffer.WriteInt32LittleEndian(Count);
+
+            buffer.WriteDeferredStructArray(ClaimEntries);
         }
 
-        public override void ReadBody(NdrBinaryStream stream)
+        public void Unmarshal(NdrBuffer buffer)
         {
-            ClaimSource = (ClaimSourceType)stream.ReadInt();
-            Count = stream.ReadUnsignedInt();
+            ClaimSource = (ClaimSourceType)buffer.ReadInt32LittleEndian();
+            Count = buffer.ReadInt32LittleEndian();
 
-            var claims = new List<ClaimEntry>();
-
-            stream.Seek(4);
-
-            var count = stream.ReadInt();
-
-            if (Count != count)
-            {
-                throw new InvalidDataException($"Claims count {Count} doesn't match actual count {count}");
-            }
-
-            for (var i = 0; i < Count; i++)
-            {
-                var claim = new ClaimEntry();
-                claim.ReadBody(stream);
-
-                claims.Add(claim);
-            }
-
-            foreach (var entry in claims)
-            {
-                entry.ReadValue(stream);
-            }
-
-            ClaimEntries = claims;
+            buffer.ReadDeferredStructArray<ClaimEntry>(Count, v => ClaimEntries = v);
         }
 
         public ClaimSourceType ClaimSource { get; set; }
 
         [KerberosIgnore]
-        public uint Count { get; set; }
+        public int Count { get; set; }
 
         public IEnumerable<ClaimEntry> ClaimEntries { get; set; }
     }

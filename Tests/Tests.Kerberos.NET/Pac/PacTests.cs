@@ -137,7 +137,7 @@ namespace Tests.Kerberos.NET
             try
             {
                 var sig = new PacSignature(pacBytes);
-                sig.ReadBody(infoBufferBytes);
+                sig.Unmarshal(infoBufferBytes);
                 sig.Validator.Validate(kerbKey);
                 pacValidated = true;
             }
@@ -162,7 +162,7 @@ namespace Tests.Kerberos.NET
             }
 
             var sig = new PacSignature(pacBytes);
-            sig.ReadBody(infoBufferBytes);
+            sig.Unmarshal(infoBufferBytes);
 
             return sig;
         }
@@ -228,14 +228,14 @@ namespace Tests.Kerberos.NET
             var expectedLastLastFailedILogon = DateTimeOffset.Parse("1/1/1601 12:00:00 AM +00:00", CultureInfo.InvariantCulture);
 
             Assert.AreEqual(expectedLastLastFailedILogon, logonInfo.LastFailedILogon);
-            Assert.AreEqual("user.test", logonInfo.UserName);
-            Assert.AreEqual("User Test", logonInfo.UserDisplayName);
-            Assert.AreEqual("", logonInfo.LogonScript);
-            Assert.AreEqual("", logonInfo.ProfilePath);
-            Assert.AreEqual("", logonInfo.HomeDirectory);
-            Assert.AreEqual("", logonInfo.HomeDrive);
-            Assert.AreEqual("WS2008", logonInfo.ServerName);
-            Assert.AreEqual("DOMAIN", logonInfo.DomainName);
+            Assert.AreEqual("user.test", logonInfo.UserName.ToString());
+            Assert.AreEqual("User Test", logonInfo.UserDisplayName.ToString());
+            Assert.AreEqual("", logonInfo.LogonScript.ToString());
+            Assert.AreEqual("", logonInfo.ProfilePath.ToString());
+            Assert.AreEqual("", logonInfo.HomeDirectory.ToString());
+            Assert.AreEqual("", logonInfo.HomeDrive.ToString());
+            Assert.AreEqual("WS2008", logonInfo.ServerName.ToString());
+            Assert.AreEqual("DOMAIN", logonInfo.DomainName.ToString());
             Assert.AreEqual("S-1-5-21-4028881986-3284141023-698984075", logonInfo.DomainSid.Value);
             Assert.AreEqual("S-1-5-21-4028881986-3284141023-698984075-1106", logonInfo.UserSid.Value);
             Assert.AreEqual("S-1-5-21-4028881986-3284141023-698984075-513", logonInfo.GroupSid.Value);
@@ -243,7 +243,8 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(7, logonInfo.ExtraSids.Count());
 
             Assert.IsNull(logonInfo.ResourceDomainSid);
-            Assert.IsNull(logonInfo.ResourceGroups);
+            Assert.IsNotNull(logonInfo.ResourceGroups);
+            Assert.AreEqual(0, logonInfo.ResourceGroups.Count());
         }
 
         [TestMethod]
@@ -267,6 +268,26 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual("DOMAIN.COM", cert.UpnDomainInformation.Domain);
             Assert.AreEqual("user.test@domain.com", cert.UpnDomainInformation.Upn);
             Assert.AreEqual((UpnDomainFlags)0, cert.UpnDomainInformation.Flags);
+        }
+
+        [TestMethod]
+        public async Task PacGenerationRoundtrip()
+        {
+            var realmService = new FakeRealmService("foo.com");
+            var krbtgt = await realmService.Principals.RetrieveKrbtgt();
+            var key = await krbtgt.RetrieveLongTermCredential();
+
+            var user = await realmService.Principals.Find("user@foo.com");
+
+            var pac = await user.GeneratePac();
+
+            Assert.IsNotNull(pac);
+
+            var encoded = pac.Encode(key, key);
+
+            var decoded = new PrivilegedAttributeCertificate(new KrbAuthorizationData { Type = AuthorizationDataType.AdWin2kPac, Data = encoded });
+
+            Assert.IsNotNull(decoded.LogonInfo);
         }
 
         private static async Task<PrivilegedAttributeCertificate> GeneratePac()
