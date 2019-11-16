@@ -225,8 +225,6 @@ namespace Kerberos.NET.Ndr
             ReadDeferred(() => callback(ReadConformantVaryingArray<T>()));
         }
 
-        private int lastRef = 0;
-
         public void ReadDeferred(Action callback)
         {
             var referent = ReadInt32LittleEndian();
@@ -235,8 +233,6 @@ namespace Kerberos.NET.Ndr
             {
                 return;
             }
-
-            lastRef = referent;
 
             deferrals.Defer(callback);
         }
