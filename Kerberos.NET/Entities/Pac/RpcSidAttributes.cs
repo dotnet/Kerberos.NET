@@ -6,24 +6,33 @@ using System.Diagnostics;
 namespace Kerberos.NET.Entities.Pac
 {
     [DebuggerDisplay("{Sid} {Attributes}")]
-    public class RpcSidAttributes : INdrStruct
+    public class RpcSidAttributes : INdrConformantStruct
     {
         public RpcSid Sid;
         public SidAttributes Attributes;
 
         public void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteDeferredStruct(Sid);
+            buffer.WriteConformantStruct(Sid);
             buffer.WriteInt32LittleEndian((int)Attributes);
+        }
+
+        public void MarshalConformance(NdrBuffer buffer)
+        {
+            //Sid.MarshalConformance(buffer);
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            var self = this;
-
-            buffer.ReadDeferredStruct<RpcSid>(p => self.Sid = p);
+            // expects 131124
+            buffer.ReadConformantStruct<RpcSid>(p => Sid = p);
 
             Attributes = (SidAttributes)buffer.ReadInt32LittleEndian();
+        }
+
+        public void UnmarshalConformance(NdrBuffer buffer)
+        {
+            //new RpcSid().UnmarshalConformance(buffer);
         }
     }
 }

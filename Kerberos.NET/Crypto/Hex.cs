@@ -7,7 +7,7 @@ namespace Kerberos.NET.Crypto
 {
     public static class Hex
     {
-        internal static void Debug(byte[] v) => System.Diagnostics.Debug.WriteLine(DumpHex(v));
+        public static void Debug(byte[] v) => System.Diagnostics.Debug.WriteLine(DumpHex(v));
 
         public static string DumpHex(this ReadOnlyMemory<byte> bytes, int bytesPerLine = 16)
         {

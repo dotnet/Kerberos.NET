@@ -1,10 +1,11 @@
 ﻿using Kerberos.NET.Ndr;
 using System;
+using System.Diagnostics;
 using System.Text;
 
 namespace Kerberos.NET.Entities.Pac
 {
-    public class RpcSid : INdrStruct
+    public class RpcSid : INdrConformantStruct
     {
         public byte Revision;
 
@@ -14,6 +15,11 @@ namespace Kerberos.NET.Entities.Pac
 
         public ReadOnlyMemory<uint> SubAuthority;
 
+        public void MarshalConformance(NdrBuffer buffer)
+        {
+            buffer.WriteInt32LittleEndian(SubAuthorityCount);
+        }
+
         public void Marshal(NdrBuffer buffer)
         {
             buffer.WriteByte(Revision);
@@ -22,10 +28,20 @@ namespace Kerberos.NET.Entities.Pac
             buffer.WriteFixedPrimitiveArray(SubAuthority.ToArray());
         }
 
+        private int conformance;
+
+        public void UnmarshalConformance(NdrBuffer buffer)
+        {
+            conformance = buffer.ReadInt32LittleEndian();
+        }
+
         public void Unmarshal(NdrBuffer buffer)
         {
             Revision = buffer.ReadByteLittleEndian();
             SubAuthorityCount = buffer.ReadByteLittleEndian();
+
+            Debug.Assert(conformance == SubAuthorityCount);
+
             IdentifierAuthority = buffer.ReadStruct<RpcSidIdentifierAuthority>();
             SubAuthority = buffer.ReadFixedPrimitiveArray<uint>(SubAuthorityCount).AsMemory();
         }

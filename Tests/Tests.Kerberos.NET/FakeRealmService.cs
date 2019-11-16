@@ -55,9 +55,9 @@ namespace Tests.Kerberos.NET
     internal class FakeKerberosPrincipal : IKerberosPrincipal
     {
         private static readonly byte[] KrbTgtKey = new byte[] {
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0
-            };
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0
+        };
 
         private static readonly SecurityIdentifier domainSid = new SecurityIdentifier(IdentifierAuthority.NTAuthority, new int[] {
                 123,456,789,012,321

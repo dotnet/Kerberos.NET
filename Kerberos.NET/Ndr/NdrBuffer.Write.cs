@@ -110,11 +110,16 @@ namespace Kerberos.NET.Ndr
             BinaryPrimitives.WriteInt32LittleEndian(MoveWriteHeadByPrimitiveTypeSize<int>(), value);
         }
 
+        public void WriteUInt32LittleEndian(uint value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(MoveWriteHeadByPrimitiveTypeSize<int>(), value);
+        }
+
         internal void MarshalObject(INdrStruct thing)
         {
             RpcHeader.WriteHeader(this);
 
-            if (WriteDeferred(thing, out _))
+            if (WriteDeferred(thing))
             {
                 WriteStruct(thing);
             }
@@ -129,6 +134,11 @@ namespace Kerberos.NET.Ndr
         {
             using (deferrals.Push())
             {
+                if (thing is INdrConformantStruct conformantStruct)
+                {
+                    conformantStruct.MarshalConformance(this);
+                }
+
                 thing.Marshal(this);
             }
         }
@@ -136,15 +146,30 @@ namespace Kerberos.NET.Ndr
         public void WriteDeferredStructArray<T>(IEnumerable<T> array)
             where T : INdrStruct
         {
-            if (WriteDeferred(array, out _))
+            if (WriteDeferred(array))
             {
-                deferrals.Defer(() => WriteConformantArray(array));
+                deferrals.Defer(() => WriteConformantArray(array, referent));
             }
         }
 
-        private void WriteConformantArray<T>(IEnumerable<T> array)
+        public void WriteDeferredConformantStructArray<T>(IEnumerable<T> array)
+            where T : INdrConformantStruct
+        {
+            if (WriteDeferred(array))
+            {
+                var referral = referent;
+
+                IncrementReferent(array.Count() * sizeof(int));
+
+                deferrals.Defer(() => WriteConformantArray(array, referral));
+            }
+        }
+
+        private void WriteConformantArray<T>(IEnumerable<T> array, int referral)
             where T : INdrStruct
         {
+            referent = referral;
+
             WriteInt32LittleEndian(array.Count());
 
             foreach (var thing in array)
@@ -161,33 +186,14 @@ namespace Kerberos.NET.Ndr
             WriteFixedPrimitiveArray(array);
         }
 
-        private bool WriteDeferred<T>(T thing, out int refer)
+        internal void IncrementReferent(int size)
         {
-            refer = 0;
-
-            if (thing == null)
-            {
-                WriteInt32LittleEndian(0);
-                return false;
-            }
-
-            refer = referent;
-
-            WriteInt32LittleEndian(refer);
-
-            referent += sizeof(int);
-
-            return true;
+            referent += size;
         }
 
-        private bool WriteDeferred<T>(ReadOnlyMemory<T> mem)
+        private bool WriteDeferred(bool write)
         {
-            return WriteDeferred(mem.Span);
-        }
-
-        private bool WriteDeferred<T>(ReadOnlySpan<T> span)
-        {
-            if (span.Length == 0)
+            if (!write)
             {
                 WriteInt32LittleEndian(0);
                 return false;
@@ -196,36 +202,42 @@ namespace Kerberos.NET.Ndr
             WriteInt32LittleEndian(referent);
 
             referent += sizeof(int);
+
             return true;
+        }
+
+        private bool WriteDeferred<T>(T thing)
+        {
+            return WriteDeferred(thing != null);
+        }
+
+        private bool WriteDeferred()
+        {
+            return WriteDeferred(true);
         }
 
         public void WriteDeferredStructUnion<T>(T thing)
             where T : INdrUnion
         {
-            if (WriteDeferred(thing, out int referent))
+            if (WriteDeferred(thing))
             {
                 deferrals.Defer(() => thing.MarshalUnion(this));
             }
         }
 
-        public void WriteDeferredStruct<T>(T thing)
+        public void WriteConformantStruct<T>(T thing)
             where T : INdrStruct
         {
-            if (WriteDeferred(thing, out int referent))
+            if (WriteDeferred(thing))
             {
-                deferrals.Defer(() => WriteReferentStruct(thing, referent));
+                deferrals.Defer(() => WriteReferentStruct(thing));
             }
         }
 
-        public void WriteReferentStruct<T>(T thing, int referent)
+        private void WriteReferentStruct<T>(T thing)
             where T : INdrStruct
         {
-            if (referent > 0)
-            {
-                WriteInt32LittleEndian(referent);
-
-                WriteStruct(thing);
-            }
+            WriteStruct(thing);
         }
 
         public void WriteFixedPrimitiveArray<T>(T[] value)
@@ -241,7 +253,7 @@ namespace Kerberos.NET.Ndr
         public void WriteDeferredConformantVaryingArray<T>(ReadOnlyMemory<T> buffer)
             where T : struct
         {
-            if (WriteDeferred(buffer))
+            if (WriteDeferred())
             {
                 deferrals.Defer(() => WriteConformantVaryingArray(buffer.Span));
             }
@@ -256,19 +268,30 @@ namespace Kerberos.NET.Ndr
             }
         }
 
-        private void WriteConformantVaryingCharArray(ReadOnlySpan<char> span)
+        private void WriteConformantVaryingCharArray(ReadOnlySpan<char> chars)
         {
-            WriteInt32LittleEndian(span.Length);
-            WriteInt32LittleEndian(0);
-            WriteInt32LittleEndian(span.Length);
+            var indexOfNull = chars.IndexOf('\0');
 
-            WriteSpan(MemoryMarshal.Cast<char, byte>(span));
+            var charWrite = chars;
+
+            if (indexOfNull > 0)
+            {
+                charWrite = chars.Slice(0, indexOfNull);
+            }
+
+            var bytes = MemoryMarshal.Cast<char, byte>(charWrite);
+
+            WriteInt32LittleEndian(chars.Length);
+            WriteInt32LittleEndian(0);
+            WriteInt32LittleEndian(charWrite.Length);
+
+            WriteSpan(bytes);
         }
 
         public void WriteDeferredConformantArray<T>(ReadOnlySpan<T> span)
             where T : struct
         {
-            if (WriteDeferred(span))
+            if (WriteDeferred())
             {
                 var deferred = span.ToArray();
 
@@ -280,7 +303,7 @@ namespace Kerberos.NET.Ndr
         {
             foreach (var val in array)
             {
-                if (WriteDeferred(val, out _))
+                if (WriteDeferred(val))
                 {
                     deferrals.Defer(() => action(val));
                 }

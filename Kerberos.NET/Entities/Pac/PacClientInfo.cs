@@ -20,7 +20,7 @@ namespace Kerberos.NET.Entities
             var buffer = new NdrBuffer();
 
             buffer.WriteFiletime(ClientId);
-            buffer.WriteInt16LittleEndian((short)(Name.Length * 2));
+            buffer.WriteInt16LittleEndian((short)(Name.Length * sizeof(char)));
 
             if (NameLength > 0)
             {
@@ -40,7 +40,7 @@ namespace Kerberos.NET.Entities
 
             if (NameLength > 0)
             {
-                Name = buffer.ReadFixedPrimitiveArray<char>(NameLength / 2).ToString();
+                Name = buffer.ReadFixedPrimitiveArray<char>(NameLength / sizeof(char)).ToString();
             }
         }
     }

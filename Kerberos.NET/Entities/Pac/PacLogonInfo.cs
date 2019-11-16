@@ -50,7 +50,7 @@ namespace Kerberos.NET.Entities.Pac
             buffer.WriteStruct(ServerName);
             buffer.WriteStruct(DomainName);
 
-            buffer.WriteDeferredStruct(DomainId);
+            buffer.WriteConformantStruct(DomainId);
 
             buffer.WriteFixedPrimitiveArray(Reserved1);
 
@@ -64,9 +64,9 @@ namespace Kerberos.NET.Entities.Pac
             buffer.WriteInt32LittleEndian(Reserved3);
 
             buffer.WriteInt32LittleEndian(ExtraSidCount);
-            buffer.WriteDeferredStructArray(ExtraIds);
+            buffer.WriteDeferredConformantStructArray(ExtraIds);
 
-            buffer.WriteDeferredStruct(ResourceDomainId);
+            buffer.WriteConformantStruct(ResourceDomainId);
 
             buffer.WriteInt32LittleEndian(ResourceGroupCount);
             buffer.WriteDeferredStructArray(ResourceGroupIds);
@@ -104,7 +104,8 @@ namespace Kerberos.NET.Entities.Pac
 
             ServerName = buffer.ReadStruct<RpcString>();
             DomainName = buffer.ReadStruct<RpcString>();
-            buffer.ReadDeferredStruct<RpcSid>(v => DomainId = v);
+
+            buffer.ReadConformantStruct<RpcSid>(v => DomainId = v);
 
             Reserved1 = buffer.ReadFixedPrimitiveArray<int>(2).ToArray();
 
@@ -119,7 +120,9 @@ namespace Kerberos.NET.Entities.Pac
             var extraSidsCount = buffer.ReadInt32LittleEndian();
             buffer.ReadDeferredStructArray<RpcSidAttributes>(extraSidsCount, v => ExtraIds = v);
 
-            buffer.ReadDeferredStruct<RpcSid>(v => ResourceDomainId = v);
+            //buffer.IncrementReferent(12);
+
+            buffer.ReadConformantStruct<RpcSid>(v => ResourceDomainId = v);
 
             var resourceGroupCount = buffer.ReadInt32LittleEndian();
 

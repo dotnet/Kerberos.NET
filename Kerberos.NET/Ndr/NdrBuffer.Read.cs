@@ -111,23 +111,21 @@ namespace Kerberos.NET.Ndr
         public ReadOnlySpan<char> ReadConformantVaryingCharArray()
         {
             var total = ReadInt32LittleEndian();
-
             var unused = ReadInt32LittleEndian();
             var used = ReadInt32LittleEndian();
 
             var chars = ReadFixedPrimitiveArray<char>(used);
-
-            if (chars.Length > 0 && chars[chars.Length - 1] == '\0')
-            {
-                chars = chars.Slice(0, chars.Length - 1);
-            }
 
             if (total == used && unused == 0)
             {
                 return chars;
             }
 
-            return chars.Slice(unused, used);
+            var actual = new Span<char>(new char[total]);
+
+            chars.CopyTo(actual.Slice(unused));
+
+            return actual;
         }
 
         public IEnumerable<T> ReadConformantArray<T>(int knownSize, Func<T> reader)
@@ -179,10 +177,10 @@ namespace Kerberos.NET.Ndr
             ReadDeferred(() => setter(ReadConformantArray<T>(knownSize)));
         }
 
-        public void ReadDeferredStruct<T>(Action<T> setter)
-            where T : INdrStruct, new()
+        public void ReadConformantStruct<T>(Action<T> setter)
+            where T : INdrConformantStruct, new()
         {
-            ReadDeferred(() => setter(ReadReferentStruct<T>()));
+            ReadDeferred(() => setter(ReadStruct<T>()));
         }
 
         public void ReadReferentStruct(INdrStruct thing)
@@ -195,16 +193,6 @@ namespace Kerberos.NET.Ndr
             }
 
             ReadStruct(thing);
-        }
-
-        public T ReadReferentStruct<T>()
-            where T : INdrStruct, new()
-        {
-            var thing = new T();
-
-            ReadReferentStruct(thing);
-
-            return thing;
         }
 
         public T ReadStruct<T>()
@@ -222,6 +210,11 @@ namespace Kerberos.NET.Ndr
         {
             using (deferrals.Push())
             {
+                if (thing is INdrConformantStruct conformantStruct)
+                {
+                    conformantStruct.UnmarshalConformance(this);
+                }
+
                 thing.Unmarshal(this);
             }
         }
@@ -232,6 +225,8 @@ namespace Kerberos.NET.Ndr
             ReadDeferred(() => callback(ReadConformantVaryingArray<T>()));
         }
 
+        private int lastRef = 0;
+
         public void ReadDeferred(Action callback)
         {
             var referent = ReadInt32LittleEndian();
@@ -240,6 +235,8 @@ namespace Kerberos.NET.Ndr
             {
                 return;
             }
+
+            lastRef = referent;
 
             deferrals.Defer(callback);
         }

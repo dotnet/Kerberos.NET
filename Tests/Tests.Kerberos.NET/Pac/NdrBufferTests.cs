@@ -1,7 +1,7 @@
 ﻿using Kerberos.NET.Ndr;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Tests.Kerberos.NET.Pac
+namespace Tests.Kerberos.NET
 {
     [TestClass]
     public class NdrBufferTests

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Kerberos.NET.Ndr
 {
@@ -13,11 +14,13 @@ namespace Kerberos.NET.Ndr
             var low = buffer.ReadUInt32LittleEndian();
             var high = buffer.ReadUInt32LittleEndian();
 
-            if (low != 0xffffffffL && high != 0x7fffffffL)
+            if (low != 0xff_ff_ff_ffL && high != 0x7f_ff_ff_ffL)
             {
                 var fileTime = ((long)high << 32) + low;
 
                 var universalTicks = fileTime + FileTimeOffset;
+
+                Debug.WriteLine($"Read UT {universalTicks} {low} {high}");
 
                 return new DateTimeOffset(universalTicks, TimeSpan.Zero);
             }
@@ -27,13 +30,24 @@ namespace Kerberos.NET.Ndr
 
         public static void WriteFiletime(this NdrBuffer buffer, DateTimeOffset filetime)
         {
-            var ticks = filetime.UtcTicks - FileTimeOffset;
+            uint low = 0xff_ff_ff_ff;
+            uint high = 0x7f_ff_ff_ff;
 
-            var low = ticks & 0xFFFFFFFF;
-            var high = ticks >> 32;
+            if (filetime != DateTimeOffset.MinValue)
+            {
+                var offset = filetime.UtcTicks - FileTimeOffset;
 
-            buffer.WriteInt32LittleEndian((int)low);
-            buffer.WriteInt32LittleEndian((int)high);
+                low = unchecked((uint)offset << 32);
+                high = (uint)unchecked(offset >> 32);
+
+                //low = unchecked((uint)offset & 0x7F_FF_FF_FF);
+                //high = unchecked((uint)offset >> 32);
+
+                Debug.WriteLine($"Write UT {offset} {low} {high}");
+            }
+
+            buffer.WriteUInt32LittleEndian(low);
+            buffer.WriteUInt32LittleEndian(high);
         }
     }
 }
