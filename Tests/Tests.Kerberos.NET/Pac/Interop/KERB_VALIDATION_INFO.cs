@@ -1,9 +1,7 @@
 ﻿using Kerberos.NET.Entities.Pac;
-using Newtonsoft.Json.Bson;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
 
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -46,18 +44,18 @@ namespace Tests.Kerberos.NET.Pac.Interop
         {
             if (Buffer != null && MaximumLength > 0)
             {
-                var len = MaximumLength; // - (MaximumLength - Length);
+                var copied = new byte[MaximumLength];
 
-                var span = new ReadOnlySpan<byte>(Buffer, Length);
+                Marshal.Copy((IntPtr)Buffer, copied, 0, Length);
+
+                var span = new ReadOnlySpan<byte>(copied);
 
                 var chars = MemoryMarshal.Cast<byte, char>(span);
 
                 return chars.ToString();
-
-                //return Marshal.PtrToStringUni((IntPtr)Buffer, len / sizeof(char));
             }
 
-            return null;
+            return string.Empty;
         }
     }
 
@@ -105,42 +103,7 @@ namespace Tests.Kerberos.NET.Pac.Interop
                 idAuth = idAuth << 8 | IdentifierAuthority[5];
             }
 
-            return new SecurityIdentifier
-            {
-                Revision = Revision,
-                SubAuthorities = auth,
-                Authority = (int)idAuth
-            };
-        }
-    }
-
-    internal class SecurityIdentifier
-    {
-        public byte Revision { get; set; }
-
-        public int Authority { get; set; }
-
-        public uint[] SubAuthorities { get; set; }
-
-        private string sddl = null;
-
-        public override string ToString()
-        {
-            if (sddl == null)
-            {
-                var result = new StringBuilder();
-
-                result.AppendFormat("S-1-{0}", (long)Authority);
-
-                foreach (var auth in SubAuthorities)
-                {
-                    result.AppendFormat("-{0}", auth);
-                }
-
-                sddl = result.ToString().ToUpperInvariant();
-            }
-
-            return sddl;
+            return new SecurityIdentifier((IdentifierAuthority)idAuth, auth, 0);
         }
     }
 
@@ -152,7 +115,7 @@ namespace Tests.Kerberos.NET.Pac.Interop
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal unsafe partial struct KERB_VALIDATION_INFO
+    internal unsafe struct KERB_VALIDATION_INFO
     {
         public _FILETIME LogonTime;
         public _FILETIME LogoffTime;

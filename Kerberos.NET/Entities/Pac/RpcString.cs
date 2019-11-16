@@ -97,5 +97,15 @@ namespace Kerberos.NET.Entities.Pac
         {
             return ToString().GetHashCode();
         }
+
+        public string ExcludeTermination()
+        {
+            if (IsNullTerminating)
+            {
+                return Buffer.Span.Slice(0, Buffer.Span.IndexOf('\0')).ToString();
+            }
+
+            return ToString();
+        }
     }
 }

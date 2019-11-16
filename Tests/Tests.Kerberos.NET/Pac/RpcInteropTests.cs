@@ -1,9 +1,11 @@
 ﻿using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Pac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Tests.Kerberos.NET.Pac.Interop;
 
 namespace Tests.Kerberos.NET
@@ -37,20 +39,6 @@ namespace Tests.Kerberos.NET
             "AE4AVABJAFQAWQBJAE4AVABFAFIAVgBFAE4AVABJAE8ATgAuAEMATwBNAHb///9hy/kO3YA+1cGWwI/WU46AAAAAAHb///+ITA" +
             "Pw8wujGdvZ025F8b7zAAAAAA==";
 
-        private enum PacType
-        {
-            LOGON_INFO = 1,
-            CREDENTIAL_TYPE = 2,
-            SERVER_CHECKSUM = 6,
-            PRIVILEGE_SERVER_CHECKSUM = 7,
-            CLIENT_NAME_TICKET_INFO = 0x0000000A,
-            CONSTRAINED_DELEGATION_INFO = 0x0000000B,
-            UPN_DOMAIN_INFO = 0x0000000C,
-            CLIENT_CLAIMS = 0x0000000D,
-            DEVICE_INFO = 0x0000000E,
-            DEVICE_CLAIMS = 0x0000000F
-        }
-
         [TestMethod]
         public void MarshalNativeFromNative_Baseline_DoesntExplode()
         {
@@ -58,78 +46,42 @@ namespace Tests.Kerberos.NET
 
             var kerbInfoBuffer = buffers[PacType.LOGON_INFO];
 
-            var info = UnmarshalValidationInfo(kerbInfoBuffer);
+            var handle = UnmarshalValidationInfo(kerbInfoBuffer);
+
+            var info = handle.Value;
 
             Assert.IsNotNull(info);
+
+            Assert.AreEqual("IDENTITYINTER\0", info.LogonDomainName.ToString());
+            Assert.AreEqual("Administrator", info.EffectiveName.ToString());
+            Assert.AreEqual("", info.FullName.ToString());
+            Assert.AreEqual("DC01\0", info.LogonServer.ToString());
+
+            handle.Close();
         }
-
-        private static void AssertSequenceEqual(ReadOnlySpan<byte> expected, ReadOnlySpan<byte> actual)
-        {
-            var diff = expected.Length - actual.Length;
-
-            if (diff != 0)
-            {
-                Assert.Fail($"Lengths don't match. Expected: {expected.Length}; Actual: {actual.Length}");
-            }
-
-
-            Hex.Debug(expected.Slice(0).ToArray());
-            Hex.Debug(actual.Slice(0).ToArray());
-
-            for (var i = 0; i < expected.Length; i++)
-            {
-                var expectedAt = expected[i];
-                var actualAt = actual[i];
-
-                try
-                {
-                    Assert.AreEqual(expectedAt, actualAt, $"Equality failed at index {i} with expected {expectedAt} != {actualAt} actual");
-                }
-                catch (AssertFailedException)
-                {
-                    Hex.Debug(expected.Slice(i).ToArray());
-                    Hex.Debug(actual.Slice(i).ToArray());
-                    throw;
-                }
-            }
-
-            ;
-        }
-
-        private const long TicksPerDay = 864000000000L;
-        private const long DaysTo1601 = 584388;
-        private const long FileTimeOffset = DaysTo1601 * TicksPerDay;
 
         [TestMethod]
         public void FileTimeConversion()
         {
-            //636369481921808216 4049749848 30607508
             var expected = 636369481921808216L;
 
-            uint low = 4049749848;
-            uint high = 30607508;
+            var ft = new RpcFileTime { LowDateTime = 4049749848, HighDateTime = 30607508 };
 
-            var fileTime = ((long)high << 32) | low;
-
-            var universalTicks = fileTime + FileTimeOffset;
-
-            Assert.AreEqual(expected, universalTicks);
-
-            var dt = DateTime.FromFileTimeUtc(fileTime);
+            var dt = (DateTimeOffset)ft;
 
             Assert.AreEqual(expected, dt.Ticks);
 
-            var offset = dt.Ticks - FileTimeOffset;
+            uint low = ft.LowDateTime;
+            uint high = ft.HighDateTime;
 
-            var finalLow = unchecked((uint)offset << 32);
-            uint finalHigh = (uint)unchecked(offset >> 32);
+            ft = dt;
 
-            Assert.AreEqual(low, finalLow);
-            Assert.AreEqual(high, (uint)finalHigh);
+            Assert.AreEqual(low, ft.LowDateTime);
+            Assert.AreEqual(high, ft.HighDateTime);
         }
 
         [TestMethod]
-        public void MarshalNativeFromNative_PassThroughManaged()
+        public unsafe void MarshalNativeFromNative_PassThroughManaged()
         {
             var buffers = Setup();
 
@@ -142,19 +94,37 @@ namespace Tests.Kerberos.NET
 
             AssertSequenceEqual(kerbInfoBuffer.Span, kerbInfoBuffer2.Span);
 
-            var final = UnmarshalValidationInfo(kerbInfoBuffer);
-
-            Assert.IsNotNull(final);
-
-            Assert.AreEqual(logonInfoDecoded.DomainName.ToString(), final.LogonDomainName.ToString());
-            Assert.AreEqual(logonInfoDecoded.UserName.ToString(), final.EffectiveName.ToString());
-            Assert.AreEqual(logonInfoDecoded.UserDisplayName.ToString(), final.FullName.ToString());
-            Assert.AreEqual(logonInfoDecoded.ServerName.ToString(), final.LogonServer.ToString());
+            AssertManagedMatchesNative(logonInfoDecoded, kerbInfoBuffer2);
         }
 
-        private static KERB_VALIDATION_INFO UnmarshalValidationInfo(ReadOnlyMemory<byte> kerbInfoBuffer)
+        [TestMethod]
+        public void MarshalNativeFromNative_PassThroughManagedRoundtripped()
         {
-            return Unmarshal<KERB_VALIDATION_INFO>(kerbInfoBuffer, RpcFormatter.Pac, RpcFormatter.KerbValidationInfo);
+            var buffers = Setup();
+
+            var kerbInfoBuffer = buffers[PacType.LOGON_INFO];
+
+            ReadOnlyMemory<byte> encoded;
+
+            for (var i = 0; i < 100; i++)
+            {
+                var logonInfoDecoded = new PacLogonInfo();
+                logonInfoDecoded.Unmarshal(kerbInfoBuffer);
+
+                encoded = logonInfoDecoded.Encode();
+
+                var kerbInfoBuffer2 = new ReadOnlyMemory<byte>(encoded.ToArray());
+
+                AssertSequenceEqual(kerbInfoBuffer.Span, kerbInfoBuffer2.Span);
+
+                // for unknown reasons NdrMesTypeDecode2 will modify kerbInfoBuffer2[16]
+                // which is the private structure referral pointer
+                // this limits the validity of this test, but it is interesting nonetheless
+
+                AssertManagedMatchesNative(logonInfoDecoded, kerbInfoBuffer2);
+
+                kerbInfoBuffer = encoded;
+            }
         }
 
         [TestMethod]
@@ -174,22 +144,168 @@ namespace Tests.Kerberos.NET
 
             Assert.AreEqual("user@test.com", logonInfoDecoded.UserName.ToString());
 
-            var nativeDecoded = UnmarshalValidationInfo(encodedLogonInfo);
-
-            Assert.IsNotNull(nativeDecoded);
-
-            Assert.AreEqual(logonInfoDecoded.DomainName.ToString(), nativeDecoded.LogonDomainName.ToString());
-            Assert.AreEqual(logonInfoDecoded.UserName.ToString(), nativeDecoded.EffectiveName.ToString());
-            Assert.AreEqual(logonInfoDecoded.UserDisplayName.ToString(), nativeDecoded.FullName.ToString());
-            Assert.AreEqual(logonInfoDecoded.ServerName.ToString(), nativeDecoded.LogonServer.ToString());
+            AssertManagedMatchesNative(logonInfoDecoded, encodedLogonInfo);
         }
 
-        private static T Unmarshal<T>(ReadOnlyMemory<byte> buffer, ReadOnlyMemory<byte> format, int offset)
+        [TestMethod]
+        public void MarshalNativeFromManaged_Groups()
+        {
+            var principal = new FakeKerberosPrincipal("user@test.com");
+
+            var pac = principal.GeneratePac().GetAwaiter().GetResult();
+
+            GeneratePacExtensions(pac, includeGroups: true, includeExtraIds: false, includeResourceDomain: false, includeResourceGroups: false);
+
+            var encodedLogonInfo = pac.LogonInfo.Encode();
+
+            Assert.IsNotNull(encodedLogonInfo);
+            Assert.IsTrue(encodedLogonInfo.Length > 0);
+
+            var logonInfoDecoded = new PacLogonInfo();
+            logonInfoDecoded.Unmarshal(encodedLogonInfo);
+
+            Assert.AreEqual("user@test.com", logonInfoDecoded.UserName.ToString());
+
+            AssertManagedMatchesNative(logonInfoDecoded, encodedLogonInfo);
+        }
+
+        [TestMethod]
+        public void MarshalNativeFromManaged_Groups_ExtraSids()
+        {
+            var principal = new FakeKerberosPrincipal("user@test.com");
+
+            var pac = principal.GeneratePac().GetAwaiter().GetResult();
+
+            GeneratePacExtensions(pac, includeGroups: true, includeExtraIds: true, includeResourceDomain: false, includeResourceGroups: false);
+
+            var encodedLogonInfo = pac.LogonInfo.Encode();
+
+            Assert.IsNotNull(encodedLogonInfo);
+            Assert.IsTrue(encodedLogonInfo.Length > 0);
+
+            var logonInfoDecoded = new PacLogonInfo();
+            logonInfoDecoded.Unmarshal(encodedLogonInfo);
+
+            Assert.AreEqual("user@test.com", logonInfoDecoded.UserName.ToString());
+
+            AssertManagedMatchesNative(logonInfoDecoded, encodedLogonInfo);
+        }
+
+        [TestMethod]
+        public void MarshalNativeFromManaged_Groups_ExtraSids_ResourceDomain()
+        {
+            var principal = new FakeKerberosPrincipal("user@test.com");
+
+            var pac = principal.GeneratePac().GetAwaiter().GetResult();
+
+            GeneratePacExtensions(pac, includeGroups: true, includeExtraIds: true, includeResourceDomain: true, includeResourceGroups: false);
+
+            var encodedLogonInfo = pac.LogonInfo.Encode();
+
+            Assert.IsNotNull(encodedLogonInfo);
+            Assert.IsTrue(encodedLogonInfo.Length > 0);
+
+            var logonInfoDecoded = new PacLogonInfo();
+            logonInfoDecoded.Unmarshal(encodedLogonInfo);
+
+            Assert.AreEqual("user@test.com", logonInfoDecoded.UserName.ToString());
+
+            AssertManagedMatchesNative(logonInfoDecoded, encodedLogonInfo);
+        }
+
+        [TestMethod]
+        public void MarshalNativeFromManaged_Groups_ExtraSids_ResourceDomain_ResourceDomainGroups()
+        {
+            var principal = new FakeKerberosPrincipal("user@test.com");
+
+            var pac = principal.GeneratePac().GetAwaiter().GetResult();
+
+            GeneratePacExtensions(pac, includeGroups: true, includeExtraIds: true, includeResourceDomain: true, includeResourceGroups: true);
+
+            var encodedLogonInfo = pac.LogonInfo.Encode();
+
+            Assert.IsNotNull(encodedLogonInfo);
+            Assert.IsTrue(encodedLogonInfo.Length > 0);
+
+            var logonInfoDecoded = new PacLogonInfo();
+            logonInfoDecoded.Unmarshal(encodedLogonInfo);
+
+            Assert.AreEqual("user@test.com", logonInfoDecoded.UserName.ToString());
+
+            AssertManagedMatchesNative(logonInfoDecoded, encodedLogonInfo);
+        }
+
+        private static void GeneratePacExtensions(
+            PrivilegedAttributeCertificate pac,
+            bool includeGroups,
+            bool includeExtraIds,
+            bool includeResourceDomain,
+            bool includeResourceGroups
+        )
+        {
+            if (includeGroups)
+            {
+                pac.LogonInfo.GroupIds = Enumerable.Range(23, 100).Select(g => new GroupMembership()
+                {
+                    Attributes = SidAttributes.SE_GROUP_ENABLED,
+                    RelativeId = g
+                });
+
+                Assert.AreEqual(100, pac.LogonInfo.GroupCount);
+            }
+
+            if (includeExtraIds)
+            {
+                pac.LogonInfo.ExtraIds = Enumerable.Range(45, 100).Select(e => new RpcSidAttributes
+                {
+                    Attributes = SidAttributes.SE_GROUP_INTEGRITY,
+                    Sid = new SecurityIdentifier(
+                        IdentifierAuthority.CreatorAuthority,
+                        new uint[] { 123, 321, 456, 432, (uint)e },
+                        SidAttributes.SE_GROUP_USE_FOR_DENY_ONLY
+                    ).ToRpcSid()
+                });
+
+                Assert.AreEqual(100, pac.LogonInfo.ExtraSidCount);
+            }
+
+            if (includeResourceDomain)
+            {
+                pac.LogonInfo.ResourceDomainId = new SecurityIdentifier(
+                    IdentifierAuthority.AppPackageAuthority,
+                    new uint[] { 111, 222, 333, 444 },
+                    SidAttributes.SE_GROUP_RESOURCE
+                ).ToRpcSid();
+            }
+
+            if (includeResourceGroups)
+            {
+
+                pac.LogonInfo.ResourceGroupIds = Enumerable.Range(88, 100).Select(g => new GroupMembership()
+                {
+                    Attributes = SidAttributes.SE_GROUP_USE_FOR_DENY_ONLY,
+                    RelativeId = g
+                });
+
+                Assert.AreEqual(100, pac.LogonInfo.ResourceGroupCount);
+            }
+        }
+
+        private static SafeMarshalledHandle<T> Unmarshal<T>(ReadOnlyMemory<byte> buffer, ReadOnlyMemory<byte> format, int offset)
+            where T : unmanaged
         {
             using (var marshaller = new PickleMarshaller(format, offset))
             {
-                return marshaller.Decode<T>(buffer.Span);
+                return marshaller.Decode(buffer.Span, p => ConvertThing<T>(p));
             }
+        }
+
+        private unsafe static T ConvertThing<T>(IntPtr p)
+            where T : unmanaged
+        {
+            T* pThing = (T*)p;
+
+            return *pThing;
         }
 
         private static Dictionary<PacType, ReadOnlyMemory<byte>> Setup()
@@ -213,6 +329,105 @@ namespace Tests.Kerberos.NET
                 }
 
                 return buffers;
+            }
+        }
+
+        private static unsafe void AssertManagedMatchesNative(PacLogonInfo logonInfoDecoded, ReadOnlyMemory<byte> kerbInfoBuffer2)
+        {
+            var handle = UnmarshalValidationInfo(kerbInfoBuffer2);
+
+            var final = handle.Value;
+
+            Assert.IsNotNull(final);
+
+            Assert.AreEqual(logonInfoDecoded.DomainName.ToString(), final.LogonDomainName.ToString());
+            Assert.AreEqual(logonInfoDecoded.UserName.ToString(), final.EffectiveName.ToString());
+            Assert.AreEqual(logonInfoDecoded.UserDisplayName.ToString(), final.FullName.ToString());
+            Assert.AreEqual(logonInfoDecoded.ServerName.ToString(), final.LogonServer.ToString());
+
+            Assert.AreEqual(logonInfoDecoded.DomainSid, final.LogonDomainId->ToSecurityIdentifier());
+
+            Assert.AreEqual(logonInfoDecoded.UserId, (int)final.UserId);
+
+            Assert.AreEqual(logonInfoDecoded.GroupCount, (int)final.GroupCount);
+
+            if (logonInfoDecoded.GroupCount > 0)
+            {
+                AssertGroupMembershipsMatch(logonInfoDecoded.GroupIds, final.GroupIds);
+            }
+
+            Assert.AreEqual(logonInfoDecoded.ExtraSidCount, (int)final.SidCount);
+
+            for (var i = 0; i < logonInfoDecoded.ExtraSidCount; i++)
+            {
+                var expected = logonInfoDecoded.ExtraIds.ElementAt(i);
+                var actual = final.ExtraSids[i];
+
+                Assert.AreEqual(expected.Attributes, actual.Attributes);
+                Assert.AreEqual(expected.Sid.ToSecurityIdentifier(), actual.Sid->ToSecurityIdentifier());
+            }
+
+            Assert.AreEqual(logonInfoDecoded.ResourceDomainId == null, final.ResourceGroupDomainSid == null);
+
+            if (logonInfoDecoded.ResourceDomainId != null)
+            {
+                Assert.AreEqual(logonInfoDecoded.ResourceDomainSid, final.ResourceGroupDomainSid->ToSecurityIdentifier());
+            }
+
+            Assert.AreEqual(logonInfoDecoded.ResourceGroupCount, (int)final.ResourceGroupCount);
+
+            if (logonInfoDecoded.ResourceGroupCount > 0)
+            {
+                AssertGroupMembershipsMatch(logonInfoDecoded.ResourceGroupIds, final.ResourceGroupIds);
+            }
+
+            handle.Close();
+        }
+
+        private static unsafe void AssertGroupMembershipsMatch(IEnumerable<GroupMembership> expectedGroups, _GROUP_MEMBERSHIP* actualGroups)
+        {
+            for (var i = 0; i < expectedGroups.Count(); i++)
+            {
+                var expected = expectedGroups.ElementAt(i);
+                var actual = actualGroups[i];
+
+                Assert.AreEqual(expected.Attributes, actual.Attributes);
+                Assert.AreEqual(expected.RelativeId, (int)actual.RelativeId);
+            }
+        }
+
+        private static SafeMarshalledHandle<KERB_VALIDATION_INFO> UnmarshalValidationInfo(ReadOnlyMemory<byte> kerbInfoBuffer)
+        {
+            return Unmarshal<KERB_VALIDATION_INFO>(kerbInfoBuffer, RpcFormatter.Pac, RpcFormatter.KerbValidationInfo);
+        }
+
+        private static void AssertSequenceEqual(ReadOnlySpan<byte> expected, ReadOnlySpan<byte> actual)
+        {
+            var diff = expected.Length - actual.Length;
+
+            if (diff != 0)
+            {
+                Assert.Fail($"Lengths don't match. Expected: {expected.Length}; Actual: {actual.Length}");
+            }
+
+            Hex.Debug(expected.Slice(0).ToArray());
+            Hex.Debug(actual.Slice(0).ToArray());
+
+            for (var i = 0; i < expected.Length; i++)
+            {
+                var expectedAt = expected[i];
+                var actualAt = actual[i];
+
+                try
+                {
+                    Assert.AreEqual(expectedAt, actualAt, $"Equality failed at index {i} with expected {expectedAt} != {actualAt} actual");
+                }
+                catch (AssertFailedException)
+                {
+                    Hex.Debug(expected.Slice(i).ToArray());
+                    Hex.Debug(actual.Slice(i).ToArray());
+                    throw;
+                }
             }
         }
     }

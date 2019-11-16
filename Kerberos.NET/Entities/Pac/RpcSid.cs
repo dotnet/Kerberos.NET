@@ -1,7 +1,6 @@
 ﻿using Kerberos.NET.Ndr;
 using System;
 using System.Diagnostics;
-using System.Text;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -46,25 +45,14 @@ namespace Kerberos.NET.Entities.Pac
             SubAuthority = buffer.ReadFixedPrimitiveArray<uint>(SubAuthorityCount).AsMemory();
         }
 
-        private string sddl;
+        public SecurityIdentifier ToSecurityIdentifier()
+        {
+            return SecurityIdentifier.FromRpcSid(this);
+        }
 
         public override string ToString()
         {
-            if (sddl == null)
-            {
-                var result = new StringBuilder();
-
-                result.AppendFormat("S-1-{0}", (long)IdentifierAuthority.Authority);
-
-                for (int i = 0; i < SubAuthority.Length; i++)
-                {
-                    result.AppendFormat("-{0}", SubAuthority.Span[i]);
-                }
-
-                sddl = result.ToString().ToUpperInvariant();
-            }
-
-            return sddl;
+            return ToSecurityIdentifier().ToString();
         }
     }
 }

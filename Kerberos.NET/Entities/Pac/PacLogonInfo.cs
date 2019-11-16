@@ -12,6 +12,15 @@ namespace Kerberos.NET.Entities.Pac
 
         public PacLogonInfo()
         {
+            LogonTime = DateTimeOffset.MinValue;
+            LogoffTime = DateTimeOffset.MinValue;
+            KickOffTime = DateTimeOffset.MinValue;
+            PwdLastChangeTime = DateTimeOffset.MinValue;
+            PwdCanChangeTime = DateTimeOffset.MinValue;
+            PwdMustChangeTime = DateTimeOffset.MinValue;
+            LastSuccessfulILogon = DateTimeOffset.MinValue;
+            LastFailedILogon = DateTimeOffset.MinValue;
+
             Reserved1 = Reserved1FixedValue;
             UserSessionKey = ReservedSessionKey;
         }
@@ -20,12 +29,12 @@ namespace Kerberos.NET.Entities.Pac
 
         public override void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteFiletime(LogonTime);
-            buffer.WriteFiletime(LogoffTime);
-            buffer.WriteFiletime(KickOffTime);
-            buffer.WriteFiletime(PwdLastChangeTime);
-            buffer.WriteFiletime(PwdCanChangeTime);
-            buffer.WriteFiletime(PwdMustChangeTime);
+            buffer.WriteStruct(LogonTime);
+            buffer.WriteStruct(LogoffTime);
+            buffer.WriteStruct(KickOffTime);
+            buffer.WriteStruct(PwdLastChangeTime);
+            buffer.WriteStruct(PwdCanChangeTime);
+            buffer.WriteStruct(PwdMustChangeTime);
 
             buffer.WriteStruct(UserName);
             buffer.WriteStruct(UserDisplayName);
@@ -57,8 +66,8 @@ namespace Kerberos.NET.Entities.Pac
             buffer.WriteInt32LittleEndian((int)UserAccountControl);
             buffer.WriteInt32LittleEndian(SubAuthStatus);
 
-            buffer.WriteFiletime(LastSuccessfulILogon);
-            buffer.WriteFiletime(LastFailedILogon);
+            buffer.WriteStruct(LastSuccessfulILogon);
+            buffer.WriteStruct(LastFailedILogon);
             buffer.WriteInt32LittleEndian(FailedILogonCount);
 
             buffer.WriteInt32LittleEndian(Reserved3);
@@ -74,12 +83,12 @@ namespace Kerberos.NET.Entities.Pac
 
         public override void Unmarshal(NdrBuffer buffer)
         {
-            LogonTime = buffer.ReadFiletime();
-            LogoffTime = buffer.ReadFiletime();
-            KickOffTime = buffer.ReadFiletime();
-            PwdLastChangeTime = buffer.ReadFiletime();
-            PwdCanChangeTime = buffer.ReadFiletime();
-            PwdMustChangeTime = buffer.ReadFiletime();
+            LogonTime = buffer.ReadStruct<RpcFileTime>();
+            LogoffTime = buffer.ReadStruct<RpcFileTime>();
+            KickOffTime = buffer.ReadStruct<RpcFileTime>();
+            PwdLastChangeTime = buffer.ReadStruct<RpcFileTime>();
+            PwdCanChangeTime = buffer.ReadStruct<RpcFileTime>();
+            PwdMustChangeTime = buffer.ReadStruct<RpcFileTime>();
 
             UserName = buffer.ReadStruct<RpcString>();
             UserDisplayName = buffer.ReadStruct<RpcString>();
@@ -111,16 +120,14 @@ namespace Kerberos.NET.Entities.Pac
 
             UserAccountControl = (UserAccountControlFlags)buffer.ReadInt32LittleEndian();
             SubAuthStatus = buffer.ReadInt32LittleEndian();
-            LastSuccessfulILogon = buffer.ReadFiletime();
-            LastFailedILogon = buffer.ReadFiletime();
+            LastSuccessfulILogon = buffer.ReadStruct<RpcFileTime>();
+            LastFailedILogon = buffer.ReadStruct<RpcFileTime>();
             FailedILogonCount = buffer.ReadInt32LittleEndian();
 
             Reserved3 = buffer.ReadInt32LittleEndian();
 
             var extraSidsCount = buffer.ReadInt32LittleEndian();
             buffer.ReadDeferredStructArray<RpcSidAttributes>(extraSidsCount, v => ExtraIds = v);
-
-            //buffer.IncrementReferent(12);
 
             buffer.ReadConformantStruct<RpcSid>(v => ResourceDomainId = v);
 
@@ -129,17 +136,17 @@ namespace Kerberos.NET.Entities.Pac
             buffer.ReadDeferredStructArray<GroupMembership>(resourceGroupCount, v => ResourceGroupIds = v);
         }
 
-        public DateTimeOffset LogonTime { get; set; }
+        public RpcFileTime LogonTime { get; set; }
 
-        public DateTimeOffset LogoffTime { get; set; }
+        public RpcFileTime LogoffTime { get; set; }
 
-        public DateTimeOffset KickOffTime { get; set; }
+        public RpcFileTime KickOffTime { get; set; }
 
-        public DateTimeOffset PwdLastChangeTime { get; set; }
+        public RpcFileTime PwdLastChangeTime { get; set; }
 
-        public DateTimeOffset PwdCanChangeTime { get; set; }
+        public RpcFileTime PwdCanChangeTime { get; set; }
 
-        public DateTimeOffset PwdMustChangeTime { get; set; }
+        public RpcFileTime PwdMustChangeTime { get; set; }
 
         public RpcString UserName { get; set; } = RpcString.Empty;
 
@@ -183,9 +190,9 @@ namespace Kerberos.NET.Entities.Pac
 
         public int SubAuthStatus { get; set; }
 
-        public DateTimeOffset LastSuccessfulILogon { get; set; }
+        public RpcFileTime LastSuccessfulILogon { get; set; }
 
-        public DateTimeOffset LastFailedILogon { get; set; }
+        public RpcFileTime LastFailedILogon { get; set; }
 
         public int FailedILogonCount { get; set; }
 
@@ -205,30 +212,34 @@ namespace Kerberos.NET.Entities.Pac
 
         public SecurityIdentifier UserSid
         {
-            get => new SecurityIdentifier(DomainId, UserId);
-            set => UserId = value.SubAuthorities[value.SubAuthorities.Length - 1];
+            get => SecurityIdentifier.FromRpcSid(DomainId, UserId);
+            set => UserId = value.Id;
         }
 
         public SecurityIdentifier GroupSid
         {
-            get => new SecurityIdentifier(DomainId, GroupId);
-            set => GroupId = value.SubAuthorities[value.SubAuthorities.Length - 1];
+            get => SecurityIdentifier.FromRpcSid(DomainId, GroupId);
+            set => GroupId = value.Id;
         }
 
         private static readonly IEnumerable<SecurityIdentifier> EmptySid = new SecurityIdentifier[0];
 
-        public IEnumerable<SecurityIdentifier> GroupSids => GroupIds?.Select(g => new SecurityIdentifier(DomainId, g.RelativeId, g.Attributes)) ?? EmptySid;
+        public IEnumerable<SecurityIdentifier> GroupSids
+            => GroupIds?.Select(g => SecurityIdentifier.FromRpcSid(DomainId, g.RelativeId, g.Attributes)) ?? EmptySid;
 
-        public IEnumerable<SecurityIdentifier> ExtraSids => ExtraIds?.Select(g => new SecurityIdentifier(g.Sid)) ?? EmptySid;
+        public IEnumerable<SecurityIdentifier> ExtraSids
+            => ExtraIds?.Select(g => g.Sid.ToSecurityIdentifier()) ?? EmptySid;
 
-        public SecurityIdentifier ResourceDomainSid => ResourceDomainId != null ? new SecurityIdentifier(ResourceDomainId) : null;
+        public SecurityIdentifier ResourceDomainSid
+            => ResourceDomainId?.ToSecurityIdentifier();
 
-        public IEnumerable<SecurityIdentifier> ResourceGroups => ResourceGroupIds?.Select(g => new SecurityIdentifier(ResourceDomainId, g.RelativeId, g.Attributes)) ?? EmptySid;
+        public IEnumerable<SecurityIdentifier> ResourceGroups
+            => ResourceGroupIds?.Select(g => SecurityIdentifier.FromRpcSid(ResourceDomainId, g.RelativeId, g.Attributes)) ?? EmptySid;
 
         public SecurityIdentifier DomainSid
         {
-            get => new SecurityIdentifier(DomainId);
-            set => DomainId = value.FromSid();
+            get => DomainId.ToSecurityIdentifier();
+            set => DomainId = value.ToRpcSid();
         }
     }
 }

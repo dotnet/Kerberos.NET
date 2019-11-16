@@ -7,6 +7,29 @@ using System.Runtime.InteropServices;
 
 namespace Tests.Kerberos.NET.Pac.Interop
 {
+    internal class SafeMarshalledHandle<T> : SafeHandle
+    {
+        public T Value { get; }
+
+        private readonly Action free;
+
+        public SafeMarshalledHandle(T t, Action p)
+            : base(IntPtr.Zero, true)
+        {
+            Value = t;
+            free = p;
+        }
+
+        public override bool IsInvalid => false;
+
+        protected override bool ReleaseHandle()
+        {
+            free();
+
+            return true;
+        }
+    }
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr PfnAllocate(int s);
 
@@ -151,10 +174,14 @@ namespace Tests.Kerberos.NET.Pac.Interop
             };
         }
 
-        public T Decode<T>(ReadOnlySpan<byte> buffer) => Decode(buffer, Marshal.PtrToStructure<T>);
-
-        public unsafe T Decode<T>(ReadOnlySpan<byte> buffer, Func<IntPtr, T> converter)
+        public unsafe SafeMarshalledHandle<T> Decode<T>(ReadOnlySpan<byte> buffer, Func<IntPtr, T> converter)
         {
+            //
+            // WARNING: THIS IS DANGEROUS
+            //
+            // THIS CAN BE INCREDIBLY LEAKY BECAUSE IT DOESN'T FREE BUFFERS
+            // DO NOT FORGET TO FREE THE HANDLE AFTER YOU"VE USED IT
+
             if (disposed)
             {
                 throw new ObjectDisposedException(nameof(PickleMarshaller));
@@ -170,39 +197,28 @@ namespace Tests.Kerberos.NET.Pac.Interop
                     out IntPtr ndrHandle
                 );
 
-                try
+                if (ret != RPC_S_OK)
                 {
-                    if (ret != RPC_S_OK)
-                    {
-                        throw new Win32Exception(ret);
-                    }
-
-                    fixed (MIDL_TYPE_PICKLING_INFO* pPicklingInfo = &__MIDL_TypePicklingInfo)
-                    {
-                        NdrMesTypeDecode2(
-                             ndrHandle,
-                             pPicklingInfo,
-                             ref stubDesc,
-                             stubDesc.pFormatTypes + formatOffset,
-                             ref pObj
-                        );
-                    }
-
-                    if (pObj == IntPtr.Zero)
-                    {
-                        throw new Win32Exception(Marshal.GetLastWin32Error());
-                    }
-
-                    return converter(pObj);
+                    throw new Win32Exception(ret);
                 }
-                catch (Exception ex)
+
+                fixed (MIDL_TYPE_PICKLING_INFO* pPicklingInfo = &__MIDL_TypePicklingInfo)
                 {
-                    throw;
+                    NdrMesTypeDecode2(
+                         ndrHandle,
+                         pPicklingInfo,
+                         ref stubDesc,
+                         stubDesc.pFormatTypes + formatOffset,
+                         ref pObj
+                    );
                 }
-                finally
+
+                if (pObj == IntPtr.Zero)
                 {
-                    FreeNdr(ref ndrHandle, ref pObj);
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
                 }
+
+                return new SafeMarshalledHandle<T>(converter(pObj), () => FreeNdr(ref ndrHandle, ref pObj));
             }
         }
 
@@ -231,13 +247,6 @@ namespace Tests.Kerberos.NET.Pac.Interop
         private unsafe extern static int MesDecodeBufferHandleCreate(
             void* pBuffer,
             int BufferSize,
-            out IntPtr pHandle
-        );
-
-        [DllImport("rpcrt4.dll")]
-        private unsafe extern static int MesEncodeDynBufferHandleCreate(
-            out void* ppBuffer,
-            out int pEncodedSize,
             out IntPtr pHandle
         );
 

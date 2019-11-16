@@ -6,7 +6,7 @@ namespace Kerberos.NET.Entities
 {
     public class PacClientInfo : PacObject, IPacElement
     {
-        public DateTimeOffset ClientId { get; set; }
+        public RpcFileTime ClientId { get; set; }
 
         [KerberosIgnore]
         public short NameLength { get; private set; }
@@ -19,7 +19,7 @@ namespace Kerberos.NET.Entities
         {
             var buffer = new NdrBuffer();
 
-            buffer.WriteFiletime(ClientId);
+            buffer.WriteStruct(ClientId);
             buffer.WriteInt16LittleEndian((short)(Name.Length * sizeof(char)));
 
             if (NameLength > 0)
@@ -34,7 +34,7 @@ namespace Kerberos.NET.Entities
         {
             var buffer = new NdrBuffer(bytes);
 
-            ClientId = buffer.ReadFiletime();
+            ClientId = buffer.ReadStruct<RpcFileTime>();
 
             NameLength = buffer.ReadInt16LittleEndian();
 
