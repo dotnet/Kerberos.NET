@@ -11,7 +11,7 @@ namespace Kerberos.NET.Entities
 
         public EncryptionType EncryptionType { get; set; }
 
-        public byte[] SerializedData { get; set; }
+        public ReadOnlyMemory<byte> SerializedData { get; set; }
 
         public override PacType PacType => PacType.CREDENTIAL_TYPE;
 
@@ -21,7 +21,7 @@ namespace Kerberos.NET.Entities
 
             buffer.WriteInt32LittleEndian(Version);
             buffer.WriteInt32LittleEndian((int)EncryptionType);
-            buffer.WriteSpan(SerializedData);
+            buffer.WriteSpan(SerializedData.Span);
 
             return buffer.ToSpan();
         }
@@ -34,7 +34,7 @@ namespace Kerberos.NET.Entities
 
             EncryptionType = (EncryptionType)stream.ReadInt32LittleEndian();
 
-            SerializedData = stream.Read(stream.BytesAvailable).ToArray();
+            SerializedData = stream.ReadMemory(stream.BytesAvailable);
         }
     }
 }

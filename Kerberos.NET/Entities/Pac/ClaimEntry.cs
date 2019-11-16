@@ -80,7 +80,7 @@ namespace Kerberos.NET.Entities.Pac
                     buffer.WriteDeferredArray(arr, val => buffer.WriteConformantVaryingArray(val.Span));
                     break;
                 default:
-                    buffer.WriteFixedPrimitiveArray(GetValues<long>().ToArray());
+                    buffer.WriteFixedPrimitiveArray<long>(GetValues<long>().ToArray());
                     break;
             }
         }

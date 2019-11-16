@@ -54,10 +54,9 @@ namespace Kerberos.NET.Ndr
             MoveByOffset(0);
         }
 
-        public ReadOnlySpan<byte> ToSpan()
-        {
-            return ToArray();
-        }
+        public Memory<byte> ToMemory() => ToArray();
+
+        public Span<byte> ToSpan() => ToArray();
 
         private byte[] ToArray()
         {
@@ -113,6 +112,11 @@ namespace Kerberos.NET.Ndr
         public void WriteUInt32LittleEndian(uint value)
         {
             BinaryPrimitives.WriteUInt32LittleEndian(MoveWriteHeadByPrimitiveTypeSize<int>(), value);
+        }
+
+        public void WriteInt64LittleEndian(long value)
+        {
+            BinaryPrimitives.WriteInt64LittleEndian(MoveWriteHeadByPrimitiveTypeSize<long>(), value);
         }
 
         internal void MarshalObject(INdrStruct thing)
@@ -178,7 +182,7 @@ namespace Kerberos.NET.Ndr
             }
         }
 
-        private void WriteConformantPrimitiveArray<T>(T[] array)
+        private void WriteConformantPrimitiveArray<T>(ReadOnlySpan<T> array)
             where T : struct
         {
             WriteInt32LittleEndian(array.Length);
@@ -240,7 +244,7 @@ namespace Kerberos.NET.Ndr
             WriteStruct(thing);
         }
 
-        public void WriteFixedPrimitiveArray<T>(T[] value)
+        public void WriteFixedPrimitiveArray<T>(ReadOnlySpan<T> value)
             where T : struct
         {
             Align(SizeOf<T>());
@@ -295,7 +299,7 @@ namespace Kerberos.NET.Ndr
             {
                 var deferred = span.ToArray();
 
-                deferrals.Defer(() => WriteConformantPrimitiveArray(deferred));
+                deferrals.Defer(() => WriteConformantPrimitiveArray<T>(deferred));
             }
         }
 

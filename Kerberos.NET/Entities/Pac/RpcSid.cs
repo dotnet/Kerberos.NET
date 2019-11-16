@@ -24,7 +24,7 @@ namespace Kerberos.NET.Entities.Pac
             buffer.WriteByte(Revision);
             buffer.WriteByte(SubAuthorityCount);
             buffer.WriteStruct(IdentifierAuthority);
-            buffer.WriteFixedPrimitiveArray(SubAuthority.ToArray());
+            buffer.WriteFixedPrimitiveArray(SubAuthority.Span);
         }
 
         private int conformance;

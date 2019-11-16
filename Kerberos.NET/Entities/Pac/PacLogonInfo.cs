@@ -61,7 +61,7 @@ namespace Kerberos.NET.Entities.Pac
 
             buffer.WriteConformantStruct(DomainId);
 
-            buffer.WriteFixedPrimitiveArray(Reserved1);
+            buffer.WriteFixedPrimitiveArray(Reserved1.Span);
 
             buffer.WriteInt32LittleEndian((int)UserAccountControl);
             buffer.WriteInt32LittleEndian(SubAuthStatus);
@@ -184,7 +184,7 @@ namespace Kerberos.NET.Entities.Pac
         public RpcSid DomainId { get; set; }
 
         //[FixedSize(2)]
-        public int[] Reserved1 { get; set; }
+        public ReadOnlyMemory<int> Reserved1 { get; set; }
 
         public UserAccountControlFlags UserAccountControl { get; set; }
 

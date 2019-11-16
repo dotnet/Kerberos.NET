@@ -251,45 +251,41 @@ namespace Kerberos.NET.Entities
 
         private static Memory<byte> GeneratePac(IEnumerable<PacObject> pacElements)
         {
-            using (var stream = new MemoryStream())
-            using (var writer = new BinaryWriter(stream))
+            var buffer = new NdrBuffer(align: false);
+
+            buffer.WriteInt32LittleEndian(pacElements.Count());
+            buffer.WriteInt32LittleEndian(PAC_VERSION);
+
+            var headerLength = 8 + (pacElements.Count() * 16);
+            var offset = headerLength;
+
+            foreach (var element in pacElements)
             {
-                writer.Write(pacElements.Count());
-                writer.Write(PAC_VERSION);
+                buffer.WriteInt32LittleEndian((int)element.PacType);
 
-                var headerLength = 8 + (pacElements.Count() * 16);
-                var offset = headerLength;
+                // encoded value is cached internally within element
+                // unless it's been marked dirty, which only happens
+                // when it's been signed
 
-                foreach (var element in pacElements)
-                {
-                    writer.Write((int)element.PacType);
+                var encoded = element.Encode();
 
-                    // encoded value is cached internally within element
-                    // unless it's been marked dirty, which only happens
-                    // when it's been signed
+                buffer.WriteInt32LittleEndian(encoded.Length);
+                buffer.WriteInt64LittleEndian(offset);
 
-                    var encoded = element.Encode();
-
-                    writer.Write(encoded.Length);
-                    writer.Write((long)offset);
-
-                    offset += encoded.Length;
-                }
-
-                foreach (var element in pacElements)
-                {
-                    // the encoded value is cached internally unless it's marked
-                    // as dirty, where it will be regenerated on next call to encode
-
-                    var encoded = element.Encode();
-
-                    writer.Write(encoded.ToArray());
-                }
-
-                writer.Flush();
-
-                return stream.ToArray();
+                offset += encoded.Length;
             }
+
+            foreach (var element in pacElements)
+            {
+                // the encoded value is cached internally unless it's marked
+                // as dirty, where it will be regenerated on next call to encode
+
+                var encoded = element.Encode();
+
+                buffer.WriteSpan(encoded.Span);
+            }
+
+            return buffer.ToMemory();
         }
 
         private IEnumerable<PacObject> CollectElements(KerberosKey kdcKey, KerberosKey serverKey)

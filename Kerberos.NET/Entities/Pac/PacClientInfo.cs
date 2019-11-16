@@ -24,7 +24,7 @@ namespace Kerberos.NET.Entities
 
             if (NameLength > 0)
             {
-                buffer.WriteFixedPrimitiveArray(Name.ToCharArray());
+                buffer.WriteFixedPrimitiveArray(Name.AsSpan());
             }
 
             return buffer.ToSpan();
