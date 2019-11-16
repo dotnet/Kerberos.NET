@@ -55,25 +55,19 @@ namespace Tests.Kerberos.NET
     internal class FakeKerberosPrincipal : IKerberosPrincipal
     {
         private static readonly byte[] KrbTgtKey = new byte[] {
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0
-            };
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0
+        };
 
-        private static readonly SecurityIdentifier domainSid = new SecurityIdentifier(IdentifierAuthority.NTAuthority, new int[] {
-                123,456,789,012,321
-            }, 0);
-
-        private readonly SecurityIdentifier userSid = new SecurityIdentifier(
+        private static readonly SecurityIdentifier domainSid = new SecurityIdentifier(
             IdentifierAuthority.NTAuthority,
-            domainSid.SubAuthorities.Concat(new[] { 888 }).ToArray(),
+            new uint[] { 123, 456, 789, 012, 321 },
             0
         );
 
-        private readonly SecurityIdentifier groupSid = new SecurityIdentifier(
-            IdentifierAuthority.NTAuthority,
-            domainSid.SubAuthorities.Concat(new[] { 513 }).ToArray(),
-            0
-        );
+        private readonly SecurityIdentifier userSid = new SecurityIdentifier(domainSid, 888);
+
+        private readonly SecurityIdentifier groupSid = new SecurityIdentifier(domainSid, 513);
 
         private readonly static byte[] FakePassword = Encoding.Unicode.GetBytes("P@ssw0rd!");
 

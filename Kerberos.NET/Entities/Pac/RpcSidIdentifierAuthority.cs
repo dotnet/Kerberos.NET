@@ -11,12 +11,12 @@ namespace Kerberos.NET.Entities.Pac
 
         public void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteSpan(IdentifierAuthority.ToArray());
+            buffer.WriteSpan(IdentifierAuthority.Span);
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            IdentifierAuthority = buffer.Read(6).AsMemory();
+            IdentifierAuthority = buffer.ReadMemory(6);
         }
     }
 }

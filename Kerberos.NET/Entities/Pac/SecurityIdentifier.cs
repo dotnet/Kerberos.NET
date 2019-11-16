@@ -1,7 +1,5 @@
-﻿using Kerberos.NET.Crypto;
-using System;
+﻿using System;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Kerberos.NET.Entities.Pac
@@ -9,90 +7,34 @@ namespace Kerberos.NET.Entities.Pac
     public class SecurityIdentifier
     {
         private readonly IdentifierAuthority authority;
+        private readonly uint[] subAuthorities;
+
         private string sddl;
 
-        public SecurityIdentifier(IdentifierAuthority authority, int[] subs, SidAttributes attributes)
+        public SecurityIdentifier(IdentifierAuthority authority, uint[] subs, SidAttributes attributes)
         {
             this.authority = authority;
-            SubAuthorities = subs;
+            subAuthorities = subs;
 
             Attributes = attributes;
-
-            BinaryForm = ToBinaryForm(authority, subs);
         }
 
-        private static byte[] ToBinaryForm(IdentifierAuthority authority, int[] subs)
-        {
-            var binaryForm = new Memory<byte>(new byte[(1 + 1 + 6) + 4 * subs.Length]);
-
-            binaryForm.Span[0] = 1; // revision
-            binaryForm.Span[1] = (byte)subs.Length;
-
-            Endian.ConvertToBigEndian((int)authority, binaryForm.Slice(4, 4));
-
-            for (var i = 0; i < subs.Length; i++)
-            {
-                Endian.ConvertToLittleEndian(subs[i], binaryForm.Slice(8 + (4 * i), 4));
-            }
-
-            return binaryForm.ToArray();
-        }
-
-        public SecurityIdentifier(SecurityIdentifier sid, SidAttributes attributes)
-            : this(sid.authority, sid.SubAuthorities, attributes)
-        {
-        }
-
-        public SecurityIdentifier(ReadOnlySpan<byte> binary, SidAttributes attributes = 0)
-        {
-            BinaryForm = new ReadOnlyMemory<byte>(binary.ToArray());
-
-            authority = (IdentifierAuthority)binary.Slice(2, 6).AsLong();
-            Attributes = attributes;
-
-            SubAuthorities = new int[binary[1]];
-
-            for (var i = 0; i < SubAuthorities.Length; i++)
-            {
-                SubAuthorities[i] = (int)binary.Slice(8 + (4 * i), 4).AsLong(littleEndian: true);
-            }
-        }
-
-        public SecurityIdentifier(RpcSid domainId, int userId = -1, SidAttributes attributes = 0)
-            : this(domainId.IdentifierAuthority.Authority, Concat(domainId.SubAuthority, userId), attributes)
+        public SecurityIdentifier(SecurityIdentifier sub, int id)
+            : this(sub.authority, Concat(sub.subAuthorities, id), sub.Attributes)
         {
 
         }
 
-        private static int[] Concat(ReadOnlyMemory<uint> subAuthority, int userId)
+        public static SecurityIdentifier FromRpcSid(RpcSid sid, int id = 0, SidAttributes attributes = 0)
         {
-            int[] final;
-
-            if (userId >= 0)
-            {
-                final = new int[subAuthority.Length + 1];
-
-                final[final.Length - 1] = userId;
-            }
-            else
-            {
-                final = new int[subAuthority.Length];
-            }
-
-            MemoryMarshal.Cast<uint, int>(subAuthority.Span).CopyTo(final);
-
-            return final;
+            return new SecurityIdentifier(sid.IdentifierAuthority.Authority, Concat(sid.SubAuthority, id), attributes);
         }
 
-        [KerberosIgnore]
-        public ReadOnlyMemory<byte> BinaryForm { get; }
+        public int Id => subAuthorities.Length > 0 ? (int)subAuthorities[subAuthorities.Length - 1] : 0;
 
         public SidAttributes Attributes { get; }
 
         public string Value { get { return ToString(); } }
-
-        [KerberosIgnore]
-        public int[] SubAuthorities { get; }
 
         public override string ToString()
         {
@@ -102,9 +44,9 @@ namespace Kerberos.NET.Entities.Pac
 
                 result.AppendFormat("S-1-{0}", (long)authority);
 
-                for (int i = 0; i < SubAuthorities.Length; i++)
+                for (int i = 0; i < subAuthorities.Length; i++)
                 {
-                    result.AppendFormat("-{0}", (uint)(SubAuthorities[i]));
+                    result.AppendFormat("-{0}", subAuthorities[i]);
                 }
 
                 sddl = result.ToString().ToUpperInvariant();
@@ -113,7 +55,7 @@ namespace Kerberos.NET.Entities.Pac
             return sddl;
         }
 
-        internal RpcSid FromSid()
+        public RpcSid ToRpcSid()
         {
             var sid = new RpcSid
             {
@@ -124,11 +66,51 @@ namespace Kerberos.NET.Entities.Pac
                     IdentifierAuthority = new byte[] { 0, 0, 0, 0, 0, (byte)authority }
                 },
 
-                SubAuthority = MemoryMarshal.Cast<int, uint>(SubAuthorities).ToArray(),
-                SubAuthorityCount = (byte)SubAuthorities.Count()
+                SubAuthority = subAuthorities,
+                SubAuthorityCount = (byte)subAuthorities.Count()
             };
 
             return sid;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is null)
+            {
+                return false;
+            }
+
+            if (obj is SecurityIdentifier sid)
+            {
+                return string.Equals(ToString(), sid.ToString(), StringComparison.InvariantCultureIgnoreCase);
+            }
+
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return ToString().GetHashCode();
+        }
+
+        private static uint[] Concat(ReadOnlyMemory<uint> subAuthority, int id)
+        {
+            uint[] final;
+
+            if (id > 0)
+            {
+                final = new uint[subAuthority.Length + 1];
+
+                final[final.Length - 1] = (uint)id;
+            }
+            else
+            {
+                final = new uint[subAuthority.Length];
+            }
+
+            subAuthority.Span.CopyTo(final);
+
+            return final;
         }
     }
 

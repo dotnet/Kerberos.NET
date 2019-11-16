@@ -136,7 +136,7 @@ namespace Tests.Kerberos.NET
 
             try
             {
-                var sig = new PacSignature(pacBytes);
+                var sig = new PacSignature() { SignatureData = pacBytes };
                 sig.Unmarshal(infoBufferBytes);
                 sig.Validator.Validate(kerbKey);
                 pacValidated = true;
@@ -161,7 +161,7 @@ namespace Tests.Kerberos.NET
                 pacBytes[i] = (byte)rand.Next(0, 254);
             }
 
-            var sig = new PacSignature(pacBytes);
+            var sig = new PacSignature() { SignatureData = pacBytes };
             sig.Unmarshal(infoBufferBytes);
 
             return sig;
@@ -197,10 +197,10 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(expectedLogonTime, Truncate(logonInfo.LogonTime));
 
             var expectedLogoffTime = DateTimeOffset.Parse("1/1/0001 12:00:00 AM +00:00", CultureInfo.InvariantCulture);
-            Assert.AreEqual(expectedLogoffTime, logonInfo.LogoffTime);
+            Assert.AreEqual(expectedLogoffTime, (DateTimeOffset)logonInfo.LogoffTime);
 
             var expectedKickOffTime = DateTimeOffset.Parse("1/1/0001 12:00:00 AM +00:00", CultureInfo.InvariantCulture);
-            Assert.AreEqual(expectedKickOffTime, logonInfo.KickOffTime);
+            Assert.AreEqual(expectedKickOffTime, (DateTimeOffset)logonInfo.KickOffTime);
 
             var expectedPwdLastChangeTime = DateTimeOffset.Parse("1/7/2009 2:33:58 PM +00:00", CultureInfo.InvariantCulture);
             Assert.AreEqual(expectedPwdLastChangeTime, Truncate(logonInfo.PwdLastChangeTime));
@@ -209,7 +209,7 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(expectedPwdCanChangeTime, Truncate(logonInfo.PwdCanChangeTime));
 
             var expectedPwdMustChangeTime = DateTimeOffset.Parse("1/1/0001 12:00:00 AM +00:00", CultureInfo.InvariantCulture);
-            Assert.AreEqual(expectedPwdMustChangeTime, logonInfo.PwdMustChangeTime);
+            Assert.AreEqual(expectedPwdMustChangeTime, (DateTimeOffset)logonInfo.PwdMustChangeTime);
 
             Assert.AreEqual(46, logonInfo.LogonCount);
             Assert.AreEqual(0, logonInfo.BadPasswordCount);
@@ -223,19 +223,19 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(0, logonInfo.SubAuthStatus);
 
             var expectedLastSuccessfulILogon = DateTimeOffset.Parse("1/1/1601 12:00:00 AM +00:00", CultureInfo.InvariantCulture);
-            Assert.AreEqual(expectedLastSuccessfulILogon, logonInfo.LastSuccessfulILogon);
+            Assert.AreEqual(expectedLastSuccessfulILogon, (DateTimeOffset)logonInfo.LastSuccessfulILogon);
 
             var expectedLastLastFailedILogon = DateTimeOffset.Parse("1/1/1601 12:00:00 AM +00:00", CultureInfo.InvariantCulture);
 
-            Assert.AreEqual(expectedLastLastFailedILogon, logonInfo.LastFailedILogon);
+            Assert.AreEqual(expectedLastLastFailedILogon, (DateTimeOffset)logonInfo.LastFailedILogon);
             Assert.AreEqual("user.test", logonInfo.UserName.ToString());
             Assert.AreEqual("User Test", logonInfo.UserDisplayName.ToString());
             Assert.AreEqual("", logonInfo.LogonScript.ToString());
             Assert.AreEqual("", logonInfo.ProfilePath.ToString());
             Assert.AreEqual("", logonInfo.HomeDirectory.ToString());
             Assert.AreEqual("", logonInfo.HomeDrive.ToString());
-            Assert.AreEqual("WS2008", logonInfo.ServerName.ToString());
-            Assert.AreEqual("DOMAIN", logonInfo.DomainName.ToString());
+            Assert.AreEqual("WS2008\0", logonInfo.ServerName.ToString());
+            Assert.AreEqual("DOMAIN\0", logonInfo.DomainName.ToString());
             Assert.AreEqual("S-1-5-21-4028881986-3284141023-698984075", logonInfo.DomainSid.Value);
             Assert.AreEqual("S-1-5-21-4028881986-3284141023-698984075-1106", logonInfo.UserSid.Value);
             Assert.AreEqual("S-1-5-21-4028881986-3284141023-698984075-513", logonInfo.GroupSid.Value);
@@ -255,7 +255,7 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(cert.ClientInformation);
 
             Assert.AreEqual("user.test", cert.ClientInformation.Name);
-            Assert.AreEqual(cert.ClientInformation.ClientId, DateTimeOffset.Parse("1/9/2009 5:19:50 PM +00:00", CultureInfo.InvariantCulture));
+            Assert.AreEqual((DateTimeOffset)cert.ClientInformation.ClientId, DateTimeOffset.Parse("1/9/2009 5:19:50 PM +00:00", CultureInfo.InvariantCulture));
         }
 
         [TestMethod]

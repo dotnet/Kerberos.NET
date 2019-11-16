@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Entities.Pac
 {
-    public class PacSignature : PacObject, IPacElement
+    public class PacSignature : PacObject
     {
         public PacSignature() { }
-
+        
         public PacSignature(PacType ptype, EncryptionType etype)
         {
             PacType = ptype;
@@ -29,12 +29,7 @@ namespace Kerberos.NET.Entities.Pac
             };
         }
 
-        private readonly Memory<byte> signatureData;
-
-        public PacSignature(Memory<byte> signatureData)
-        {
-            this.signatureData = signatureData;
-        }
+        public ReadOnlyMemory<byte> SignatureData { get; set; }
 
         public KerberosChecksum Validator { get; set; }
 
@@ -46,7 +41,7 @@ namespace Kerberos.NET.Entities.Pac
 
         internal int SignaturePosition { get; set; }
 
-        public PacType PacType { get; }
+        public override PacType PacType { get; }
 
         public bool Validated { get; private set; }
 
@@ -70,7 +65,7 @@ namespace Kerberos.NET.Entities.Pac
             SignaturePosition = stream.Offset;
             Signature = SetSignatureValue(Type, size => stream.ReadFixedPrimitiveArray<byte>(size).ToArray());
 
-            Validator = CryptoService.CreateChecksum(Type, Signature, signatureData);
+            Validator = CryptoService.CreateChecksum(Type, Signature, SignatureData);
 
             if (stream.BytesAvailable > 0)
             {

@@ -15,8 +15,28 @@ namespace Kerberos.NET.Entities.Pac
 
         public ReadOnlyMemory<char> Buffer;
 
+        public bool IsNullTerminating => IsNullTerminated(Buffer);
+
+        private bool IsNullTerminated(ReadOnlyMemory<char> buffer)
+        {
+            if (buffer.Length <= 0)
+            {
+                return false;
+            }
+
+            return buffer.Span[buffer.Length - 1] == '\0';
+        }
+
         public void Marshal(NdrBuffer buffer)
         {
+            Length = (short)(Buffer.Length * sizeof(char));
+            MaxLength = (short)(Buffer.Length * sizeof(char));
+
+            if (IsNullTerminating)
+            {
+                Length -= sizeof(char);
+            }
+
             buffer.WriteInt16LittleEndian(Length);
             buffer.WriteInt16LittleEndian(MaxLength);
 
@@ -48,7 +68,14 @@ namespace Kerberos.NET.Entities.Pac
                 return Empty;
             }
 
-            return new RpcString { Length = (short)str.Length, MaxLength = (short)str.Length, Buffer = str.AsMemory() };
+            var mem = str.AsMemory();
+
+            return new RpcString
+            {
+                Length = (short)(mem.Length * sizeof(char)),
+                MaxLength = (short)(mem.Length * sizeof(char)),
+                Buffer = mem
+            };
         }
 
         public override bool Equals(object obj)
@@ -69,6 +96,16 @@ namespace Kerberos.NET.Entities.Pac
         public override int GetHashCode()
         {
             return ToString().GetHashCode();
+        }
+
+        public string ExcludeTermination()
+        {
+            if (IsNullTerminating)
+            {
+                return Buffer.Span.Slice(0, Buffer.Span.IndexOf('\0')).ToString();
+            }
+
+            return ToString();
         }
     }
 }

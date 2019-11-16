@@ -32,6 +32,13 @@ namespace Kerberos.NET.Ndr
         public void MarshalUnion(NdrBuffer buffer);
     }
 
+    public interface INdrConformantStruct : INdrStruct
+    {
+        void MarshalConformance(NdrBuffer buffer);
+
+        void UnmarshalConformance(NdrBuffer buffer);
+    }
+
     public interface INdrStruct
     {
         void Marshal(NdrBuffer buffer);

@@ -213,10 +213,27 @@ namespace Kerberos.NET
         {
             foreach (var value in entry.GetValues<string>())
             {
-                var claim = new Claim(entry.Id, value, GetTypeId(entry.Type), issuer);
+                var claim = new Claim(
+                    ExcludeNullTermination(entry.Id),
+                    ExcludeNullTermination(value),
+                    GetTypeId(entry.Type),
+                    issuer
+                );
 
                 claims.Add(claim);
             }
+        }
+
+        private static string ExcludeNullTermination(string str)
+        {
+            var index = str.IndexOf('\0');
+
+            if (index > 0)
+            {
+                return str.Substring(0, index);
+            }
+
+            return str;
         }
 
         private static string GetTypeId(ClaimType type)
@@ -274,7 +291,7 @@ namespace Kerberos.NET
             }
             else
             {
-                claims.Add(new Claim(ClaimTypes.NameIdentifier, $"{logonInfo.DomainName}\\{logonInfo.UserName}"));
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, $"{logonInfo.DomainName.ExcludeTermination()}\\{logonInfo.UserName}"));
             }
         }
 

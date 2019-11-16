@@ -14,14 +14,14 @@ namespace Kerberos.NET.Entities
         U = 1
     }
 
-    public class UpnDomainInfo : PacObject, IPacElement
+    public class UpnDomainInfo : PacObject
     {
         public override ReadOnlySpan<byte> Marshal()
         {
             var buffer = new NdrBuffer();
 
-            var upnBytes = Encoding.Unicode.GetBytes(Upn);
-            var domainBytes = Encoding.Unicode.GetBytes(Domain);
+            var upnBytes = MemoryMarshal.Cast<char, byte>(Upn.AsSpan());
+            var domainBytes = MemoryMarshal.Cast<char, byte>(Domain.AsSpan());
 
             buffer.WriteInt16LittleEndian((short)upnBytes.Length);
             buffer.WriteInt16LittleEndian(2 + 2 + 2 + 2 + 4 + 4); // + 4 to align on 8 boundary
@@ -75,6 +75,6 @@ namespace Kerberos.NET.Entities
 
         public UpnDomainFlags Flags { get; set; }
 
-        public PacType PacType => PacType.UPN_DOMAIN_INFO;
+        public override PacType PacType => PacType.UPN_DOMAIN_INFO;
     }
 }
