@@ -28,6 +28,8 @@ namespace Kerberos.NET.Entities.Pac
 
     public abstract class PacObject // not NDR thing
     {
+        public abstract PacType PacType { get; }
+
         public abstract ReadOnlySpan<byte> Marshal();
 
         public abstract void Unmarshal(ReadOnlyMemory<byte> bytes);

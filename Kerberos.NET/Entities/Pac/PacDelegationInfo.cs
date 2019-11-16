@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Kerberos.NET.Entities
 {
-    public class PacDelegationInfo : NdrPacObject, IPacElement
+    public class PacDelegationInfo : NdrPacObject
     {
         public override void Marshal(NdrBuffer buffer)
         {
@@ -29,7 +29,7 @@ namespace Kerberos.NET.Entities
 
         public IEnumerable<RpcString> S4UTransitedServices { get; set; }
 
-        public PacType PacType => PacType.CONSTRAINED_DELEGATION_INFO;
+        public override PacType PacType => PacType.CONSTRAINED_DELEGATION_INFO;
 
         public override string ToString()
         {

@@ -14,7 +14,7 @@ namespace Kerberos.NET.Entities
         U = 1
     }
 
-    public class UpnDomainInfo : PacObject, IPacElement
+    public class UpnDomainInfo : PacObject
     {
         public override ReadOnlySpan<byte> Marshal()
         {
@@ -75,6 +75,6 @@ namespace Kerberos.NET.Entities
 
         public UpnDomainFlags Flags { get; set; }
 
-        public PacType PacType => PacType.UPN_DOMAIN_INFO;
+        public override PacType PacType => PacType.UPN_DOMAIN_INFO;
     }
 }

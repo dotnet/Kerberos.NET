@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Kerberos.NET.Entities.Pac
 {
-    public class ClaimsSet : NdrPacObject, INdrStruct
+    public class ClaimsSet : INdrStruct
     {
-        public override void Marshal(NdrBuffer buffer)
+        public void Marshal(NdrBuffer buffer)
         {
             buffer.WriteInt32LittleEndian(ClaimsArray.Count());
             buffer.WriteDeferredStructArray(ClaimsArray);
@@ -16,7 +16,7 @@ namespace Kerberos.NET.Entities.Pac
             buffer.WriteDeferredConformantArray<byte>(ReservedField);
         }
 
-        public override void Unmarshal(NdrBuffer buffer)
+        public void Unmarshal(NdrBuffer buffer)
         {
             Count = buffer.ReadInt32LittleEndian();
 

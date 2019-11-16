@@ -4,7 +4,7 @@ using System;
 
 namespace Kerberos.NET.Entities
 {
-    public class ClaimsSetMetadata : NdrPacObject, IPacElement
+    public class ClaimsSetMetadata : NdrPacObject
     {
         public override void Marshal(NdrBuffer buffer)
         {
@@ -25,7 +25,11 @@ namespace Kerberos.NET.Entities
 
         private static ReadOnlySpan<byte> Compress(ClaimsSet claimsSet, CompressionFormat compressionFormat, out int originalSize)
         {
-            var encoded = claimsSet.Marshal();
+            var buffer = new NdrBuffer();
+
+            buffer.MarshalObject(claimsSet);
+
+            var encoded = buffer.ToSpan();
 
             originalSize = encoded.Length;
 
@@ -59,7 +63,7 @@ namespace Kerberos.NET.Entities
             }
 
             var claimsSet = new ClaimsSet();
-            claimsSet.Unmarshal(claimSet);
+            new NdrBuffer(claimSet).UnmarshalObject(claimsSet);
 
             return claimsSet;
         }
@@ -81,6 +85,6 @@ namespace Kerberos.NET.Entities
 
         public byte[] ReservedField { get; set; }
 
-        public PacType PacType { get; private set; } = PacType.CLIENT_CLAIMS;
+        public override PacType PacType => PacType.CLIENT_CLAIMS;
     }
 }

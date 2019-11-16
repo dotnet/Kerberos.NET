@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Kerberos.NET.Entities.Pac
 {
-    public partial class PacLogonInfo : NdrPacObject, IPacElement
+    public partial class PacLogonInfo : NdrPacObject
     {
         private static readonly int[] Reserved1FixedValue = new[] { 0, 0 };
         private static readonly byte[] ReservedSessionKey = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -25,7 +25,7 @@ namespace Kerberos.NET.Entities.Pac
             UserSessionKey = ReservedSessionKey;
         }
 
-        public PacType PacType => PacType.LOGON_INFO;
+        public override PacType PacType => PacType.LOGON_INFO;
 
         public override void Marshal(NdrBuffer buffer)
         {

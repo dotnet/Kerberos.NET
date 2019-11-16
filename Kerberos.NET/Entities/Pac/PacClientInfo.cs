@@ -4,7 +4,7 @@ using System;
 
 namespace Kerberos.NET.Entities
 {
-    public class PacClientInfo : PacObject, IPacElement
+    public class PacClientInfo : PacObject
     {
         public RpcFileTime ClientId { get; set; }
 
@@ -13,7 +13,7 @@ namespace Kerberos.NET.Entities
 
         public string Name { get; set; }
 
-        public PacType PacType => PacType.CLIENT_NAME_TICKET_INFO;
+        public override PacType PacType => PacType.CLIENT_NAME_TICKET_INFO;
 
         public override ReadOnlySpan<byte> Marshal()
         {

@@ -136,7 +136,7 @@ namespace Tests.Kerberos.NET
 
             try
             {
-                var sig = new PacSignature(pacBytes);
+                var sig = new PacSignature() { SignatureData = pacBytes };
                 sig.Unmarshal(infoBufferBytes);
                 sig.Validator.Validate(kerbKey);
                 pacValidated = true;
@@ -161,7 +161,7 @@ namespace Tests.Kerberos.NET
                 pacBytes[i] = (byte)rand.Next(0, 254);
             }
 
-            var sig = new PacSignature(pacBytes);
+            var sig = new PacSignature() { SignatureData = pacBytes };
             sig.Unmarshal(infoBufferBytes);
 
             return sig;
