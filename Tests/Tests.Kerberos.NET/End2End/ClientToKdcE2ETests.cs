@@ -429,13 +429,23 @@ namespace Tests.Kerberos.NET
             string user,
             string password,
             string overrideKdc,
+            KeyTable keytab = null,
             string s4u = null,
             bool encodeNego = false,
             bool caching = false,
             bool includePac = true
         )
         {
-            var kerbCred = new KerberosPasswordCredential(user, password);
+            KerberosCredential kerbCred;
+
+            if (keytab == null)
+            {
+                kerbCred = new KerberosPasswordCredential(user, password);
+            }
+            else
+            {
+                kerbCred = new KeytabCredential(user, keytab);
+            }
 
             using (var client = new KerberosClient(overrideKdc) { CacheServiceTickets = caching })
             {

@@ -11,7 +11,7 @@ namespace Tests.Kerberos.NET
 
         public static int NextPort()
         {
-            return rng.Next(20000, 40000);
+            return rng.Next(1000, 60000);
         }
 
         public static KdcServiceListener StartListener(int port, bool slow = false)

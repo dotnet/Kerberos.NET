@@ -50,8 +50,8 @@ namespace Kerberos.NET.Server
                 SocketListener listener = openListeners.Pop();
                 listener.Dispose();
             }
-
-            startTcs.TrySetResult(null);
+            
+            startTcs.SetResult(null);
         }
 
         private void StartListenerThreads(SocketListener listener)
