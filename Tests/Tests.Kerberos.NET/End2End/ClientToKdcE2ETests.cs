@@ -44,24 +44,6 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task E2E_KeytabCredential()
-        {
-            var port = NextPort();
-
-            using (var listener = StartListener(port))
-            {
-                await RequestAndValidateTickets(
-                    AdminAtCorpUserName,
-                    password: null,
-                    $"127.0.0.1:{port}",
-                    keytab: new KeyTable(new KerberosKey(FakeAdminAtCorpPassword, etype: EncryptionType.RC4_HMAC_NT))
-                );
-
-                listener.Stop();
-            }
-        }
-
-        [TestMethod]
         public async Task E2E_NoPac()
         {
             var port = NextPort();
@@ -454,7 +436,7 @@ namespace Tests.Kerberos.NET
             bool includePac = true
         )
         {
-            KerberosCredential kerbCred = null;
+            KerberosCredential kerbCred;
 
             if (keytab == null)
             {
