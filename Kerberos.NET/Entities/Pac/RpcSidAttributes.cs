@@ -1,8 +1,6 @@
 ﻿using Kerberos.NET.Ndr;
 using System.Diagnostics;
 
-#pragma warning disable S2344 // Enumeration type names should not have "Flags" or "Enum" suffixes
-
 namespace Kerberos.NET.Entities.Pac
 {
     [DebuggerDisplay("{Sid} {Attributes}")]
@@ -17,22 +15,15 @@ namespace Kerberos.NET.Entities.Pac
             buffer.WriteInt32LittleEndian((int)Attributes);
         }
 
-        public void MarshalConformance(NdrBuffer buffer)
-        {
-            //Sid.MarshalConformance(buffer);
-        }
+        public void MarshalConformance(NdrBuffer buffer) { }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            // expects 131124
             buffer.ReadConformantStruct<RpcSid>(p => Sid = p);
 
             Attributes = (SidAttributes)buffer.ReadInt32LittleEndian();
         }
 
-        public void UnmarshalConformance(NdrBuffer buffer)
-        {
-            //new RpcSid().UnmarshalConformance(buffer);
-        }
+        public void UnmarshalConformance(NdrBuffer buffer) { }
     }
 }
