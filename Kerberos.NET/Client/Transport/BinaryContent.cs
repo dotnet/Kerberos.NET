@@ -2,9 +2,8 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using static Kerberos.NET.BinaryExtensions;
 
 namespace Kerberos.NET.Transport
 {
@@ -29,19 +28,6 @@ namespace Kerberos.NET.Transport
             length = data.Length;
 
             return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static byte[] TryGetArrayFast(ReadOnlyMemory<byte> bytes)
-        {
-            if (MemoryMarshal.TryGetArray(bytes, out ArraySegment<byte> segment) && segment.Array.Length == bytes.Length)
-            {
-                return segment.Array;
-            }
-            else
-            {
-                return bytes.ToArray();
-            }
         }
     }
 }

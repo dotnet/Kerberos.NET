@@ -3,7 +3,6 @@ using Kerberos.NET.Ndr;
 using System;
 using System.Buffers.Binary;
 using System.Runtime.InteropServices;
-using System.Text;
 
 #pragma warning disable S2344 // Enumeration type names should not have "Flags" or "Enum" suffixes
 

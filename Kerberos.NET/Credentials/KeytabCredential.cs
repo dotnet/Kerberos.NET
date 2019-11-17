@@ -1,7 +1,7 @@
-﻿using System;
-using System.Linq;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using System;
+using System.Linq;
 
 namespace Kerberos.NET.Credentials
 {
@@ -37,7 +37,7 @@ namespace Kerberos.NET.Credentials
             foreach (var salt in Salts)
             {
                 var key = keytab.GetKey(salt.Key, principalName);
-                
+
                 if (key != null)
                 {
                     return key;

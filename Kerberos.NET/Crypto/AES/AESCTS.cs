@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Buffers;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using AESAlgorithm = System.Security.Cryptography.Aes;
 
 #pragma warning disable S101 // Types should be named in camel case
 
@@ -14,14 +11,18 @@ namespace Kerberos.NET.Crypto
         private const int BlockSize = 16;
         private const int TwoBlockSizes = BlockSize * 2;
 
-        public static ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> plainText, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv)
+        public static ReadOnlyMemory<byte> Encrypt(
+            ReadOnlyMemory<byte> plainText,
+            ReadOnlySpan<byte> key,
+            ReadOnlySpan<byte> iv
+        )
         {
             if (!CalculateLength(plainText.Length, out int padSize, out int maxLength))
             {
                 return plainText;
             }
 
-            using (var rental = MemoryPool<byte>.Shared.Rent(maxLength))
+            using (var rental = CryptoPool.Rent<byte>(maxLength))
             {
                 Memory<byte> plaintextRented;
 
@@ -49,46 +50,30 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        private static readonly Lazy<AESAlgorithm> lazyAlgorithm = new Lazy<AESAlgorithm>(() =>
+        private static Memory<byte> Transform(
+           ReadOnlySpan<byte> data,
+           ReadOnlySpan<byte> key,
+           ReadOnlySpan<byte> iv,
+           bool encrypt
+       )
         {
-            var impl = AESAlgorithm.Create();
-            impl.Padding = PaddingMode.None;
-            impl.Mode = CipherMode.CBC;
-            return impl;
-        });
-
-        private static AESAlgorithm Algorithm => lazyAlgorithm.Value;
-
-        private static Memory<byte> Transform(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv, bool encrypt)
-        {
-            var keyArray = key.ToArray();
-            var ivArray = iv.ToArray();
-            var dataArray = data.ToArray();
-
-            ICryptoTransform transform;
+            var aes = CryptoPal.Platform.Aes();
 
             if (encrypt)
             {
-                transform = Algorithm.CreateEncryptor(keyArray, ivArray);
+                return aes.Encrypt(data, key, iv);
             }
             else
             {
-                transform = Algorithm.CreateDecryptor(keyArray, ivArray);
-            }
-
-            using (transform)
-            using (var stream = new MemoryStream(data.Length))
-            {
-                using (var cryptoStream = new CryptoStream(stream, transform, CryptoStreamMode.Write))
-                {
-                    cryptoStream.Write(dataArray, 0, data.Length);
-                }
-
-                return stream.GetBuffer();
+                return aes.Decrypt(data, key, iv);
             }
         }
 
-        public static ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ciphertext, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv)
+        public static ReadOnlyMemory<byte> Decrypt(
+            ReadOnlyMemory<byte> ciphertext,
+            ReadOnlySpan<byte> key,
+            ReadOnlySpan<byte> iv
+        )
         {
             if (!CalculateLength(ciphertext.Length, out int padSize, out int maxLength))
             {

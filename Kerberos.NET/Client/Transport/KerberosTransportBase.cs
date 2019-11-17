@@ -27,7 +27,7 @@ namespace Kerberos.NET.Transport
         public virtual bool TransportFailed { get; set; }
 
         public virtual KerberosTransportException LastError { get; set; }
-    
+
         public bool Enabled { get; set; }
 
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(10);

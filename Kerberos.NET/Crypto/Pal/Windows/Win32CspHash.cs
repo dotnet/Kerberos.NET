@@ -4,25 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Crypto
 {
-    internal sealed class MD5 : Hash
+    internal unsafe abstract class Win32CspHash : IHashAlgorithm
     {
-        private const int CALG_MD5 = 0x00008003;
-        private const int MD5HashSize = 16;
-
-        public MD5() : base("MD5", CALG_MD5, MD5HashSize) { }
-    }
-
-    internal sealed class MD4 : Hash
-    {
-        private const int CALG_MD4 = 0x00008002;
-        private const int MD4HashSize = 16;
-
-        public MD4() : base("MD4", CALG_MD4, MD4HashSize) { }
-    }
-
-    internal unsafe abstract class Hash : IDisposable
-    {
-        protected Hash(string algorithm, int calg, int hashSize)
+        protected Win32CspHash(string algorithm, int calg, int hashSize)
         {
             Algorithm = algorithm;
             CAlg = calg;

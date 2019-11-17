@@ -50,7 +50,7 @@ namespace Kerberos.NET.Server
                 SocketListener listener = openListeners.Pop();
                 listener.Dispose();
             }
-            
+
             startTcs.SetResult(null);
         }
 

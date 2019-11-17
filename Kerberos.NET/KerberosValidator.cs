@@ -1,9 +1,8 @@
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -125,10 +124,10 @@ namespace Kerberos.NET
 
         private static string Hash(string value)
         {
-            using (var sha = SHA256.Create())
+            using (var sha = CryptoPal.Platform.Sha256())
             {
                 return Hex.Hexify(
-                    sha.ComputeHash(Encoding.UTF8.GetBytes(value))
+                    sha.ComputeHash(Encoding.UTF8.GetBytes(value)).Span
                 );
             }
         }

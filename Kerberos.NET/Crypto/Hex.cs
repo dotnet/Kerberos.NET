@@ -51,14 +51,19 @@ namespace Kerberos.NET.Crypto
             return sb.ToString();
         }
 
-        public static string Hexify(byte[] hash, int lineLength = 0, bool spaces = false)
+        public static string Hexify(
+            ReadOnlySpan<byte> hash,
+            int lineLength = 0,
+            bool spaces = false
+        )
         {
             if (hash == null || hash.Length <= 0)
             {
                 return null;
             }
 
-            // It's considerably faster to just do a lookup and append than to do something like BitConverter.ToString(byte[])
+            // It's considerably faster to just do a lookup and append
+            // than to do something like BitConverter.ToString(byte[])
 
             int len = hash.Length * (spaces ? 3 : 2);
 

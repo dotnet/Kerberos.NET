@@ -293,24 +293,16 @@ namespace Kerberos.NET.Crypto.AES
 
         private static ReadOnlyMemory<byte> Hmac(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
         {
-            var keyArray = TryGetArrayFast(key);
-            var dataArray = TryGetArrayFast(data);
+            var hmac = CryptoPal.Platform.HmacSha1();
 
-            using (var hmac = new HMACSHA1(keyArray))
-            {
-                return hmac.ComputeHash(dataArray, 0, data.Length);
-            }
+            return hmac.ComputeHash(key, data);
         }
 
         private static ReadOnlySpan<byte> PBKDF2(ReadOnlyMemory<byte> passwordBytes, ReadOnlyMemory<byte> salt, int iterations, int keySize)
         {
-            var passwordArray = TryGetArrayFast(passwordBytes);
-            var saltArray = TryGetArrayFast(salt);
+            var derivation = CryptoPal.Platform.Rfc2898DeriveBytes();
 
-            using (var derive = new Rfc2898DeriveBytes(passwordArray, saltArray, iterations))
-            {
-                return derive.GetBytes(keySize);
-            }
+            return derivation.Derive(passwordBytes, salt, iterations, keySize);
         }
     }
 }
