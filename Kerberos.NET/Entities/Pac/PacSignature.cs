@@ -8,7 +8,7 @@ namespace Kerberos.NET.Entities.Pac
     public class PacSignature : PacObject
     {
         public PacSignature() { }
-        
+
         public PacSignature(PacType ptype, EncryptionType etype)
         {
             PacType = ptype;

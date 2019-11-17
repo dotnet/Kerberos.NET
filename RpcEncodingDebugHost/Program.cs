@@ -1,5 +1,4 @@
-﻿using System;
-using Tests.Kerberos.NET;
+﻿using Tests.Kerberos.NET;
 
 namespace RpcEncodingDebugHost
 {

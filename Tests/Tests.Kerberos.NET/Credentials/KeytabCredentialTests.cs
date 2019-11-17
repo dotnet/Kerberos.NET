@@ -37,7 +37,7 @@ namespace Tests.Kerberos.NET
 
             Assert.AreEqual(EncryptionType.RC4_HMAC_NT, key.EncryptionType);
         }
-        
+
         [TestMethod]
         public void LocateKey_AesSalts()
         {

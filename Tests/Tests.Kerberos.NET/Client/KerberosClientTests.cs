@@ -3,7 +3,6 @@ using Kerberos.NET.Transport;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET

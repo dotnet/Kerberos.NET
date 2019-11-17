@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Security;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Kerberos.NET.Crypto
@@ -19,14 +18,6 @@ namespace Kerberos.NET.Crypto
         public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
         {
             return MD4(key.PasswordBytes);
-        }
-
-        private static ReadOnlyMemory<byte> MD4(byte[] key)
-        {
-            using (var md4 = new MD4())
-            {
-                return md4.ComputeHash(key);
-            }
         }
 
         public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)
@@ -103,14 +94,6 @@ namespace Kerberos.NET.Crypto
             return HMACMD5(ksign, tmp);
         }
 
-        private static ReadOnlyMemory<byte> MD5(ReadOnlySpan<byte> data)
-        {
-            using (var md5 = new MD5())
-            {
-                return md5.ComputeHash(data);
-            }
-        }
-
         private static byte[] GetSalt(int usage)
         {
             switch (usage)
@@ -137,14 +120,26 @@ namespace Kerberos.NET.Crypto
             return salt;
         }
 
+        private static ReadOnlyMemory<byte> MD5(ReadOnlySpan<byte> data)
+        {
+            using (var md5 = CryptoPal.Platform.Md5())
+            {
+                return md5.ComputeHash(data);
+            }
+        }
+
         private static ReadOnlyMemory<byte> HMACMD5(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
         {
-            var keyArray = TryGetArrayFast(key);
-            var dataArray = TryGetArrayFast(data);
+            var hmac = CryptoPal.Platform.HmacMd5();
 
-            using (HMACMD5 hmac = new HMACMD5(keyArray))
+            return hmac.ComputeHash(key, data);
+        }
+
+        private static ReadOnlyMemory<byte> MD4(byte[] key)
+        {
+            using (var md4 = CryptoPal.Platform.Md4())
             {
-                return hmac.ComputeHash(dataArray, 0, data.Length);
+                return md4.ComputeHash(key);
             }
         }
     }
