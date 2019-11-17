@@ -18,11 +18,7 @@ namespace Kerberos.NET.Transport
         private const string HttpsServiceTemplate = "_kerberos._https.{0}";
         private const string WellKnownKdcProxyPath = "/KdcProxy";
 
-        protected static HttpMessageHandler Handler { get; set; }
-
-        private static readonly Lazy<HttpClient> lazyHttp = new Lazy<HttpClient>(
-            () => Handler != null ? new HttpClient(Handler) : new HttpClient()
-        );
+        private static readonly Lazy<HttpClient> lazyHttp = new Lazy<HttpClient>();
 
         public string CustomVirtualPath { get; set; }
 
@@ -32,7 +28,7 @@ namespace Kerberos.NET.Transport
 
         public DcLocatorHint Hint { get; set; }
 
-        protected HttpClient Client => lazyHttp.Value;
+        protected virtual HttpClient Client => lazyHttp.Value;
 
         public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
         {

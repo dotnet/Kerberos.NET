@@ -39,10 +39,14 @@ namespace Tests.Kerberos.NET
 
         private class HandledHttpsKerberosTransport : HttpsKerberosTransport
         {
+            private readonly DelegatingHandler handler;
+
             public HandledHttpsKerberosTransport(DelegatingHandler handler)
             {
-                Handler = handler;
+                this.handler = handler;
             }
+
+            protected override HttpClient Client => new HttpClient(handler);
         }
 
         internal static readonly byte[] TgtKey = new byte[] {
