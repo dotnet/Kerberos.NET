@@ -1,4 +1,5 @@
 ﻿using Kerberos.NET.Client;
+using Kerberos.NET.Transport;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
@@ -44,7 +45,7 @@ namespace Tests.Kerberos.NET
         {
             using (var client = new KerberosClient())
             {
-                var tcp = client.Transports.FirstOrDefault(t => t.Protocol == ProtocolType.Tcp);
+                var tcp = client.Transports.OfType<TcpKerberosTransport>().FirstOrDefault();
 
                 Assert.IsNotNull(tcp);
 
@@ -57,7 +58,7 @@ namespace Tests.Kerberos.NET
         {
             using (var client = new KerberosClient())
             {
-                var udp = client.Transports.FirstOrDefault(t => t.Protocol == ProtocolType.Udp);
+                var udp = client.Transports.OfType<UdpKerberosTransport>().FirstOrDefault();
 
                 Assert.IsNotNull(udp);
 

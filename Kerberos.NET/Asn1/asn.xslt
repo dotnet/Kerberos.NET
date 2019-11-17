@@ -790,7 +790,7 @@ namespace <xsl:value-of select="@namespace" />
 
             <xsl:value-of select="$indent"/>if (<xsl:value-of select="$readerName"/>.TryReadInt32(<xsl:call-template name="MaybeImplicitCallP"/>out int tmp<xsl:value-of select="@name"/>))
             <xsl:value-of select="$indent"/>{
-            <xsl:value-of select="$indent"/>    <xsl:value-of select="$name"/> = (<xsl:value-of select="$enumType" />)tmp<xsl:value-of select="@name"/>;
+            <xsl:value-of select="$indent"/>    <xsl:value-of select="$name"/> = (<xsl:value-of select="@enumType" />)tmp<xsl:value-of select="@name"/>;
             <xsl:value-of select="$indent"/>}
             <xsl:value-of select="$indent"/>else
             <xsl:value-of select="$indent"/>{

@@ -27,8 +27,17 @@ namespace Kerberos.NET.Client
         //                   -> cache TGT/cache service ticket?
 
         public KerberosClient(string kdc = null, ILoggerFactory logger = null)
-            : this(logger, new UdpKerberosTransport(kdc), new TcpKerberosTransport(logger, kdc))
+            : this(logger, CreateTransports(kdc, logger))
         {
+        }
+
+        private static IKerberosTransport[] CreateTransports(string kdc, ILoggerFactory logger)
+        {
+            return new IKerberosTransport[]
+            {
+                new UdpKerberosTransport(kdc),
+                new TcpKerberosTransport(logger, kdc)
+            };
         }
 
         private const AuthenticationOptions DefaultAuthentication =

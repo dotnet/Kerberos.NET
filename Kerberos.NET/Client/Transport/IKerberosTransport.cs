@@ -1,6 +1,5 @@
 ﻿using Kerberos.NET.Asn1;
 using System;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,8 +10,6 @@ namespace Kerberos.NET.Transport
         bool TransportFailed { get; set; }
 
         KerberosTransportException LastError { get; set; }
-
-        ProtocolType Protocol { get; }
 
         bool Enabled { get; set; }
 

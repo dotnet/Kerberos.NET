@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,8 +12,6 @@ namespace Kerberos.NET.Transport
         {
             this.Transports = transports;
         }
-
-        public override ProtocolType Protocol => ProtocolType.Unspecified;
 
         public IEnumerable<IKerberosTransport> Transports { get; }
 

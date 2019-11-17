@@ -51,8 +51,6 @@ namespace Tests.Kerberos.NET
         {
             public NoopTransport() { }
 
-            public override ProtocolType Protocol => ProtocolType.Unspecified;
-
             public override Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
             {
                 var cached = QueryDomain(domain);
