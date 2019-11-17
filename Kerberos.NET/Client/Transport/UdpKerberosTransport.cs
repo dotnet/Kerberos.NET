@@ -6,15 +6,13 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
 {
-    internal class UdpKerberosTransport : KerberosTransportBase
+    public class UdpKerberosTransport : KerberosTransportBase
     {
         private const string UdpServiceTemplate = "_kerberos._udp.{0}";
 
         public override bool TransportFailed { get; set; }
 
         public override KerberosTransportException LastError { get; set; }
-
-        public override ProtocolType Protocol => ProtocolType.Udp;
 
         public UdpKerberosTransport(string kdc = null)
             : base(kdc)

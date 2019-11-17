@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KdcProxyMessage"
+  namespace="Kerberos.NET.Entities">
+  <!--
+  
+    KDC-PROXY-MESSAGE::= SEQUENCE {
+        kerb-message           [0] OCTET STRING,
+        target-domain          [1] KERB-REALM OPTIONAL,
+        dclocator-hint         [2] INTEGER OPTIONAL
+    }
+
+  -->
+
+  <asn:OctetString name="KerbMessage" explicitTag="0" />
+  <asn:GeneralString name="TargetDomain" explicitTag="1" optional="true" />
+  <asn:Integer name="DcLocatorHint" explicitTag="2" backingType="enum" enumType="DcLocatorHint" optional="true" />
+</asn:Sequence>

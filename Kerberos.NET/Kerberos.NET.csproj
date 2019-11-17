@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AsnXml Include="Entities\Kkdcp\KdcProxyMessage.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
     <AsnXml Include="Entities\Krb\KrbApReq.xml" />
     <AsnXml Include="Entities\Krb\KrbApRep.xml" />

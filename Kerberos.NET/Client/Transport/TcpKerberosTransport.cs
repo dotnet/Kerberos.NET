@@ -22,8 +22,6 @@ namespace Kerberos.NET.Transport
             Enabled = true;
         }
 
-        public override ProtocolType Protocol => ProtocolType.Tcp;
-
         public override async Task<T> SendMessage<T>(
             string domain,
             ReadOnlyMemory<byte> encoded,

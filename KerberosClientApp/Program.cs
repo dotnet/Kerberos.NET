@@ -3,7 +3,9 @@ using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Transport;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using static System.Console;
 
@@ -14,7 +16,7 @@ namespace KerberosClientApp
         static async Task Main(string[] args)
         {
             string user = ReadString("UserName", "administrator@corp.identityintervention.com", args);
-            string password = ReadString("Password", "P@ssw0rd!", args);
+            string password = ReadString("Password", "P@ssw0rd!", args, ReadMasked);
             string s4u = ReadString("S4U", null, args);
             string spn = ReadString("SPN", "host/downlevel.corp.identityintervention.com", args);
             string overrideKdc = ReadString("KDC", "10.0.0.21:88", args);
@@ -46,7 +48,27 @@ namespace KerberosClientApp
         {
             var kerbCred = new KerberosPasswordCredential(user, password);
 
-            using (KerberosClient client = new KerberosClient(overrideKdc))
+            KerberosClient client;
+
+            if (Uri.TryCreate(overrideKdc, UriKind.Absolute, out Uri kdcProxy))
+            {
+                var kdcProxyTransport = new HttpsKerberosTransport()
+                {
+                    DomainPaths = new Dictionary<string, Uri>
+                    {
+                        { kdcProxy.DnsSafeHost, kdcProxy },
+                        { kerbCred.Domain, kdcProxy }
+                    }
+                };
+
+                client = new KerberosClient(null, kdcProxyTransport);
+            }
+            else
+            {
+                client = new KerberosClient(overrideKdc);
+            }
+
+            using (client)
             {
                 await client.Authenticate(kerbCred);
 
@@ -71,6 +93,8 @@ namespace KerberosClientApp
                     s4uTicket: s4uTicket
                 );
 
+                DumpTicket(ticket);
+
                 var encoded = ticket.EncodeApplication().ToArray();
 
                 var authenticator = new KerberosAuthenticator(
@@ -91,6 +115,18 @@ namespace KerberosClientApp
 
                 DumpClaims(validated);
             }
+        }
+
+        private static void DumpTicket(KrbApReq ticket)
+        {
+            WriteLine();
+
+            WriteLine($"Type: {ticket.MessageType}");
+            WriteLine($"APOptions: {ticket.ApOptions}");
+            WriteLine($"Realm: {ticket.Ticket.Realm}");
+            WriteLine($"SName: {ticket.Ticket.SName.FullyQualifiedName}");
+
+            WriteLine();
         }
 
         private static void DumpClaims(KerberosIdentity validated)
@@ -129,7 +165,7 @@ namespace KerberosClientApp
             }
         }
 
-        private static string ReadString(string label, string defaultVal = null, string[] args = null)
+        private static string ReadString(string label, string defaultVal = null, string[] args = null, Func<string> reader = null)
         {
             if (args.Length % 2 == 0)
             {
@@ -146,7 +182,9 @@ namespace KerberosClientApp
 
             Write($"{label} ({defaultVal}): ");
 
-            var val = ReadLine();
+            reader ??= ReadLine;
+
+            var val = reader();
 
             if (string.IsNullOrWhiteSpace(val))
             {
@@ -154,6 +192,38 @@ namespace KerberosClientApp
             }
 
             return val;
+        }
+
+        private static string ReadMasked()
+        {
+            var masked = "";
+
+            do
+            {
+                ConsoleKeyInfo key = ReadKey(true);
+
+                if (key.Key != ConsoleKey.Backspace &&
+                    key.Key != ConsoleKey.Enter &&
+                    !char.IsControl(key.KeyChar))
+                {
+                    masked += key.KeyChar;
+
+                    Write("*");
+                }
+                else if (key.Key == ConsoleKey.Backspace && masked.Length > 0)
+                {
+                    Write("\b \b");
+                    masked = masked[0..^1];
+                }
+                else if (key.Key == ConsoleKey.Enter)
+                {
+                    WriteLine();
+                    break;
+                }
+            }
+            while (true);
+
+            return masked;
         }
     }
 }
