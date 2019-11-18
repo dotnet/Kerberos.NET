@@ -13,8 +13,8 @@ namespace Kerberos.NET.Crypto
 
         public static ReadOnlyMemory<byte> Encrypt(
             ReadOnlyMemory<byte> plainText,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> iv
+            ReadOnlyMemory<byte> key,
+            ReadOnlyMemory<byte> iv
         )
         {
             if (!CalculateLength(plainText.Length, out int padSize, out int maxLength))
@@ -39,7 +39,9 @@ namespace Kerberos.NET.Crypto
                     plaintextRented.Span.Slice(plaintextRented.Length - padSize).Fill(0);
                 }
 
-                var encrypted = Transform(plaintextRented.Span, key, iv, true);
+                var aes = CryptoPal.Platform.Aes();
+
+                var encrypted = aes.Encrypt(plaintextRented, key, iv);
 
                 if (plainText.Length >= TwoBlockSizes)
                 {
@@ -50,29 +52,10 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        private static Memory<byte> Transform(
-           ReadOnlySpan<byte> data,
-           ReadOnlySpan<byte> key,
-           ReadOnlySpan<byte> iv,
-           bool encrypt
-       )
-        {
-            var aes = CryptoPal.Platform.Aes();
-
-            if (encrypt)
-            {
-                return aes.Encrypt(data, key, iv);
-            }
-            else
-            {
-                return aes.Decrypt(data, key, iv);
-            }
-        }
-
         public static ReadOnlyMemory<byte> Decrypt(
             ReadOnlyMemory<byte> ciphertext,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> iv
+            ReadOnlyMemory<byte> key,
+            ReadOnlyMemory<byte> iv
         )
         {
             if (!CalculateLength(ciphertext.Length, out int padSize, out int maxLength))
@@ -82,6 +65,8 @@ namespace Kerberos.NET.Crypto
 
             using (var rental = CryptoPool.Rent<byte>(maxLength))
             {
+                var aes = CryptoPal.Platform.Aes();
+
                 Memory<byte> ciphertextRented;
 
                 if (padSize == BlockSize)
@@ -94,12 +79,7 @@ namespace Kerberos.NET.Crypto
                 {
                     var depadded = Depad(ciphertext, padSize);
 
-                    var decryptedPad = Transform(
-                        depadded.Span,
-                        key,
-                        iv,
-                        false
-                    );
+                    var decryptedPad = aes.Decrypt(depadded, key, iv);
 
                     ciphertextRented = rental.Memory.Slice(0, maxLength);
 
@@ -116,7 +96,7 @@ namespace Kerberos.NET.Crypto
                     SwapLastTwoBlocks(ciphertextRented.Span);
                 }
 
-                return Transform(ciphertextRented.Span, key, iv, false).Slice(0, ciphertext.Length);
+                return aes.Decrypt(ciphertextRented, key, iv).Slice(0, ciphertext.Length);
             }
         }
 

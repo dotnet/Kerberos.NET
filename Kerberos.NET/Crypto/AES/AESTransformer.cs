@@ -41,11 +41,7 @@ namespace Kerberos.NET.Crypto.AES
 
         public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey kerberosKey, KeyUsage usage)
         {
-            var Ke = kerberosKey.GetOrDeriveKey(
-                this,
-                $"{usage}|Ke|{KeySize}|{BlockSize}",
-                key => DK(key.Span, usage, KeyDerivationMode.Ke, KeySize, BlockSize)
-            );
+            var Ke = GetOrDeriveKey(kerberosKey, usage);
 
             var confounder = GenerateRandomBytes(ConfounderSize);
 
@@ -57,14 +53,24 @@ namespace Kerberos.NET.Crypto.AES
 
                 var encrypted = AESCTS.Encrypt(
                     cleartext,
-                    Ke.Span,
-                    AllZerosInitVector.Span
+                    Ke,
+                    AllZerosInitVector
                 );
 
                 var checksum = MakeChecksum(cleartext, kerberosKey, usage, KeyDerivationMode.Ki, ChecksumSize);
 
                 return Concat(encrypted.Span, checksum.Span);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ReadOnlyMemory<byte> GetOrDeriveKey(KerberosKey kerberosKey, KeyUsage usage)
+        {
+            return kerberosKey.GetOrDeriveKey(
+                this,
+                $"{usage}|Ke|{KeySize}|{BlockSize}",
+                key => DK(key, usage, KeyDerivationMode.Ke, KeySize, BlockSize)
+            );
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -86,16 +92,12 @@ namespace Kerberos.NET.Crypto.AES
         {
             var cipherLength = cipher.Length - ChecksumSize;
 
-            var Ke = kerberosKey.GetOrDeriveKey(
-                this,
-                $"{usage}|Ke|{KeySize}|{BlockSize}",
-                key => DK(key.Span, usage, KeyDerivationMode.Ke, KeySize, BlockSize)
-            );
+            var Ke = GetOrDeriveKey(kerberosKey, usage);
 
             var decrypted = AESCTS.Decrypt(
                 cipher.Slice(0, cipherLength),
-                Ke.Span,
-                AllZerosInitVector.Span
+                Ke,
+                AllZerosInitVector
             );
 
             var actualChecksum = MakeChecksum(decrypted, kerberosKey, usage, KeyDerivationMode.Ki, ChecksumSize);
@@ -121,13 +123,13 @@ namespace Kerberos.NET.Crypto.AES
             var ki = key.GetOrDeriveKey(
                 this,
                 $"{usage}|{kdf}|{KeySize}|{BlockSize}",
-                k => DK(k.Span, usage, kdf, KeySize, BlockSize)
+                k => DK(k, usage, kdf, KeySize, BlockSize)
             );
 
             return Hmac(ki, data).Slice(0, hashSize);
         }
 
-        private static ReadOnlyMemory<byte> DK(ReadOnlySpan<byte> key, KeyUsage usage, KeyDerivationMode kdf, int keySize, int blockSize)
+        private static ReadOnlyMemory<byte> DK(ReadOnlyMemory<byte> key, KeyUsage usage, KeyDerivationMode kdf, int keySize, int blockSize)
         {
             using (var constantPool = CryptoPool.RentUnsafe<byte>(5))
             {
@@ -143,7 +145,7 @@ namespace Kerberos.NET.Crypto.AES
             }
         }
 
-        private static ReadOnlyMemory<byte> DK(ReadOnlySpan<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
+        private static ReadOnlyMemory<byte> DK(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
         {
             //return Random2Key( DR(...) );
 
@@ -198,7 +200,7 @@ namespace Kerberos.NET.Crypto.AES
             return val;
         }
 
-        private static ReadOnlyMemory<byte> DR(ReadOnlySpan<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
+        private static ReadOnlyMemory<byte> DR(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
         {
             var keyBytes = new Memory<byte>(new byte[keySize]);
 
@@ -217,7 +219,7 @@ namespace Kerberos.NET.Crypto.AES
 
             do
             {
-                Ki = AESCTS.Encrypt(Ki, key, AllZerosInitVector.Span);
+                Ki = AESCTS.Encrypt(Ki, key, AllZerosInitVector);
 
                 if (n + blockSize >= keySize)
                 {
@@ -298,7 +300,7 @@ namespace Kerberos.NET.Crypto.AES
             return hmac.ComputeHash(key, data);
         }
 
-        private static ReadOnlySpan<byte> PBKDF2(ReadOnlyMemory<byte> passwordBytes, ReadOnlyMemory<byte> salt, int iterations, int keySize)
+        private static ReadOnlyMemory<byte> PBKDF2(ReadOnlyMemory<byte> passwordBytes, ReadOnlyMemory<byte> salt, int iterations, int keySize)
         {
             var derivation = CryptoPal.Platform.Rfc2898DeriveBytes();
 

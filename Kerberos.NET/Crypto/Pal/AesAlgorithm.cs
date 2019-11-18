@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
+using static Kerberos.NET.BinaryExtensions;
 
 namespace Kerberos.NET.Crypto
 {
@@ -18,15 +19,15 @@ namespace Kerberos.NET.Crypto
         public static Aes Algorithm => lazyAlgorithm.Value;
 
         private static Memory<byte> Transform(
-           ReadOnlySpan<byte> data,
-           ReadOnlySpan<byte> key,
-           ReadOnlySpan<byte> iv,
+           ReadOnlyMemory<byte> data,
+           ReadOnlyMemory<byte> key,
+           ReadOnlyMemory<byte> iv,
            bool encrypt
        )
         {
-            var keyArray = key.ToArray();
-            var ivArray = iv.ToArray();
-            var dataArray = data.ToArray();
+            var keyArray = TryGetArrayFast(key);
+            var ivArray = TryGetArrayFast(iv);
+            var dataArray = TryGetArrayFast(data);
 
             ICryptoTransform transform;
 
@@ -55,20 +56,12 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public Memory<byte> Decrypt(
-            ReadOnlySpan<byte> data,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> iv
-        )
+        public Memory<byte> Decrypt(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> iv)
         {
             return Transform(data, key, iv, false);
         }
 
-        public Memory<byte> Encrypt(
-            ReadOnlySpan<byte> data,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> iv
-        )
+        public Memory<byte> Encrypt(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> iv)
         {
             return Transform(data, key, iv, true);
         }

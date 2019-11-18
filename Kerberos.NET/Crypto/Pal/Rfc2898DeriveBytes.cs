@@ -6,7 +6,7 @@ namespace Kerberos.NET.Crypto
 {
     internal class Rfc2898DeriveBytes : IKeyDerivationAlgorithm
     {
-        public ReadOnlySpan<byte> Derive(
+        public ReadOnlyMemory<byte> Derive(
             ReadOnlyMemory<byte> passwordBytes,
             ReadOnlyMemory<byte> salt,
             int iterations,
