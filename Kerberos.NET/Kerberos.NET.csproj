@@ -51,6 +51,15 @@
     <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
     <AsnXml Include="Entities\Krb\KrbTicket.xml" />
     <AsnXml Include="Entities\Krb\KrbTransitedEncoding.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbAlgorithmIdentifier.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbAuthPack.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbDHReplyInfo.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbExternalPrincipalIdentifier.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbKdcDHKeyInfo.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbPaPkAsReq.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbPaPkAsRep.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbPKAuthenticator.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbSubjectPublicKeyInfo.xml" />
     <AsnXml Include="Entities\SpNego\NegotiationToken.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenInit.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenResp.xml" />

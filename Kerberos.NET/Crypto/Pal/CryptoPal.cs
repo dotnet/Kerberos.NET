@@ -51,9 +51,13 @@ namespace Kerberos.NET.Crypto
 
         public abstract IKeyDerivationAlgorithm Rfc2898DeriveBytes();
 
+        public abstract IHashAlgorithm Sha1();
+
         public abstract IHashAlgorithm Sha256();
 
         public abstract ISymmetricAlgorithm Aes();
+
+        public abstract IKeyAgreement DiffieHellmanModp14();
 
         protected static PlatformNotSupportedException PlatformNotSupported(string algorithm = "CryptoPal")
         {

@@ -72,5 +72,13 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(pbkdf2);
         }
+
+        [TestMethod]
+        public void PalSupportsDHModp14()
+        {
+            var dh = CryptoPal.Platform.DiffieHellmanModp14();
+
+            Assert.IsNotNull(dh);
+        }
     }
 }

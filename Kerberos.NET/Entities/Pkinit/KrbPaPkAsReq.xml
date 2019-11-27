@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbPaPkAsReq"
+  namespace="Kerberos.NET.Entities">
+  <!--
+  
+PA-PK-AS-REQ ::= SEQUENCE {
+  signedAuthPack          [0] IMPLICIT OCTET STRING,
+		   - - Contains a CMS type ContentInfo encoded
+		   - - according to [RFC3852].
+		   - - The contentType field of the type ContentInfo
+		   - - is id-signedData (1.2.840.113549.1.7.2),
+		   - - and the content field is a SignedData.
+		   - - The eContentType field for the type SignedData is
+		   - - id-pkinit-authData (1.3.6.1.5.2.3.1), and the
+		   - - eContent field contains the DER encoding of the
+		   - - type AuthPack.
+		   - - AuthPack is defined below.
+  trustedCertifiers       [1] SEQUENCE OF
+			  ExternalPrincipalIdentifier OPTIONAL,
+		   - - Contains a list of CAs, trusted by the client,
+		   - - that can be used to certify the KDC.
+		   - - Each ExternalPrincipalIdentifier identifies a CA
+		   - - or a CA certificate (thereby its public key).
+		   - - The information contained in the
+		   - - trustedCertifiers SHOULD be used by the KDC as
+		   - - hints to guide its selection of an appropriate
+		   - - certificate chain to return to the client.
+  kdcPkId                 [2] IMPLICIT OCTET STRING
+							  OPTIONAL,
+		   - - Contains a CMS type SignerIdentifier encoded
+		   - - according to [RFC3852].
+		   - - Identifies, if present, a particular KDC
+		   - - public key that the client already has.
+  ...
+}
+
+  -->
+
+  <asn:OctetString name="SignedAuthPack" implicitTag="0" />
+
+  <asn:SequenceOf name="TrustedCertifiers" explicitTag="1" optional="true">
+    <asn:AsnType typeName="KrbExternalPrincipalIdentifier" />
+  </asn:SequenceOf>
+
+  <asn:OctetString name="KdcPkId" implicitTag="2" optional="true" />
+</asn:Sequence>
