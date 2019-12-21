@@ -86,7 +86,7 @@ namespace Kerberos.NET.Credentials
 
             return result;
         }
-        
+
         public override void TransformKdcReq(KrbKdcReq req)
         {
             var padata = req.PaData.ToList();
