@@ -16,6 +16,31 @@ namespace Kerberos.NET.Credentials
 
         public abstract KerberosKey CreateKey();
 
+        public virtual void TransformKdcReq(KrbKdcReq req)
+        {
+            var ts = KrbPaEncTsEnc.Now();
+
+            var tsEncoded = ts.Encode();
+
+            var padata = req.PaData.ToList();
+
+            var key = CreateKey();
+
+            KrbEncryptedData encData = KrbEncryptedData.Encrypt(
+                tsEncoded,
+                key,
+                KeyUsage.PaEncTs
+            );
+
+            padata.Add(new KrbPaData
+            {
+                Type = PaDataType.PA_ENC_TIMESTAMP,
+                Value = encData.Encode()
+            });
+
+            req.PaData = padata.ToArray();
+        }
+
         public void IncludePreAuthenticationHints(IEnumerable<KrbPaData> preauth)
         {
             foreach (var padata in preauth)
@@ -59,6 +84,15 @@ namespace Kerberos.NET.Credentials
             {
                 throw new ArgumentException("Domain cannot be null or empty", nameof(Domain));
             }
+        }
+
+        public virtual T DecryptKdcRep<T>(KrbKdcRep kdcRep, KeyUsage keyUsage, Func<ReadOnlyMemory<byte>, T> func)
+        {
+            return kdcRep.EncPart.Decrypt(
+                CreateKey(),
+                KeyUsage.EncAsRepPart,
+                func
+            );
         }
     }
 }

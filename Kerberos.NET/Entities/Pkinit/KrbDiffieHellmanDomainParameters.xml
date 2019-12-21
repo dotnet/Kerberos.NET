@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbDiffieHellmanDomainParameters"
+  namespace="Kerberos.NET.Entities">
+  <!--
+  
+DomainParameters ::= SEQUENCE {
+    p       INTEGER, - - odd prime, p=jq +1
+    g       INTEGER, - - generator, g
+    q       INTEGER, - - factor of p-1
+    j       INTEGER OPTIONAL, - - subgroup factor
+    validationParms  ValidationParms OPTIONAL
+}
+
+  -->
+
+  <asn:AnyValue name="P" />
+  <asn:AnyValue name="G" />
+  <asn:AnyValue name="Q" />
+  <asn:AnyValue name="J" optional="true" />
+  <asn:AsnType name="ValidationParameters" typeName="KrbDiffieHellmanValidationParameters" optional="true" />
+</asn:Sequence>

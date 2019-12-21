@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbDiffieHellmanValidationParameters"
+  namespace="Kerberos.NET.Entities">
+  <!--
+  
+ValidationParms ::= SEQUENCE {
+    seed             BIT STRING,
+    pgenCounter      INTEGER
+}
+
+  -->
+
+  <asn:BitString name="Seed" />
+  <asn:Integer name="PGenOutput" />
+</asn:Sequence>

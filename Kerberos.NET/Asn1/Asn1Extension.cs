@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Asn1
 {
@@ -23,6 +25,41 @@ namespace Kerberos.NET.Asn1
         public static bool HasValue(Enum thing)
         {
             return thing != null;
+        }
+
+        internal static void WriteKeyParameterInteger(this AsnWriter writer, ReadOnlySpan<byte> integer)
+        {
+            Debug.Assert(!integer.IsEmpty);
+
+            if (integer[0] == 0)
+            {
+                int newStart = 1;
+
+                while (newStart < integer.Length)
+                {
+                    if (integer[newStart] >= 0x80)
+                    {
+                        newStart--;
+                        break;
+                    }
+
+                    if (integer[newStart] != 0)
+                    {
+                        break;
+                    }
+
+                    newStart++;
+                }
+
+                if (newStart == integer.Length)
+                {
+                    newStart--;
+                }
+
+                integer = integer.Slice(newStart);
+            }
+
+            writer.WriteIntegerUnsigned(integer);
         }
     }
 }

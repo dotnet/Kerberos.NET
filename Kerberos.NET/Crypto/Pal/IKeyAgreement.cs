@@ -4,10 +4,12 @@ namespace Kerberos.NET.Crypto
 {
     public interface IKeyAgreement : IDisposable
     {
-        ReadOnlyMemory<byte> PublicKey { get; }
+        DiffieHellmanKey PublicKey { get; }
+
+        DiffieHellmanKey PrivateKey { get; }
 
         ReadOnlyMemory<byte> GenerateAgreement();
 
-        void ImportPartnerKey(ReadOnlySpan<byte> publicKey);
+        void ImportPartnerKey(DiffieHellmanKey publicKey);
     }
 }

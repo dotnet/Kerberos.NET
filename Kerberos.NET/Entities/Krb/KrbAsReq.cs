@@ -40,26 +40,7 @@ namespace Kerberos.NET.Entities
                     Value = pacRequest.Encode()
                 }
             };
-
-            if (options.HasFlag(AuthenticationOptions.PreAuthenticate))
-            {
-                var ts = KrbPaEncTsEnc.Now();
-
-                var tsEncoded = ts.Encode();
-
-                KrbEncryptedData encData = KrbEncryptedData.Encrypt(
-                    tsEncoded,
-                    credential.CreateKey(),
-                    KeyUsage.PaEncTs
-                );
-
-                padata.Add(new KrbPaData
-                {
-                    Type = PaDataType.PA_ENC_TIMESTAMP,
-                    Value = encData.Encode()
-                });
-            }
-
+            
             var asreq = new KrbAsReq()
             {
                 MessageType = MessageType.KRB_AS_REQ,
@@ -90,6 +71,11 @@ namespace Kerberos.NET.Entities
                 },
                 PaData = padata.ToArray()
             };
+
+            if (options.HasFlag(AuthenticationOptions.PreAuthenticate))
+            {
+                credential.TransformKdcReq(asreq);
+            }
 
             return asreq;
         }
