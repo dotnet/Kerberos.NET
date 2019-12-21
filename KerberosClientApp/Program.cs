@@ -236,7 +236,7 @@ namespace KerberosClientApp
 
             protected override bool CacheKeyAgreementParameters(IKeyAgreement agreement)
             {
-                var serializedPk = JsonConvert.SerializeObject(ConvertKey(agreement.PrivateKey));
+                var serializedPk = JsonConvert.SerializeObject(ConvertKey(agreement.PrivateKey as DiffieHellmanKey));
 
                 using (var reg = Registry.CurrentUser.CreateSubKey($"SOFTWARE\\Kerberos.NET\\{UserName}"))
                 {

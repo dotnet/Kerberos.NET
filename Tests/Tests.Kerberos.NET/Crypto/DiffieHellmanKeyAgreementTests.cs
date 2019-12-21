@@ -97,8 +97,11 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        private static DiffieHellmanKey GetRightPublicKey(DiffieHellmanKey left, DiffieHellmanKey right)
+        private static IExchangeKey GetRightPublicKey(IExchangeKey a, IExchangeKey b)
         {
+            var left = a as DiffieHellmanKey;
+            var right = b as DiffieHellmanKey;
+
             var pub = right.Public.ToArray();
 
             var key = new DiffieHellmanKey
@@ -117,9 +120,11 @@ namespace Tests.Kerberos.NET
         {
             using (var eve = new BCryptDiffieHellmanOakleyGroup14())
             {
-                var eveMod = new BigInteger(eve.PublicKey.Modulus.Span, isUnsigned: true);
-                var eveGen = new BigInteger(eve.PublicKey.Generator.Span, isUnsigned: true);
-                var evePub = new BigInteger(eve.PublicKey.Public.Span, isUnsigned: true);
+                var evePubKey = eve.PublicKey as DiffieHellmanKey;
+
+                var eveMod = new BigInteger(evePubKey.Modulus.Span, isUnsigned: true);
+                var eveGen = new BigInteger(evePubKey.Generator.Span, isUnsigned: true);
+                var evePub = new BigInteger(evePubKey.Public.Span, isUnsigned: true);
 
                 for (var i = 0; i < 100; i++)
                 {
@@ -131,8 +136,11 @@ namespace Tests.Kerberos.NET
 
                         AssertKeysAgree(alice, bob);
 
-                        var aliceMod = new BigInteger(alice.PublicKey.Modulus.Span, isUnsigned: true);
-                        var bobMod = new BigInteger(bob.PublicKey.Modulus.Span, isUnsigned: true);
+                        var alicePubKey = alice.PublicKey as DiffieHellmanKey;
+                        var bobPubKey = bob.PublicKey as DiffieHellmanKey;
+
+                        var aliceMod = new BigInteger(alicePubKey.Modulus.Span, isUnsigned: true);
+                        var bobMod = new BigInteger(bobPubKey.Modulus.Span, isUnsigned: true);
 
                         var alicePub = new BigInteger(alice.PublicKey.Public.Span, isUnsigned: true);
                         var bobPub = new BigInteger(bob.PublicKey.Public.Span, isUnsigned: true);
@@ -149,8 +157,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ImportPrivateKey()
         {
-            DiffieHellmanKey aliceKey = null;
-            DiffieHellmanKey bobKey = null;
+            IExchangeKey aliceKey = null;
+            IExchangeKey bobKey = null;
 
             byte[] firstPassDerivedKey = null;
 
@@ -242,7 +250,7 @@ namespace Tests.Kerberos.NET
             using (var alice = new ManagedDiffieHellmanOakley2())
             using (var bob = new ManagedDiffieHellmanOakley2())
             {
-                managedExport = alice.PrivateKey;
+                managedExport = alice.PrivateKey as DiffieHellmanKey;
 
                 alice.ImportPartnerKey(bob.PublicKey);
                 bob.ImportPartnerKey(alice.PublicKey);
@@ -267,8 +275,8 @@ namespace Tests.Kerberos.NET
         {
             using (var alice = new ManagedDiffieHellmanOakley2())
             {
-                var managedExportPrivate = alice.PrivateKey;
-                var managedExportPublic = alice.PublicKey;
+                var managedExportPrivate = alice.PrivateKey as DiffieHellmanKey;
+                var managedExportPublic = alice.PublicKey as DiffieHellmanKey;
 
                 managedExportPrivate.Generator = Pad(managedExportPrivate.Generator, managedExportPrivate.KeyLength);
                 managedExportPublic.Generator = Pad(managedExportPublic.Generator, managedExportPublic.KeyLength);
@@ -286,8 +294,11 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        private void AssertKeysMatch(DiffieHellmanKey alice, DiffieHellmanKey bob)
+        private void AssertKeysMatch(IExchangeKey a, IExchangeKey b)
         {
+            var alice = a as DiffieHellmanKey;
+            var bob = b as DiffieHellmanKey;
+
             Assert.IsTrue(alice.Modulus.Span.SequenceEqual(bob.Modulus.Span));
             Assert.IsTrue(alice.Generator.Span.SequenceEqual(bob.Generator.Span));
             Assert.IsTrue(alice.Factor.Span.SequenceEqual(bob.Factor.Span));

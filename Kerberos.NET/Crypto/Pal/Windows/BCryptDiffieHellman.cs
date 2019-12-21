@@ -11,7 +11,7 @@ namespace Kerberos.NET.Crypto
         Private
     }
 
-    public class DiffieHellmanKey
+    public class DiffieHellmanKey : IExchangeKey
     {
         public AsymmetricKeyType Type { get; set; }
 
@@ -49,9 +49,9 @@ namespace Kerberos.NET.Crypto
         private IntPtr hPublicKey;
         private IntPtr phAgreedSecret;
 
-        public static BCryptDiffieHellman Import(DiffieHellmanKey key)
+        public static BCryptDiffieHellman Import(IExchangeKey key)
         {
-            return new BCryptDiffieHellman(key);
+            return new BCryptDiffieHellman((DiffieHellmanKey)key);
         }
 
         protected BCryptDiffieHellman(DiffieHellmanKey importKey = null)
@@ -111,9 +111,9 @@ namespace Kerberos.NET.Crypto
 
         protected virtual byte[] Factor { get; set; }
 
-        public DiffieHellmanKey PublicKey { get; }
+        public IExchangeKey PublicKey { get; }
 
-        public DiffieHellmanKey PrivateKey { get; }
+        public IExchangeKey PrivateKey { get; }
 
         public unsafe void Dispose()
         {
@@ -219,7 +219,7 @@ namespace Kerberos.NET.Crypto
             }
             else
             {
-                key = PublicKey;
+                key = (DiffieHellmanKey)PublicKey;
 
                 keyType = BCRYPT_DH_PUBLIC_BLOB;
                 dwMagic = BCRYPT_DH_PUBLIC_MAGIC;
@@ -273,9 +273,9 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public void ImportPartnerKey(DiffieHellmanKey incoming)
+        public void ImportPartnerKey(IExchangeKey incoming)
         {
-            ImportKey(incoming, ref hPublicKey);
+            ImportKey(incoming as DiffieHellmanKey, ref hPublicKey);
         }
 
         public unsafe ReadOnlyMemory<byte> GenerateAgreement()

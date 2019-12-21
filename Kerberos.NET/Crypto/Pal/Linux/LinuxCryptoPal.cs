@@ -32,10 +32,10 @@ namespace Kerberos.NET.Crypto
 
         public override IKeyAgreement DiffieHellmanModp2() => throw PlatformNotSupported("DH-MODP-2");
 
-        public override IKeyAgreement DiffieHellmanModp2(DiffieHellmanKey privateKey) => throw PlatformNotSupported("DH-MODP-2");
+        public override IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey) => throw PlatformNotSupported("DH-MODP-2");
 
         public override IKeyAgreement DiffieHellmanModp14() => throw PlatformNotSupported("DH-MODP-14");
 
-        public override IKeyAgreement DiffieHellmanModp14(DiffieHellmanKey privateKey) => throw PlatformNotSupported("DH-MODP-14");
+        public override IKeyAgreement DiffieHellmanModp14(IExchangeKey privateKey) => throw PlatformNotSupported("DH-MODP-14");
     }
 }
