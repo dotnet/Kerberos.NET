@@ -59,11 +59,11 @@ namespace Kerberos.NET.Crypto
 
         public abstract IKeyAgreement DiffieHellmanModp2();
 
-        public abstract IKeyAgreement DiffieHellmanModp2(DiffieHellmanKey privateKey);
+        public abstract IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey);
 
         public abstract IKeyAgreement DiffieHellmanModp14();
 
-        public abstract IKeyAgreement DiffieHellmanModp14(DiffieHellmanKey privateKey);
+        public abstract IKeyAgreement DiffieHellmanModp14(IExchangeKey privateKey);
 
         protected static PlatformNotSupportedException PlatformNotSupported(string algorithm = "CryptoPal")
         {

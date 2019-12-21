@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Security.Cryptography;
 
 namespace Kerberos.NET.Crypto
 {
@@ -80,20 +81,18 @@ namespace Kerberos.NET.Crypto
 
         private BigInteger GeneratePrime()
         {
-            IKeyAgreement pv;
+            // RSA's P and Q parameters are prime, but len(P+Q) = keylength
+            // so generate an RSA key twice as large as required and just
+            // use P as the prime.
 
-            if (keyLength == 256)
-            {
-                pv = new BCryptDiffieHellmanOakleyGroup14();
-            }
-            else
-            {
-                pv = new BCryptDiffieHellmanOakleyGroup2();
-            }
+            // P in RSA is a safer prime than primes used in DH so it's
+            // good enough here, though it's costlier to generate.
 
-            using (pv)
+            using (var alg = RSA.Create(keyLength * 2 * 8))
             {
-                return ParseBigInteger(pv.PrivateKey.Private);
+                var rsa = alg.ExportParameters(true);
+
+                return ParseBigInteger(rsa.P);
             }
         }
 
@@ -118,9 +117,9 @@ namespace Kerberos.NET.Crypto
             return new BigInteger(pv);
         }
 
-        public DiffieHellmanKey PublicKey { get; }
+        public IExchangeKey PublicKey { get; }
 
-        public DiffieHellmanKey PrivateKey { get; }
+        public IExchangeKey PrivateKey { get; }
 
         public void Dispose() { }
 
@@ -137,7 +136,7 @@ namespace Kerberos.NET.Crypto
             return agreement;
         }
 
-        public void ImportPartnerKey(DiffieHellmanKey publicKey)
+        public void ImportPartnerKey(IExchangeKey publicKey)
         {
             this.partnerKey = ParseBigInteger(publicKey.Public, true);
         }

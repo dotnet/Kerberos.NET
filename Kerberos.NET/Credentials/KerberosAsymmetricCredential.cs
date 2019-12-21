@@ -68,25 +68,6 @@ namespace Kerberos.NET.Credentials
 
         private ReadOnlyMemory<byte> clientDHNonce;
 
-        private static ReadOnlyMemory<byte> DepadRight(ReadOnlyMemory<byte> data)
-        {
-            var result = data;
-
-            for (var i = data.Length - 1; i > 0; i--)
-            {
-                if (data.Span[i] == 0)
-                {
-                    result = result.Slice(0, i);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return result;
-        }
-
         private static ReadOnlyMemory<byte> DepadLeft(ReadOnlyMemory<byte> data)
         {
             var result = data;
@@ -105,21 +86,7 @@ namespace Kerberos.NET.Credentials
 
             return result;
         }
-
-        private static ReadOnlyMemory<byte> Pad(ReadOnlyMemory<byte> pv)
-        {
-            if (pv.Span[0] != 0)
-            {
-                var copy = new Memory<byte>(new byte[pv.Length + 1]);
-
-                pv.CopyTo(copy.Slice(1));
-
-                pv = copy;
-            }
-
-            return pv;
-        }
-
+        
         public override void TransformKdcReq(KrbKdcReq req)
         {
             var padata = req.PaData.ToList();
@@ -135,12 +102,7 @@ namespace Kerberos.NET.Credentials
                 clientDHNonce = GenerateNonce(req.Body.EType.FirstOrDefault(), agreement.PublicKey.KeyLength);
             }
 
-            var domainParams = new KrbDiffieHellmanDomainParameters
-            {
-                P = Pad(agreement.PublicKey.Modulus),
-                G = DepadRight(agreement.PublicKey.Generator),
-                Q = agreement.PublicKey.Factor
-            };
+            KrbDiffieHellmanDomainParameters domainParams = GetDomainParameters();
 
             var authPack = new KrbAuthPack
             {
@@ -186,6 +148,11 @@ namespace Kerberos.NET.Credentials
             });
 
             req.PaData = padata.ToArray();
+        }
+
+        private KrbDiffieHellmanDomainParameters GetDomainParameters()
+        {
+            return KrbDiffieHellmanDomainParameters.FromKeyAgreement(agreement);
         }
 
         private ReadOnlyMemory<byte> GenerateNonce(EncryptionType encryptionType, int minSize)
@@ -258,7 +225,7 @@ namespace Kerberos.NET.Credentials
             signed.CheckSignature(verifySignatureOnly: false);
         }
 
-        private static ReadOnlyMemory<byte> EncodePublicKey(DiffieHellmanKey publicKey)
+        private static ReadOnlyMemory<byte> EncodePublicKey(IExchangeKey publicKey)
         {
             using (var writer = new AsnWriter(AsnEncodingRules.DER))
             {
