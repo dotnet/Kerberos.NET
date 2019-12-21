@@ -14,7 +14,8 @@ namespace Benchmark.Kerberos.NET
     {
         None,
         Stress,
-        Timing
+        Timing,
+        DH
     }
 
     internal class CommandLineParameters
@@ -151,6 +152,12 @@ namespace Benchmark.Kerberos.NET
             {
                 BenchmarkRunner.Run<StressAsReq>();
                 BenchmarkRunner.Run<StressTgsReq>();
+                return;
+            }
+
+            if (cmd.Benchmark == BenchmarkType.DH)
+            {
+                BenchmarkRunner.Run<BCryptDiffieHellmanBenchmarks>();
                 return;
             }
 
