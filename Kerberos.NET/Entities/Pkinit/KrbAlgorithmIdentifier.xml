@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbAlgorithmIdentifier"
+  namespace="Kerberos.NET.Entities">
+  <!--
+  
+AlgorithmIdentifier ::= SEQUENCE {
+    algorithm OBJECT IDENTIFIER,
+    parameters ANY DEFINED BY algorithm OPTIONAL
+}
+
+  -->
+
+  <asn:ObjectIdentifier name="Algorithm" />
+  <asn:AnyValue name="Parameters" optional="true" />
+</asn:Sequence>

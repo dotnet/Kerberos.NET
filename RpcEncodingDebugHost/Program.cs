@@ -6,11 +6,15 @@ namespace RpcEncodingDebugHost
     {
         static void Main(string[] args)
         {
-            RpcInteropTests test = new RpcInteropTests();
+            DiffieHellmanKeyAgreementTests test = new DiffieHellmanKeyAgreementTests();
+
+            test.Oakley14_KeyAgreement();
+
+            //RpcInteropTests test = new RpcInteropTests();
 
             //test.MarshalNativeFromManaged_Baseline_DoesntExplode();
 
-            test.MarshalNativeFromNative_PassThroughManaged();
+            //test.MarshalNativeFromNative_PassThroughManaged();
         }
     }
 }

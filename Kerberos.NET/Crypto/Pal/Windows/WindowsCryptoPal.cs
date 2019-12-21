@@ -24,8 +24,18 @@ namespace Kerberos.NET.Crypto
 
         public override IKeyDerivationAlgorithm Rfc2898DeriveBytes() => new Rfc2898DeriveBytes();
 
+        public override IHashAlgorithm Sha1() => new Sha1();
+
         public override IHashAlgorithm Sha256() => new Sha256();
 
         public override ISymmetricAlgorithm Aes() => new AesAlgorithm();
+
+        public override IKeyAgreement DiffieHellmanModp2() => new BCryptDiffieHellmanOakleyGroup2();
+
+        public override IKeyAgreement DiffieHellmanModp2(DiffieHellmanKey privateKey) => BCryptDiffieHellman.Import(privateKey);
+
+        public override IKeyAgreement DiffieHellmanModp14() => new BCryptDiffieHellmanOakleyGroup14();
+
+        public override IKeyAgreement DiffieHellmanModp14(DiffieHellmanKey privateKey) => BCryptDiffieHellman.Import(privateKey);
     }
 }

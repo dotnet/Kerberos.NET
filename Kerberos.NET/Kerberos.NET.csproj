@@ -8,7 +8,7 @@
     <Product>Kerberos.NET library</Product>
     <Description>A cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
     <PackageTags>security kerberos</PackageTags>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>    
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -51,6 +51,17 @@
     <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
     <AsnXml Include="Entities\Krb\KrbTicket.xml" />
     <AsnXml Include="Entities\Krb\KrbTransitedEncoding.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbAlgorithmIdentifier.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbAuthPack.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbDHReplyInfo.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbDiffieHellmanDomainParameters.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbDiffieHellmanValidationParameters.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbExternalPrincipalIdentifier.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbKdcDHKeyInfo.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbPaPkAsReq.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbPaPkAsRep.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbPKAuthenticator.xml" />
+    <AsnXml Include="Entities\Pkinit\KrbSubjectPublicKeyInfo.xml" />
     <AsnXml Include="Entities\SpNego\NegotiationToken.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenInit.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenResp.xml" />
@@ -58,6 +69,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="4.6.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.0" />
     <PackageReference Include="System.IO.Pipelines" Version="4.7.0" />
   </ItemGroup>

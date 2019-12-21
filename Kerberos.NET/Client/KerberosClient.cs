@@ -323,8 +323,8 @@ namespace Kerberos.NET.Client
 
             var asRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq);
 
-            var decrypted = asRep.EncPart.Decrypt(
-                credential.CreateKey(),
+            var decrypted = credential.DecryptKdcRep(
+                asRep,
                 KeyUsage.EncAsRepPart,
                 d => KrbEncAsRepPart.DecodeApplication(d)
             );
