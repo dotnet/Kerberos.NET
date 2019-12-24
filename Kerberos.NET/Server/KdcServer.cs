@@ -38,7 +38,9 @@ namespace Kerberos.NET.Server
         {
             if (type < MessageType.KRB_AS_REQ || type > MessageType.KRB_ERROR)
             {
-                throw new InvalidOperationException($"Cannot register {type}. Can only register application messages >= 10 and <= 30");
+                throw new InvalidOperationException(
+                    $"Cannot register {type}. Can only register application messages >= 10 and <= 30"
+                );
             }
 
             messageHandlers[type] = builder;
@@ -56,11 +58,34 @@ namespace Kerberos.NET.Server
             // But we'll leave it to the registered handlers to decide
             // what they are willing to process
 
+            // but we also need to process Kdc Proxy messages
+
+            var tag = PeekTag(request);
+
+            if (tag == Asn1Tag.Sequence && options.ProxyEnabled)
+            {
+                try
+                {
+                    return await ProcessProxyMessage(request);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Proxy message could not be parsed correctly");
+
+                    return KdcMessageHandlerBase.GenerateGenericError(ex, options);
+                }
+            }
+
+            return await ProcessMessageCore(request, tag);
+        }
+
+        internal virtual async Task<ReadOnlyMemory<byte>> ProcessMessageCore(ReadOnlySequence<byte> request, Asn1Tag tag)
+        {
             KdcMessageHandlerBase messageHandler;
 
             try
             {
-                messageHandler = LocateMessageHandler(request);
+                messageHandler = LocateMessageHandler(request, tag);
             }
             catch (Exception ex)
             {
@@ -81,10 +106,8 @@ namespace Kerberos.NET.Server
             }
         }
 
-        private KdcMessageHandlerBase LocateMessageHandler(ReadOnlySequence<byte> request)
+        private KdcMessageHandlerBase LocateMessageHandler(ReadOnlySequence<byte> request, Asn1Tag tag)
         {
-            Asn1Tag tag = PeekTag(request);
-
             if (tag.TagClass != TagClass.Application)
             {
                 throw new KerberosProtocolException($"Unknown incoming tag {tag}");
@@ -107,6 +130,30 @@ namespace Kerberos.NET.Server
             handler.RegisterPreAuthHandlers(preAuthHandlers);
 
             return handler;
+        }
+
+        private async Task<ReadOnlyMemory<byte>> ProcessProxyMessage(ReadOnlySequence<byte> request)
+        {
+            var proxyMessage = KdcProxyMessage.Decode(request.ToArray());
+
+            var length = proxyMessage.KerbMessage.Slice(0, 4).AsLong();
+            var message = new ReadOnlySequence<byte>(proxyMessage.KerbMessage.Slice(4));
+
+            if (length != message.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Proxy message length {length} doesn't match actual message length {message.Length}"
+                );
+            }
+
+            var tag = PeekTag(message);
+
+            var response = await ProcessMessageCore(message, tag);
+
+            return new KdcProxyMessage
+            {
+                KerbMessage = response
+            }.Encode();
         }
 
         private static Asn1Tag PeekTag(ReadOnlySequence<byte> request)
