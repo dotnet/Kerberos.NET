@@ -29,5 +29,7 @@ namespace Kerberos.NET.Server
         public Func<string, Task<IRealmService>> RealmLocator { get; set; }
 
         public Func<Guid> NextScopeId { get; set; } = KerberosConstants.GetRequestActivityId;
+
+        public bool ProxyEnabled { get; set; } = true;
     }
 }

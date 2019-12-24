@@ -1,4 +1,6 @@
-﻿using Kerberos.NET.Entities;
+﻿using Kerberos.NET.Credentials;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -26,7 +28,6 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(err);
 
             Assert.AreEqual(KerberosErrorCode.KRB_ERR_GENERIC, err.ErrorCode);
-            Assert.IsTrue(err.EText.Contains("Unknown incoming tag"));
         }
 
         [TestMethod]
@@ -82,6 +83,50 @@ namespace Tests.Kerberos.NET
             var kdc = new KdcServer(new ListenerOptions { });
 
             kdc.RegisterMessageHandler((MessageType)9, null);
+        }
+
+        [TestMethod]
+        public async Task ParseKdcProxyMessage()
+        {
+            var req = KrbAsReq.CreateAsReq(
+                new KerberosPasswordCredential("blah@corp.identityintervention.com", "P@ssw0rd!"),
+                0
+            ).EncodeApplication();
+
+            var domain = "corp.identityintervention.com";
+            var hint = DcLocatorHint.DS_AVOID_SELF;
+
+            var messageBytes = new Memory<byte>(new byte[req.Length + 4]);
+
+            Endian.ConvertToBigEndian(req.Length, messageBytes.Slice(0, 4));
+            req.CopyTo(messageBytes.Slice(4, req.Length));
+
+            var message = new KdcProxyMessage
+            {
+                TargetDomain = domain,
+                KerbMessage = messageBytes,
+                DcLocatorHint = hint
+            };
+
+            var kdc = new KdcServer(new ListenerOptions { RealmLocator = LocateFakeRealm });
+
+            var response = await kdc.ProcessMessage(new ReadOnlySequence<byte>(message.Encode()));
+
+            Assert.IsTrue(response.Length > 0);
+            Assert.IsFalse(KrbError.CanDecode(response));
+
+            var proxy = KdcProxyMessage.Decode(response);
+
+            var preAuthReq = KrbError.DecodeApplication(proxy.KerbMessage);
+
+            Assert.AreEqual(KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED, preAuthReq.ErrorCode);
+        }
+
+        private static Task<IRealmService> LocateFakeRealm(string realm)
+        {
+            IRealmService service = new FakeRealmService(realm);
+
+            return Task.FromResult(service);
         }
     }
 }
