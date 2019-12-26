@@ -30,6 +30,8 @@ namespace Kerberos.NET.Crypto
 
         public override ISymmetricAlgorithm Aes() => new AesAlgorithm();
 
+        public override IKeyAgreement DiffieHellmanP256() => throw PlatformNotSupported("ECDH-P256");
+
         public override IKeyAgreement DiffieHellmanModp2() => throw PlatformNotSupported("DH-MODP-2");
 
         public override IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey) => throw PlatformNotSupported("DH-MODP-2");

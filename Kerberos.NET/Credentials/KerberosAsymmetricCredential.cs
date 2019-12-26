@@ -2,7 +2,6 @@
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
@@ -35,9 +34,7 @@ namespace Kerberos.NET.Credentials
             TrySplitUserNameDomain(username, out username, ref domain);
 
             Certificate = cert;
-            PrivateKey = cert.PrivateKey;
-            PublicKey = cert.PublicKey;
-
+            
             UserName = username;
 
             if (!string.IsNullOrWhiteSpace(domain))
@@ -45,14 +42,13 @@ namespace Kerberos.NET.Credentials
                 Domain = domain.ToUpperInvariant();
             }
 
+            SupportsEllipticCurveDiffieHellman = false;
+            SupportsDiffieHellman = true;
+
             agreement = StartKeyAgreement();
         }
 
         public X509Certificate2 Certificate { get; }
-
-        public AsymmetricAlgorithm PrivateKey { get; }
-
-        public PublicKey PublicKey { get; }
 
         private static readonly Oid IdPkInitAuthData = new Oid("1.3.6.1.5.2.3.1");
         private static readonly Oid DiffieHellman = new Oid("1.2.840.10046.2.1");
@@ -61,8 +57,22 @@ namespace Kerberos.NET.Credentials
 
         protected virtual IKeyAgreement StartKeyAgreement()
         {
-            return CryptoPal.Platform.DiffieHellmanModp14();
+            if (SupportsEllipticCurveDiffieHellman)
+            {
+                return CryptoPal.Platform.DiffieHellmanP256();
+            }
+
+            if (SupportsDiffieHellman)
+            {
+                return CryptoPal.Platform.DiffieHellmanModp14();
+            }
+
+            return null;
         }
+
+        public bool SupportsEllipticCurveDiffieHellman { get; }
+
+        public bool SupportsDiffieHellman { get; }
 
         protected virtual bool CacheKeyAgreementParameters(IKeyAgreement agreement) => false;
 
@@ -91,37 +101,20 @@ namespace Kerberos.NET.Credentials
         {
             var padata = req.PaData.ToList();
 
-            var sha1 = CryptoPal.Platform.Sha1();
+            KrbAuthPack authPack;
 
-            var paChecksum = sha1.ComputeHash(req.Body.Encode().Span);
-
-            var parametersAreCached = CacheKeyAgreementParameters(agreement);
-
-            if (parametersAreCached)
+            if (SupportsEllipticCurveDiffieHellman)
             {
-                clientDHNonce = GenerateNonce(req.Body.EType.FirstOrDefault(), agreement.PublicKey.KeyLength);
+                authPack = CreateEllipticCurveDiffieHellmanAuthPack(req.Body);
             }
-
-            KrbDiffieHellmanDomainParameters domainParams = GetDomainParameters();
-
-            var authPack = new KrbAuthPack
+            else if (SupportsDiffieHellman)
             {
-                PKAuthenticator = new KrbPKAuthenticator
-                {
-                    Nonce = req.Body.Nonce,
-                    PaChecksum = paChecksum
-                },
-                ClientPublicValue = new KrbSubjectPublicKeyInfo
-                {
-                    Algorithm = new KrbAlgorithmIdentifier
-                    {
-                        Algorithm = DiffieHellman,
-                        Parameters = domainParams.EncodeSpecial()
-                    },
-                    SubjectPublicKey = EncodePublicKey(agreement.PublicKey)
-                },
-                ClientDHNonce = clientDHNonce
-            };
+                authPack = CreateDiffieHellmanAuthPack(req.Body);
+            }
+            else
+            {
+                throw OnlyKeyAgreementSupportedException();
+            }
 
             KerberosConstants.Now(out authPack.PKAuthenticator.CTime, out authPack.PKAuthenticator.CuSec);
 
@@ -150,12 +143,54 @@ namespace Kerberos.NET.Credentials
             req.PaData = padata.ToArray();
         }
 
-        private KrbDiffieHellmanDomainParameters GetDomainParameters()
+        private static Exception OnlyKeyAgreementSupportedException() => throw new NotSupportedException("Only key agreement is supported for PKINIT authentication");
+
+        private KrbAuthPack CreateEllipticCurveDiffieHellmanAuthPack(KrbKdcReqBody body)
         {
-            return KrbDiffieHellmanDomainParameters.FromKeyAgreement(agreement);
+            throw new NotImplementedException();
         }
 
-        private ReadOnlyMemory<byte> GenerateNonce(EncryptionType encryptionType, int minSize)
+        private KrbAuthPack CreateDiffieHellmanAuthPack(KrbKdcReqBody body)
+        {
+            using (var sha1 = CryptoPal.Platform.Sha1())
+            {
+                var encoded = body.Encode();
+
+                var paChecksum = sha1.ComputeHash(encoded.Span);
+
+                var parametersAreCached = CacheKeyAgreementParameters(agreement);
+
+                if (parametersAreCached)
+                {
+                    clientDHNonce = GenerateNonce(body.EType.FirstOrDefault(), agreement.PublicKey.KeyLength);
+                }
+
+                var domainParams = KrbDiffieHellmanDomainParameters.FromKeyAgreement(agreement);
+
+                var authPack = new KrbAuthPack
+                {
+                    PKAuthenticator = new KrbPKAuthenticator
+                    {
+                        Nonce = body.Nonce,
+                        PaChecksum = paChecksum
+                    },
+                    ClientPublicValue = new KrbSubjectPublicKeyInfo
+                    {
+                        Algorithm = new KrbAlgorithmIdentifier
+                        {
+                            Algorithm = DiffieHellman,
+                            Parameters = domainParams.EncodeSpecial()
+                        },
+                        SubjectPublicKey = EncodeDiffieHellmanPublicKey(agreement.PublicKey)
+                    },
+                    ClientDHNonce = clientDHNonce
+                };
+
+                return authPack;
+            }
+        }
+
+        private static ReadOnlyMemory<byte> GenerateNonce(EncryptionType encryptionType, int minSize)
         {
             var transformer = CryptoService.CreateTransform(encryptionType);
 
@@ -164,18 +199,32 @@ namespace Kerberos.NET.Credentials
 
         public override T DecryptKdcRep<T>(KrbKdcRep kdcRep, KeyUsage keyUsage, Func<ReadOnlyMemory<byte>, T> func)
         {
-            var paPkRep = kdcRep.PaData.FirstOrDefault(a => a.Type == PaDataType.PA_PK_AS_REP);
+            var paPkRep = kdcRep?.PaData?.FirstOrDefault(a => a.Type == PaDataType.PA_PK_AS_REP);
 
             if (paPkRep == null)
             {
-                throw new KerberosProtocolException("PA-Data doesn't constain PA-PK-AS-REP");
+                throw new KerberosProtocolException("PA-Data doesn't contain PA-PK-AS-REP");
             }
 
             var pkRep = KrbPaPkAsRep.Decode(paPkRep.Value);
 
+            if (pkRep.DHInfo != null)
+            {
+                sharedSecret = DeriveDHKeyAgreement(kdcRep, pkRep);
+            }
+            else
+            {
+                throw OnlyKeyAgreementSupportedException();
+            }
+
+            return base.DecryptKdcRep(kdcRep, keyUsage, func);
+        }
+
+        private ReadOnlyMemory<byte> DeriveDHKeyAgreement(KrbKdcRep kdcRep, KrbPaPkAsRep pkRep)
+        {
             var dhKeyInfo = ValidateDHReply(pkRep);
 
-            var kdcPublicKey = ParsePublicKey(dhKeyInfo.SubjectPublicKey);
+            var kdcPublicKey = ParseDiffieHellmanPublicKey(dhKeyInfo.SubjectPublicKey);
 
             agreement.ImportPartnerKey(new DiffieHellmanKey
             {
@@ -193,14 +242,12 @@ namespace Kerberos.NET.Credentials
 
             var transform = CryptoService.CreateTransform(kdcRep.EncPart.EType);
 
-            sharedSecret = PKInitString2Key.String2Key(derivedKey.Span, transform.KeySize, clientDHNonce.Span, serverDHNonce);
-
-            return base.DecryptKdcRep(kdcRep, keyUsage, func);
+            return PKInitString2Key.String2Key(derivedKey.Span, transform.KeySize, clientDHNonce.Span, serverDHNonce);
         }
 
         private ReadOnlyMemory<byte> sharedSecret;
 
-        private static ReadOnlyMemory<byte> ParsePublicKey(ReadOnlyMemory<byte> data)
+        private static ReadOnlyMemory<byte> ParseDiffieHellmanPublicKey(ReadOnlyMemory<byte> data)
         {
             var reader = new AsnReader(data, AsnEncodingRules.DER);
 
@@ -225,7 +272,7 @@ namespace Kerberos.NET.Credentials
             signed.CheckSignature(verifySignatureOnly: false);
         }
 
-        private static ReadOnlyMemory<byte> EncodePublicKey(IExchangeKey publicKey)
+        private static ReadOnlyMemory<byte> EncodeDiffieHellmanPublicKey(IExchangeKey publicKey)
         {
             using (var writer = new AsnWriter(AsnEncodingRules.DER))
             {
@@ -244,14 +291,14 @@ namespace Kerberos.NET.Credentials
         {
             base.Validate();
 
-            if (PrivateKey == null)
+            if (Certificate.PrivateKey == null)
             {
-                throw new ArgumentException("A Private Key must be set", nameof(PrivateKey));
+                throw new ArgumentException("A Private Key must be set", nameof(Certificate.PrivateKey));
             }
 
-            if (PublicKey == null)
+            if (Certificate.PublicKey == null)
             {
-                throw new ArgumentException("A Public Key must be set", nameof(PublicKey));
+                throw new ArgumentException("A Public Key must be set", nameof(Certificate.PublicKey));
             }
         }
 

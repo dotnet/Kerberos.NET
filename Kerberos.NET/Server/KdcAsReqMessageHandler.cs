@@ -13,8 +13,14 @@ namespace Kerberos.NET.Server
 
     public class KdcAsReqMessageHandler : KdcMessageHandlerBase
     {
-        private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> postProcessAuthHandlers =
+        private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> PostProcessAuthHandlers =
                 new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
+
+        private static readonly PaDataType[] PreAuthAscendingPriority = new PaDataType[]
+        {
+            PaDataType.PA_PK_AS_REQ,
+            PaDataType.PA_ENC_TIMESTAMP,
+        };
 
         private readonly ILogger<KdcAsReqMessageHandler> logger;
 
@@ -23,9 +29,9 @@ namespace Kerberos.NET.Server
         {
             this.logger = options.Log.CreateLoggerSafe<KdcAsReqMessageHandler>();
 
-            postProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);
+            PostProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);
 
-            RegisterPreAuthHandlers(postProcessAuthHandlers);
+            RegisterPreAuthHandlers(PostProcessAuthHandlers);
         }
 
         protected override MessageType MessageType => MessageType.KRB_AS_REQ;
@@ -59,9 +65,14 @@ namespace Kerberos.NET.Server
                 return GenerateError(KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN, null, RealmService.Name, username);
             }
 
+            var preauth = new PreAuthenticationContext
+            {
+                Principal = principal
+            };
+
             try
             {
-                var preAuthRequests = await ProcessPreAuth(asReq, principal);
+                var preAuthRequests = await ProcessPreAuth(preauth, asReq);
 
                 if (preAuthRequests.Count() > 0)
                 {
@@ -75,10 +86,10 @@ namespace Kerberos.NET.Server
                 return PreAuthFailed(kex, principal);
             }
 
-            return await GenerateAsRep(asReq, principal);
+            return await GenerateAsRep(preauth, asReq);
         }
 
-        private async Task<ReadOnlyMemory<byte>> GenerateAsRep(KrbAsReq asReq, IKerberosPrincipal principal)
+        private async Task<ReadOnlyMemory<byte>> GenerateAsRep(PreAuthenticationContext preauth, KrbAsReq asReq)
         {
             // 1. detect if specific PAC contents are requested (claims)
             // 2. if requested generate PAC for user
@@ -87,23 +98,20 @@ namespace Kerberos.NET.Server
             // 5. encrypt against krbtgt
             // 6. done
 
-            var requirements = new List<KrbPaData>();
-
-            foreach (var handler in postProcessAuthHandlers)
-            {
-                await InvokePreAuthHandler(null, principal, requirements, handler.Value);
-            }
-
             var rst = new ServiceTicketRequest
             {
-                Principal = principal,
+                Principal = preauth.Principal,
+                EncryptedPartKey = preauth.EncryptedPartKey,
                 Addresses = asReq.Body.Addresses,
                 Nonce = asReq.Body.Nonce,
                 IncludePac = true,
                 Flags = TicketFlags.Initial | KrbKdcRep.DefaultFlags
             };
 
-            rst.EncryptedPartKey = await principal.RetrieveLongTermCredential();
+            if (rst.EncryptedPartKey == null)
+            {
+                rst.EncryptedPartKey = await rst.Principal.RetrieveLongTermCredential();
+            }
 
             var pacRequest = asReq.PaData.FirstOrDefault(pa => pa.Type == PaDataType.PA_PAC_REQUEST);
 
@@ -116,7 +124,10 @@ namespace Kerberos.NET.Server
 
             var asRep = await KrbAsRep.GenerateTgt(rst, RealmService);
 
-            asRep.PaData = requirements.ToArray();
+            if (preauth.PaData != null)
+            {
+                asRep.PaData = preauth.PaData.ToArray();
+            }
 
             return asRep.EncodeApplication();
         }
@@ -153,20 +164,20 @@ namespace Kerberos.NET.Server
             return err.EncodeApplication();
         }
 
-        private async Task<IEnumerable<KrbPaData>> ProcessPreAuth(KrbKdcReq asReq, IKerberosPrincipal principal)
+        private async Task<IEnumerable<KrbPaData>> ProcessPreAuth(PreAuthenticationContext preauth, KrbKdcReq asReq)
         {
             // if there are pre-auth handlers registered check whether they intersect with what the user supports.
             // at some point in the future this should evaluate whether there's at least a m-of-n PA-Data approval
             // this would probably best be driven by some policy check, which would involve coming up with a logic
             // system of some sort. Will leave that as an exercise for future me.
 
-            var invokingAuthTypes = PreAuthHandlers.Keys.Intersect(principal.SupportedPreAuthenticationTypes);
+            IEnumerable<PaDataType> invokingAuthTypes = GetOrderedPreAuth(preauth);
 
             var preAuthRequirements = new List<KrbPaData>();
 
             foreach (var preAuthType in invokingAuthTypes)
             {
-                await InvokePreAuthHandler(asReq, principal, preAuthRequirements, PreAuthHandlers[preAuthType]);
+                await InvokePreAuthHandler(asReq, preauth, preAuthRequirements, PreAuthHandlers[preAuthType]);
             }
 
             // if the pre-auth handlers think auth is required we should check with the
@@ -176,28 +187,37 @@ namespace Kerberos.NET.Server
             // the post-auth handlers will determine if they need to do anything based
             // on their own criteria.
 
-            foreach (var preAuthType in postProcessAuthHandlers)
+            foreach (var preAuthType in PostProcessAuthHandlers)
             {
                 var func = preAuthType.Value;
 
                 var handler = func(RealmService);
 
-                await handler.PostValidate(principal, preAuthRequirements);
+                await handler.PostValidate(preauth.Principal, preAuthRequirements);
             }
 
             return preAuthRequirements;
         }
 
+        private IEnumerable<PaDataType> GetOrderedPreAuth(PreAuthenticationContext preauth)
+        {
+            var keys = PreAuthHandlers.Keys.Intersect(preauth.Principal.SupportedPreAuthenticationTypes);
+
+            keys = keys.OrderBy(k => Array.IndexOf(PreAuthAscendingPriority, k));
+
+            return keys;
+        }
+
         private async Task InvokePreAuthHandler(
             KrbKdcReq asReq,
-            IKerberosPrincipal principal,
+            PreAuthenticationContext preauth,
             List<KrbPaData> preAuthRequirements,
             PreAuthHandlerConstructor func
         )
         {
             var handler = func(RealmService);
 
-            var preAuthRequirement = await handler.Validate(asReq, principal);
+            var preAuthRequirement = await handler.Validate(asReq, preauth);
 
             if (preAuthRequirement != null)
             {
