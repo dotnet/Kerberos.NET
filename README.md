@@ -8,7 +8,7 @@ A complete Kerberos library built entirely in managed code without (many) OS dep
 
 A library built in .NET that lets you operate on Kerberos messages. You can run a client, host your own KDC, or just validate incoming tickets. It's intended to be as lightweight as possible.
 
-Take a look at the [Kerberos.NET](https://syfuhs.net/tag/kerberos-net/) tag for more information while the documentation here is updated.
+A [deep dive into the design of Kerberos.NET](https://syfuhs.net/a-deep-dive-into-the-design-kerberos-net) is available and worth a read.
 
 # Getting Started
 There are two ways you can go about using this library. The first is to download the code and build it locally. The second, better, option is to just use nuget.
