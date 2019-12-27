@@ -79,6 +79,26 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public async Task E2E_PKINIT_Synchronous()
+        {
+            var port = NextPort();
+
+            var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
+
+            var threads = 1;
+            var requests = RequestsPerThread;
+
+            var cacheTickets = false;
+            var encodeNego = false;
+            var includePac = false;
+
+            string kdc = $"127.0.0.1:{port}";
+            //string kdc = "10.0.0.21:88";
+
+            await MultithreadedRequests(port, threads, requests, cacheTickets, encodeNego, includePac, kdc, cert);
+        }
+
+        [TestMethod]
         public async Task E2E_NoPac()
         {
             var port = NextPort();
@@ -401,14 +421,24 @@ namespace Tests.Kerberos.NET
             bool cacheTickets,
             bool encodeNego,
             bool includePac,
-            string kdc
+            string kdc,
+            X509Certificate2 cert = null
         )
         {
             using (var listener = StartListener(port))
             {
                 var exceptions = new List<Exception>();
 
-                var kerbCred = new KerberosPasswordCredential(AdminAtCorpUserName, FakeAdminAtCorpPassword);
+                KerberosCredential kerbCred;
+
+                if (cert != null)
+                {
+                    kerbCred = new TrustedAsymmetricCredential(cert, TestAtCorpUserName);
+                }
+                else
+                {
+                    kerbCred = new KerberosPasswordCredential(AdminAtCorpUserName, FakeAdminAtCorpPassword);
+                }
 
                 using (KerberosClient client = new KerberosClient(kdc))
                 {

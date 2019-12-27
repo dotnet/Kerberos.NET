@@ -1,10 +1,8 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Security.Cryptography.Asn1;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 
@@ -34,7 +32,7 @@ namespace Kerberos.NET.Credentials
             TrySplitUserNameDomain(username, out username, ref domain);
 
             Certificate = cert;
-            
+
             UserName = username;
 
             if (!string.IsNullOrWhiteSpace(domain))
@@ -78,25 +76,6 @@ namespace Kerberos.NET.Credentials
 
         private ReadOnlyMemory<byte> clientDHNonce;
 
-        private static ReadOnlyMemory<byte> DepadLeft(ReadOnlyMemory<byte> data)
-        {
-            var result = data;
-
-            for (var i = 0; i < data.Length; i++)
-            {
-                if (data.Span[i] == 0)
-                {
-                    result = result.Slice(i + 1);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return result;
-        }
-
         public override void TransformKdcReq(KrbKdcReq req)
         {
             var padata = req.PaData.ToList();
@@ -127,12 +106,7 @@ namespace Kerberos.NET.Credentials
 
             signed.ComputeSignature(new CmsSigner(Certificate));
 
-            var encoded = signed.Encode();
-
-            var pk = new KrbPaPkAsReq
-            {
-                SignedAuthPack = encoded
-            };
+            var pk = new KrbPaPkAsReq { SignedAuthPack = signed.Encode() };
 
             padata.Add(new KrbPaData
             {
@@ -145,7 +119,7 @@ namespace Kerberos.NET.Credentials
 
         private static Exception OnlyKeyAgreementSupportedException() => throw new NotSupportedException("Only key agreement is supported for PKINIT authentication");
 
-        private KrbAuthPack CreateEllipticCurveDiffieHellmanAuthPack(KrbKdcReqBody body)
+        private KrbAuthPack CreateEllipticCurveDiffieHellmanAuthPack(KrbKdcReqBody _)
         {
             throw new NotImplementedException();
         }
@@ -162,7 +136,7 @@ namespace Kerberos.NET.Credentials
 
                 if (parametersAreCached)
                 {
-                    clientDHNonce = GenerateNonce(body.EType.FirstOrDefault(), agreement.PublicKey.KeyLength);
+                    clientDHNonce = GenerateNonce(body.EType.First(), agreement.PublicKey.KeyLength);
                 }
 
                 var domainParams = KrbDiffieHellmanDomainParameters.FromKeyAgreement(agreement);
@@ -181,7 +155,7 @@ namespace Kerberos.NET.Credentials
                             Algorithm = DiffieHellman,
                             Parameters = domainParams.EncodeSpecial()
                         },
-                        SubjectPublicKey = EncodeDiffieHellmanPublicKey(agreement.PublicKey)
+                        SubjectPublicKey = agreement.PublicKey.EncodePublicKey()
                     },
                     ClientDHNonce = clientDHNonce
                 };
@@ -224,12 +198,9 @@ namespace Kerberos.NET.Credentials
         {
             var dhKeyInfo = ValidateDHReply(pkRep);
 
-            var kdcPublicKey = ParseDiffieHellmanPublicKey(dhKeyInfo.SubjectPublicKey);
+            var kdcPublicKey = DiffieHellmanKey.ParsePublicKey(dhKeyInfo.SubjectPublicKey);
 
-            agreement.ImportPartnerKey(new DiffieHellmanKey
-            {
-                Public = DepadLeft(kdcPublicKey)
-            });
+            agreement.ImportPartnerKey(kdcPublicKey);
 
             var derivedKey = agreement.GenerateAgreement();
 
@@ -247,15 +218,6 @@ namespace Kerberos.NET.Credentials
 
         private ReadOnlyMemory<byte> sharedSecret;
 
-        private static ReadOnlyMemory<byte> ParseDiffieHellmanPublicKey(ReadOnlyMemory<byte> data)
-        {
-            var reader = new AsnReader(data, AsnEncodingRules.DER);
-
-            var bytes = reader.ReadIntegerBytes().ToArray();
-
-            return bytes;
-        }
-
         private KrbKdcDHKeyInfo ValidateDHReply(KrbPaPkAsRep pkRep)
         {
             var signed = new SignedCms();
@@ -270,16 +232,6 @@ namespace Kerberos.NET.Credentials
         protected virtual void VerifyKdcSignature(SignedCms signed)
         {
             signed.CheckSignature(verifySignatureOnly: false);
-        }
-
-        private static ReadOnlyMemory<byte> EncodeDiffieHellmanPublicKey(IExchangeKey publicKey)
-        {
-            using (var writer = new AsnWriter(AsnEncodingRules.DER))
-            {
-                writer.WriteKeyParameterInteger(publicKey.Public.Span);
-
-                return writer.EncodeAsMemory();
-            }
         }
 
         private static string TryExtractPrincipalName(X509Certificate2 cert)

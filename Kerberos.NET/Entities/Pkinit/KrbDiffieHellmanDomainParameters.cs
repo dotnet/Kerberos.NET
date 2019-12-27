@@ -11,9 +11,9 @@ namespace Kerberos.NET.Entities
         {
             var decoded = Decode(data);
 
-            decoded.P = new AsnReader(decoded.P, AsnEncodingRules.DER).ReadIntegerBytes();
-            decoded.G = new AsnReader(decoded.G, AsnEncodingRules.DER).ReadIntegerBytes();
-            decoded.Q = new AsnReader(decoded.Q, AsnEncodingRules.DER).ReadIntegerBytes();
+            decoded.P = new AsnReader(decoded.P, AsnEncodingRules.DER).ReadIntegerBytes().DepadLeft();
+            decoded.G = new AsnReader(decoded.G, AsnEncodingRules.DER).ReadIntegerBytes().DepadLeft();
+            decoded.Q = new AsnReader(decoded.Q, AsnEncodingRules.DER).ReadIntegerBytes().DepadLeft();
 
             return decoded;
         }

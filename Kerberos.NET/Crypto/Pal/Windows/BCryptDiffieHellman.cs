@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Kerberos.NET.Asn1;
+using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Crypto
 {
@@ -9,23 +11,6 @@ namespace Kerberos.NET.Crypto
     {
         Public,
         Private
-    }
-
-    public class DiffieHellmanKey : IExchangeKey
-    {
-        public AsymmetricKeyType Type { get; set; }
-
-        public int KeyLength { get; set; }
-
-        public ReadOnlyMemory<byte> Modulus { get; set; }
-
-        public ReadOnlyMemory<byte> Generator { get; set; }
-
-        public ReadOnlyMemory<byte> Factor { get; set; }
-
-        public ReadOnlyMemory<byte> Public { get; set; }
-
-        public ReadOnlyMemory<byte> Private { get; set; }
     }
 
     public class BCryptDiffieHellman : IKeyAgreement
@@ -68,8 +53,8 @@ namespace Kerberos.NET.Crypto
                 GenerateKey(Modulus, Generator, ref hPrivateKey);
             }
 
-            PublicKey = ExportKey(BCRYPT_DH_PUBLIC_BLOB);
-            PrivateKey = ExportKey(BCRYPT_DH_PRIVATE_BLOB);
+            PublicKey = ExportKey(BCRYPT_DH_PUBLIC_BLOB, importKey?.CacheExpiry);
+            PrivateKey = ExportKey(BCRYPT_DH_PRIVATE_BLOB, importKey?.CacheExpiry);
         }
 
         private unsafe void GenerateKey(ReadOnlyMemory<byte> modulus, ReadOnlyMemory<byte> generator, ref IntPtr hPrivateKey)
@@ -146,7 +131,7 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        private unsafe DiffieHellmanKey ExportKey(string keyType)
+        private unsafe DiffieHellmanKey ExportKey(string keyType, DateTimeOffset? expiry)
         {
             int status = 0;
 
@@ -171,7 +156,9 @@ namespace Kerberos.NET.Crypto
                     key = new DiffieHellmanKey()
                     {
                         KeyLength = param->header.cbKey,
-                        Type = param->header.dwMagic == BCRYPT_DH_PRIVATE_MAGIC ? AsymmetricKeyType.Private : AsymmetricKeyType.Public
+                        Algorithm = param->header.cbKey < 256 ? KeyAgreementAlgorithm.DiffieHellmanModp2 : KeyAgreementAlgorithm.DiffieHellmanModp14,
+                        Type = param->header.dwMagic == BCRYPT_DH_PRIVATE_MAGIC ? AsymmetricKeyType.Private : AsymmetricKeyType.Public,
+                        CacheExpiry = expiry
                     };
                 }
 

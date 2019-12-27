@@ -34,10 +34,26 @@ namespace Kerberos.NET.Crypto
 
         public override IKeyAgreement DiffieHellmanModp2() => new BCryptDiffieHellmanOakleyGroup2();
 
-        public override IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey) => BCryptDiffieHellman.Import(privateKey);
+        public override IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey)
+        {
+            if (privateKey != null)
+            {
+                BCryptDiffieHellman.Import(privateKey);
+            }
+
+            return DiffieHellmanModp2();
+        }
 
         public override IKeyAgreement DiffieHellmanModp14() => new BCryptDiffieHellmanOakleyGroup14();
 
-        public override IKeyAgreement DiffieHellmanModp14(IExchangeKey privateKey) => BCryptDiffieHellman.Import(privateKey);
+        public override IKeyAgreement DiffieHellmanModp14(IExchangeKey privateKey)
+        {
+            if (privateKey != null)
+            {
+                BCryptDiffieHellman.Import(privateKey);
+            }
+
+            return DiffieHellmanModp14();
+        }
     }
 }

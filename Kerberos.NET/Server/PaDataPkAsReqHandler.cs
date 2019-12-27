@@ -1,5 +1,4 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
 using System.Collections.Generic;
@@ -7,9 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
-using System.Security.Cryptography.Asn1;
 using System.Security.Cryptography.Pkcs;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
@@ -36,7 +33,7 @@ namespace Kerberos.NET.Server
 
             var pkreq = KrbPaPkAsReq.Decode(paPk.Value);
 
-            KrbAuthPack authPack = await ValidateAuthPack(preauth.Principal, pkreq);
+            var authPack = await ValidateAuthPack(preauth.Principal, pkreq);
 
             ValidateAuthenticator(authPack.PKAuthenticator, asReq.Body);
 
@@ -50,7 +47,7 @@ namespace Kerberos.NET.Server
             }
             else if (requestAlg?.Value == DiffieHellman.Value)
             {
-                agreement = FromDiffieHellmanDomainParameters(authPack.ClientPublicValue);
+                agreement = await FromDiffieHellmanDomainParametersAsync(authPack.ClientPublicValue);
             }
             else
             {
@@ -69,16 +66,24 @@ namespace Kerberos.NET.Server
             if (clientDHNonce.Length > 0)
             {
                 serverDHNonce = transform.GenerateRandomBytes(agreement.PublicKey.KeyLength);
+
+                await Service.Principals.CacheKey(agreement.PrivateKey);
             }
 
-            var sessionKey = PKInitString2Key.String2Key(derivedKey.Span, transform.KeySize, clientDHNonce.Span, serverDHNonce.Span);
+            var keyInfo = new KrbKdcDHKeyInfo { SubjectPublicKey = agreement.PublicKey.EncodePublicKey() };
 
-            preauth.EncryptedPartKey = new KerberosKey(key: sessionKey.ToArray(), etype: etype);
-
-            KrbKdcDHKeyInfo keyInfo = new KrbKdcDHKeyInfo
+            if (agreement.PublicKey.CacheExpiry.HasValue)
             {
-                SubjectPublicKey = EncodeDiffieHellmanPublicKey(agreement.PublicKey)
-            };
+                keyInfo.DHKeyExpiration = agreement.PublicKey.CacheExpiry;
+                keyInfo.Nonce = authPack.PKAuthenticator.Nonce;
+            }
+
+            var sessionKey = PKInitString2Key.String2Key(
+                derivedKey.Span,
+                transform.KeySize,
+                clientDHNonce.Span,
+                serverDHNonce.Span
+            );
 
             var paPkRep = new KrbPaPkAsRep
             {
@@ -98,19 +103,21 @@ namespace Kerberos.NET.Server
                 }
             };
 
+            preauth.EncryptedPartKey = new KerberosKey(key: sessionKey.ToArray(), etype: etype);
+
             return null;
         }
 
         private async Task<ReadOnlyMemory<byte>> SignDHResponseAsync(KrbKdcDHKeyInfo keyInfo)
         {
-            SignedCms signed = new SignedCms(
+            var signed = new SignedCms(
                 new ContentInfo(
                     IdPkInitDHKeyData,
                     keyInfo.Encode().ToArray()
                 )
             );
 
-            X509Certificate2 Certificate = await Service.Principals.RetrieveKdcCertificate();
+            var Certificate = await Service.Principals.RetrieveKdcCertificate();
 
             signed.ComputeSignature(new CmsSigner(Certificate));
 
@@ -119,65 +126,29 @@ namespace Kerberos.NET.Server
 
         private static Exception OnlyKeyAgreementSupportedException() => throw new NotSupportedException("Only key agreement is supported for PKINIT authentication");
 
-        private IKeyAgreement FromDiffieHellmanDomainParameters(KrbSubjectPublicKeyInfo clientPublicValue)
+        private async Task<IKeyAgreement> FromDiffieHellmanDomainParametersAsync(KrbSubjectPublicKeyInfo clientPublicValue)
         {
             var parameters = KrbDiffieHellmanDomainParameters.DecodeSpecial(clientPublicValue.Algorithm.Parameters.Value);
 
-            IKeyAgreement agreement = DepadLeft(parameters.P).Length switch
+            var agreement = parameters.P.Length switch
             {
-                128 => CryptoPal.Platform.DiffieHellmanModp2(),
-                256 => CryptoPal.Platform.DiffieHellmanModp14(),
+                128 => CryptoPal.Platform.DiffieHellmanModp2(
+                    await Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp2)
+                ),
+                256 => CryptoPal.Platform.DiffieHellmanModp14(
+                  await Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp14)
+                ),
                 _ => throw new InvalidOperationException("Unknown key agreement parameter"),
             };
 
-            agreement.ImportPartnerKey(new DiffieHellmanKey
-            {
-                Public = ParseDiffieHellmanPublicKey(clientPublicValue.SubjectPublicKey)
-            });
+            var publicKey = DiffieHellmanKey.ParsePublicKey(clientPublicValue.SubjectPublicKey);
+
+            agreement.ImportPartnerKey(publicKey);
 
             return agreement;
         }
 
-
-        private static ReadOnlyMemory<byte> DepadLeft(ReadOnlyMemory<byte> data)
-        {
-            var result = data;
-
-            for (var i = 0; i < data.Length; i++)
-            {
-                if (data.Span[i] == 0)
-                {
-                    result = result.Slice(i + 1);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return result;
-        }
-
-        private static ReadOnlyMemory<byte> EncodeDiffieHellmanPublicKey(IExchangeKey publicKey)
-        {
-            using (var writer = new AsnWriter(AsnEncodingRules.DER))
-            {
-                writer.WriteKeyParameterInteger(publicKey.Public.Span);
-
-                return writer.EncodeAsMemory();
-            }
-        }
-
-        private static ReadOnlyMemory<byte> ParseDiffieHellmanPublicKey(ReadOnlyMemory<byte> data)
-        {
-            var reader = new AsnReader(data, AsnEncodingRules.DER);
-
-            var bytes = reader.ReadIntegerBytes().ToArray();
-
-            return bytes;
-        }
-
-        private IKeyAgreement FromEllipticCurveDomainParameters(KrbSubjectPublicKeyInfo clientPublicValue)
+        private IKeyAgreement FromEllipticCurveDomainParameters(KrbSubjectPublicKeyInfo _)
         {
             throw new NotImplementedException();
         }

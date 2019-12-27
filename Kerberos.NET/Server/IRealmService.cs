@@ -27,6 +27,10 @@ namespace Kerberos.NET.Server
         Task<IKerberosPrincipal> RetrieveKrbtgt();
 
         Task<X509Certificate2> RetrieveKdcCertificate();
+
+        Task<IExchangeKey> RetrieveKeyCache(KeyAgreementAlgorithm algorithm);
+
+        Task<IExchangeKey> CacheKey(IExchangeKey key);
     }
 
     public interface IRealmSettings
@@ -49,6 +53,7 @@ namespace Kerberos.NET.Server
         DateTimeOffset? Expires { get; set; }
 
         Task Validate(X509Certificate2Collection certificates);
+
         Task<KerberosKey> RetrieveLongTermCredential();
 
         Task<PrivilegedAttributeCertificate> GeneratePac();

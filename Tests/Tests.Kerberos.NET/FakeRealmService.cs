@@ -54,6 +54,34 @@ namespace Tests.Kerberos.NET
             return Task.FromResult(cert);
         }
 
+        private static readonly Dictionary<KeyAgreementAlgorithm, IExchangeKey> keyCache = new Dictionary<KeyAgreementAlgorithm, IExchangeKey>();
+
+        public Task<IExchangeKey> RetrieveKeyCache(KeyAgreementAlgorithm algorithm)
+        {
+            if (keyCache.TryGetValue(algorithm, out IExchangeKey key))
+            {
+                if (key.CacheExpiry < DateTimeOffset.UtcNow)
+                {
+                    keyCache.Remove(algorithm);
+                }
+                else
+                {
+                    return Task.FromResult(key);
+                }
+            }
+
+            return Task.FromResult<IExchangeKey>(null);
+        }
+
+        public Task<IExchangeKey> CacheKey(IExchangeKey key)
+        {
+            key.CacheExpiry = DateTimeOffset.UtcNow.AddMinutes(60);
+
+            keyCache[key.Algorithm] = key;
+
+            return Task.FromResult(key);
+        }
+
         public Task<IKerberosPrincipal> RetrieveKrbtgt()
         {
             IKerberosPrincipal krbtgt = new FakeKerberosPrincipal("krbtgt");
