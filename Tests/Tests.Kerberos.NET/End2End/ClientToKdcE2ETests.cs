@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography.Pkcs;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using static Tests.Kerberos.NET.KdcListener;
 
@@ -17,9 +19,10 @@ namespace Tests.Kerberos.NET
 
 {
     [TestClass]
-    public class ClientToKdcE2ETests
+    public class ClientToKdcE2ETests : BaseTest
     {
         private const string AdminAtCorpUserName = "administrator@corp.identityintervention.com";
+        private const string TestAtCorpUserName = "testuser@corp.identityintervention.com";
         private const string FakeAdminAtCorpPassword = "P@ssw0rd!";
         private const string FakeAppServiceSpn = "host/appservice.corp.identityintervention.com";
 
@@ -41,6 +44,58 @@ namespace Tests.Kerberos.NET
 
                 listener.Stop();
             }
+        }
+
+        private class TrustedAsymmetricCredential : KerberosAsymmetricCredential
+        {
+            public TrustedAsymmetricCredential(X509Certificate2 cert, string username = null)
+                : base(cert, username)
+            {
+            }
+
+            protected override void VerifyKdcSignature(SignedCms signed)
+            {
+                signed.CheckSignature(verifySignatureOnly: true);
+            }
+        }
+
+        [TestMethod]
+        public async Task E2E_PKINIT()
+        {
+            var port = NextPort();
+
+            var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
+
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    TestAtCorpUserName,
+                    overrideKdc: $"127.0.0.1:{port}",
+                    cert: cert
+                );
+
+                listener.Stop();
+            }
+        }
+
+        [TestMethod]
+        public async Task E2E_PKINIT_Synchronous()
+        {
+            var port = NextPort();
+
+            var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
+
+            var threads = 1;
+            var requests = RequestsPerThread;
+
+            var cacheTickets = false;
+            var encodeNego = false;
+            var includePac = false;
+
+            string kdc = $"127.0.0.1:{port}";
+            //string kdc = "10.0.0.21:88";
+
+            await MultithreadedRequests(port, threads, requests, cacheTickets, encodeNego, includePac, kdc, cert);
         }
 
         [TestMethod]
@@ -115,7 +170,6 @@ namespace Tests.Kerberos.NET
                 listener.Stop();
             }
         }
-
 
         [TestMethod]
         public async Task E2E_WithNegotiate_NoCache()
@@ -367,14 +421,24 @@ namespace Tests.Kerberos.NET
             bool cacheTickets,
             bool encodeNego,
             bool includePac,
-            string kdc
+            string kdc,
+            X509Certificate2 cert = null
         )
         {
             using (var listener = StartListener(port))
             {
                 var exceptions = new List<Exception>();
 
-                var kerbCred = new KerberosPasswordCredential(AdminAtCorpUserName, FakeAdminAtCorpPassword);
+                KerberosCredential kerbCred;
+
+                if (cert != null)
+                {
+                    kerbCred = new TrustedAsymmetricCredential(cert, TestAtCorpUserName);
+                }
+                else
+                {
+                    kerbCred = new KerberosPasswordCredential(AdminAtCorpUserName, FakeAdminAtCorpPassword);
+                }
 
                 using (KerberosClient client = new KerberosClient(kdc))
                 {
@@ -427,24 +491,29 @@ namespace Tests.Kerberos.NET
 
         private static async Task RequestAndValidateTickets(
             string user,
-            string password,
-            string overrideKdc,
+            string password = null,
+            string overrideKdc = null,
             KeyTable keytab = null,
             string s4u = null,
             bool encodeNego = false,
             bool caching = false,
-            bool includePac = true
+            bool includePac = true,
+            X509Certificate2 cert = null
         )
         {
             KerberosCredential kerbCred;
 
-            if (keytab == null)
+            if (cert != null)
             {
-                kerbCred = new KerberosPasswordCredential(user, password);
+                kerbCred = new TrustedAsymmetricCredential(cert, user);
+            }
+            else if (keytab != null)
+            {
+                kerbCred = new KeytabCredential(user, keytab);
             }
             else
             {
-                kerbCred = new KeytabCredential(user, keytab);
+                kerbCred = new KerberosPasswordCredential(user, password);
             }
 
             using (var client = new KerberosClient(overrideKdc) { CacheServiceTickets = caching })

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kerberos.NET.Crypto;
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.Asn1;
@@ -25,6 +26,25 @@ namespace Kerberos.NET.Asn1
         public static bool HasValue(Enum thing)
         {
             return thing != null;
+        }
+
+        internal static ReadOnlyMemory<byte> DepadLeft(this ReadOnlyMemory<byte> data)
+        {
+            var result = data;
+
+            for (var i = 0; i < data.Length; i++)
+            {
+                if (data.Span[i] == 0)
+                {
+                    result = result.Slice(i + 1);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return result;
         }
 
         internal static void WriteKeyParameterInteger(this AsnWriter writer, ReadOnlySpan<byte> integer)

@@ -26,6 +26,7 @@ namespace Kerberos.NET.Server
             RegisterMessageHandler(MessageType.KRB_TGS_REQ, (message, op) => new KdcTgsReqMessageHandler(message, op));
 
             RegisterPreAuthHandler(PaDataType.PA_ENC_TIMESTAMP, (service) => new PaDataTimestampHandler(service));
+            RegisterPreAuthHandler(PaDataType.PA_PK_AS_REQ, (service) => new PaDataPkAsReqHandler(service));
         }
 
         private readonly ConcurrentDictionary<MessageType, MessageHandlerConstructor> messageHandlers =

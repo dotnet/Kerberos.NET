@@ -2,6 +2,7 @@
 using Kerberos.NET.Entities;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
@@ -24,6 +25,12 @@ namespace Kerberos.NET.Server
         Task<IKerberosPrincipal> Find(KrbPrincipalName principalName);
 
         Task<IKerberosPrincipal> RetrieveKrbtgt();
+
+        Task<X509Certificate2> RetrieveKdcCertificate();
+
+        Task<IExchangeKey> RetrieveKeyCache(KeyAgreementAlgorithm algorithm);
+
+        Task<IExchangeKey> CacheKey(IExchangeKey key);
     }
 
     public interface IRealmSettings
@@ -44,6 +51,8 @@ namespace Kerberos.NET.Server
         string PrincipalName { get; set; }
 
         DateTimeOffset? Expires { get; set; }
+
+        Task Validate(X509Certificate2Collection certificates);
 
         Task<KerberosKey> RetrieveLongTermCredential();
 

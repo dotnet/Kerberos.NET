@@ -46,6 +46,15 @@ namespace Kerberos.NET.Entities
             return (int)counter;
         }
 
+        public static bool WithinSkew(DateTimeOffset now, DateTimeOffset ctime, int usec, TimeSpan skew)
+        {
+            ctime = ctime.AddTicks(usec / 10);
+
+            var skewed = TimeSpan.FromMilliseconds(Math.Abs((now - ctime).TotalMilliseconds));
+
+            return skewed <= skew;
+        }
+
         private const int TickUSec = 1000000;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

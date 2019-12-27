@@ -11,8 +11,15 @@ namespace Kerberos.NET.Server
         {
         }
 
-        public override async Task<KrbPaData> Validate(KrbKdcReq asReq, IKerberosPrincipal principal)
+        public override async Task<KrbPaData> Validate(KrbKdcReq asReq, PreAuthenticationContext preauth)
         {
+            if (preauth.PreAuthenticationSatisfied)
+            {
+                return null;
+            }
+
+            var principal = preauth.Principal;
+
             var timestamp = asReq.DecryptTimestamp(await principal.RetrieveLongTermCredential());
 
             if (timestamp == DateTimeOffset.MinValue)
@@ -27,7 +34,7 @@ namespace Kerberos.NET.Server
 
             DateTimeOffset now = Service.Now();
 
-            if ((now - timestamp) > skew)
+            if (Abs(now - timestamp) > skew)
             {
                 throw new KerberosValidationException(
                     $"Timestamp window is greater than allowed skew. Start: {timestamp}; End: {now}; Skew: {skew}"
@@ -35,6 +42,16 @@ namespace Kerberos.NET.Server
             }
 
             return null;
+        }
+
+        private static TimeSpan Abs(TimeSpan timeSpan)
+        {
+            if (timeSpan < TimeSpan.Zero)
+            {
+                return -timeSpan;
+            }
+
+            return timeSpan;
         }
     }
 }

@@ -70,12 +70,10 @@ namespace Kerberos.NET.Crypto
 
         protected virtual void ValidateTicketSkew(DateTimeOffset now, TimeSpan skew, DateTimeOffset ctime)
         {
-            var skewed = TimeSpan.FromMilliseconds(Math.Abs((now - ctime).TotalMilliseconds));
-
-            if (skewed > skew)
+            if (!KerberosConstants.WithinSkew(now, ctime, 0, skew))
             {
                 throw new KerberosValidationException(
-                    $"Token window is greater than allowed skew. Start: {ctime}; End: {now}; Allowed Skew: {skew}; Actual Skew: {skewed}",
+                    $"Token window is greater than allowed skew. Start: {ctime}; End: {now}; Allowed Skew: {skew}",
                     nameof(skew)
                 );
             }

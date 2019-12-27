@@ -57,6 +57,8 @@ namespace Kerberos.NET.Crypto
 
         public abstract ISymmetricAlgorithm Aes();
 
+        public abstract IKeyAgreement DiffieHellmanP256();
+
         public abstract IKeyAgreement DiffieHellmanModp2();
 
         public abstract IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey);

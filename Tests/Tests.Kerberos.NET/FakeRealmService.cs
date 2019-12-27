@@ -5,6 +5,8 @@ using Kerberos.NET.Server;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -41,6 +43,43 @@ namespace Tests.Kerberos.NET
         public Task<IKerberosPrincipal> Find(KrbPrincipalName principalName)
         {
             return Find(principalName.FullyQualifiedName);
+        }
+
+        public Task<X509Certificate2> RetrieveKdcCertificate()
+        {
+            var file = File.ReadAllBytes("data\\kdc.pfx");
+
+            var cert = new X509Certificate2(file, "p", X509KeyStorageFlags.EphemeralKeySet);
+
+            return Task.FromResult(cert);
+        }
+
+        private static readonly Dictionary<KeyAgreementAlgorithm, IExchangeKey> keyCache = new Dictionary<KeyAgreementAlgorithm, IExchangeKey>();
+
+        public Task<IExchangeKey> RetrieveKeyCache(KeyAgreementAlgorithm algorithm)
+        {
+            if (keyCache.TryGetValue(algorithm, out IExchangeKey key))
+            {
+                if (key.CacheExpiry < DateTimeOffset.UtcNow)
+                {
+                    keyCache.Remove(algorithm);
+                }
+                else
+                {
+                    return Task.FromResult(key);
+                }
+            }
+
+            return Task.FromResult<IExchangeKey>(null);
+        }
+
+        public Task<IExchangeKey> CacheKey(IExchangeKey key)
+        {
+            key.CacheExpiry = DateTimeOffset.UtcNow.AddMinutes(60);
+
+            keyCache[key.Algorithm] = key;
+
+            return Task.FromResult(key);
         }
 
         public Task<IKerberosPrincipal> RetrieveKrbtgt()
@@ -85,7 +124,10 @@ namespace Tests.Kerberos.NET
                SupportedEncryptionTypes.DesCbcCrc |
                SupportedEncryptionTypes.DesCbcMd5;
 
-        public IEnumerable<PaDataType> SupportedPreAuthenticationTypes { get; set; } = new[] { PaDataType.PA_ENC_TIMESTAMP };
+        public IEnumerable<PaDataType> SupportedPreAuthenticationTypes { get; set; } = new[] {
+            PaDataType.PA_ENC_TIMESTAMP,
+            PaDataType.PA_PK_AS_REQ
+        };
 
         public string PrincipalName { get; set; }
 
@@ -167,6 +209,11 @@ namespace Tests.Kerberos.NET
             }
 
             return EncryptionType.AES256_CTS_HMAC_SHA1_96;
+        }
+
+        public Task Validate(X509Certificate2Collection certificates)
+        {
+            return Task.CompletedTask;
         }
     }
 

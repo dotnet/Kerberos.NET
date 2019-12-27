@@ -18,6 +18,11 @@ namespace Kerberos.NET.Entities
         {
             var crypto = CryptoService.CreateTransform(key.EncryptionType);
 
+            if (crypto == null)
+            {
+                throw new InvalidOperationException($"CryptoService couldn't create a transform for type {key.EncryptionType}");
+            }
+
             ReadOnlyMemory<byte> cipher = crypto.Encrypt(data, key, usage);
 
             return new KrbEncryptedData
