@@ -10,6 +10,10 @@ A library built in .NET that lets you operate on Kerberos messages. You can run 
 
 A [deep dive into the design of Kerberos.NET](https://syfuhs.net/a-deep-dive-into-the-design-kerberos-net) is available and worth a read.
 
+# Cross Platform Support
+
+The library will work on all [supported .NET Standard 2.0 platforms with some caveats](https://syfuhs.net/cross-platform-support-for-kerberos).
+
 # Getting Started
 There are two ways you can go about using this library. The first is to download the code and build it locally. The second, better, option is to just use nuget.
 
