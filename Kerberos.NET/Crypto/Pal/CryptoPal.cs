@@ -21,8 +21,22 @@ namespace Kerberos.NET.Crypto
 
         public abstract OSPlatform OSPlatform { get; }
 
+        private static Func<CryptoPal> injectedPal;
+
+        public static void RegisterPal(Func<CryptoPal> palFunc)
+        {
+            injectedPal = palFunc ?? throw new InvalidOperationException("Cannot register a null PAL");
+        }
+
         private static CryptoPal CreatePal()
         {
+            var injected = injectedPal;
+
+            if (injected != null)
+            {
+                return injected();
+            }
+
             if (IsWindows)
             {
                 return new WindowsCryptoPal();

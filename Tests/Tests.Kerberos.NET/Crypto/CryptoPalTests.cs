@@ -1,5 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Runtime.InteropServices;
 
 namespace Tests.Kerberos.NET
@@ -93,6 +94,90 @@ namespace Tests.Kerberos.NET
             var dh2 = CryptoPal.Platform.DiffieHellmanModp14(pk);
 
             Assert.IsNotNull(dh2);
+        }
+
+        [TestMethod]
+        public void PalSupportsInjected()
+        {
+            CryptoPal.RegisterPal(() => new FakeCryptoPal());
+
+            Assert.IsInstanceOfType(CryptoPal.Platform, typeof(FakeCryptoPal));
+        }
+
+        [TestMethod, ExpectedException(typeof(InvalidOperationException))]
+        public void PalBlocksInjectedNull()
+        {
+            CryptoPal.RegisterPal(null);
+        }
+
+        private class FakeCryptoPal : CryptoPal
+        {
+            public override OSPlatform OSPlatform => throw new System.NotImplementedException();
+
+            public override ISymmetricAlgorithm Aes()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IKeyAgreement DiffieHellmanModp14()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IKeyAgreement DiffieHellmanModp14(IExchangeKey privateKey)
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IKeyAgreement DiffieHellmanModp2()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey)
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IKeyAgreement DiffieHellmanP256()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IHmacAlgorithm HmacMd5()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IHmacAlgorithm HmacSha1()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IHashAlgorithm Md4()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IHashAlgorithm Md5()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IKeyDerivationAlgorithm Rfc2898DeriveBytes()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IHashAlgorithm Sha1()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override IHashAlgorithm Sha256()
+            {
+                throw new System.NotImplementedException();
+            }
         }
     }
 }
