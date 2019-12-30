@@ -16,7 +16,7 @@ namespace Kerberos.NET.Crypto
 
         public static CryptoPal Platform => lazyPlatform.Value;
 
-        private static readonly Lazy<CryptoPal> lazyPlatform
+        private static Lazy<CryptoPal> lazyPlatform
             = new Lazy<CryptoPal>(() => CreatePal());
 
         public abstract OSPlatform OSPlatform { get; }
@@ -26,6 +26,8 @@ namespace Kerberos.NET.Crypto
         public static void RegisterPal(Func<CryptoPal> palFunc)
         {
             injectedPal = palFunc ?? throw new InvalidOperationException("Cannot register a null PAL");
+
+            lazyPlatform = new Lazy<CryptoPal>(() => CreatePal());
         }
 
         private static CryptoPal CreatePal()
