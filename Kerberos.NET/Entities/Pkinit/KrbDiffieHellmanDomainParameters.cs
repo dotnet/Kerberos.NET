@@ -65,7 +65,7 @@ namespace Kerberos.NET.Entities
             return result;
         }
 
-        private static ReadOnlyMemory<byte> Pad(ReadOnlyMemory<byte> pv)
+        private static ReadOnlyMemory<byte> PadLeft(ReadOnlyMemory<byte> pv)
         {
             if (pv.Span[0] != 0)
             {
@@ -88,7 +88,7 @@ namespace Kerberos.NET.Entities
 
             return new KrbDiffieHellmanDomainParameters
             {
-                P = Pad(pk.Modulus),
+                P = PadLeft(pk.Modulus),
                 G = DepadRight(pk.Generator),
                 Q = pk.Factor
             };

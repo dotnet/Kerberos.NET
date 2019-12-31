@@ -47,6 +47,20 @@ namespace Kerberos.NET.Asn1
             return result;
         }
 
+        internal static ReadOnlyMemory<byte> PadRight(this ReadOnlyMemory<byte> data, int length)
+        {
+            if (data.Length == length)
+            {
+                return data;
+            }
+
+            var copy = new Memory<byte>(new byte[length]);
+
+            data.CopyTo(copy.Slice(length - data.Length));
+
+            return copy;
+        }
+
         internal static void WriteKeyParameterInteger(this AsnWriter writer, ReadOnlySpan<byte> integer)
         {
             Debug.Assert(!integer.IsEmpty);

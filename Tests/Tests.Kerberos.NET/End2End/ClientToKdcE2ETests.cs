@@ -85,17 +85,21 @@ namespace Tests.Kerberos.NET
 
             var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
 
-            var threads = 1;
             var requests = RequestsPerThread;
 
-            var cacheTickets = false;
-            var encodeNego = false;
-            var includePac = false;
+            using (var listener = StartListener(port))
+            {
+                for (var i = 0; i < requests; i++)
+                {
+                    await RequestAndValidateTickets(
+                        TestAtCorpUserName,
+                        overrideKdc: $"127.0.0.1:{port}",
+                        cert: cert
+                    );
+                }
 
-            string kdc = $"127.0.0.1:{port}";
-            //string kdc = "10.0.0.21:88";
-
-            await MultithreadedRequests(port, threads, requests, cacheTickets, encodeNego, includePac, kdc, cert);
+                listener.Stop();
+            }
         }
 
         [TestMethod]

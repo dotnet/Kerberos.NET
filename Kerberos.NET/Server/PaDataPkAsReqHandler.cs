@@ -141,7 +141,7 @@ namespace Kerberos.NET.Server
                 _ => throw new InvalidOperationException("Unknown key agreement parameter"),
             };
 
-            var publicKey = DiffieHellmanKey.ParsePublicKey(clientPublicValue.SubjectPublicKey);
+            var publicKey = DiffieHellmanKey.ParsePublicKey(clientPublicValue.SubjectPublicKey, agreement.PublicKey.KeyLength);
 
             agreement.ImportPartnerKey(publicKey);
 

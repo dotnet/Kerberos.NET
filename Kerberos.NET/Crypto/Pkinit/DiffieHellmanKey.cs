@@ -34,13 +34,13 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public static DiffieHellmanKey ParsePublicKey(ReadOnlyMemory<byte> data)
+        public static DiffieHellmanKey ParsePublicKey(ReadOnlyMemory<byte> data, int keyLength)
         {
             var reader = new AsnReader(data, AsnEncodingRules.DER);
 
             var bytes = reader.ReadIntegerBytes();
 
-            return new DiffieHellmanKey { Public = bytes.DepadLeft() };
+            return new DiffieHellmanKey { Public = bytes.DepadLeft().PadRight(keyLength) };
         }
     }
 }

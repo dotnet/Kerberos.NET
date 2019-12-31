@@ -105,7 +105,7 @@ namespace Kerberos.NET.Crypto
                 Array.Reverse(pv);
             }
 
-            if (pv[pv.Length - 1] != 0)
+            if (pv[^1] != 0)
             {
                 var copy = new byte[pv.Length + 1];
 

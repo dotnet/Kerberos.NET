@@ -1,6 +1,7 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
@@ -198,7 +199,7 @@ namespace Kerberos.NET.Credentials
         {
             var dhKeyInfo = ValidateDHReply(pkRep);
 
-            var kdcPublicKey = DiffieHellmanKey.ParsePublicKey(dhKeyInfo.SubjectPublicKey);
+            var kdcPublicKey = DiffieHellmanKey.ParsePublicKey(dhKeyInfo.SubjectPublicKey, agreement.PublicKey.KeyLength);
 
             agreement.ImportPartnerKey(kdcPublicKey);
 
