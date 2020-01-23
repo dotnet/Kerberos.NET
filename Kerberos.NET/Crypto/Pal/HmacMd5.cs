@@ -4,6 +4,7 @@ using static Kerberos.NET.BinaryExtensions;
 
 namespace Kerberos.NET.Crypto
 {
+#if WEAKCRYPTO
     internal class HmacMd5 : IHmacAlgorithm
     {
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
@@ -17,4 +18,5 @@ namespace Kerberos.NET.Crypto
             }
         }
     }
+#endif
 }

@@ -114,17 +114,33 @@ namespace Kerberos.NET.Logging
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 private static TraceLevel ConvertLogLevel(LogLevel logLevel)
                 {
-                    return logLevel switch
+                    TraceLevel level;
+
+                    switch (logLevel)
                     {
-                        LogLevel.Trace => TraceLevel.Verbose,
-                        LogLevel.Debug => TraceLevel.Verbose,
-                        LogLevel.Information => TraceLevel.Info,
-                        LogLevel.Warning => TraceLevel.Warning,
-                        LogLevel.Error => TraceLevel.Error,
-                        LogLevel.Critical => TraceLevel.Error,
-                        LogLevel.None => TraceLevel.Off,
-                        _ => TraceLevel.Verbose
-                    };
+                        case LogLevel.Trace:
+                        case LogLevel.Debug:
+                            level = TraceLevel.Verbose;
+                            break;
+                        case LogLevel.Information:
+                            level = TraceLevel.Info;
+                            break;
+                        case LogLevel.Warning:
+                            level = TraceLevel.Warning;
+                            break;
+                        case LogLevel.Error:
+                        case LogLevel.Critical:
+                            level = TraceLevel.Error;
+                            break;
+                        case LogLevel.None:
+                            level = TraceLevel.Off;
+                            break;
+                        default:
+                            level = TraceLevel.Verbose;
+                            break;
+                    }
+
+                    return level;
                 }
             }
         }

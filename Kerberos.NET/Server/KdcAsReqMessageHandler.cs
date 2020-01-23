@@ -41,7 +41,45 @@ namespace Kerberos.NET.Server
             return KrbAsReq.DecodeApplication(message);
         }
 
-        protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message)
+        public override async Task<PreAuthenticationContext> ValidateTicketRequest(IKerberosMessage message)
+        {
+            KrbAsReq asReq = (KrbAsReq)message;
+
+            await SetRealmContext(asReq.Realm);
+
+            var username = asReq.Body.CName.FullyQualifiedName;
+
+            var principal = await RealmService.Principals.Find(username);
+
+            var preauth = new PreAuthenticationContext { Principal = principal };
+
+            if (preauth.Principal == null)
+            {
+                return preauth;
+            }
+
+            try
+            {
+                var preauthReq = await ProcessPreAuth(preauth, asReq);
+
+                if (preauth.PaData == null)
+                {
+                    preauth.PaData = new KrbPaData[0];
+                }
+
+                preauth.PaData = preauth.PaData.Union(preauthReq).ToArray();
+            }
+            catch (KerberosValidationException kex)
+            {
+                logger.LogWarning(kex, "AS-REQ failed processing for principal {Principal}", principal);
+
+                preauth.Failure = kex;
+            }
+
+            return preauth;
+        }
+
+        public override async Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message, PreAuthenticationContext context)
         {
             // 1. check what pre-auth validation is required for user
             // 2. enumerate all pre-auth handlers that are available
@@ -52,41 +90,26 @@ namespace Kerberos.NET.Server
             // 6. if some pre-auth succeeded, return error
             // 7. if all required validation succeeds, generate PAC, TGT, and return it
 
+            if (context.Failure != null)
+            {
+                return PreAuthFailed(context);
+            }
+
             KrbAsReq asReq = (KrbAsReq)message;
 
-            var username = asReq.Body.CName.FullyQualifiedName;
-
-            var principal = await RealmService.Principals.Find(username);
-
-            if (principal == null)
+            if (context.Principal == null)
             {
-                logger.LogInformation("User {User} not found in realm {Realm}", username, RealmService.Name);
+                logger.LogInformation("User {User} not found in realm {Realm}", asReq.Body.CName.FullyQualifiedName, RealmService.Name);
 
-                return GenerateError(KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN, null, RealmService.Name, username);
+                return GenerateError(KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN, null, RealmService.Name, asReq.Body.CName.FullyQualifiedName);
             }
 
-            var preauth = new PreAuthenticationContext
+            if (!context.PreAuthenticationSatisfied)
             {
-                Principal = principal
-            };
-
-            try
-            {
-                var preAuthRequests = await ProcessPreAuth(preauth, asReq);
-
-                if (preAuthRequests.Count() > 0)
-                {
-                    return RequirePreAuth(preAuthRequests, principal);
-                }
-            }
-            catch (KerberosValidationException kex)
-            {
-                logger.LogWarning(kex, "AS-REQ failed processing for principal {Principal}", principal);
-
-                return PreAuthFailed(kex, principal);
+                return RequirePreAuth(context);
             }
 
-            return await GenerateAsRep(preauth, asReq);
+            return await GenerateAsRep(context, asReq);
         }
 
         private async Task<ReadOnlyMemory<byte>> GenerateAsRep(PreAuthenticationContext preauth, KrbAsReq asReq)
@@ -132,32 +155,32 @@ namespace Kerberos.NET.Server
             return asRep.EncodeApplication();
         }
 
-        private ReadOnlyMemory<byte> PreAuthFailed(KerberosValidationException kex, IKerberosPrincipal principal)
+        private ReadOnlyMemory<byte> PreAuthFailed(PreAuthenticationContext context)
         {
             var err = new KrbError
             {
                 ErrorCode = KerberosErrorCode.KDC_ERR_PREAUTH_FAILED,
-                EText = kex.Message,
+                EText = context.Failure.Message,
                 Realm = RealmService.Name,
-                SName = KrbPrincipalName.FromPrincipal(principal)
+                SName = KrbPrincipalName.FromPrincipal(context.Principal)
             };
 
             return err.EncodeApplication();
         }
 
-        private ReadOnlyMemory<byte> RequirePreAuth(IEnumerable<KrbPaData> preAuthRequests, IKerberosPrincipal principal)
+        private ReadOnlyMemory<byte> RequirePreAuth(PreAuthenticationContext context)
         {
-            logger.LogTrace("AS-REQ requires pre-auth for user {User}", principal.PrincipalName);
+            logger.LogTrace("AS-REQ requires pre-auth for user {User}", context.Principal.PrincipalName);
 
             var err = new KrbError
             {
                 ErrorCode = KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED,
                 EText = "",
                 Realm = RealmService.Name,
-                SName = KrbPrincipalName.FromPrincipal(principal),
+                SName = KrbPrincipalName.FromPrincipal(context.Principal),
                 EData = new KrbMethodData
                 {
-                    MethodData = preAuthRequests.ToArray()
+                    MethodData = context.PaData.ToArray()
                 }.Encode()
             };
 

@@ -14,5 +14,9 @@ namespace Kerberos.NET.Server
         public bool PreAuthenticationSatisfied => EncryptedPartKey != null;
 
         public IEnumerable<KrbPaData> PaData { get; set; }
+
+        public KrbEncTicketPart Ticket { get; set; }
+
+        public Exception Failure { get; set; }
     }
 }

@@ -5,7 +5,6 @@ using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET
 {
-
     [Serializable]
     public class KerberosProtocolException : Exception
     {

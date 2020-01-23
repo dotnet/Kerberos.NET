@@ -31,5 +31,11 @@ namespace Kerberos.NET.Server
         public Func<Guid> NextScopeId { get; set; } = KerberosConstants.GetRequestActivityId;
 
         public bool ProxyEnabled { get; set; } = true;
+
+        public bool RegisterDefaultAsReqHandler { get; set; } = true;
+
+        public bool RegisterDefaultTgsReqHandler { get; set; } = true;
+
+        public bool RegisterDefaultPkInitPreAuthHandler { get; set; } = true;
     }
 }

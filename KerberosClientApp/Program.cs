@@ -21,13 +21,15 @@ namespace KerberosClientApp
     {
         static async Task Main(string[] args)
         {
-            var cert = SelectCertificate(args);
+            bool prompt = ReadString("prompt", "y", args, required: false, reader: () => { WriteLine(); return null; }).Equals("y", StringComparison.InvariantCultureIgnoreCase);
 
-            string user = ReadString("UserName", "administrator@corp.identityintervention.com", args);
-            string password = ReadString("Password", "P@ssw0rd!", args, ReadMasked);
-            string s4u = ReadString("S4U", null, args);
-            string spn = ReadString("SPN", "host/downlevel.corp.identityintervention.com", args);
-            string overrideKdc = ReadString("KDC", "10.0.0.21:88", args);
+            var cert = SelectCertificate(args, prompt);
+
+            string user = ReadString("UserName", "administrator@corp.identityintervention.com", args, prompt: prompt);
+            string password = ReadString("Password", "P@ssw0rd!", args, ReadMasked, prompt: prompt);
+            string s4u = ReadString("S4U", null, args, required: false, prompt: prompt);
+            string spn = ReadString("SPN", "host/downlevel.corp.identityintervention.com", args, prompt: prompt);
+            string overrideKdc = ReadString("KDC", "10.0.0.21:88", args, prompt: prompt);
 
             bool randomDH = false;
 
@@ -43,7 +45,7 @@ namespace KerberosClientApp
             ReadKey();
         }
 
-        private static X509Certificate2 SelectCertificate(string[] args)
+        private static X509Certificate2 SelectCertificate(string[] args, bool prompt)
         {
             string thumbprint = "";
 
@@ -58,7 +60,7 @@ namespace KerberosClientApp
                 }
             }
 
-            var readCert = ReadString("Certificate", "N", args).ToLowerInvariant() == "y";
+            var readCert = ReadString("Certificate", "N", args, prompt: prompt).ToLowerInvariant() == "y";
 
             if (!readCert)
             {
@@ -431,7 +433,7 @@ namespace KerberosClientApp
             }
         }
 
-        private static string ReadString(string label, string defaultVal = null, string[] args = null, Func<string> reader = null)
+        private static string ReadString(string label, string defaultVal = null, string[] args = null, Func<string> reader = null, bool required = true, bool prompt = true)
         {
             if (args.Length % 2 == 0)
             {
@@ -448,9 +450,18 @@ namespace KerberosClientApp
 
             Write($"{label} ({defaultVal}): ");
 
-            reader ??= ReadLine;
+            string val = null;
 
-            var val = reader();
+            if ((required && string.IsNullOrWhiteSpace(defaultVal)) || prompt)
+            {
+                reader ??= ReadLine;
+
+                val = reader();
+            }
+            else
+            {
+                WriteLine();
+            }
 
             if (string.IsNullOrWhiteSpace(val))
             {

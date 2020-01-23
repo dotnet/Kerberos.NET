@@ -117,7 +117,7 @@ namespace Tests.Kerberos.NET
 
             var proxy = KdcProxyMessage.Decode(response);
 
-            var preAuthReq = KrbError.DecodeApplication(proxy.KerbMessage);
+            var preAuthReq = KrbError.DecodeApplication(proxy.UnwrapMessage());
 
             Assert.AreEqual(KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED, preAuthReq.ErrorCode);
         }

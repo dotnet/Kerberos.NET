@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -24,7 +25,7 @@ namespace Kerberos.NET.Entities.Pac
             return sid;
         }
 
-        private static readonly Dictionary<string, string> WellKnownSids = new Dictionary<string, string>
+        private static readonly ReadOnlyDictionary<string, string> WellKnownSids = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>
         {
             { "S-1-1-0",                "Everyone" },
             { "S-1-2-0",                "Local" },
@@ -124,6 +125,6 @@ namespace Kerberos.NET.Entities.Pac
             { "S-1-18-4",               "Key Trust Identity" },
             { "S-1-18-5",               "Key Property MFA" },
             { "S-1-18-6",               "Key Property Attestation" }
-        };
+        });
     }
 }

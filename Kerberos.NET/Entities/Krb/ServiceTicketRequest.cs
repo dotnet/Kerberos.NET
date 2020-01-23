@@ -34,5 +34,12 @@ namespace Kerberos.NET.Entities
         public bool IncludePac { get; set; }
 
         public IEnumerable<KrbPaData> PreAuthenticationData { get; set; }
+
+        /// <summary>
+        /// SAM account name to be used to generate TGT for Windows specific user principal.
+        /// If this parameter contains valid string (not empty), CName of encrypted part of ticket
+        /// will be created based on provided SamAccountName. 
+        /// </summary>
+        public string SamAccountName { get; set; }
     }
 }

@@ -17,14 +17,14 @@ namespace Kerberos.NET.Entities.Pac
     {
         const ushort COMPRESSION_ENGINE_MAXIMUM = 0x100;
 
-        [DllImport("ntdll.dll")]
+        [DllImport("ntdll.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern uint RtlGetCompressionWorkSpaceSize(
             ushort compressionFormat,
             ref int bufferWorkSize,
             ref int fragmentWorkSize
         );
 
-        [DllImport("ntdll.dll")]
+        [DllImport("ntdll.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern uint RtlDecompressBufferEx(
             ushort compressionFormat,
             byte* uncompressedBuffer,
@@ -35,7 +35,7 @@ namespace Kerberos.NET.Entities.Pac
             byte* workSpace
         );
 
-        [DllImport("ntdll.dll")]
+        [DllImport("ntdll.dll", CallingConvention = CallingConvention.Cdecl)]
         static extern uint RtlCompressBuffer(
             ushort CompressionFormat,
             byte* SourceBuffer,

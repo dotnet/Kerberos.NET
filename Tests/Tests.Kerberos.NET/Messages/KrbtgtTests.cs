@@ -108,5 +108,76 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(Enumerable.SequenceEqual(krbtgt.Key.KeyValue.ToArray(), encPart.Key.KeyValue.ToArray()));
         }
+
+        private const string TestSamAccountName = "SamAccount";
+
+        [TestMethod]
+        public async Task GeneratedTgtMatchesWithOnPremisesSamAccountName()
+        {
+            var realmService = new FakeRealmService(Realm);
+            var principal = await realmService.Principals.Find(UserUpn);
+
+            var principalKey = await principal.RetrieveLongTermCredential();
+
+            var rst = new ServiceTicketRequest
+            {
+                SamAccountName = TestSamAccountName,
+                Flags = ExpectedFlags,
+                Principal = principal,
+                EncryptedPartKey = principalKey,
+                ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96)
+            };
+
+            var tgt = await KrbAsRep.GenerateTgt(rst, realmService);
+
+            Assert.IsNotNull(tgt);
+
+            var encoded = tgt.EncodeApplication();
+
+            AssertIsExpectedKrbtgtWithOnPremisesSamAccountName(principalKey, rst.ServicePrincipalKey, encoded.ToArray());
+        }
+
+        private static void AssertIsExpectedKrbtgtWithOnPremisesSamAccountName(KerberosKey clientKey, KerberosKey tgtKey, byte[] message)
+        {
+            var asRep = new KrbAsRep().DecodeAsApplication(message);
+
+            Assert.IsNotNull(asRep);
+
+            // CName under reply part should be original UPN
+            Assert.AreEqual(UserUpn, asRep.CName.FullyQualifiedName);
+
+            var encPart = asRep.EncPart.Decrypt(
+                clientKey,
+                KeyUsage.EncAsRepPart,
+                b => KrbEncAsRepPart.DecodeApplication(b)
+            );
+
+            Assert.IsNotNull(encPart);
+
+            Assert.AreEqual(KrbtgtSpn, encPart.SName.FullyQualifiedName, true);
+            Assert.AreEqual(Realm, encPart.Realm);
+
+            Assert.IsNotNull(encPart.Key);
+
+            Assert.AreEqual(ExpectedFlags, encPart.Flags);
+
+            var krbtgt = asRep.Ticket.EncryptedPart.Decrypt(
+                tgtKey,
+                KeyUsage.Ticket,
+                d => new KrbEncTicketPart().DecodeAsApplication(d)
+            );
+
+            Assert.IsNotNull(krbtgt);
+
+            // CName under encrypted ticket part should be matched with OnPremisesSamAccountName
+            Assert.IsTrue(krbtgt.CName.Type == PrincipalNameType.NT_PRINCIPAL);
+            Assert.IsTrue(krbtgt.CName.Name.Length == 1);
+            Assert.AreEqual(TestSamAccountName, krbtgt.CName.FullyQualifiedName);
+
+            Assert.AreEqual(Realm, krbtgt.CRealm);
+            Assert.AreEqual(ExpectedFlags, krbtgt.Flags);
+
+            Assert.IsTrue(Enumerable.SequenceEqual(krbtgt.Key.KeyValue.ToArray(), encPart.Key.KeyValue.ToArray()));
+        }
     }
 }

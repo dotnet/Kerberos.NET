@@ -49,7 +49,7 @@ namespace Tests.Kerberos.NET
         {
             var file = File.ReadAllBytes("data\\kdc.pfx");
 
-            var cert = new X509Certificate2(file, "p", X509KeyStorageFlags.EphemeralKeySet);
+            var cert = new X509Certificate2(file, "p", X509KeyStorageFlags.UserKeySet);
 
             return Task.FromResult(cert);
         }

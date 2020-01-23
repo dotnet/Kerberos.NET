@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 
 namespace Kerberos.NET.Crypto
 {
+#if WEAKCRYPTO
     internal class Md5 : IHashAlgorithm
     {
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
@@ -17,4 +18,5 @@ namespace Kerberos.NET.Crypto
 
         public void Dispose() { }
     }
+#endif
 }

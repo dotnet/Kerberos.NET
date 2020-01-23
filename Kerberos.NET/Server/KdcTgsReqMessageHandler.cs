@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
 {
-    internal class KdcTgsReqMessageHandler : KdcMessageHandlerBase
+    public class KdcTgsReqMessageHandler : KdcMessageHandlerBase
     {
         private readonly ILogger<KdcTgsReqMessageHandler> logger;
 
@@ -30,7 +30,30 @@ namespace Kerberos.NET.Server
 
         protected override MessageType MessageType => MessageType.KRB_TGS_REQ;
 
-        protected override async Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message)
+        public override async Task<PreAuthenticationContext> ValidateTicketRequest(IKerberosMessage message)
+        {
+            var tgsReq = (KrbTgsReq)message;
+
+            await SetRealmContext(tgsReq.Realm);
+
+            var apReq = ExtractApReq(tgsReq);
+
+            var krbtgtIdentity = await RealmService.Principals.RetrieveKrbtgt();
+            var krbtgtKey = await krbtgtIdentity.RetrieveLongTermCredential();
+
+            var krbtgtApReqDecrypted = DecryptApReq(apReq, krbtgtKey);
+
+            var principal = await RealmService.Principals.Find(krbtgtApReqDecrypted.Ticket.CName.FullyQualifiedName);
+
+            return new PreAuthenticationContext
+            {
+                Principal = principal,
+                EncryptedPartKey = krbtgtApReqDecrypted.SessionKey,
+                Ticket = krbtgtApReqDecrypted.Ticket
+            };
+        }
+
+        public override async Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message, PreAuthenticationContext context)
         {
             // the logic for a TGS-REQ is relatively simple in the primary case where you have a TGT and want
             // to get a ticket to another service. It gets a bit more complicated when you need to do something
@@ -46,23 +69,17 @@ namespace Kerberos.NET.Server
 
             var tgsReq = (KrbTgsReq)message;
 
-            var apReq = ExtractApReq(tgsReq);
-
             logger.LogInformation("TGS-REQ incoming. SPN = {SPN}", tgsReq.Body.SName.FullyQualifiedName);
 
             var krbtgtIdentity = await RealmService.Principals.RetrieveKrbtgt();
             var krbtgtKey = await krbtgtIdentity.RetrieveLongTermCredential();
-
-            var krbtgtApReqDecrypted = DecryptApReq(apReq, krbtgtKey);
-
-            var principal = await RealmService.Principals.Find(krbtgtApReqDecrypted.Ticket.CName.FullyQualifiedName);
 
             var servicePrincipal = await RealmService.Principals.Find(tgsReq.Body.SName.FullyQualifiedName);
 
             // renewal is an odd case here because the SName will be krbtgt
             // does this need to be validated more than the Decrypt call?
 
-            await EvaluateSecurityPolicy(principal, servicePrincipal, krbtgtApReqDecrypted);
+            await EvaluateSecurityPolicy(context.Principal, servicePrincipal);
 
             KerberosKey serviceKey;
 
@@ -84,7 +101,7 @@ namespace Kerberos.NET.Server
                 flags |= TicketFlags.Forwardable;
             }
 
-            if (krbtgtApReqDecrypted.Ticket.Flags.HasFlag(TicketFlags.PreAuthenticated))
+            if (context.Ticket.Flags.HasFlag(TicketFlags.PreAuthenticated))
             {
                 flags |= TicketFlags.PreAuthenticated;
             }
@@ -92,18 +109,18 @@ namespace Kerberos.NET.Server
             var tgsRep = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(
                 new ServiceTicketRequest
                 {
-                    Principal = principal,
-                    EncryptedPartKey = krbtgtApReqDecrypted.SessionKey,
+                    Principal =  context.Principal,
+                    EncryptedPartKey = context.EncryptedPartKey,
                     ServicePrincipal = servicePrincipal,
                     ServicePrincipalKey = serviceKey,
                     RealmName = RealmService.Name,
                     Addresses = tgsReq.Body.Addresses,
-                    RenewTill = krbtgtApReqDecrypted.Ticket.RenewTill,
+                    RenewTill = context.Ticket.RenewTill,
                     StartTime = now - RealmService.Settings.MaximumSkew,
                     EndTime = now + RealmService.Settings.SessionLifetime,
                     Flags = flags,
                     Now = now,
-                    IncludePac = krbtgtApReqDecrypted.Ticket.AuthorizationData.Any(a => a.Type == AuthorizationDataType.AdIfRelevant)
+                    IncludePac = context.Ticket.AuthorizationData.Any(a => a.Type == AuthorizationDataType.AdIfRelevant)
                 }
             );
 
@@ -130,8 +147,7 @@ namespace Kerberos.NET.Server
 
         protected virtual Task EvaluateSecurityPolicy(
             IKerberosPrincipal principal,
-            IKerberosPrincipal servicePrincipal,
-            DecryptedKrbApReq apReqDecrypted
+            IKerberosPrincipal servicePrincipal
         )
         {
             logger.LogDebug("Evaluating policy for {User} to {Service}", principal.PrincipalName, servicePrincipal.PrincipalName);
@@ -153,7 +169,7 @@ namespace Kerberos.NET.Server
             return apReqDecrypted;
         }
 
-        private static KrbApReq ExtractApReq(KrbTgsReq tgsReq)
+        private static KrbApReq ExtractApReq(KrbKdcReq tgsReq)
         {
             var paData = tgsReq.PaData.First(p => p.Type == PaDataType.PA_TGS_REQ);
 

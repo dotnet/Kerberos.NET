@@ -22,7 +22,7 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        private static readonly IEnumerable<string> EmptyTransit = new string[0];
+        private static readonly IEnumerable<string> EmptyTransit = Enumerable.Empty<string>();
 
         public IEnumerable<string> DecodeTransit()
         {

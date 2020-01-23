@@ -1,6 +1,5 @@
 ﻿using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
-using Kerberos.NET.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,23 +39,23 @@ namespace Kerberos.NET.Entities
                     Value = pacRequest.Encode()
                 }
             };
-            
+
             var asreq = new KrbAsReq()
             {
                 MessageType = MessageType.KRB_AS_REQ,
                 Body = new KrbKdcReqBody
                 {
                     Addresses = new[] {
-                            new KrbHostAddress {
-                                AddressType = AddressType.NetBios,
-                                Address = Encoding.ASCII.GetBytes(hostAddress.PadRight(16, ' '))
-                            }
-                        },
-                    CName = new KrbPrincipalName
-                    {
-                        Name = new[] { $"{credential.UserName}@{credential.Domain}" },
-                        Type = PrincipalNameType.NT_ENTERPRISE
+                        new KrbHostAddress {
+                            AddressType = AddressType.NetBios,
+                            Address = Encoding.ASCII.GetBytes(hostAddress.PadRight(16, ' '))
+                        }
                     },
+                    CName = KrbPrincipalName.FromString(
+                        credential.UserName, 
+                        PrincipalNameType.NT_ENTERPRISE, 
+                        credential.Domain
+                    ),
                     EType = KerberosConstants.ETypes.ToArray(),
                     KdcOptions = kdcOptions,
                     Nonce = KerberosConstants.GetNonce(),

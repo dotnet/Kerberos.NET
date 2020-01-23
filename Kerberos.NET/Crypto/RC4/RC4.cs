@@ -2,6 +2,7 @@
 
 namespace Kerberos.NET.Crypto
 {
+#if WEAKCRYPTO
     public static class RC4
     {
         public static void Transform(
@@ -80,4 +81,5 @@ namespace Kerberos.NET.Crypto
             }
         }
     }
+#endif
 }

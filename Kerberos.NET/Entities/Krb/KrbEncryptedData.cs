@@ -9,6 +9,11 @@ namespace Kerberos.NET.Entities
         {
             var crypto = CryptoService.CreateTransform(this.EType);
 
+            if (crypto == null)
+            {
+                throw new InvalidOperationException($"CryptoService couldn't create a transform for type {key.EncryptionType}");
+            }
+
             var decrypted = crypto.Decrypt(this.Cipher, key, usage);
 
             return func(decrypted);

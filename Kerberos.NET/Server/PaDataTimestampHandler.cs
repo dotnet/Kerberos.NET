@@ -19,8 +19,9 @@ namespace Kerberos.NET.Server
             }
 
             var principal = preauth.Principal;
+            var cred = await principal.RetrieveLongTermCredential();
 
-            var timestamp = asReq.DecryptTimestamp(await principal.RetrieveLongTermCredential());
+            var timestamp = asReq.DecryptTimestamp(cred);
 
             if (timestamp == DateTimeOffset.MinValue)
             {
@@ -40,6 +41,8 @@ namespace Kerberos.NET.Server
                     $"Timestamp window is greater than allowed skew. Start: {timestamp}; End: {now}; Skew: {skew}"
                 );
             }
+
+            preauth.EncryptedPartKey = cred;
 
             return null;
         }

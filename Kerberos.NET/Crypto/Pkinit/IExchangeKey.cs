@@ -6,7 +6,7 @@ namespace Kerberos.NET.Crypto
     {
         int KeyLength { get; set; }
 
-        public DateTimeOffset? CacheExpiry { get; set; }
+        DateTimeOffset? CacheExpiry { get; set; }
 
         ReadOnlyMemory<byte> Private { get; set; }
 

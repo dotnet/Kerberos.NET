@@ -1,9 +1,7 @@
-﻿using Kerberos.NET.Asn1;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Crypto
 {
@@ -90,11 +88,11 @@ namespace Kerberos.NET.Crypto
 
         public int ModulusSize => Modulus.Length * 8;
 
-        protected virtual byte[] Modulus { get; }
+        protected virtual ReadOnlyMemory<byte> Modulus { get; }
 
-        protected virtual byte[] Generator { get; }
+        protected virtual ReadOnlyMemory<byte> Generator { get; }
 
-        protected virtual byte[] Factor { get; set; }
+        protected virtual ReadOnlyMemory<byte> Factor { get; set; }
 
         public IExchangeKey PublicKey { get; }
 
@@ -173,7 +171,7 @@ namespace Kerberos.NET.Crypto
                     key.Private = Copy(export.Slice(key.KeyLength + key.KeyLength + key.KeyLength, key.KeyLength));
                 }
 
-                key.Factor = Copy(Factor);
+                key.Factor = Copy(Factor.Span);
             }
 
             return key;

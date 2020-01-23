@@ -79,7 +79,7 @@ namespace Kerberos.NET.Crypto
             return KerberosCryptoTransformer.AreEqualSlow(actualChecksum.Span, Signature.Span);
         }
     }
-
+#if WEAKCRYPTO
     public class HmacMd5KerberosChecksum : KerberosChecksum
     {
         public HmacMd5KerberosChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> data)
@@ -105,4 +105,5 @@ namespace Kerberos.NET.Crypto
             return KerberosCryptoTransformer.AreEqualSlow(actualChecksum.Span, Signature.Span);
         }
     }
+#endif
 }

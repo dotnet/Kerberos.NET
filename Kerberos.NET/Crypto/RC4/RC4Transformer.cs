@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Kerberos.NET.Crypto
 {
+#if WEAKCRYPTO
     public class RC4Transformer : KerberosCryptoTransformer
     {
         private const int HashSize = 16;
@@ -143,4 +144,5 @@ namespace Kerberos.NET.Crypto
             }
         }
     }
+#endif
 }

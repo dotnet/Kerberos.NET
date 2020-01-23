@@ -22,11 +22,21 @@ namespace Kerberos.NET.Server
             this.options = options;
             this.logger = options.Log.CreateLoggerSafe<KdcServer>();
 
-            RegisterMessageHandler(MessageType.KRB_AS_REQ, (message, op) => new KdcAsReqMessageHandler(message, op));
-            RegisterMessageHandler(MessageType.KRB_TGS_REQ, (message, op) => new KdcTgsReqMessageHandler(message, op));
+            if (options.RegisterDefaultAsReqHandler)
+            {
+                RegisterMessageHandler(MessageType.KRB_AS_REQ, (message, op) => new KdcAsReqMessageHandler(message, op));
+                RegisterPreAuthHandler(PaDataType.PA_ENC_TIMESTAMP, (service) => new PaDataTimestampHandler(service));
 
-            RegisterPreAuthHandler(PaDataType.PA_ENC_TIMESTAMP, (service) => new PaDataTimestampHandler(service));
-            RegisterPreAuthHandler(PaDataType.PA_PK_AS_REQ, (service) => new PaDataPkAsReqHandler(service));
+                if (options.RegisterDefaultPkInitPreAuthHandler)
+                {
+                    RegisterPreAuthHandler(PaDataType.PA_PK_AS_REQ, (service) => new PaDataPkAsReqHandler(service));
+                }
+            }
+
+            if (options.RegisterDefaultTgsReqHandler)
+            {
+                RegisterMessageHandler(MessageType.KRB_TGS_REQ, (message, op) => new KdcTgsReqMessageHandler(message, op));
+            }
         }
 
         private readonly ConcurrentDictionary<MessageType, MessageHandlerConstructor> messageHandlers =
@@ -37,14 +47,19 @@ namespace Kerberos.NET.Server
 
         public void RegisterMessageHandler(MessageType type, MessageHandlerConstructor builder)
         {
+            ValidateSupportedMessageType(type);
+
+            messageHandlers[type] = builder;
+        }
+
+        private static void ValidateSupportedMessageType(MessageType type)
+        {
             if (type < MessageType.KRB_AS_REQ || type > MessageType.KRB_ERROR)
             {
                 throw new InvalidOperationException(
                     $"Cannot register {type}. Can only register application messages >= 10 and <= 30"
                 );
             }
-
-            messageHandlers[type] = builder;
         }
 
         public void RegisterPreAuthHandler(PaDataType type, PreAuthHandlerConstructor builder)
@@ -61,7 +76,7 @@ namespace Kerberos.NET.Server
 
             // but we also need to process Kdc Proxy messages
 
-            var tag = PeekTag(request);
+            var tag = PeekTag(request.First);
 
             if (tag == Asn1Tag.Sequence && options.ProxyEnabled)
             {
@@ -109,12 +124,7 @@ namespace Kerberos.NET.Server
 
         private KdcMessageHandlerBase LocateMessageHandler(ReadOnlySequence<byte> request, Asn1Tag tag)
         {
-            if (tag.TagClass != TagClass.Application)
-            {
-                throw new KerberosProtocolException($"Unknown incoming tag {tag}");
-            }
-
-            var messageType = (MessageType)tag.TagValue;
+            MessageType messageType = DetectMessageType(tag);
 
             if (!messageHandlers.TryGetValue(messageType, out MessageHandlerConstructor builder))
             {
@@ -133,33 +143,48 @@ namespace Kerberos.NET.Server
             return handler;
         }
 
+        public static MessageType DetectMessageType(ReadOnlyMemory<byte> message)
+        {
+            var tag = PeekTag(message);
+
+            return DetectMessageType(tag);
+        }
+
+        private static MessageType DetectMessageType(Asn1Tag tag)
+        {
+            if (tag.TagClass != TagClass.Application)
+            {
+                throw new KerberosProtocolException($"Unknown incoming tag {tag}");
+            }
+
+            var messageType = (MessageType)tag.TagValue;
+
+            ValidateSupportedMessageType(messageType);
+
+            return messageType;
+        }
+
         private async Task<ReadOnlyMemory<byte>> ProcessProxyMessage(ReadOnlySequence<byte> request)
         {
             var proxyMessage = KdcProxyMessage.Decode(request.ToArray());
 
-            var length = proxyMessage.KerbMessage.Slice(0, 4).AsLong();
-            var message = new ReadOnlySequence<byte>(proxyMessage.KerbMessage.Slice(4));
+            var unwrapped = proxyMessage.UnwrapMessage();
 
-            if (length != message.Length)
-            {
-                throw new InvalidOperationException(
-                    $"Proxy message length {length} doesn't match actual message length {message.Length}"
-                );
-            }
+            var tag = PeekTag(unwrapped);
 
-            var tag = PeekTag(message);
+            var response = await ProcessMessageCore(new ReadOnlySequence<byte>(unwrapped), tag);
 
-            var response = await ProcessMessageCore(message, tag);
-
-            return new KdcProxyMessage
-            {
-                KerbMessage = response
-            }.Encode();
+            return EncodeProxyResponse(response);
         }
 
-        private static Asn1Tag PeekTag(ReadOnlySequence<byte> request)
+        private static ReadOnlyMemory<byte> EncodeProxyResponse(ReadOnlyMemory<byte> response)
         {
-            AsnReader reader = new AsnReader(request.First, AsnEncodingRules.DER);
+            return KdcProxyMessage.WrapMessage(response).Encode();
+        }
+
+        private static Asn1Tag PeekTag(ReadOnlyMemory<byte> request)
+        {
+            AsnReader reader = new AsnReader(request, AsnEncodingRules.DER);
 
             return reader.PeekTag();
         }
