@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -437,6 +437,21 @@ namespace System.Security.Cryptography.Asn1
             {
                 throw new ArgumentOutOfRangeException(nameof(ruleSet));
             }
+        }
+
+        public static bool IsExpectedTag(Asn1Tag tag, Asn1Tag expectedTag, UniversalTagNumber tagNumber)
+        {
+            if (expectedTag.TagClass == TagClass.Universal && expectedTag.TagValue != (int)tagNumber)
+            {
+                return false;
+            }
+
+            if (expectedTag.TagClass != tag.TagClass || expectedTag.TagValue != tag.TagValue)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private static void CheckExpectedTag(Asn1Tag tag, Asn1Tag expectedTag, UniversalTagNumber tagNumber)

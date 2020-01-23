@@ -1,12 +1,16 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.Asn1;
 using System.Text;
 
 namespace Kerberos.NET.Entities
 {
     public class NtlmMessage
     {
+        private static readonly Asn1Tag GssApplicationTag = new Asn1Tag(TagClass.Application, 0);
+        private static readonly Asn1Tag NtlmContextTag = new Asn1Tag(TagClass.ContextSpecific, 1);
+
         internal static readonly byte[] MessageSignature = Encoding.ASCII.GetBytes("NTLMSSP\0");
 
         public static bool CanReadNtlmMessage(ReadOnlyMemory<byte> ntlm)
@@ -16,21 +20,67 @@ namespace Kerberos.NET.Entities
 
         public static bool CanReadNtlmMessage(ReadOnlyMemory<byte> ntlm, out byte[] actualSignature, out BinaryReader reader)
         {
+            return CanReadNtlmMessage(ntlm, out actualSignature, out reader, out _);
+        }
+
+        private static bool CanReadNtlmMessage(ReadOnlyMemory<byte> ntlm, out byte[] actualSignature, out BinaryReader reader, out AsnReader asnReader)
+        {
+            asnReader = null;
+
             reader = new BinaryReader(new MemoryStream(ntlm.ToArray()));
 
             actualSignature = reader.ReadBytes(MessageSignature.Length);
 
-            return actualSignature.SequenceEqual(MessageSignature);
+            if (actualSignature.SequenceEqual(MessageSignature))
+            {
+                return true;
+            }
+
+            asnReader = new AsnReader(ntlm, AsnEncodingRules.DER);
+
+            var peekTag = asnReader.PeekTag();
+
+            if (AsnReader.IsExpectedTag(peekTag, GssApplicationTag, UniversalTagNumber.Sequence))
+            {
+                return false;
+            }
+
+            return AsnReader.IsExpectedTag(peekTag, NtlmContextTag, UniversalTagNumber.Sequence);
         }
 
         public NtlmMessage(ReadOnlyMemory<byte> ntlm)
         {
-            if (!CanReadNtlmMessage(ntlm, out byte[] actualSignature, out BinaryReader reader))
+            bool canRead;
+            BinaryReader reader;
+
+            do
             {
-                throw new InvalidDataException($"Unknown NTLM message signature. Actual: 0x{actualSignature:X}; Expected: 0x{MessageSignature:X}");
+                canRead = CanReadNtlmMessage(ntlm, out byte[] actualSignature, out reader, out AsnReader asnReader);
+
+                if (!canRead)
+                {
+                    throw new InvalidDataException($"Unknown NTLM message signature. Actual: 0x{actualSignature:X}; Expected: 0x{MessageSignature:X}");
+                }
+
+                if (asnReader == null)
+                {
+                    break;
+                }
+
+                asnReader = asnReader.ReadSequence(NtlmContextTag);
+                NegTokenResp.Decode(asnReader, out NegTokenResp resp);
+
+                ntlm = resp.ResponseToken.Value;
             }
+            while (canRead);
 
             MessageType = (NtlmMessageType)reader.ReadInt32();
+
+            if (MessageType != NtlmMessageType.Challenge)
+            {
+                return;
+            }
+
             Flags = (NtlmNegotiateFlag)reader.ReadInt32();
 
             var domainNameLength = reader.ReadInt16();
