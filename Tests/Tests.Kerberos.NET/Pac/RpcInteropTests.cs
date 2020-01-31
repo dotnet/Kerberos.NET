@@ -10,7 +10,7 @@ using Tests.Kerberos.NET.Pac.Interop;
 
 namespace Tests.Kerberos.NET
 {
-    //[TestClass]
+    [TestClass]
     public class RpcInteropTests
     {
         private const string pac =
