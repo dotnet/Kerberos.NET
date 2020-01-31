@@ -64,7 +64,7 @@ namespace Kerberos.NET.Server
 
                 if (preauth.PaData == null)
                 {
-                    preauth.PaData = new KrbPaData[0];
+                    preauth.PaData = Array.Empty<KrbPaData>();
                 }
 
                 preauth.PaData = preauth.PaData.Union(preauthReq).ToArray();

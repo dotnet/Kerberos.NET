@@ -3,7 +3,7 @@ using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbApChoice
+    public static class KrbApChoice
     {
         private static readonly Asn1Tag KrbApReqTag = new Asn1Tag(TagClass.Application, 14);
 

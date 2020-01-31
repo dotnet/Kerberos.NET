@@ -18,6 +18,22 @@ charset = utf-8-bom
 indent_size = 2
 
 # Xml config files
+
+# IDE0003: Remove qualification
+dotnet_style_qualification_for_event = false:none
+
+# IDE0003: Remove qualification
+dotnet_style_qualification_for_property = false:none
+
+# IDE0003: Remove qualification
+dotnet_style_qualification_for_method = false:none
+
+# IDE0003: Remove qualification
+dotnet_style_qualification_for_field = false:none
+
+# IDE0054: Use compound assignment
+dotnet_style_prefer_compound_assignment = false:suggestion
+
 [*.{props,targets,ruleset,config,nuspec,resx,vsixmanifest,vsct}]
 indent_size = 2
 

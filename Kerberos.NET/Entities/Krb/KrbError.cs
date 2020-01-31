@@ -25,6 +25,11 @@ namespace Kerberos.NET.Entities
             return tag.HasSameClassAndValue(KrbErrorTag);
         }
 
+        public void StampServerTime()
+        {
+            KerberosConstants.Now(out this.STime, out this.Susc);
+        }
+
         public IEnumerable<KrbPaData> DecodePreAuthentication()
         {
             if (ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)

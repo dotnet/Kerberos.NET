@@ -96,6 +96,7 @@ namespace Kerberos.NET.Client
             get => scopeId ?? (scopeId = KerberosConstants.GetRequestActivityId()).Value;
             set => scopeId = value;
         }
+        public KrbPrincipalName CNameHint { get; set; }
 
         public async Task Authenticate(KerberosCredential credential)
         {
@@ -167,6 +168,14 @@ namespace Kerberos.NET.Client
                     d => KrbEncTgsRepPart.DecodeApplication(d)
                 );
 
+                await Cache.Add(new TicketCacheEntry
+                {
+                    Key = rst.ServicePrincipalName,
+                    Container = rst.S4uTarget,
+                    Expires = encKdcRepPart.EndTime,
+                    Value = serviceTicketCacheEntry
+                });
+
                 return new ApplicationSessionContext
                 {
                     ApReq = KrbApReq.CreateApReq(
@@ -198,7 +207,8 @@ namespace Kerberos.NET.Client
                     ApOptions = options,
                     S4uTarget = s4u,
                     S4uTicket = s4uTicket,
-                    UserToUserTicket = u2uServerTicket
+                    UserToUserTicket = u2uServerTicket,
+                    CNameHint = CNameHint
                 },
                 cancellation.Token
             );
@@ -236,14 +246,6 @@ namespace Kerberos.NET.Client
                 Ticket = tgsRep,
                 SessionKey = subkey
             };
-
-            await Cache.Add(new TicketCacheEntry
-            {
-                Key = rst.ServicePrincipalName,
-                Container = rst.S4uTarget,
-                Expires = tgsReq.Body.Till,
-                Value = entry
-            });
 
             return entry;
         }
@@ -296,14 +298,21 @@ namespace Kerberos.NET.Client
                 d => KrbEncTgsRepPart.DecodeApplication(d)
             );
 
+            await CacheTgt(tgsRep, encKdcRepPart);
+        }
+
+        private async Task CacheTgt(KrbKdcRep kdcRep, KrbEncKdcRepPart encKdcRepPart)
+        {
+            var key = $"krbtgt/{kdcRep.CRealm}";
+
             await Cache.Add(new TicketCacheEntry
             {
-                Key = tgsRep.Ticket.SName.FullyQualifiedName,
+                Key = key,
                 Expires = encKdcRepPart.RenewTill ?? encKdcRepPart.EndTime,
                 Value = new KerberosClientCacheEntry
                 {
                     SessionKey = encKdcRepPart.Key,
-                    Ticket = tgsRep
+                    Ticket = kdcRep
                 }
             });
         }
@@ -336,16 +345,7 @@ namespace Kerberos.NET.Client
 
             DefaultDomain = credential.Domain;
 
-            await Cache.Add(new TicketCacheEntry
-            {
-                Key = asRep.Ticket.SName.FullyQualifiedName,
-                Expires = decrypted.RenewTill ?? decrypted.EndTime,
-                Value = new KerberosClientCacheEntry
-                {
-                    SessionKey = decrypted.Key,
-                    Ticket = asRep
-                }
-            });
+            await CacheTgt(asRep, decrypted);
         }
 
         private bool disposed = false;

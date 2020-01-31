@@ -136,7 +136,7 @@ namespace Kerberos.NET.Entities
 
             if (addresses == null)
             {
-                addresses = new KrbHostAddress[0];
+                addresses = Array.Empty<KrbHostAddress>();
             }
 
             var encTicketPart = new KrbEncTicketPart()
@@ -207,23 +207,26 @@ namespace Kerberos.NET.Entities
             {
                 var pac = await principal.GeneratePac();
 
-                var sequence = new KrbAuthorizationDataSequence
+                if (pac != null)
                 {
-                    AuthorizationData = new[]
+                    var sequence = new KrbAuthorizationDataSequence
                     {
-                        new KrbAuthorizationData
+                        AuthorizationData = new[]
                         {
-                            Type = AuthorizationDataType.AdWin2kPac,
-                            Data = pac.Encode(request.ServicePrincipalKey, request.ServicePrincipalKey)
+                            new KrbAuthorizationData
+                            {
+                                Type = AuthorizationDataType.AdWin2kPac,
+                                Data = pac.Encode(request.ServicePrincipalKey, request.ServicePrincipalKey)
+                            }
                         }
-                    }
-                };
+                    };
 
-                authz.Add(new KrbAuthorizationData
-                {
-                    Type = AuthorizationDataType.AdIfRelevant,
-                    Data = sequence.Encode()
-                });
+                    authz.Add(new KrbAuthorizationData
+                    {
+                        Type = AuthorizationDataType.AdIfRelevant,
+                        Data = sequence.Encode()
+                    });
+                }
             }
 
             return authz;

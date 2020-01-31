@@ -3,6 +3,7 @@ using Kerberos.NET.Entities;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,31 +35,33 @@ namespace Kerberos.NET.Transport
         {
             var kdc = LocateKdc(domain);
 
-            var messageBytes = new Memory<byte>(new byte[req.Length + 4]);
-
-            Endian.ConvertToBigEndian(req.Length, messageBytes.Slice(0, 4));
-            req.CopyTo(messageBytes.Slice(4, req.Length));
-
-            var message = new KdcProxyMessage
-            {
-                TargetDomain = domain,
-                KerbMessage = messageBytes,
-                DcLocatorHint = Hint
-            };
+            var message = KdcProxyMessage.WrapMessage(req, domain, Hint);
 
             var response = await Client.PostAsync(kdc, new BinaryContent(message.Encode()));
 
-            response.EnsureSuccessStatusCode();
-
             var responseBody = await response.Content.ReadAsByteArrayAsync();
 
-            var kdcResponse = KdcProxyMessage.Decode(responseBody);
+            if (!KdcProxyMessage.TryDecode(responseBody, out KdcProxyMessage kdcResponse))
+            {
+                response.EnsureSuccessStatusCode();
 
-            return Decode<T>(kdcResponse.KerbMessage.Slice(4));
+                string body = "";
+
+                if (responseBody.Length > 0)
+                {
+                    body = Encoding.UTF8.GetString(responseBody);
+                }
+
+                throw new KerberosProtocolException($"Cannot process HTTP Response: {body}");
+            }
+
+            return Decode<T>(kdcResponse.UnwrapMessage());
         }
 
         protected Uri LocateKdc(string domain)
         {
+            domain = domain.ToLowerInvariant();
+
             if (DomainPaths.TryGetValue(domain, out Uri uri))
             {
                 return uri;

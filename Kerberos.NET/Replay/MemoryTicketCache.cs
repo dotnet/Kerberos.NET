@@ -9,69 +9,37 @@ namespace Kerberos.NET
     internal sealed class MemoryTicketCache : ITicketCache, IDisposable
     {
         private readonly ILogger logger;
+        private readonly Task backgroundCleanup;
+        private readonly CancellationTokenSource cts;
 
         public MemoryTicketCache(ILoggerFactory logger)
         {
             this.logger = logger.CreateLoggerSafe<MemoryTicketCache>();
+
+            cts = new CancellationTokenSource();
+
+            backgroundCleanup = Task.Run(Cleanup, cts.Token);
+            backgroundCleanup.ContinueWith(t => { }, cts.Token);
         }
 
-        private readonly CancellationTokenSource cancel = new CancellationTokenSource();
-
-        private class CacheEntry
+        private async Task Cleanup()
         {
-            private readonly ConcurrentDictionary<string, CacheEntry> cache;
-            private readonly ILogger logger;
-
-            public CacheEntry(
-                ConcurrentDictionary<string, CacheEntry> cache,
-                string key,
-                object value,
-                ILogger logger
-            )
+            while (true)
             {
-                this.cache = cache;
-                this.Key = key;
-                this.Value = value;
-                this.logger = logger;
-            }
-
-            public string Key { get; }
-
-            public object Value { get; }
-
-            private Task triggerCleanup;
-
-            public void BeginTriggerDelay(TimeSpan lifetime, CancellationToken cancel)
-            {
-                LogWrite($"Triggering delay {lifetime} for {Key}");
-
-                TimeSpan delay = lifetime;
-
-                if (delay > TimeSpan.FromDays(7))
+                if (cts.Token.IsCancellationRequested)
                 {
-                    delay = TimeSpan.FromDays(7);
+                    break;
                 }
 
-                triggerCleanup = Task.Delay(delay, cancel).ContinueWith(RemoveSelf, cancel);
-            }
-
-            private void LogWrite(string log, Exception ex = null)
-            {
-                logger.LogTrace(ex, log);
-            }
-
-            private void RemoveSelf(Task task)
-            {
-                if (task.IsFaulted)
+                foreach (var kv in this.cache.Keys)
                 {
-                    LogWrite($"Removal failed for {Key}", task.Exception);
+                    if (cache.TryGetValue(kv, out CacheEntry entry) && entry.IsExpired())
+                    {
+                        cache.TryRemove(kv, out _);
+                    }
                 }
 
-                var removed = cache.TryRemove(Key, out CacheEntry removedEntry);
-
-                LogWrite($"Removal triggered for {removedEntry.Key}. Succeeded: {removed}");
-
-                GC.KeepAlive(triggerCleanup);
+                await Task.Delay(TimeSpan.FromMinutes(5), cts.Token);
             }
         }
 
@@ -82,18 +50,16 @@ namespace Kerberos.NET
         {
             bool added = false;
 
-            var cacheEntry = new CacheEntry(cache, entry.Computed, entry.Value, logger);
+            var cacheEntry = new CacheEntry(entry.Computed, entry.Value, logger);
 
-            if (cache.TryAdd(cacheEntry.Key, cacheEntry))
+            cache.AddOrUpdate(cacheEntry.Key, cacheEntry, (_, __) => cacheEntry);
+
+            var lifetime = entry.Expires - DateTimeOffset.UtcNow;
+
+            if (lifetime > TimeSpan.Zero)
             {
-                var lifetime = entry.Expires - DateTimeOffset.UtcNow;
-
-                if (lifetime > TimeSpan.Zero)
-                {
-                    cacheEntry.BeginTriggerDelay(lifetime, cancel.Token);
-
-                    added = true;
-                }
+                cacheEntry.MarkLifetime(lifetime);
+                added = true;
             }
 
             return Task.FromResult(added);
@@ -108,12 +74,28 @@ namespace Kerberos.NET
 
         public Task<object> Get(string key, string container = null)
         {
-            if (cache.TryGetValue(TicketCacheEntry.GenerateKey(key: key, container: container), out CacheEntry entry))
+            var entryKey = TicketCacheEntry.GenerateKey(key: key, container: container);
+
+            if (cache.TryGetValue(entryKey, out CacheEntry entry))
             {
-                return Task.FromResult(entry.Value);
+                if (entry.IsExpired())
+                {
+                    Evict(entryKey);
+                }
+                else
+                {
+                    return Task.FromResult(entry.Value);
+                }
             }
 
             return Task.FromResult<object>(null);
+        }
+
+        private void Evict(string entryKey)
+        {
+            var removed = cache.TryRemove(entryKey, out _);
+
+            logger.LogDebug($"Removal triggered for {entryKey}. Succeeded: {removed}");
         }
 
         public async Task<T> Get<T>(string key, string container = null)
@@ -125,8 +107,49 @@ namespace Kerberos.NET
 
         public void Dispose()
         {
-            cancel.Cancel();
-            cancel.Dispose();
+            cts.Cancel();
+            cts.Dispose();
+        }
+
+        private class CacheEntry
+        {
+            private readonly ILogger logger;
+
+            public CacheEntry(
+                string key,
+                object value,
+                ILogger logger
+            )
+            {
+                this.Key = key;
+                this.Value = value;
+                this.logger = logger;
+            }
+
+            public string Key { get; }
+
+            public object Value { get; }
+
+            public DateTimeOffset? Expiration { get; private set; }
+
+            public void MarkLifetime(TimeSpan lifetime)
+            {
+                logger.LogTrace($"Triggering delay {lifetime} for {Key}");
+
+                TimeSpan delay = lifetime;
+
+                if (delay > TimeSpan.FromDays(7))
+                {
+                    delay = TimeSpan.FromDays(7);
+                }
+
+                Expiration = DateTimeOffset.UtcNow + delay;
+            }
+
+            public bool IsExpired()
+            {
+                return Expiration.HasValue && Expiration.Value <= DateTimeOffset.UtcNow;
+            }
         }
     }
 }

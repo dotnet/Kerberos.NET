@@ -1,4 +1,11 @@
-﻿using Kerberos.NET;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Security.Cryptography.Pkcs;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
+using Kerberos.NET;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
@@ -6,13 +13,6 @@ using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
 using Microsoft.Win32;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
-using System.Security.Cryptography.Pkcs;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using static System.Console;
 
 namespace KerberosClientApp
@@ -21,7 +21,7 @@ namespace KerberosClientApp
     {
         static async Task Main(string[] args)
         {
-            bool prompt = ReadString("prompt", "y", args, required: false, reader: () => { WriteLine(); return null; }).Equals("y", StringComparison.InvariantCultureIgnoreCase);
+            bool prompt = ReadString("prompt", "y", args, required: false, reader: () => { W(); return null; }).Equals("y", StringComparison.InvariantCultureIgnoreCase);
 
             var cert = SelectCertificate(args, prompt);
 
@@ -31,6 +31,11 @@ namespace KerberosClientApp
             string spn = ReadString("SPN", "host/downlevel.corp.identityintervention.com", args, prompt: prompt);
             string overrideKdc = ReadString("KDC", "10.0.0.21:88", args, prompt: prompt);
 
+            bool includeCNameHint = ReadString("Hint", "n", args, required: false, prompt: prompt).Equals("y", StringComparison.InvariantCultureIgnoreCase);
+
+            string servicePassword = ReadString("ServicePassword", "P@ssw0rd!", args, required: false, prompt: prompt);
+            string serviceSalt = ReadString("ServiceSalt", "", args, required: false, prompt: prompt);
+
             bool randomDH = false;
 
             if (cert != null)
@@ -38,7 +43,9 @@ namespace KerberosClientApp
                 randomDH = ReadString("RandomDH", "n", args).Equals("y", StringComparison.InvariantCultureIgnoreCase);
             }
 
-            await RequestTicketsAsync(cert, user, password, overrideKdc, s4u, spn, randomDH);
+            W();
+
+            await RequestTicketsAsync(cert, user, password, overrideKdc, s4u, spn, randomDH, includeCNameHint, servicePassword, serviceSalt);
 
             Write("Press [Any] key to exit...");
 
@@ -101,18 +108,21 @@ namespace KerberosClientApp
             string overrideKdc,
             string s4u,
             string spn,
-            bool randomDH
+            bool randomDH,
+            bool includeCNameHint,
+            string servicePassword,
+            string serviceSalt
         )
         {
             while (true)
             {
                 try
                 {
-                    await RequestTickets(cert, user, password, overrideKdc, s4u, spn, randomDH);
+                    await RequestTickets(cert, user, password, overrideKdc, s4u, spn, randomDH, includeCNameHint, servicePassword, serviceSalt);
                 }
                 catch (Exception ex)
                 {
-                    WriteLine(ex);
+                    W(ex.ToString(), ConsoleColor.Red);
                     break;
                 }
             }
@@ -157,7 +167,7 @@ namespace KerberosClientApp
                         break;
                 }
 
-                WriteLine($"DH Type: {agreement.GetType()}");
+                W($"DH Type: {agreement.GetType()}");
 
                 if (agreement == null)
                 {
@@ -255,7 +265,12 @@ namespace KerberosClientApp
             string password,
             string overrideKdc,
             string s4u,
-            string spn, bool retryDH)
+            string spn,
+            bool retryDH,
+            bool includeCNameHint,
+            string servicePassword,
+            string serviceSalt
+        )
         {
             KerberosCredential kerbCred;
 
@@ -299,8 +314,8 @@ namespace KerberosClientApp
                 {
                     DomainPaths = new Dictionary<string, Uri>
                     {
-                        { kdcProxy.DnsSafeHost, kdcProxy },
-                        { kerbCred.Domain, kdcProxy }
+                        { kdcProxy.DnsSafeHost.ToLowerInvariant(), kdcProxy },
+                        { kerbCred.Domain.ToLowerInvariant(), kdcProxy }
                     }
                 };
 
@@ -311,12 +326,17 @@ namespace KerberosClientApp
                 client = new KerberosClient(overrideKdc);
             }
 
+            if (includeCNameHint)
+            {
+                client.CNameHint = KrbPrincipalName.FromString(kerbCred.UserName, PrincipalNameType.NT_PRINCIPAL, kerbCred.Domain);
+            }
+
             using (client)
             using (kerbCred as IDisposable)
             {
                 await client.Authenticate(kerbCred);
 
-                ForegroundColor = ConsoleColor.Green;
+                W("AS-REQ Succeeded", ConsoleColor.Green);
 
                 spn = spn ?? "host/appservice.corp.identityintervention.com";
 
@@ -347,89 +367,114 @@ namespace KerberosClientApp
                 {
                     try
                     {
-                        await TryValidate(spn, ticket);
+                        await TryValidate(spn, ticket, servicePassword, serviceSalt);
                     }
                     catch (Exception ex)
                     {
-                        ForegroundColor = ConsoleColor.Yellow;
-
-                        WriteLine(ex.Message);
+                        W(ex.Message, ConsoleColor.Yellow);
 
                         ResetColor();
-                        //WriteLine(ex.StackTrace);
                     }
                 }
             }
         }
 
-        private static async Task TryValidate(string spn, KrbApReq ticket)
+        private static void W() => W("");
+
+        private static void W(string message)
+        {
+            ResetColor();
+            WriteLine(message);
+        }
+
+        private static void W(string message, ConsoleColor color)
+        {
+            ForegroundColor = color;
+
+            WriteLine(message);
+            ResetColor();
+        }
+
+        private static async Task TryValidate(string spn, KrbApReq ticket, string servicePassword, string serviceSalt)
         {
             var encoded = ticket.EncodeApplication().ToArray();
 
-            var authenticator = new KerberosAuthenticator(
-                new KeyTable(
-                    new KerberosKey(
-                        "P@ssw0rd!",
-                        principalName: new PrincipalName(
-                            PrincipalNameType.NT_PRINCIPAL,
-                            "CORP.IDENTITYINTERVENTION.com",
-                            new[] { spn }
-                        ),
-                        saltType: SaltType.ActiveDirectoryUser
-                    )
-                )
-            );
+            KerberosKey kerbKey;
+
+            if (string.IsNullOrWhiteSpace(serviceSalt))
+            {
+                kerbKey = new KerberosKey(
+                    "P@ssw0rd!",
+                    principalName: new PrincipalName(
+                        PrincipalNameType.NT_PRINCIPAL,
+                        ticket.Ticket.Realm,
+                        new[] { spn }
+                    ),
+                    saltType: SaltType.ActiveDirectoryUser
+                );
+            }
+            else
+            {
+                kerbKey = new KerberosKey(
+                    servicePassword,
+                    salt: serviceSalt,
+                    etype: ticket.Ticket.EncryptedPart.EType,
+                    saltType: SaltType.ActiveDirectoryService
+                );
+            }
+
+            var authenticator = new KerberosAuthenticator(new KeyTable(kerbKey));
 
             var validated = (KerberosIdentity)await authenticator.Authenticate(encoded);
 
-            DumpClaims(validated);
+            DumpRestrictions(validated);
         }
 
         private static void DumpTicket(KrbApReq ticket)
         {
-            WriteLine();
+            W("====== Ticket ======");
 
-            WriteLine($"Type: {ticket.MessageType}");
-            WriteLine($"APOptions: {ticket.ApOptions}");
-            WriteLine($"Realm: {ticket.Ticket.Realm}");
-            WriteLine($"SName: {ticket.Ticket.SName.FullyQualifiedName}");
+            W($"Type: {ticket.MessageType}", ConsoleColor.Green);
+            W($"APOptions: {ticket.ApOptions}", ConsoleColor.Green);
+            W($"Realm: {ticket.Ticket.Realm}", ConsoleColor.Green);
+            W($"SName: {ticket.Ticket.SName.FullyQualifiedName}", ConsoleColor.Green);
 
-            WriteLine();
+            W();
         }
 
-        private static void DumpClaims(KerberosIdentity validated)
+        private static void DumpRestrictions(KerberosIdentity validated)
         {
-            WriteLine();
+            W("=== Restrictions ===");
 
-            WriteLine($"UserName: {validated.Name}");
-            WriteLine($"AuthType: {validated.AuthenticationType}");
-            WriteLine($"Validated by: {validated.ValidationMode}");
+            W($"UserName: {validated.Name}", ConsoleColor.Green);
+            W($"AuthType: {validated.AuthenticationType}", ConsoleColor.Green);
+            W($"Validated by: {validated.ValidationMode}", ConsoleColor.Green);
 
             foreach (var kv in validated.Restrictions)
             {
-                WriteLine($"Restriction: {kv.Key}");
+                W($"Restriction: {kv.Key}", ConsoleColor.Green);
 
                 foreach (var restriction in kv.Value)
                 {
-                    WriteLine($"Type: {restriction.Type}");
-                    WriteLine($"Value: {restriction}");
+                    W($"Type: {restriction.Type}", ConsoleColor.Green);
+                    W($"Value: {restriction}", ConsoleColor.Green);
 
                     if (restriction is PrivilegedAttributeCertificate pac)
                     {
-                        WriteLine($"{pac.DelegationInformation}");
+                        W($"{pac.DelegationInformation}", ConsoleColor.Green);
                     }
                 }
 
-                WriteLine();
+                W();
             }
 
-            WriteLine();
+            W("=== Claims ===");
 
             foreach (var claim in validated.Claims)
             {
-                WriteLine($"Type: {claim.Type}");
-                WriteLine($"Value: {claim.Value}");
-                WriteLine();
+                W($"Type: {claim.Type}", ConsoleColor.Green);
+                W($"Value: {claim.Value}", ConsoleColor.Green);
+                W();
             }
         }
 
@@ -460,7 +505,7 @@ namespace KerberosClientApp
             }
             else
             {
-                WriteLine();
+                W();
             }
 
             if (string.IsNullOrWhiteSpace(val))
@@ -494,7 +539,7 @@ namespace KerberosClientApp
                 }
                 else if (key.Key == ConsoleKey.Enter)
                 {
-                    WriteLine();
+                    W();
                     break;
                 }
             }

@@ -16,7 +16,7 @@ namespace Kerberos.NET
 
         internal static string GenerateKey(string container = null, string key = null)
         {
-            return $"kerberos-{container}-{key}";
+            return $"kerberos-{container?.ToLowerInvariant()}-{key?.ToLowerInvariant()}";
         }
 
         public string Key { get; set; }

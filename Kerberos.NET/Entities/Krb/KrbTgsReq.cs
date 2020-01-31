@@ -64,7 +64,8 @@ namespace Kerberos.NET.Entities
                     Type = PrincipalNameType.NT_SRV_HST,
                     Name = sname
                 },
-                Till = KerberosConstants.EndOfTime
+                Till = KerberosConstants.EndOfTime,
+                CName = rst.CNameHint
             };
 
             if (additionalTickets.Count > 0)

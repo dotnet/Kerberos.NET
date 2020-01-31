@@ -15,5 +15,7 @@ namespace Kerberos.NET
         public KrbTicket UserToUserTicket { get; set; }
 
         public KdcOptions KdcOptions { get; set; }
+
+        public KrbPrincipalName CNameHint { get; set; }
     }
 }

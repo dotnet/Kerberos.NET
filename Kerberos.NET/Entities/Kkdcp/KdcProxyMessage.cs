@@ -6,7 +6,7 @@ namespace Kerberos.NET.Entities
 {
     public partial class KdcProxyMessage
     {
-        public static KdcProxyMessage WrapMessage(ReadOnlyMemory<byte> message)
+        public static KdcProxyMessage WrapMessage(ReadOnlyMemory<byte> message, string domain = null, DcLocatorHint? hint = null)
         {
             var kerbMessage = new Memory<byte>(new byte[message.Length + 4]);
 
@@ -16,7 +16,9 @@ namespace Kerberos.NET.Entities
 
             return new KdcProxyMessage()
             {
-                KerbMessage = kerbMessage
+                KerbMessage = kerbMessage,
+                TargetDomain = domain,
+                DcLocatorHint = hint
             };
         }
 

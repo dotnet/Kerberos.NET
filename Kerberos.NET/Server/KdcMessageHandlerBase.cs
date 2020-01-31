@@ -21,7 +21,7 @@ namespace Kerberos.NET.Server
 
         protected IRealmService RealmService { get; private set; }
 
-        protected IDictionary<PaDataType, PreAuthHandlerConstructor> PreAuthHandlers
+        public IDictionary<PaDataType, PreAuthHandlerConstructor> PreAuthHandlers
         {
             get => preAuthHandlers;
         }
@@ -111,6 +111,8 @@ namespace Kerberos.NET.Server
                     }
                 }
             };
+
+            krbErr.StampServerTime();
 
             return krbErr.EncodeApplication();
         }
