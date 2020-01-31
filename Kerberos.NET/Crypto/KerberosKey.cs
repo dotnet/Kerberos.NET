@@ -67,6 +67,8 @@ namespace Kerberos.NET.Crypto
         private readonly ConcurrentDictionary<string, ReadOnlyMemory<byte>> DerivedKeyCache
             = new ConcurrentDictionary<string, ReadOnlyMemory<byte>>();
 
+        public KeyUsage? Usage { get; set; }
+
         internal ReadOnlyMemory<byte> GetOrDeriveKey(
             KerberosCryptoTransformer transformer,
             string cacheKey,
