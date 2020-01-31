@@ -222,7 +222,7 @@ namespace Kerberos.NET.Entities.Pac
             set => GroupId = value.Id;
         }
 
-        private static readonly IEnumerable<SecurityIdentifier> EmptySid = new SecurityIdentifier[0];
+        private static readonly IEnumerable<SecurityIdentifier> EmptySid = Array.Empty<SecurityIdentifier>();
 
         public IEnumerable<SecurityIdentifier> GroupSids
             => GroupIds?.Select(g => SecurityIdentifier.FromRpcSid(DomainId, g.RelativeId, g.Attributes)) ?? EmptySid;

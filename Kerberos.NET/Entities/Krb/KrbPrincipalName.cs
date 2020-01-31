@@ -71,6 +71,18 @@ namespace Kerberos.NET.Entities
             { "msdtc", HostServiceName }
         });
 
+        internal PrincipalName ToKeyPrincipal()
+        {
+            string realm = "";
+
+            if (Name.Length > 2)
+            {
+                realm = Name[2];
+            }
+
+            return new PrincipalName(Type, realm, Name.Take(2));
+        }
+
         public string FullyQualifiedName => MakeFullName(Name, Type);
 
         private static string MakeFullName(IEnumerable<string> names, PrincipalNameType type, bool normalizeAlias = false)

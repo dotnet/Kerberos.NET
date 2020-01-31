@@ -50,6 +50,7 @@ namespace Kerberos.NET.Dns
         public int Port { get; set; }
     }
 
+    [Flags]
     public enum DnsQueryOptions
     {
         Standard = 0x0,

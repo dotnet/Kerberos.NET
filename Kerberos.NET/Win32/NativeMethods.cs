@@ -211,7 +211,7 @@ namespace Kerberos.NET.Win32
             {
                 if (cBuffers <= 0)
                 {
-                    return new byte[0];
+                    return Array.Empty<byte>();
                 }
 
                 var bufferList = new List<byte[]>();

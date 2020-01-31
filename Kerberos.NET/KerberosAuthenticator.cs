@@ -98,8 +98,8 @@ namespace Kerberos.NET
             List<Restriction> restrictions
         )
         {
-            var authenticatorAuthz = krbApReq.Authenticator.AuthorizationData ?? new KrbAuthorizationData[0];
-            var ticketAuthz = krbApReq.Ticket.AuthorizationData ?? new KrbAuthorizationData[0];
+            var authenticatorAuthz = krbApReq.Authenticator.AuthorizationData ?? Array.Empty<KrbAuthorizationData>();
+            var ticketAuthz = krbApReq.Ticket.AuthorizationData ?? Array.Empty<KrbAuthorizationData>();
 
             var authz = authenticatorAuthz.Concat(ticketAuthz);
 
