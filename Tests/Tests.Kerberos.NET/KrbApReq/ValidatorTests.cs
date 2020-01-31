@@ -70,10 +70,10 @@ namespace Tests.Kerberos.NET
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key);
-
-            validator.Now = () => DateTimeOffset.Parse("1/9/2009 5:20:00 PM +00:00", CultureInfo.InvariantCulture);
-
+            var validator = new KerberosValidator(key)
+            {
+                Now = () => DateTimeOffset.Parse("1/9/2009 5:20:00 PM +00:00", CultureInfo.InvariantCulture)
+            };
 
             await validator.Validate(data);
 
@@ -121,7 +121,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(added);
 
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(1));
 
             added = await replay.Add(entry);
 
@@ -210,7 +210,7 @@ namespace Tests.Kerberos.NET
 
             var encKdcRepPart = tgsRep.EncPart.Decrypt(
                 key,
-                KeyUsage.EncTgsRepPartSubSessionKey,
+                KeyUsage.EncTgsRepPartSessionKey,
                 d => KrbEncTgsRepPart.DecodeApplication(d)
             );
 

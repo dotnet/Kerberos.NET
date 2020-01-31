@@ -303,7 +303,7 @@ namespace Tests.Kerberos.NET
 
                     var serverEntry = await server.Cache.Get<KerberosClientCacheEntry>($"krbtgt/{server.DefaultDomain}");
 
-                    var serverTgt = serverEntry.Ticket.Ticket;
+                    var serverTgt = serverEntry.KdcResponse.Ticket;
 
                     var apReq = await client.GetServiceTicket("host/u2u", ApOptions.MutualRequired | ApOptions.UseSessionKey, u2uServerTicket: serverTgt);
 

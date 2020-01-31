@@ -63,13 +63,18 @@ namespace Kerberos.NET.Entities
 
             KrbEncKdcRepPart encKdcRepPart;
 
+            KeyUsage keyUsage;
+
             if (typeof(T) == typeof(KrbAsRep))
             {
                 encKdcRepPart = new KrbEncAsRepPart();
+                keyUsage = KeyUsage.EncAsRepPart;
             }
             else if (typeof(T) == typeof(KrbTgsRep))
             {
                 encKdcRepPart = new KrbEncTgsRepPart();
+
+                keyUsage = request.EncryptedPartKey.Usage ?? KeyUsage.EncTgsRepPartSessionKey;
             }
             else
             {
@@ -111,7 +116,7 @@ namespace Kerberos.NET.Entities
                 EncPart = KrbEncryptedData.Encrypt(
                     encKdcRepPart.EncodeApplication(),
                     request.EncryptedPartKey,
-                    encKdcRepPart.KeyUsage
+                    keyUsage
                 )
             };
 

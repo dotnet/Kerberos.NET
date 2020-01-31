@@ -39,6 +39,11 @@ namespace Kerberos.NET.Transport
 
             var response = await Client.PostAsync(kdc, new BinaryContent(message.Encode()));
 
+            if (response.Content == null)
+            {
+                response.EnsureSuccessStatusCode();
+            }
+
             var responseBody = await response.Content.ReadAsByteArrayAsync();
 
             if (!KdcProxyMessage.TryDecode(responseBody, out KdcProxyMessage kdcResponse))

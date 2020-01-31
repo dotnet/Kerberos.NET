@@ -46,23 +46,37 @@ namespace Kerberos.NET
         private readonly ConcurrentDictionary<string, CacheEntry> cache
             = new ConcurrentDictionary<string, CacheEntry>();
 
-        public Task<bool> Add(TicketCacheEntry entry)
+        public bool BlockUpdates { get; set; }
+
+        public async Task<bool> Add(TicketCacheEntry entry)
         {
-            bool added = false;
-
             var cacheEntry = new CacheEntry(entry.Computed, entry.Value, logger);
-
-            cache.AddOrUpdate(cacheEntry.Key, cacheEntry, (_, __) => cacheEntry);
 
             var lifetime = entry.Expires - DateTimeOffset.UtcNow;
 
             if (lifetime > TimeSpan.Zero)
             {
                 cacheEntry.MarkLifetime(lifetime);
+            }
+
+            bool added = false;
+
+            if (BlockUpdates)
+            {
+                var got = await GetInternal(cacheEntry.Key);
+
+                if (got == null)
+                {
+                    added = cache.TryAdd(cacheEntry.Key, cacheEntry);
+                }
+            }
+            else
+            {
+                cache.AddOrUpdate(cacheEntry.Key, cacheEntry, (_, __) => cacheEntry);
                 added = true;
             }
 
-            return Task.FromResult(added);
+            return added;
         }
 
         public Task<bool> Contains(TicketCacheEntry entry)
@@ -76,6 +90,11 @@ namespace Kerberos.NET
         {
             var entryKey = TicketCacheEntry.GenerateKey(key: key, container: container);
 
+            return GetInternal(entryKey);
+        }
+
+        private Task<object> GetInternal(string entryKey)
+        {
             if (cache.TryGetValue(entryKey, out CacheEntry entry))
             {
                 if (entry.IsExpired())

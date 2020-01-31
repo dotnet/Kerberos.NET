@@ -10,7 +10,5 @@ namespace Kerberos.NET.Entities
         {
             return DecodeApplication(encoded);
         }
-
-        public override KeyUsage KeyUsage => KeyUsage.EncAsRepPart;
     }
 }

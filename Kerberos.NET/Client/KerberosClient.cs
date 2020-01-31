@@ -157,14 +157,14 @@ namespace Kerberos.NET.Client
 
                 var serviceTicketCacheEntry = await Cache.Get<KerberosClientCacheEntry>(rst.ServicePrincipalName, rst.S4uTarget);
 
-                if (serviceTicketCacheEntry.Ticket == null || !CacheServiceTickets)
+                if (serviceTicketCacheEntry.KdcResponse == null || !CacheServiceTickets)
                 {
                     serviceTicketCacheEntry = await RequestTgs(rst, tgtEntry, cancellation);
                 }
 
-                var encKdcRepPart = serviceTicketCacheEntry.Ticket.EncPart.Decrypt(
+                var encKdcRepPart = serviceTicketCacheEntry.KdcResponse.EncPart.Decrypt(
                     serviceTicketCacheEntry.SessionKey.AsKey(),
-                    KeyUsage.EncTgsRepPartSubSessionKey,
+                    serviceTicketCacheEntry.SessionKey.Usage,
                     d => KrbEncTgsRepPart.DecodeApplication(d)
                 );
 
@@ -179,12 +179,12 @@ namespace Kerberos.NET.Client
                 return new ApplicationSessionContext
                 {
                     ApReq = KrbApReq.CreateApReq(
-                        serviceTicketCacheEntry.Ticket,
+                        serviceTicketCacheEntry.KdcResponse,
                         encKdcRepPart.Key.AsKey(),
                         rst.ApOptions,
                         out KrbAuthenticator authenticator
                     ),
-                    SessionKey = authenticator.Subkey,
+                    SessionKey = authenticator.Subkey ?? encKdcRepPart.Key,
                     CTime = authenticator.CTime,
                     CuSec = authenticator.CuSec,
                     SequenceNumber = authenticator.SequenceNumber
@@ -229,7 +229,7 @@ namespace Kerberos.NET.Client
                 rst.S4uTicket?.SName
             );
 
-            var tgsReq = KrbTgsReq.CreateTgsReq(rst, tgtEntry.SessionKey, tgtEntry.Ticket, out KrbEncryptionKey subkey);
+            var tgsReq = KrbTgsReq.CreateTgsReq(rst, tgtEntry.SessionKey, tgtEntry.KdcResponse, out KrbEncryptionKey sessionKey);
 
             var encodedTgs = tgsReq.EncodeApplication();
 
@@ -243,8 +243,8 @@ namespace Kerberos.NET.Client
 
             var entry = new KerberosClientCacheEntry
             {
-                Ticket = tgsRep,
-                SessionKey = subkey
+                KdcResponse = tgsRep,
+                SessionKey = sessionKey
             };
 
             return entry;
@@ -258,13 +258,17 @@ namespace Kerberos.NET.Client
 
             lock (_syncTicket)
             {
-                if (entry.Ticket == null)
+                if (entry.KdcResponse == null)
                 {
                     throw new InvalidOperationException("Cannot request a service ticket until a user is authenticated");
                 }
 
+                var usage = entry.SessionKey.Usage;
+
                 entry.SessionKey = KrbEncryptionKey.Decode(entry.SessionKey.Encode());
-                entry.Ticket = KrbKdcRep.Decode(entry.Ticket.Encode());
+                entry.SessionKey.Usage = usage;
+
+                entry.KdcResponse = KrbKdcRep.Decode(entry.KdcResponse.Encode());
             }
 
             return entry;
@@ -281,7 +285,7 @@ namespace Kerberos.NET.Client
                     KdcOptions = KdcOptions
                 },
                 entry.SessionKey,
-                entry.Ticket,
+                entry.KdcResponse,
                 out KrbEncryptionKey subkey
             );
 
@@ -305,6 +309,8 @@ namespace Kerberos.NET.Client
         {
             var key = $"krbtgt/{kdcRep.CRealm}";
 
+            encKdcRepPart.Key.Usage = KeyUsage.EncTgsRepPartSessionKey;
+
             await Cache.Add(new TicketCacheEntry
             {
                 Key = key,
@@ -312,7 +318,7 @@ namespace Kerberos.NET.Client
                 Value = new KerberosClientCacheEntry
                 {
                     SessionKey = encKdcRepPart.Key,
-                    Ticket = kdcRep
+                    KdcResponse = kdcRep
                 }
             });
         }
