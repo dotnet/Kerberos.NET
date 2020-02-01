@@ -19,14 +19,22 @@ namespace Kerberos.NET.Entities.Pac
 
         private static byte[] SetSignatureValue(ChecksumType type, Func<int, byte[]> setterFunc)
         {
-            return type switch
-            {
-                ChecksumType.KERB_CHECKSUM_HMAC_MD5 => setterFunc(16),
-                ChecksumType.HMAC_SHA1_96_AES128 => setterFunc(12),
-                ChecksumType.HMAC_SHA1_96_AES256 => setterFunc(12),
+            byte[] signatureValue = null;
 
-                _ => throw new InvalidOperationException($"Unknown checksum type {type}"),
-            };
+            switch (type)
+            {
+                case ChecksumType.KERB_CHECKSUM_HMAC_MD5:
+                    signatureValue = setterFunc(16);
+                    break;
+                case ChecksumType.HMAC_SHA1_96_AES128:
+                case ChecksumType.HMAC_SHA1_96_AES256:
+                    signatureValue = setterFunc(12);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown checksum type {type}");
+            }
+
+            return signatureValue;
         }
 
         public ReadOnlyMemory<byte> SignatureData { get; set; }

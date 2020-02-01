@@ -10,9 +10,10 @@ namespace Kerberos.NET.Crypto
 
         static CryptoService()
         {
+#if WEAKCRYPTO
             RegisterCryptographicAlgorithm(EncryptionType.RC4_HMAC_NT, () => new RC4Transformer());
             RegisterCryptographicAlgorithm(EncryptionType.RC4_HMAC_NT_EXP, () => new RC4Transformer());
-
+#endif
             RegisterCryptographicAlgorithm(EncryptionType.AES128_CTS_HMAC_SHA1_96, () => new AES128Transformer());
             RegisterCryptographicAlgorithm(EncryptionType.AES256_CTS_HMAC_SHA1_96, () => new AES256Transformer());
         }
@@ -62,8 +63,10 @@ namespace Kerberos.NET.Crypto
         {
             switch (type)
             {
+#if WEAKCRYPTO
                 case ChecksumType.KERB_CHECKSUM_HMAC_MD5:
                     return new HmacMd5KerberosChecksum(signature, signatureData);
+#endif
                 case ChecksumType.HMAC_SHA1_96_AES128:
                     return new HmacAes128KerberosChecksum(signature, signatureData);
                 case ChecksumType.HMAC_SHA1_96_AES256:

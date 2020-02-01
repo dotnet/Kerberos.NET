@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Entities
 {
+    [Flags]
     public enum UpnDomainFlags
     {
         U = 1

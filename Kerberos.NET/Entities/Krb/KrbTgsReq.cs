@@ -28,7 +28,7 @@ namespace Kerberos.NET.Entities
             RequestServiceTicket rst,
             KrbEncryptionKey tgtSessionKey,
             KrbKdcRep kdcRep,
-            out KrbEncryptionKey subkey
+            out KrbEncryptionKey sessionKey
         )
         {
             var sname = rst.ServicePrincipalName.Split('/', '@');
@@ -64,7 +64,8 @@ namespace Kerberos.NET.Entities
                     Type = PrincipalNameType.NT_SRV_HST,
                     Name = sname
                 },
-                Till = KerberosConstants.EndOfTime
+                Till = KerberosConstants.EndOfTime,
+                CName = rst.CNameHint
             };
 
             if (additionalTickets.Count > 0)
@@ -78,7 +79,7 @@ namespace Kerberos.NET.Entities
                 KeyUsage.PaTgsReqChecksum
             );
 
-            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey, bodyChecksum, out subkey);
+            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey, bodyChecksum, out sessionKey);
 
             var pacOptions = new KrbPaPacOptions
             {
@@ -128,20 +129,21 @@ namespace Kerberos.NET.Entities
             return paS4u.Encode();
         }
 
-        private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey, KrbChecksum checksum, out KrbEncryptionKey subkey)
+        private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey, KrbChecksum checksum, out KrbEncryptionKey sessionKey)
         {
             var tgt = kdcRep.Ticket;
-
-            subkey = KrbEncryptionKey.Generate(tgtSessionKey.EType);
 
             var authenticator = new KrbAuthenticator
             {
                 CName = kdcRep.CName,
                 Realm = tgt.Realm,
                 SequenceNumber = KerberosConstants.GetNonce(),
-                Subkey = subkey,
                 Checksum = checksum
             };
+
+            sessionKey = KrbEncryptionKey.Generate(tgtSessionKey.EType);
+            sessionKey.Usage = KeyUsage.EncTgsRepPartSubSessionKey;
+            authenticator.Subkey = sessionKey;
 
             KerberosConstants.Now(out authenticator.CTime, out authenticator.CuSec);
 

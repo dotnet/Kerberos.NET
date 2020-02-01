@@ -12,15 +12,16 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class AuthenticatorTests : BaseTest
     {
-        private const string ApReqWithoutPacLogonInfo = "YIIDFwYGKwYBBQUCoIIDCzCCAwegDTALBgkqhkiG9xIBAgKiggL0BIIC8GCCAuwGCSqGSIb3EgECA" + "gEAboIC2zCCAtegAwIBBaEDAgEOogcDBQAgAAAAo4IBtGGCAbAwggGsoAMCAQWhHxsdQ09SUC5JREVOVElUWUlOVEVSVkVOVElPTi5DT02iWjBYoAMCAQKhUTBP" +
-            "GwRob3N0GyhhcHBzZXJ2aWNlLmNvcnAuaWRlbnRpdHlpbnRlcnZlbnRpb24uY29tGx1DT1JQLklERU5USVRZSU5URVJWRU5USU9OLkNPTaOCASYwggEioAMCA" +
-            "RKiggEZBIIBFQ/VQjHzHo8Pjug4HAJMQ8sovdyLuCIiviMWD52cjBhpHlrWx+GX1ZLXpoXu0V95+T+VoVzdDulxPwBeeIMZRt5pKck1SphlRPlPqtpoOBgZdR" +
-            "qmZ3nFWKAg8VjE/bZIZGsQJasWoDc3brZcou64pp0Xwt6gc+VCkcVBbyicoHm32WpbJx0htgp1pdHEwsuDBn73ul36s/04uMq30iGW04DOY99/C3zTo6dMc2Z" +
-            "B7tqAhZk7WMHzQ4nNsRp/Cp0WIkBQEAIDVllwI44vtnpMlESgiGgYWnjLOLnc+BX07m5IzWIxUISJSvJwydvMx6DC4ZTY3jG7fDCeLzqRju+NpqiAmTxJpwoJ" +
-            "E6+aEGjDvYqZZySLnv2kggEIMIIBBKADAgESooH8BIH5GG37GRQ4n6lrqYIQErjUAwMfe4DJtOp9U+CIGt/K1Oz9VbnVhj/o1Z3o/5hT29kIMocZ1UneO6siY" +
-            "gAqe9EWQxk4L0oro+9rLXBU48WGIytopEd6gs0PEdW/zya/pdW/evyb1JLuyqkMKYZlF6rXeSdgoMhq6bSnkJPTAdT7Baw5R3eCAu6jW/Ad/7Yyp7Y2/nfke0" +
-            "P5Nfw135/dhEuPMcDs/2HBHHgKEV9sAMqKQQKKTt9ZB6jFJE0wSk4ULPUgfJrGIeouxHjv2lgrG42rPehB+8wvyHoucocwUlgMsgwthDtrynae4KxDKX9k2RX" +
-            "lv1dmdYUHwQ3M";
+        private const string ApReqWithoutPacLogonInfo = "YIIDFwYGKwYBBQUCoIIDCzCCAwegDTALBgkqhkiG9xIBAgKiggL0BIIC8GCCAuwGCSqGSIb3EgECA" +
+            "gEAboIC2zCCAtegAwIBBaEDAgEOogcDBQAgAAAAo4IBtGGCAbAwggGsoAMCAQWhHxsdQ09SUC5JREVOVElUWUlOVEVSVkVOVElPTi5DT02iWjBYoAMCAQKhUT" +
+            "BPGwRob3N0GyhhcHBzZXJ2aWNlLmNvcnAuaWRlbnRpdHlpbnRlcnZlbnRpb24uY29tGx1DT1JQLklERU5USVRZSU5URVJWRU5USU9OLkNPTaOCASYwggEioAM" +
+            "CARKiggEZBIIBFQ/VQjHzHo8Pjug4HAJMQ8sovdyLuCIiviMWD52cjBhpHlrWx+GX1ZLXpoXu0V95+T+VoVzdDulxPwBeeIMZRt5pKck1SphlRPlPqtpoOBgZ" +
+            "dRqmZ3nFWKAg8VjE/bZIZGsQJasWoDc3brZcou64pp0Xwt6gc+VCkcVBbyicoHm32WpbJx0htgp1pdHEwsuDBn73ul36s/04uMq30iGW04DOY99/C3zTo6dMc" +
+            "2ZB7tqAhZk7WMHzQ4nNsRp/Cp0WIkBQEAIDVllwI44vtnpMlESgiGgYWnjLOLnc+BX07m5IzWIxUISJSvJwydvMx6DC4ZTY3jG7fDCeLzqRju+NpqiAmTxJpw" +
+            "oJE6+aEGjDvYqZZySLnv2kggEIMIIBBKADAgESooH8BIH5GG37GRQ4n6lrqYIQErjUAwMfe4DJtOp9U+CIGt/K1Oz9VbnVhj/o1Z3o/5hT29kIMocZ1UneO6s" +
+            "iYgAqe9EWQxk4L0oro+9rLXBU48WGIytopEd6gs0PEdW/zya/pdW/evyb1JLuyqkMKYZlF6rXeSdgoMhq6bSnkJPTAdT7Baw5R3eCAu6jW/Ad/7Yyp7Y2/nfk" +
+            "e0P5Nfw135/dhEuPMcDs/2HBHHgKEV9sAMqKQQKKTt9ZB6jFJE0wSk4ULPUgfJrGIeouxHjv2lgrG42rPehB+8wvyHoucocwUlgMsgwthDtrynae4KxDKX9k2" +
+            "RXlv1dmdYUHwQ3M";
 
         [TestMethod]
         public async Task AuthenticatorGetsAsRep()

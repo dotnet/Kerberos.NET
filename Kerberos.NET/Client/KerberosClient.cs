@@ -96,6 +96,7 @@ namespace Kerberos.NET.Client
             get => scopeId ?? (scopeId = KerberosConstants.GetRequestActivityId()).Value;
             set => scopeId = value;
         }
+        public KrbPrincipalName CNameHint { get; set; }
 
         public async Task Authenticate(KerberosCredential credential)
         {
@@ -156,26 +157,36 @@ namespace Kerberos.NET.Client
 
                 var serviceTicketCacheEntry = await Cache.Get<KerberosClientCacheEntry>(rst.ServicePrincipalName, rst.S4uTarget);
 
-                if (serviceTicketCacheEntry.Ticket == null || !CacheServiceTickets)
+                if (serviceTicketCacheEntry.KdcResponse == null || !CacheServiceTickets)
                 {
                     serviceTicketCacheEntry = await RequestTgs(rst, tgtEntry, cancellation);
                 }
 
-                var encKdcRepPart = serviceTicketCacheEntry.Ticket.EncPart.Decrypt(
+                var encKdcRepPart = serviceTicketCacheEntry.KdcResponse.EncPart.Decrypt(
                     serviceTicketCacheEntry.SessionKey.AsKey(),
-                    KeyUsage.EncTgsRepPartSubSessionKey,
+                    serviceTicketCacheEntry.SessionKey.Usage,
                     d => KrbEncTgsRepPart.DecodeApplication(d)
                 );
+
+                VerifyNonces(serviceTicketCacheEntry.Nonce, encKdcRepPart.Nonce);
+
+                await Cache.Add(new TicketCacheEntry
+                {
+                    Key = rst.ServicePrincipalName,
+                    Container = rst.S4uTarget,
+                    Expires = encKdcRepPart.EndTime,
+                    Value = serviceTicketCacheEntry
+                });
 
                 return new ApplicationSessionContext
                 {
                     ApReq = KrbApReq.CreateApReq(
-                        serviceTicketCacheEntry.Ticket,
+                        serviceTicketCacheEntry.KdcResponse,
                         encKdcRepPart.Key.AsKey(),
                         rst.ApOptions,
                         out KrbAuthenticator authenticator
                     ),
-                    SessionKey = authenticator.Subkey,
+                    SessionKey = authenticator.Subkey ?? encKdcRepPart.Key,
                     CTime = authenticator.CTime,
                     CuSec = authenticator.CuSec,
                     SequenceNumber = authenticator.SequenceNumber
@@ -198,7 +209,8 @@ namespace Kerberos.NET.Client
                     ApOptions = options,
                     S4uTarget = s4u,
                     S4uTicket = s4uTicket,
-                    UserToUserTicket = u2uServerTicket
+                    UserToUserTicket = u2uServerTicket,
+                    CNameHint = CNameHint
                 },
                 cancellation.Token
             );
@@ -219,7 +231,7 @@ namespace Kerberos.NET.Client
                 rst.S4uTicket?.SName
             );
 
-            var tgsReq = KrbTgsReq.CreateTgsReq(rst, tgtEntry.SessionKey, tgtEntry.Ticket, out KrbEncryptionKey subkey);
+            var tgsReq = KrbTgsReq.CreateTgsReq(rst, tgtEntry.SessionKey, tgtEntry.KdcResponse, out KrbEncryptionKey sessionKey);
 
             var encodedTgs = tgsReq.EncodeApplication();
 
@@ -233,17 +245,10 @@ namespace Kerberos.NET.Client
 
             var entry = new KerberosClientCacheEntry
             {
-                Ticket = tgsRep,
-                SessionKey = subkey
+                KdcResponse = tgsRep,
+                SessionKey = sessionKey,
+                Nonce = tgsReq.Body.Nonce
             };
-
-            await Cache.Add(new TicketCacheEntry
-            {
-                Key = rst.ServicePrincipalName,
-                Container = rst.S4uTarget,
-                Expires = tgsReq.Body.Till,
-                Value = entry
-            });
 
             return entry;
         }
@@ -256,13 +261,17 @@ namespace Kerberos.NET.Client
 
             lock (_syncTicket)
             {
-                if (entry.Ticket == null)
+                if (entry.KdcResponse == null)
                 {
                     throw new InvalidOperationException("Cannot request a service ticket until a user is authenticated");
                 }
 
+                var usage = entry.SessionKey.Usage;
+
                 entry.SessionKey = KrbEncryptionKey.Decode(entry.SessionKey.Encode());
-                entry.Ticket = KrbKdcRep.Decode(entry.Ticket.Encode());
+                entry.SessionKey.Usage = usage;
+
+                entry.KdcResponse = KrbKdcRep.Decode(entry.KdcResponse.Encode());
             }
 
             return entry;
@@ -279,7 +288,7 @@ namespace Kerberos.NET.Client
                     KdcOptions = KdcOptions
                 },
                 entry.SessionKey,
-                entry.Ticket,
+                entry.KdcResponse,
                 out KrbEncryptionKey subkey
             );
 
@@ -296,14 +305,23 @@ namespace Kerberos.NET.Client
                 d => KrbEncTgsRepPart.DecodeApplication(d)
             );
 
+            await CacheTgt(tgsRep, encKdcRepPart);
+        }
+
+        private async Task CacheTgt(KrbKdcRep kdcRep, KrbEncKdcRepPart encKdcRepPart)
+        {
+            var key = $"krbtgt/{kdcRep.CRealm}";
+
+            encKdcRepPart.Key.Usage = KeyUsage.EncTgsRepPartSessionKey;
+
             await Cache.Add(new TicketCacheEntry
             {
-                Key = tgsRep.Ticket.SName.FullyQualifiedName,
+                Key = key,
                 Expires = encKdcRepPart.RenewTill ?? encKdcRepPart.EndTime,
                 Value = new KerberosClientCacheEntry
                 {
                     SessionKey = encKdcRepPart.Key,
-                    Ticket = tgsRep
+                    KdcResponse = kdcRep
                 }
             });
         }
@@ -329,23 +347,19 @@ namespace Kerberos.NET.Client
                 d => KrbEncAsRepPart.DecodeApplication(d)
             );
 
-            if (decrypted.Nonce != asReqMessage.Body.Nonce)
-            {
-                throw new SecurityException(SR.Resource("KRB_ERROR_AS_NONCE_MISMATCH", asReqMessage.Body.Nonce, decrypted.Nonce));
-            }
+            VerifyNonces(asReqMessage.Body.Nonce, decrypted.Nonce);
 
             DefaultDomain = credential.Domain;
 
-            await Cache.Add(new TicketCacheEntry
+            await CacheTgt(asRep, decrypted);
+        }
+
+        private static void VerifyNonces(int reqNonce, int repNonce)
+        {
+            if (repNonce != reqNonce)
             {
-                Key = asRep.Ticket.SName.FullyQualifiedName,
-                Expires = decrypted.RenewTill ?? decrypted.EndTime,
-                Value = new KerberosClientCacheEntry
-                {
-                    SessionKey = decrypted.Key,
-                    Ticket = asRep
-                }
-            });
+                throw new SecurityException(SR.Resource("KRB_ERROR_AS_NONCE_MISMATCH", reqNonce, repNonce));
+            }
         }
 
         private bool disposed = false;

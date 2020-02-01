@@ -17,7 +17,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public bool IsNullTerminating => IsNullTerminated(Buffer);
 
-        private bool IsNullTerminated(ReadOnlyMemory<char> buffer)
+        private static bool IsNullTerminated(ReadOnlyMemory<char> buffer)
         {
             if (buffer.Length <= 0)
             {

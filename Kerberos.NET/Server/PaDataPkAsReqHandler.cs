@@ -7,15 +7,18 @@ using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
 {
-    internal class PaDataPkAsReqHandler : KdcPreAuthenticationHandlerBase
+    public class PaDataPkAsReqHandler : KdcPreAuthenticationHandlerBase
     {
         private static readonly Oid IdPkInitDHKeyData = new Oid("1.3.6.1.5.2.3.2");
         private static readonly Oid DiffieHellman = new Oid("1.2.840.10046.2.1");
         private static readonly Oid EllipticCurveDiffieHellman = new Oid("1.2.840.10045.2.1");
+
+        public X509IncludeOption IncludeOption { get; set; } = X509IncludeOption.ExcludeRoot;
 
         public PaDataPkAsReqHandler(IRealmService service)
             : base(service)
@@ -117,9 +120,11 @@ namespace Kerberos.NET.Server
                 )
             );
 
-            var Certificate = await Service.Principals.RetrieveKdcCertificate();
+            var certificate = await Service.Principals.RetrieveKdcCertificate();
 
-            signed.ComputeSignature(new CmsSigner(Certificate));
+            var signer = new CmsSigner(certificate) { IncludeOption = IncludeOption };
+
+            signed.ComputeSignature(signer);
 
             return signed.Encode();
         }
@@ -130,16 +135,23 @@ namespace Kerberos.NET.Server
         {
             var parameters = KrbDiffieHellmanDomainParameters.DecodeSpecial(clientPublicValue.Algorithm.Parameters.Value);
 
-            var agreement = parameters.P.Length switch
+            IKeyAgreement agreement = null;
+
+            switch (parameters.P.Length)
             {
-                128 => CryptoPal.Platform.DiffieHellmanModp2(
-                    await Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp2)
-                ),
-                256 => CryptoPal.Platform.DiffieHellmanModp14(
-                  await Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp14)
-                ),
-                _ => throw new InvalidOperationException("Unknown key agreement parameter"),
-            };
+                case 128:
+                    agreement = CryptoPal.Platform.DiffieHellmanModp2(
+                        await Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp2)
+                    );
+                    break;
+                case 256:
+                    agreement = CryptoPal.Platform.DiffieHellmanModp14(
+                      await Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp14)
+                    );
+                    break;
+                default:
+                    throw new InvalidOperationException("Unknown key agreement parameter");
+            }
 
             var publicKey = DiffieHellmanKey.ParsePublicKey(clientPublicValue.SubjectPublicKey, agreement.PublicKey.KeyLength);
 

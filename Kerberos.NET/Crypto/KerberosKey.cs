@@ -2,6 +2,7 @@
 using Kerberos.NET.Entities;
 using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Text;
 
 namespace Kerberos.NET.Crypto
@@ -66,6 +67,43 @@ namespace Kerberos.NET.Crypto
 
         private readonly ConcurrentDictionary<string, ReadOnlyMemory<byte>> DerivedKeyCache
             = new ConcurrentDictionary<string, ReadOnlyMemory<byte>>();
+
+        public KeyUsage? Usage { get; set; }
+
+        public static ReadOnlyMemory<byte> GenerateFile(
+            string password,
+            Guid saltGuid,
+            KrbPrincipalName name,
+            EncryptionType etype = EncryptionType.AES256_CTS_HMAC_SHA1_96
+        )
+        {
+            var salt = NormalizeGuid(saltGuid);
+
+            var kerbKey = new KerberosKey(
+                password: password,
+                etype: etype,
+                salt: salt,
+                principalName: name.ToKeyPrincipal()
+            );
+
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                var keytab = new KeyTable(kerbKey);
+
+                keytab.Write(writer);
+
+                return stream.ToArray();
+            }
+        }
+
+        private static string NormalizeGuid(Guid saltGuid)
+        {
+            // lowercase, no dashes
+            // e.g. 0aa29dcb-3a9b-413f-aee2-8df91fd1118e => 0aa29dcb3a9b413faee28df91fd1118e
+
+            return saltGuid.ToString("n");
+        }
 
         internal ReadOnlyMemory<byte> GetOrDeriveKey(
             KerberosCryptoTransformer transformer,
@@ -182,12 +220,13 @@ namespace Kerberos.NET.Crypto
 
         public override int GetHashCode()
         {
-            return base.GetHashCode() ^
-                   Version ?? 0 ^
-                  (key ?? new byte[0]).GetHashCode() ^
-                   PasswordBytes.GetHashCode() ^
-                  (Host ?? "").GetHashCode() ^
-                  (PrincipalName ?? new PrincipalName()).GetHashCode();
+            return EntityHashCode.GetHashCode(
+                Version ?? 0, 
+                key ?? Array.Empty<byte>(), 
+                PasswordBytes, 
+                Host ?? "", 
+                PrincipalName ?? new PrincipalName()
+            );
         }
     }
 }

@@ -43,7 +43,7 @@ namespace Tests.Kerberos.NET
         {
             var cred = new KeytabCredential("sdfsdf@domain.com", new KeyTable(Aes128Key, RC4Key))
             {
-                Salts = new[] { KeyValuePair.Create(EncryptionType.AES128_CTS_HMAC_SHA1_96, "asfsdz") }
+                Salts = new[] { new KeyValuePair<EncryptionType, string>(EncryptionType.AES128_CTS_HMAC_SHA1_96, "asfsdz") }
             };
 
             var key = cred.CreateKey();

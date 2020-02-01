@@ -6,6 +6,8 @@ namespace Kerberos.NET.Client
     {
         public KrbEncryptionKey SessionKey;
 
-        public KrbKdcRep Ticket;
+        public KrbKdcRep KdcResponse;
+
+        public int Nonce { get; set; }
     }
 }

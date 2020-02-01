@@ -1,5 +1,8 @@
-﻿namespace Kerberos.NET.Entities
+﻿using System;
+
+namespace Kerberos.NET.Entities
 {
+    [Flags]
     public enum ContextFlags
     {
         delegFlag = 1 << 6,

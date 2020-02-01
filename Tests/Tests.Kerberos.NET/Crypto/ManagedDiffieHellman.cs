@@ -88,7 +88,7 @@ namespace Kerberos.NET.Crypto
             // P in RSA is a safer prime than primes used in DH so it's
             // good enough here, though it's costlier to generate.
 
-            using (var alg = RSA.Create(keyLength * 2 * 8))
+            using (var alg = new RSACryptoServiceProvider(keyLength * 2 * 8))
             {
                 var rsa = alg.ExportParameters(true);
 
@@ -105,7 +105,7 @@ namespace Kerberos.NET.Crypto
                 Array.Reverse(pv);
             }
 
-            if (pv[^1] != 0)
+            if (pv[pv.Length - 1] != 0)
             {
                 var copy = new byte[pv.Length + 1];
 

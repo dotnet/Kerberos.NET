@@ -42,44 +42,9 @@ namespace Kerberos.NET.Entities
 
             var authz = await GenerateAuthorizationData(request.Principal, request);
 
-            var cname = KrbPrincipalName.FromPrincipal(request.Principal, realm: request.RealmName);
-
             var sessionKey = KrbEncryptionKey.Generate(request.ServicePrincipalKey.EncryptionType);
 
-            var flags = request.Flags;
-
-            if (request.PreAuthenticationData?.Any(r => r.Type == PaDataType.PA_REQ_ENC_PA_REP) ?? false)
-            {
-                flags |= TicketFlags.EncryptedPreAuthentication;
-            }
-
-            var addresses = request.Addresses;
-
-            if (addresses == null)
-            {
-                addresses = new KrbHostAddress[0];
-            }
-
-            var encTicketPart = new KrbEncTicketPart()
-            {
-                CName = cname,
-                Key = sessionKey,
-                AuthTime = request.Now,
-                StartTime = request.StartTime,
-                EndTime = request.EndTime,
-                CRealm = request.RealmName,
-                Flags = flags,
-                AuthorizationData = authz.ToArray(),
-                CAddr = addresses.ToArray(),
-                Transited = new KrbTransitedEncoding()
-            };
-
-            if (flags.HasFlag(TicketFlags.Renewable))
-            {
-                // RenewTill should never increase if it was set previously even if this is a renewal pass
-
-                encTicketPart.RenewTill = request.RenewTill;
-            }
+            var encTicketPart = CreateEncTicketPart(request, authz.ToArray(), sessionKey);
 
             var ticket = new KrbTicket()
             {
@@ -98,13 +63,18 @@ namespace Kerberos.NET.Entities
 
             KrbEncKdcRepPart encKdcRepPart;
 
+            KeyUsage keyUsage;
+
             if (typeof(T) == typeof(KrbAsRep))
             {
                 encKdcRepPart = new KrbEncAsRepPart();
+                keyUsage = KeyUsage.EncAsRepPart;
             }
             else if (typeof(T) == typeof(KrbTgsRep))
             {
                 encKdcRepPart = new KrbEncTgsRepPart();
+
+                keyUsage = request.EncryptedPartKey.Usage ?? KeyUsage.EncTgsRepPartSessionKey;
             }
             else
             {
@@ -135,6 +105,8 @@ namespace Kerberos.NET.Entities
                 }
             };
 
+            var cname = KrbPrincipalName.FromPrincipal(request.Principal, realm: request.RealmName);
+
             var rep = new T
             {
                 CName = cname,
@@ -144,11 +116,70 @@ namespace Kerberos.NET.Entities
                 EncPart = KrbEncryptedData.Encrypt(
                     encKdcRepPart.EncodeApplication(),
                     request.EncryptedPartKey,
-                    encKdcRepPart.KeyUsage
+                    keyUsage
                 )
             };
 
             return rep;
+        }
+
+        private static KrbEncTicketPart CreateEncTicketPart(
+            ServiceTicketRequest request,
+            KrbAuthorizationData[] authorizationDatas,
+            KrbEncryptionKey sessionKey)
+        {
+            var cname = CreateCNameForTicket(request);
+
+            var flags = request.Flags;
+
+            if (request.PreAuthenticationData?.Any(r => r.Type == PaDataType.PA_REQ_ENC_PA_REP) ?? false)
+            {
+                flags |= TicketFlags.EncryptedPreAuthentication;
+            }
+
+            var addresses = request.Addresses;
+
+            if (addresses == null)
+            {
+                addresses = Array.Empty<KrbHostAddress>();
+            }
+
+            var encTicketPart = new KrbEncTicketPart()
+            {
+                CName = cname,
+                Key = sessionKey,
+                AuthTime = request.Now,
+                StartTime = request.StartTime,
+                EndTime = request.EndTime,
+                CRealm = request.RealmName,
+                Flags = flags,
+                AuthorizationData = authorizationDatas,
+                CAddr = addresses.ToArray(),
+                Transited = new KrbTransitedEncoding()
+            };
+
+            if (flags.HasFlag(TicketFlags.Renewable))
+            {
+                // RenewTill should never increase if it was set previously even if this is a renewal pass
+
+                encTicketPart.RenewTill = request.RenewTill;
+            }
+
+            return encTicketPart;
+        }
+
+        private static KrbPrincipalName CreateCNameForTicket(ServiceTicketRequest request)
+        {
+            if (string.IsNullOrEmpty(request.SamAccountName))
+            {
+                return KrbPrincipalName.FromPrincipal(request.Principal, realm: request.RealmName);
+            }
+
+            return new KrbPrincipalName
+            {
+                Type = PrincipalNameType.NT_PRINCIPAL,
+                Name = new[] { request.SamAccountName }
+            };
         }
 
         private static async Task<IEnumerable<KrbAuthorizationData>> GenerateAuthorizationData(
@@ -181,23 +212,26 @@ namespace Kerberos.NET.Entities
             {
                 var pac = await principal.GeneratePac();
 
-                var sequence = new KrbAuthorizationDataSequence
+                if (pac != null)
                 {
-                    AuthorizationData = new[]
+                    var sequence = new KrbAuthorizationDataSequence
                     {
-                        new KrbAuthorizationData
+                        AuthorizationData = new[]
                         {
-                            Type = AuthorizationDataType.AdWin2kPac,
-                            Data = pac.Encode(request.ServicePrincipalKey, request.ServicePrincipalKey)
+                            new KrbAuthorizationData
+                            {
+                                Type = AuthorizationDataType.AdWin2kPac,
+                                Data = pac.Encode(request.ServicePrincipalKey, request.ServicePrincipalKey)
+                            }
                         }
-                    }
-                };
+                    };
 
-                authz.Add(new KrbAuthorizationData
-                {
-                    Type = AuthorizationDataType.AdIfRelevant,
-                    Data = sequence.Encode()
-                });
+                    authz.Add(new KrbAuthorizationData
+                    {
+                        Type = AuthorizationDataType.AdIfRelevant,
+                        Data = sequence.Encode()
+                    });
+                }
             }
 
             return authz;

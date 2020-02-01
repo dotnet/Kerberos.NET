@@ -122,9 +122,9 @@ namespace Tests.Kerberos.NET
             {
                 var evePubKey = eve.PublicKey as DiffieHellmanKey;
 
-                var eveMod = new BigInteger(evePubKey.Modulus.Span, isUnsigned: true);
-                var eveGen = new BigInteger(evePubKey.Generator.Span, isUnsigned: true);
-                var evePub = new BigInteger(evePubKey.Public.Span, isUnsigned: true);
+                var eveMod = new BigInteger(evePubKey.Modulus.Span.ToArray());
+                var eveGen = new BigInteger(evePubKey.Generator.Span.ToArray());
+                var evePub = new BigInteger(evePubKey.Public.Span.ToArray());
 
                 for (var i = 0; i < 100; i++)
                 {
@@ -139,11 +139,11 @@ namespace Tests.Kerberos.NET
                         var alicePubKey = alice.PublicKey as DiffieHellmanKey;
                         var bobPubKey = bob.PublicKey as DiffieHellmanKey;
 
-                        var aliceMod = new BigInteger(alicePubKey.Modulus.Span, isUnsigned: true);
-                        var bobMod = new BigInteger(bobPubKey.Modulus.Span, isUnsigned: true);
+                        var aliceMod = new BigInteger(alicePubKey.Modulus.Span.ToArray());
+                        var bobMod = new BigInteger(bobPubKey.Modulus.Span.ToArray());
 
-                        var alicePub = new BigInteger(alice.PublicKey.Public.Span, isUnsigned: true);
-                        var bobPub = new BigInteger(bob.PublicKey.Public.Span, isUnsigned: true);
+                        var alicePub = new BigInteger(alice.PublicKey.Public.Span.ToArray());
+                        var bobPub = new BigInteger(bob.PublicKey.Public.Span.ToArray());
 
                         Assert.AreEqual(aliceMod, bobMod);
                         Assert.AreNotEqual(alicePub, bobPub);
@@ -303,7 +303,7 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(alice.Generator.Span.SequenceEqual(bob.Generator.Span));
             Assert.IsTrue(alice.Factor.Span.SequenceEqual(bob.Factor.Span));
             Assert.IsTrue(alice.Public.Span.SequenceEqual(bob.Public.Span));
-            
+
             Assert.IsTrue(alice.Private.Span.SequenceEqual(bob.Private.Span));
         }
 

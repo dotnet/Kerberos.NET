@@ -1,4 +1,6 @@
-﻿namespace Kerberos.NET.Crypto
+﻿using System;
+
+namespace Kerberos.NET.Crypto
 {
     public enum EncryptionType
     {
@@ -26,6 +28,7 @@
         AES256_CTS_HMAC_SHA1_96_PLAIN = -149
     }
 
+    [Flags]
     public enum SupportedEncryptionTypes
     {
         DesCbcCrc = 1 << 0,

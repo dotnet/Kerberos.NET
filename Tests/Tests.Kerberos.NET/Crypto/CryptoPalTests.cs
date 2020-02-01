@@ -17,7 +17,7 @@ namespace Tests.Kerberos.NET
 
             Assert.AreEqual(OSPlatform.Windows, pal.OSPlatform);
         }
-
+#if WEAKCRYPTO
         [TestMethod]
         public void PalSupportsMd4()
         {
@@ -41,7 +41,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(hmac);
         }
-
+#endif
         [TestMethod]
         public void PalSupportsHmacSha1()
         {

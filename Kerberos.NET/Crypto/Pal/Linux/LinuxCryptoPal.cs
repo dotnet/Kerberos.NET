@@ -13,13 +13,13 @@ namespace Kerberos.NET.Crypto
         }
 
         public override OSPlatform OSPlatform => OSPlatform.Linux;
-
+#if WEAKCRYPTO
         public override IHashAlgorithm Md4() => throw PlatformNotSupported("MD4");
 
         public override IHashAlgorithm Md5() => new Md5();
 
         public override IHmacAlgorithm HmacMd5() => new HmacMd5();
-
+#endif
         public override IHmacAlgorithm HmacSha1() => new HmacSha1();
 
         public override IKeyDerivationAlgorithm Rfc2898DeriveBytes() => new Rfc2898DeriveBytes();

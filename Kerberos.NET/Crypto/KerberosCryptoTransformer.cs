@@ -59,6 +59,11 @@ namespace Kerberos.NET.Crypto
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         public static bool AreEqualSlow(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
         {
+            if (left.Length != right.Length)
+            {
+                return false;
+            }
+
             var diff = left.Length ^ right.Length;
 
             for (var i = 0; i < left.Length; i++)

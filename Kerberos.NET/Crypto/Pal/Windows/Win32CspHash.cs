@@ -32,7 +32,7 @@ namespace Kerberos.NET.Crypto
 
         private const int HP_HASHVAL = 0x0002;
 
-        [DllImport(ADVAPI32, CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport(ADVAPI32, CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern bool CryptAcquireContext(
             ref IntPtr hProv,
             string pszContainer,

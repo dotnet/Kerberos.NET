@@ -16,7 +16,7 @@ namespace Kerberos.NET.Crypto
 
         public static CryptoPal Platform => lazyPlatform.Value;
 
-        private static Lazy<CryptoPal> lazyPlatform
+        private static readonly Lazy<CryptoPal> lazyPlatform
             = new Lazy<CryptoPal>(() => CreatePal());
 
         public abstract OSPlatform OSPlatform { get; }
@@ -54,13 +54,13 @@ namespace Kerberos.NET.Crypto
 
             throw PlatformNotSupported();
         }
-
+#if WEAKCRYPTO
         public abstract IHashAlgorithm Md4();
 
         public abstract IHashAlgorithm Md5();
 
         public abstract IHmacAlgorithm HmacMd5();
-
+#endif
         public abstract IHmacAlgorithm HmacSha1();
 
         public abstract IKeyDerivationAlgorithm Rfc2898DeriveBytes();

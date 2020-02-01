@@ -35,6 +35,11 @@ namespace Kerberos.NET.Entities
 
             var checksum = CryptoService.CreateChecksum(type, signatureData: data);
 
+            if (checksum == null)
+            {
+                throw new InvalidOperationException($"CryptoService couldn't create a transform for type {type}");
+            }
+
             checksum.Usage = ku;
 
             checksum.Sign(key);

@@ -1,9 +1,7 @@
-﻿using Kerberos.NET.Asn1;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Crypto
 {
@@ -90,11 +88,11 @@ namespace Kerberos.NET.Crypto
 
         public int ModulusSize => Modulus.Length * 8;
 
-        protected virtual byte[] Modulus { get; }
+        protected virtual ReadOnlyMemory<byte> Modulus { get; }
 
-        protected virtual byte[] Generator { get; }
+        protected virtual ReadOnlyMemory<byte> Generator { get; }
 
-        protected virtual byte[] Factor { get; set; }
+        protected virtual ReadOnlyMemory<byte> Factor { get; set; }
 
         public IExchangeKey PublicKey { get; }
 
@@ -102,25 +100,33 @@ namespace Kerberos.NET.Crypto
 
         public unsafe void Dispose()
         {
+            int status;
+
             if (hAlgorithm != IntPtr.Zero)
             {
-                BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+                status = BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+                ThrowIfNotNtSuccess(status);
             }
 
             if (hPrivateKey != IntPtr.Zero)
             {
-                BCryptDestroyKey(hPrivateKey);
+                status = BCryptDestroyKey(hPrivateKey);
+                ThrowIfNotNtSuccess(status);
             }
 
             if (hPublicKey != IntPtr.Zero)
             {
-                BCryptDestroyKey(hPublicKey);
+                status = BCryptDestroyKey(hPublicKey);
+                ThrowIfNotNtSuccess(status);
             }
 
             if (phAgreedSecret != IntPtr.Zero)
             {
-                BCryptDestroySecret(phAgreedSecret);
+                status = BCryptDestroySecret(phAgreedSecret);
+                ThrowIfNotNtSuccess(status);
             }
+
+            GC.SuppressFinalize(this);
         }
 
         private static void ThrowIfNotNtSuccess(int status)
@@ -173,7 +179,7 @@ namespace Kerberos.NET.Crypto
                     key.Private = Copy(export.Slice(key.KeyLength + key.KeyLength + key.KeyLength, key.KeyLength));
                 }
 
-                key.Factor = Copy(Factor);
+                key.Factor = Copy(Factor.Span);
             }
 
             return key;
@@ -272,14 +278,17 @@ namespace Kerberos.NET.Crypto
                 throw new NotSupportedException("A partner key must be imported first");
             }
 
+            int status;
+
             if (phAgreedSecret != IntPtr.Zero)
             {
-                BCryptDestroySecret(phAgreedSecret);
+                status = BCryptDestroySecret(phAgreedSecret);
+                ThrowIfNotNtSuccess(status);
             }
 
             phAgreedSecret = IntPtr.Zero;
 
-            var status = BCryptSecretAgreement(hPrivateKey, hPublicKey, ref phAgreedSecret, 0);
+            status = BCryptSecretAgreement(hPrivateKey, hPublicKey, ref phAgreedSecret, 0);
 
             ThrowIfNotNtSuccess(status);
 
@@ -348,7 +357,7 @@ namespace Kerberos.NET.Crypto
 
         private const string BCRYPT = "bcrypt.dll";
 
-        [DllImport(BCRYPT, CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport(BCRYPT, CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern int BCryptOpenAlgorithmProvider(
             ref IntPtr hAlgorithm,
             string pszAlgId,
@@ -385,7 +394,7 @@ namespace Kerberos.NET.Crypto
             int dwFlags
         );
 
-        [DllImport(BCRYPT, CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport(BCRYPT, CharSet = CharSet.Unicode, SetLastError = true)]
         private unsafe static extern int BCryptExportKey(
            IntPtr hKey,
            IntPtr hExportKey,
@@ -396,7 +405,7 @@ namespace Kerberos.NET.Crypto
            int dwFlags
         );
 
-        [DllImport(BCRYPT, CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport(BCRYPT, CharSet = CharSet.Unicode, SetLastError = true)]
         private unsafe static extern int BCryptImportKeyPair(
            IntPtr hAlgorithm,
            IntPtr hImportKey,

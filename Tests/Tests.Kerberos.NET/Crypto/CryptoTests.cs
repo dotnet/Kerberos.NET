@@ -22,6 +22,13 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public void ConstantTimeComparisonDoesntThrowOnMismatchLength()
+        {
+            Assert.IsFalse(KerberosCryptoTransformer.AreEqualSlow(new byte[] { 3, 3, 3 }, new byte[] { 4, 4, 4, 4 }));
+            Assert.IsFalse(KerberosCryptoTransformer.AreEqualSlow(new byte[] { 4, 4, 4, 4 }, new byte[] { 3, 3, 3 }));
+        }
+
+        [TestMethod]
         public void Aes128Roundtrip()
         {
             var data = new Memory<byte>(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 });
@@ -61,6 +68,8 @@ namespace Tests.Kerberos.NET
             var key = CreateKey();
 
             var rc4Transformer = CryptoService.CreateTransform(EncryptionType.RC4_HMAC_NT);
+
+            Assert.IsNotNull(rc4Transformer);
 
             var encrypted = rc4Transformer.Encrypt(data, key, KeyUsage.PaEncTs);
 

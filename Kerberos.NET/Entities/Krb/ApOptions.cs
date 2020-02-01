@@ -1,5 +1,8 @@
-﻿namespace Kerberos.NET.Entities
+﻿using System;
+
+namespace Kerberos.NET.Entities
 {
+    [Flags]
     public enum ApOptions
     {
         Reserved = 0,

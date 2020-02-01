@@ -58,10 +58,10 @@ namespace Kerberos.NET.Crypto
             Decrypt(key);
         }
 
-        public override void Decrypt(KerberosKey key)
+        public override void Decrypt(KerberosKey ticketEncryptingKey)
         {
             Ticket = token.Ticket.EncryptedPart.Decrypt(
-                key,
+                ticketEncryptingKey,
                 KeyUsage.Ticket,
                 b => KrbEncTicketPart.DecodeApplication(b)
             );
@@ -79,13 +79,25 @@ namespace Kerberos.NET.Crypto
                 b => KrbAuthenticator.DecodeApplication(b)
             );
 
+            KeyUsage? projectedUsage = null;
+
             if (Authenticator.Subkey != null)
             {
-                SessionKey = Authenticator.Subkey.AsKey();
+                if (keyUsage == KeyUsage.PaTgsReqAuthenticator)
+                {
+                    projectedUsage = KeyUsage.EncTgsRepPartSubSessionKey;
+                }
+
+                SessionKey = Authenticator.Subkey.AsKey(projectedUsage);
             }
             else
             {
-                SessionKey = Ticket.Key.AsKey();
+                if (keyUsage == KeyUsage.PaTgsReqAuthenticator)
+                {
+                    projectedUsage = KeyUsage.EncTgsRepPartSessionKey;
+                }
+
+                SessionKey = Ticket.Key.AsKey(projectedUsage);
             }
 
             var checksum = Authenticator.Checksum;

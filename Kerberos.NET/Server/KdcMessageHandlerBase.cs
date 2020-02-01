@@ -21,12 +21,14 @@ namespace Kerberos.NET.Server
 
         protected IRealmService RealmService { get; private set; }
 
-        protected IDictionary<PaDataType, PreAuthHandlerConstructor> PreAuthHandlers
+        public IDictionary<PaDataType, PreAuthHandlerConstructor> PreAuthHandlers
         {
             get => preAuthHandlers;
         }
 
         protected abstract MessageType MessageType { get; }
+
+        public abstract Task<PreAuthenticationContext> ValidateTicketRequest(IKerberosMessage message);
 
         protected KdcMessageHandlerBase(ReadOnlySequence<byte> message, ListenerOptions options)
         {
@@ -43,7 +45,7 @@ namespace Kerberos.NET.Server
             RealmService = await Options.RealmLocator(realm);
         }
 
-        private async Task<IKerberosMessage> DecodeMessage(ReadOnlyMemory<byte> message)
+        private Task<IKerberosMessage> DecodeMessage(ReadOnlyMemory<byte> message)
         {
             var decoded = DecodeMessageCore(message);
 
@@ -57,20 +59,25 @@ namespace Kerberos.NET.Server
                 throw new InvalidOperationException($"MessageType should match application class. Actual: {decoded.KerberosMessageType}; Expected: {MessageType}");
             }
 
-            await SetRealmContext(decoded.Realm);
-
-            return decoded;
+            return Task.FromResult(decoded);
         }
 
         protected abstract IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message);
+
+        public async Task<IKerberosMessage> DecodeMessage()
+        {
+            return await DecodeMessage(messagePool.Memory.Slice(0, messageLength));
+        }
 
         public virtual async Task<ReadOnlyMemory<byte>> Execute()
         {
             try
             {
-                var message = await DecodeMessage(messagePool.Memory.Slice(0, messageLength));
+                var message = await DecodeMessage();
 
-                return await ExecuteCore(message);
+                var context = await ValidateTicketRequest(message);
+
+                return await ExecuteCore(message, context);
             }
             catch (Exception ex)
             {
@@ -82,7 +89,7 @@ namespace Kerberos.NET.Server
             }
         }
 
-        protected abstract Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message);
+        public abstract Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message, PreAuthenticationContext context);
 
         internal static ReadOnlyMemory<byte> GenerateGenericError(Exception ex, ListenerOptions options)
         {
@@ -104,6 +111,8 @@ namespace Kerberos.NET.Server
                     }
                 }
             };
+
+            krbErr.StampServerTime();
 
             return krbErr.EncodeApplication();
         }

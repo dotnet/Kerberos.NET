@@ -54,7 +54,7 @@ namespace Kerberos.NET.Entities
 
         public override int GetHashCode()
         {
-            return Names.GetHashCode() ^ NameType.GetHashCode();
+            return EntityHashCode.GetHashCode(Names, NameType);
         }
     }
 }

@@ -77,6 +77,8 @@ namespace Kerberos.NET.Credentials
 
         private ReadOnlyMemory<byte> clientDHNonce;
 
+        public X509IncludeOption IncludeOption { get; set; } = X509IncludeOption.ExcludeRoot;
+
         public override void TransformKdcReq(KrbKdcReq req)
         {
             var padata = req.PaData.ToList();
@@ -105,7 +107,9 @@ namespace Kerberos.NET.Credentials
                 )
             );
 
-            signed.ComputeSignature(new CmsSigner(Certificate));
+            var signer = new CmsSigner(Certificate) { IncludeOption = IncludeOption };
+
+            signed.ComputeSignature(signer, silent: true);
 
             var pk = new KrbPaPkAsReq { SignedAuthPack = signed.Encode() };
 

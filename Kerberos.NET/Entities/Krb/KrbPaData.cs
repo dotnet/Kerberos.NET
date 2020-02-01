@@ -68,9 +68,6 @@ namespace Kerberos.NET.Entities
         TD_REQ_NONCE = 107,
         TD_REQ_SEQ = 108,
         PA_PAC_REQUEST = 128,
-
-        // -- So sayeth Heimdal ¯\_(ツ)_/¯
-
         PA_FOR_USER = 129,
         PA_FOR_X509_USER = 130,
         PA_FOR_CHECK_DUPS = 131,

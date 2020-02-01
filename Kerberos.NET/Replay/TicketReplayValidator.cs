@@ -9,24 +9,19 @@ namespace Kerberos.NET
 
         public TicketReplayValidator(ILoggerFactory logger)
         {
-            this.cache = new MemoryTicketCache(logger);
+            this.cache = new MemoryTicketCache(logger) { BlockUpdates = true };
         }
 
         public async Task<bool> Add(TicketCacheEntry entry)
         {
-            if (await Contains(entry))
-            {
-                return false;
-            }
-
-            await cache.Add(entry);
-
-            return true;
+            return await cache.Add(entry);
         }
 
         public async Task<bool> Contains(TicketCacheEntry entry)
         {
-            return await cache.Contains(entry);
+            var got = await cache.Get(entry.Key);
+
+            return got != null;
         }
     }
 }

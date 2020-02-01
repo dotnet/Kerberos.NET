@@ -310,7 +310,7 @@ namespace Kerberos.NET.Entities
             return elements;
         }
 
-        private void AddIfNotNull(List<PacObject> elements, PacObject element)
+        private static void AddIfNotNull(List<PacObject> elements, PacObject element)
         {
             if (element != null)
             {

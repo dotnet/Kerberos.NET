@@ -4,10 +4,12 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncryptionKey
     {
-        public KerberosKey AsKey()
+        public KerberosKey AsKey(KeyUsage? usage = null)
         {
-            return new KerberosKey(this);
+            return new KerberosKey(this) { Usage = usage };
         }
+
+        public KeyUsage Usage { get; set; }
 
         public static KrbEncryptionKey Generate(EncryptionType type)
         {

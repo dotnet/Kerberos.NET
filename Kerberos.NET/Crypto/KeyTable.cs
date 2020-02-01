@@ -200,7 +200,7 @@ namespace Kerberos.NET.Crypto
             return new KerberosKey(key, etype: EncryptionType ?? Crypto.EncryptionType.NULL);
         }
 
-        private DateTimeOffset ReadDateTime(BinaryReader reader)
+        private static DateTimeOffset ReadDateTime(BinaryReader reader)
         {
             var time = ReadInt32(reader);
 
@@ -209,12 +209,12 @@ namespace Kerberos.NET.Crypto
             return UNIX_EPOCH_BASE.Add(ts);
         }
 
-        private string ReadString(BinaryReader reader)
+        private static string ReadString(BinaryReader reader)
         {
             return Encoding.UTF8.GetString(ReadBytes(reader));
         }
 
-        private byte[] ReadBytes(BinaryReader reader)
+        private static byte[] ReadBytes(BinaryReader reader)
         {
             var length = ReadInt16(reader);
 
@@ -335,11 +335,13 @@ namespace Kerberos.NET.Crypto
 
         public override int GetHashCode()
         {
-            return (this.EncryptionType ?? Crypto.EncryptionType.NULL).GetHashCode() ^
-                    Key.GetHashCode() ^
-                    Principal.GetHashCode() ^
-                    Timestamp.GetHashCode() ^
-                    Version.GetHashCode();
+            return EntityHashCode.GetHashCode(
+                this.EncryptionType ?? Crypto.EncryptionType.NULL,
+                Key,
+                Principal,
+                Timestamp,
+                Version
+            );
         }
 
         public override bool Equals(object obj)
