@@ -120,6 +120,7 @@ namespace Kerberos.NET.Server
                     EndTime = now + RealmService.Settings.SessionLifetime,
                     Flags = flags,
                     Now = now,
+                    Nonce = tgsReq.Body.Nonce,
                     IncludePac = context.Ticket.AuthorizationData.Any(a => a.Type == AuthorizationDataType.AdIfRelevant)
                 }
             );

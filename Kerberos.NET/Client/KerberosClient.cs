@@ -168,6 +168,8 @@ namespace Kerberos.NET.Client
                     d => KrbEncTgsRepPart.DecodeApplication(d)
                 );
 
+                VerifyNonces(serviceTicketCacheEntry.Nonce, encKdcRepPart.Nonce);
+
                 await Cache.Add(new TicketCacheEntry
                 {
                     Key = rst.ServicePrincipalName,
@@ -244,7 +246,8 @@ namespace Kerberos.NET.Client
             var entry = new KerberosClientCacheEntry
             {
                 KdcResponse = tgsRep,
-                SessionKey = sessionKey
+                SessionKey = sessionKey,
+                Nonce = tgsReq.Body.Nonce
             };
 
             return entry;
@@ -344,14 +347,19 @@ namespace Kerberos.NET.Client
                 d => KrbEncAsRepPart.DecodeApplication(d)
             );
 
-            if (decrypted.Nonce != asReqMessage.Body.Nonce)
-            {
-                throw new SecurityException(SR.Resource("KRB_ERROR_AS_NONCE_MISMATCH", asReqMessage.Body.Nonce, decrypted.Nonce));
-            }
+            VerifyNonces(asReqMessage.Body.Nonce, decrypted.Nonce);
 
             DefaultDomain = credential.Domain;
 
             await CacheTgt(asRep, decrypted);
+        }
+
+        private static void VerifyNonces(int reqNonce, int repNonce)
+        {
+            if (repNonce != reqNonce)
+            {
+                throw new SecurityException(SR.Resource("KRB_ERROR_AS_NONCE_MISMATCH", reqNonce, repNonce));
+            }
         }
 
         private bool disposed = false;
