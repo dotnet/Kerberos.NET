@@ -27,7 +27,6 @@ namespace KerberosClientApp
             bool prompt = ReadString("prompt", "y", args, required: false, reader: () => { W(); return null; }).Equals("y", StringComparison.InvariantCultureIgnoreCase);
 
             var cert = SelectCertificate(args, prompt);
-
             string user = ReadString("UserName", "administrator@corp.identityintervention.com", args, prompt: prompt);
             string password = ReadString("Password", "P@ssw0rd!", args, ReadMasked, prompt: prompt);
             string s4u = ReadString("S4U", null, args, required: false, prompt: prompt);

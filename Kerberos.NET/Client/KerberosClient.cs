@@ -150,6 +150,7 @@ namespace Kerberos.NET.Client
             get => scopeId ?? (scopeId = KerberosConstants.GetRequestActivityId()).Value;
             set => scopeId = value;
         }
+        public KrbPrincipalName CNameHint { get; set; }
 
         /// <summary>
         /// Initiates an AS-REQ to get a Ticket-Granting-Ticket for the provided credentials
@@ -396,7 +397,8 @@ namespace Kerberos.NET.Client
                     ApOptions = options,
                     S4uTarget = s4u,
                     S4uTicket = s4uTicket,
-                    UserToUserTicket = u2uServerTicket
+                    UserToUserTicket = u2uServerTicket,
+                    CNameHint = CNameHint
                 },
                 cancellation.Token
             );
@@ -484,7 +486,6 @@ namespace Kerberos.NET.Client
             };
 
             logger.LogInformation("TGS-REP for {SPN}", tgsRep.Ticket.SName);
-
             return entry;
         }
 

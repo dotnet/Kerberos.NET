@@ -142,7 +142,6 @@ namespace Kerberos.NET.Entities
             };
 
             sessionKey = KrbEncryptionKey.Generate(tgtSessionKey.EType);
-
             sessionKey.Usage = KeyUsage.EncTgsRepPartSubSessionKey;
             authenticator.Subkey = sessionKey;
 
