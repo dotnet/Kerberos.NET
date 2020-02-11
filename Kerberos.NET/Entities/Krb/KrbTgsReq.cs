@@ -58,10 +58,10 @@ namespace Kerberos.NET.Entities
                 EType = KerberosConstants.ETypes.ToArray(),
                 KdcOptions = rst.KdcOptions,
                 Nonce = KerberosConstants.GetNonce(),
-                Realm = tgt.Realm,
+                Realm = rst.Realm,
                 SName = new KrbPrincipalName()
                 {
-                    Type = PrincipalNameType.NT_SRV_HST,
+                    Type = PrincipalNameType.NT_SRV_INST,
                     Name = sname
                 },
                 Till = KerberosConstants.EndOfTime,
@@ -136,7 +136,7 @@ namespace Kerberos.NET.Entities
             var authenticator = new KrbAuthenticator
             {
                 CName = kdcRep.CName,
-                Realm = tgt.Realm,
+                Realm = kdcRep.CRealm,
                 SequenceNumber = KerberosConstants.GetNonce(),
                 Checksum = checksum
             };

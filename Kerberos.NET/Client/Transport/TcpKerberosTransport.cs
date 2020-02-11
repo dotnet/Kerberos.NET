@@ -28,33 +28,46 @@ namespace Kerberos.NET.Transport
             CancellationToken cancellation = default
         )
         {
-            var target = LocateKdc(domain);
+            var attempts = MaximumAttempts;
+            SocketException lastThrown = null;
 
-            logger.LogInformation("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
-
-            using (var client = new TcpClient(AddressFamily.InterNetwork))
+            do
             {
-                client.LingerState = new LingerOption(false, 0);
+                var target = LocateKdc(domain);
 
-                try
+                logger.LogInformation("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
+
+                using (var client = new TcpClient(AddressFamily.InterNetwork))
                 {
-                    client.SendTimeout = (int)ConnectTimeout.TotalMilliseconds;
-                    client.ReceiveTimeout = (int)ConnectTimeout.TotalMilliseconds;
+                    client.LingerState = new LingerOption(false, 0);
 
-                    await client.ConnectAsync(target.Target, target.Port);
+                    try
+                    {
+                        client.SendTimeout = (int)ConnectTimeout.TotalMilliseconds;
+                        client.ReceiveTimeout = (int)ConnectTimeout.TotalMilliseconds;
+
+                        await client.ConnectAsync(target.Target, target.Port);
+                    }
+                    catch (SocketException sx)
+                    {
+                        lastThrown = sx;
+                        target.Ignore = true;
+
+                        continue;
+                    }
+
+                    var stream = client.GetStream();
+
+                    await WriteMessage(encoded, stream, cancellation);
+
+                    return await ReadResponse<T>(stream, cancellation);
                 }
-                catch (SocketException sx)
-                {
-                    logger.LogDebug(sx, "TCP Socket exception during Connect {SocketCode}", sx.SocketErrorCode);
-                    throw new KerberosTransportException("TCP Connect failed", sx);
-                }
-
-                var stream = client.GetStream();
-
-                await WriteMessage(encoded, stream, cancellation);
-
-                return await ReadResponse<T>(stream, cancellation);
             }
+            while (--attempts > 0);
+
+            logger.LogDebug(lastThrown, "TCP Socket exception during Connect {SocketCode}", lastThrown.SocketErrorCode);
+
+            throw new KerberosTransportException("TCP Connect failed", lastThrown);
         }
 
         private async Task<T> ReadResponse<T>(NetworkStream stream, CancellationToken cancellation)

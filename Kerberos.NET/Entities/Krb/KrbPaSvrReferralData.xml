@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbPaSvrReferralData"
+  namespace="Kerberos.NET.Entities">
+  <!--
+  
+  PA-SVR-REFERRAL-INFO       20
+
+  PA-SVR-REFERRAL-DATA ::= SEQUENCE {
+          referred-name   [1] PrincipalName OPTIONAL,
+          referred-realm  [0] Realm
+  }
+  
+  -->
+  <asn:AsnType name="ReferredName" explicitTag="1" typeName="KrbPrincipalName" optional="true" />
+  <asn:GeneralString name="ReferredRealm" explicitTag="0" />
+</asn:Sequence>

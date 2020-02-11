@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,7 +11,7 @@ namespace Kerberos.NET
     internal sealed class MemoryTicketCache : ITicketCache, IDisposable
     {
         private readonly ILogger logger;
-        private readonly Task backgroundCleanup;
+        private readonly Task backgroundRunner;
         private readonly CancellationTokenSource cts;
 
         public MemoryTicketCache(ILoggerFactory logger)
@@ -18,11 +20,17 @@ namespace Kerberos.NET
 
             cts = new CancellationTokenSource();
 
-            backgroundCleanup = Task.Run(Cleanup, cts.Token);
-            backgroundCleanup.ContinueWith(t => { }, cts.Token);
+            backgroundRunner = Task.Run(RunBackground, cts.Token);
+            backgroundRunner.ContinueWith(t => t, cts.Token);
         }
 
-        private async Task Cleanup()
+        internal Func<CacheEntry, Task> Refresh { get; set; }
+
+        public bool RefreshTickets { get; set; }
+
+        public TimeSpan RefreshInterval { get; set; } = TimeSpan.FromSeconds(30);
+
+        private async Task RunBackground()
         {
             while (true)
             {
@@ -31,15 +39,48 @@ namespace Kerberos.NET
                     break;
                 }
 
-                foreach (var kv in this.cache.Keys)
+                try
                 {
-                    if (cache.TryGetValue(kv, out CacheEntry entry) && entry.IsExpired())
-                    {
-                        cache.TryRemove(kv, out _);
-                    }
+                    await BackgroundCacheOperation();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Background cache operation failed");
                 }
 
-                await Task.Delay(TimeSpan.FromMinutes(5), cts.Token);
+                await Task.Delay(RefreshInterval, cts.Token);
+            }
+        }
+
+        private async Task BackgroundCacheOperation()
+        {
+            var originalKeys = cache.Keys.ToArray();
+
+            foreach (var kv in originalKeys)
+            {
+                if (!cache.TryGetValue(kv, out CacheEntry entry))
+                {
+                    continue;
+                }
+
+                if (entry.IsExpired())
+                {
+                    cache.TryRemove(kv, out _);
+                }
+                else if (RefreshTickets)
+                {
+                    await Refresh?.Invoke(entry);
+                }
+            }
+
+            var finalKeys = cache.Keys.ToArray();
+
+            var newKeys = finalKeys.Except(originalKeys);
+            var purgedKeys = originalKeys.Except(finalKeys);
+
+            if (newKeys.Any() || purgedKeys.Any())
+            {
+                logger.LogDebug("Cache Operation. New: {NewKeys}; Purged: {PurgedKeys}", string.Join("; ", newKeys), string.Join("; ", purgedKeys));
             }
         }
 
@@ -52,11 +93,9 @@ namespace Kerberos.NET
         {
             var cacheEntry = new CacheEntry(entry.Computed, entry.Value, logger);
 
-            var lifetime = entry.Expires - DateTimeOffset.UtcNow;
-
-            if (lifetime > TimeSpan.Zero)
+            if (entry.Expires > DateTimeOffset.UtcNow)
             {
-                cacheEntry.MarkLifetime(lifetime);
+                cacheEntry.MarkLifetime(entry.Expires, entry.RenewUntil);
             }
 
             bool added = false;
@@ -128,9 +167,11 @@ namespace Kerberos.NET
         {
             cts.Cancel();
             cts.Dispose();
+            backgroundRunner.Dispose();
         }
 
-        private class CacheEntry
+        [DebuggerDisplay("{Key}; E: {Expiration}; R: {RenewUntil};")]
+        internal class CacheEntry
         {
             private readonly ILogger logger;
 
@@ -151,23 +192,21 @@ namespace Kerberos.NET
 
             public DateTimeOffset? Expiration { get; private set; }
 
-            public void MarkLifetime(TimeSpan lifetime)
+            public DateTimeOffset? RenewUntil { get; private set; }
+
+            public TimeSpan TimeToLive => (Expiration ?? DateTimeOffset.MaxValue) - DateTimeOffset.UtcNow;
+
+            public void MarkLifetime(DateTimeOffset expiration, DateTimeOffset? renewUntil)
             {
-                logger.LogTrace($"Triggering delay {lifetime} for {Key}");
+                logger.LogTrace("Caching ticket until {Expiration} for {Key} with renewal option until {RenewUntil}", expiration, Key, renewUntil);
 
-                TimeSpan delay = lifetime;
-
-                if (delay > TimeSpan.FromDays(7))
-                {
-                    delay = TimeSpan.FromDays(7);
-                }
-
-                Expiration = DateTimeOffset.UtcNow + delay;
+                Expiration = expiration;
+                RenewUntil = renewUntil;
             }
 
             public bool IsExpired()
             {
-                return Expiration.HasValue && Expiration.Value <= DateTimeOffset.UtcNow;
+                return TimeToLive <= TimeSpan.Zero;
             }
         }
     }

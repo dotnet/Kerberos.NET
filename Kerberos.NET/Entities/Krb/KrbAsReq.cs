@@ -42,7 +42,6 @@ namespace Kerberos.NET.Entities
 
             var asreq = new KrbAsReq()
             {
-                MessageType = MessageType.KRB_AS_REQ,
                 Body = new KrbKdcReqBody
                 {
                     Addresses = new[] {

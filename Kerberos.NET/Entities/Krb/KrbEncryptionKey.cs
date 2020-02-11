@@ -1,7 +1,9 @@
-﻿using Kerberos.NET.Crypto;
+﻿using System.Diagnostics;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
+    [DebuggerDisplay("{EType} {Usage} [{KeyValue.Length}]")]
     public partial class KrbEncryptionKey
     {
         public KerberosKey AsKey(KeyUsage? usage = null)

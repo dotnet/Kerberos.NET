@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET;
 using Kerberos.NET.Client;
@@ -11,6 +12,8 @@ using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using static System.Console;
@@ -24,12 +27,11 @@ namespace KerberosClientApp
             bool prompt = ReadString("prompt", "y", args, required: false, reader: () => { W(); return null; }).Equals("y", StringComparison.InvariantCultureIgnoreCase);
 
             var cert = SelectCertificate(args, prompt);
-
             string user = ReadString("UserName", "administrator@corp.identityintervention.com", args, prompt: prompt);
             string password = ReadString("Password", "P@ssw0rd!", args, ReadMasked, prompt: prompt);
             string s4u = ReadString("S4U", null, args, required: false, prompt: prompt);
             string spn = ReadString("SPN", "host/downlevel.corp.identityintervention.com", args, prompt: prompt);
-            string overrideKdc = ReadString("KDC", "10.0.0.21:88", args, prompt: prompt);
+            string overrideKdc = ReadString("KDC", "", args, required: false, prompt: prompt);
 
             bool includeCNameHint = ReadString("Hint", "n", args, required: false, prompt: prompt).Equals("y", StringComparison.InvariantCultureIgnoreCase);
 
@@ -306,6 +308,12 @@ namespace KerberosClientApp
                 }
             }
 
+            var factory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole(opt => opt.IncludeScopes = true);
+                builder.AddFilter<ConsoleLoggerProvider>(level => level >= LogLevel.Trace);
+            });
+
             KerberosClient client;
 
             if (Uri.TryCreate(overrideKdc, UriKind.Absolute, out Uri kdcProxy))
@@ -319,24 +327,26 @@ namespace KerberosClientApp
                     }
                 };
 
-                client = new KerberosClient(null, kdcProxyTransport);
+                client = new KerberosClient(factory, kdcProxyTransport);
             }
             else
             {
-                client = new KerberosClient(overrideKdc);
+                client = new KerberosClient(overrideKdc, factory);
             }
+
+            KrbPrincipalName cnameHint = null;
 
             if (includeCNameHint)
             {
-                client.CNameHint = KrbPrincipalName.FromString(kerbCred.UserName, PrincipalNameType.NT_PRINCIPAL, kerbCred.Domain);
+                cnameHint = KrbPrincipalName.FromString(kerbCred.UserName, PrincipalNameType.NT_PRINCIPAL, kerbCred.Domain);
             }
+
+            client.RenewTickets = true;
 
             using (client)
             using (kerbCred as IDisposable)
             {
                 await client.Authenticate(kerbCred);
-
-                W("AS-REQ Succeeded", ConsoleColor.Green);
 
                 spn = spn ?? "host/appservice.corp.identityintervention.com";
 
@@ -353,13 +363,17 @@ namespace KerberosClientApp
                     s4uTicket = s4uSelf.Ticket;
                 }
 
-                var ticket = await client.GetServiceTicket(
-                    spn,
-                    ApOptions.MutualRequired,
-                    s4uTicket: s4uTicket
+                var session = await client.GetServiceTicket(
+                    new RequestServiceTicket
+                    {
+                        ServicePrincipalName = spn,
+                        ApOptions = ApOptions.MutualRequired,
+                        S4uTicket = s4uTicket,
+                        CNameHint = cnameHint
+                    }
                 );
 
-                DumpTicket(ticket);
+                DumpTicket(session.ApReq);
 
                 ResetColor();
 
@@ -367,7 +381,7 @@ namespace KerberosClientApp
                 {
                     try
                     {
-                        await TryValidate(spn, ticket, servicePassword, serviceSalt);
+                        await TryValidate(spn, session.ApReq, servicePassword, serviceSalt);
                     }
                     catch (Exception ex)
                     {
