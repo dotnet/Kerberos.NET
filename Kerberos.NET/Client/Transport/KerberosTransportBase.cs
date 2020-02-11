@@ -16,6 +16,11 @@ namespace Kerberos.NET.Transport
 
         private readonly string kdc;
 
+        private static readonly Random random = new Random();
+
+        private readonly ConcurrentDictionary<string, DnsRecord> negativeCache
+            = new ConcurrentDictionary<string, DnsRecord>();
+
         protected KerberosTransportBase(string kdc = null)
         {
             this.kdc = kdc;
@@ -31,6 +36,8 @@ namespace Kerberos.NET.Transport
         public bool Enabled { get; set; }
 
         public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+        public int MaximumAttempts { get; set; } = 10;
 
         protected static T Decode<T>(ReadOnlyMemory<byte> response)
             where T : IAsn1ApplicationEncoder<T>, new()
@@ -67,6 +74,15 @@ namespace Kerberos.NET.Transport
 
         protected virtual DnsRecord QueryDomain(string lookup)
         {
+            return DomainCache.AddOrUpdate(
+                lookup, // find SRV by domain name in cache
+                dn => QueryDns(dn, null), // if it doesn't exist in cache just query and add
+                (dn, existing) => existing.Purge ? QueryDns(dn, existing) : existing // if it already exists check if its ignored and replace
+            );
+        }
+
+        private DnsRecord QueryDns(string lookup, DnsRecord ignored)
+        {
             if (!string.IsNullOrWhiteSpace(kdc))
             {
                 var split = kdc.Split(':');
@@ -88,14 +104,20 @@ namespace Kerberos.NET.Transport
                 return record;
             }
 
-            return DomainCache.GetOrAdd(lookup, d => QueryDns(d));
-        }
+            var results = Query(lookup).Where(r => r.Type == DnsRecordType.SRV);
 
-        private DnsRecord QueryDns(string lookup)
-        {
-            var results = Query(lookup);
+            if (ignored != null)
+            {
+                negativeCache[ignored.Target] = ignored;
+            }
 
-            var srv = results.FirstOrDefault(s => s.Type == DnsRecordType.SRV);
+            results = results.Where(s => !negativeCache.TryGetValue(s.Target, out DnsRecord record) || record.Expired);
+
+            var weighted = results.GroupBy(r => r.Weight).OrderBy(r => r.Key).OrderByDescending(r => r.Sum(a => a.Canonical.Count())).FirstOrDefault();
+
+            var rand = random.Next(0, weighted.Count());
+
+            var srv = weighted.ElementAtOrDefault(rand);
 
             if (srv == null)
             {

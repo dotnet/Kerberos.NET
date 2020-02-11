@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 
@@ -32,12 +33,21 @@ namespace Kerberos.NET.Dns
         }
     }
 
-    [DebuggerDisplay("{Type} {Target}")]
+    [DebuggerDisplay("{Type} {Target} {Weight}")]
     public class DnsRecord
     {
+        private readonly DateTimeOffset stamp;
+
+        public DnsRecord()
+        {
+            stamp = DateTimeOffset.UtcNow;
+        }
+
         public string Name { get; set; }
 
         public string Target { get; set; }
+
+        public IEnumerable<DnsRecord> Canonical { get; set; } = new List<DnsRecord>();
 
         public DnsRecordType Type { get; set; }
 
@@ -48,6 +58,12 @@ namespace Kerberos.NET.Dns
         public int Weight { get; set; }
 
         public int Port { get; set; }
+
+        public bool Ignore { get; set; }
+
+        public bool Purge => Ignore || Expired;
+
+        public bool Expired => stamp.AddSeconds(TimeToLive) <= DateTimeOffset.UtcNow;
     }
 
     [Flags]
@@ -229,6 +245,7 @@ namespace Kerberos.NET.Dns
                             records.Add(new DnsRecord
                             {
                                 Type = aRecord.wType,
+                                Name = aRecord.pName,
                                 Target = new IPAddress(aRecord.IPAddress).ToString()
                             });
                             break;
@@ -239,6 +256,7 @@ namespace Kerberos.NET.Dns
                             records.Add(new DnsRecord
                             {
                                 Type = aaaaRecord.wType,
+                                Name = aaaaRecord.pName,
                                 Target = new IPAddress(aaaaRecord.IPAddress).ToString()
                             });
                             break;
@@ -248,6 +266,17 @@ namespace Kerberos.NET.Dns
             finally
             {
                 DnsRecordListFree(ppQueryResults, DnsFreeType.DnsFreeRecordList);
+            }
+
+            var merged = records.Where(r => r.Type != DnsRecordType.SRV).GroupBy(r => r.Name);
+
+            foreach (var srv in records.Where(r => r.Type == DnsRecordType.SRV))
+            {
+                var c1 = merged.Where(m => m.Key.Equals(srv.Target, StringComparison.InvariantCultureIgnoreCase));
+
+                var canon = c1.SelectMany(r => r);
+
+                srv.Canonical = canon.ToList();
             }
 
             return records;

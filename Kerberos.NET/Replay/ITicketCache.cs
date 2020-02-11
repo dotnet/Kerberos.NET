@@ -4,6 +4,8 @@ namespace Kerberos.NET
 {
     public interface ITicketCache
     {
+        bool RefreshTickets { get; set; }
+
         Task<bool> Add(TicketCacheEntry entry);
 
         Task<bool> Contains(TicketCacheEntry entry);

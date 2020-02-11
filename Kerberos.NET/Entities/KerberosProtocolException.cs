@@ -25,7 +25,7 @@ namespace Kerberos.NET
                 return error.EText;
             }
 
-            return SR.Resource($"KRB_ERROR_{error.ErrorCode}");
+            return $"KDC {error.ErrorCode}: " + SR.Resource($"KRB_ERROR_{error.ErrorCode}");
         }
 
         public KerberosProtocolException(string message) : base(message) { }

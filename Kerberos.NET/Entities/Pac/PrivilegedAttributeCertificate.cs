@@ -104,20 +104,23 @@ namespace Kerberos.NET.Entities
 
             var attribute = (PacObject)Activator.CreateInstance(pacObjectType);
 
-            PacSignature signature = null;
-
-            if (attribute is PacSignature)
+            if (pacInfoBuffer.Length > 0)
             {
-                signature = (PacSignature)attribute;
-                signature.SignatureData = pacData;
-            }
+                PacSignature signature = null;
 
-            attribute.Unmarshal(pacInfoBuffer);
+                if (attribute is PacSignature)
+                {
+                    signature = (PacSignature)attribute;
+                    signature.SignatureData = pacData;
+                }
 
-            if (signature != null)
-            {
-                exclusionStart = signature.SignaturePosition;
-                exclusionLength = signature.Signature.Length;
+                attribute.Unmarshal(pacInfoBuffer);
+
+                if (signature != null)
+                {
+                    exclusionStart = signature.SignaturePosition;
+                    exclusionLength = signature.Signature.Length;
+                }
             }
 
             attributes[type] = attribute;

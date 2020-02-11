@@ -50,7 +50,9 @@ namespace Kerberos.NET.Entities
         PA_PK_AS_REQ = 16,
         PA_PK_AS_REP = 17,
         PA_ETYPE_INFO2 = 19,
-        PA_USE_SPECIFIED_KVNO = 20,
+        // Deprecated: 
+        // PA_USE_SPECIFIED_KVNO = 20,
+        PA_SVR_REFERRAL_INFO = 20,
         PA_SAM_REDIRECT = 21,
         PA_GET_FROM_TYPED_DATA = 22,
         TD_PADATA = 22,

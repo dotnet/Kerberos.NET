@@ -47,6 +47,7 @@
     <AsnXml Include="Entities\Krb\KrbPaForUser.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacOptions.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacRequest.xml" />
+    <AsnXml Include="Entities\Krb\KrbPaSvrReferralData.xml" />
     <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsReq.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />

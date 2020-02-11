@@ -29,6 +29,7 @@ namespace Kerberos.NET.Transport
 
             foreach (var transport in Transports.Where(t => t.Enabled && !t.TransportFailed))
             {
+                transport.MaximumAttempts = MaximumAttempts;
                 transport.ConnectTimeout = ConnectTimeout;
 
                 try

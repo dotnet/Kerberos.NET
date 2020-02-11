@@ -102,9 +102,6 @@ namespace Kerberos.NET.Crypto
                 case 3:
                     usage = 8;
                     break;
-                case 9:
-                    usage = 8;
-                    break;
                 case 23:
                     usage = 13;
                     break;

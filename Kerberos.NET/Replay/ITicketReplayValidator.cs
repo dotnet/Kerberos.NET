@@ -25,6 +25,8 @@ namespace Kerberos.NET
 
         public DateTimeOffset Expires { get; set; }
 
+        public DateTimeOffset? RenewUntil { get; set; }
+
         public object Value { get; set; }
     }
 }
