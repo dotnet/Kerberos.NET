@@ -13,6 +13,17 @@ namespace Kerberos.NET.Entities
 
         internal static readonly byte[] MessageSignature = Encoding.ASCII.GetBytes("NTLMSSP\0");
 
+        public static bool CanReadNtlmMessage(string token)
+        {
+            token = token.Trim();
+            if (token.IndexOf(' ') >= 1)
+            {
+                string[] strArray = token.Split(' ');
+                token = strArray[strArray.Length - 1];
+            }
+            return CanReadNtlmMessage(Convert.FromBase64String(token));
+        }
+
         public static bool CanReadNtlmMessage(ReadOnlyMemory<byte> ntlm)
         {
             return CanReadNtlmMessage(ntlm, out _, out _);
