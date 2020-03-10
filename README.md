@@ -4,6 +4,10 @@ A complete Kerberos library built entirely in managed code without (many) OS dep
 [![Build Status](https://syfuhs2.visualstudio.com/Kerberos.NET/_apis/build/status/Kerberos.NET%20YAML?branchName=master)](https://syfuhs2.visualstudio.com/Kerberos.NET/_build/latest?definitionId=3&branchName=master)
 [![Nuget Package](https://img.shields.io/nuget/v/Kerberos.NET.svg)](https://www.nuget.org/packages/Kerberos.NET)
 
+### .NET Foundation
+
+This project is supported by the [.NET Foundation](https://dotnetfoundation.org).
+
 # What is it?
 
 A library built in .NET that lets you operate on Kerberos messages. You can run a client, host your own KDC, or just validate incoming tickets. It's intended to be as lightweight as possible.
