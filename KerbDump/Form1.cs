@@ -25,7 +25,7 @@ namespace KerbDump
     {
         private const string RequestTemplateText = "Request for {0}";
 
-        private readonly ContextMenu exportMenu = new ContextMenu();
+        private readonly ContextMenuStrip exportMenu = new ContextMenuStrip();
 
         public Form1()
         {
@@ -34,8 +34,8 @@ namespace KerbDump
 
             InitializeComponent();
 
-            exportMenu.MenuItems.Add("Export to WireShark", ExportWireshark);
-            exportMenu.MenuItems.Add("Export to Keytab", ExportKeytab);
+            exportMenu.Items.Add("Export to WireShark", null, ExportWireshark);
+            exportMenu.Items.Add("Export to Keytab", null, ExportKeytab);
 
             btnExport.Click += (s, e) => { exportMenu.Show(btnExport, new System.Drawing.Point()); };
 
