@@ -29,7 +29,11 @@ namespace Tests.Kerberos.NET
         [TestMethod, ExpectedException(typeof(KerberosTransportException))]
         public async Task TcpClientConnectExceptional()
         {
-            var tcp = new NoDnsTcpTransport(new FakeExceptionLoggerFactory()) { ConnectTimeout = TimeSpan.FromSeconds(1) };
+            var tcp = new NoDnsTcpTransport(new FakeExceptionLoggerFactory())
+            {
+                ConnectTimeout = TimeSpan.FromSeconds(1),
+                MaximumAttempts = 1
+            };
 
             await tcp.SendMessage<KrbApReq>("blah.com", new ReadOnlyMemory<byte>());
         }

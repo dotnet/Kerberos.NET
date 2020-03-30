@@ -1,41 +1,82 @@
 ﻿namespace Kerberos.NET.Entities
 {
+    public static class MessageTypeExtensions
+    {
+        /// <summary>
+        /// Determines whether the provided type is within the bounds of the expected range of message types.
+        /// </summary>
+        /// <param name="type">The value to compare</param>
+        /// <returns>Returns true if the value matches an expected type otherwise returns false</returns>
+        public static bool IsValidMessageType(this MessageType type)
+        {
+            return (type >= MessageType.KRB_AS_REQ &&
+                    type <= MessageType.KRB_RESERVED17) ||
+                   (type >= MessageType.KRB_SAFE &&
+                    type <= MessageType.KRB_CRED) ||
+                    type == MessageType.KRB_ERROR;
+        }
+    }
+
     public enum MessageType
     {
-        // Request for initial authentication
+        /// <summary>
+        /// Request for initial authentication
+        /// </summary>
         KRB_AS_REQ = 10,
 
-        // Response to KRB_AS_REQ request
+        /// <summary>
+        /// Response to KRB_AS_REQ request
+        /// </summary>
         KRB_AS_REP = 11,
 
-        // Request for authentication based on TGT
+        /// <summary>
+        /// Request for authentication based on TGT
+        /// </summary>
         KRB_TGS_REQ = 12,
 
-        // Response to KRB_TGS_REQ request
+        /// <summary>
+        /// Response to KRB_TGS_REQ request
+        /// </summary>
         KRB_TGS_REP = 13,
 
-        // Application request to server
+        /// <summary>
+        /// Application request to server
+        /// </summary>
         KRB_AP_REQ = 14,
 
-        // Response to KRB_AP_REQ_MUTUAL
+        /// <summary>
+        /// Response to KRB_AP_REQ_MUTUAL
+        /// </summary>
         KRB_AP_REP = 15,
 
-        // Reserved for user-to-user krb_tgt_request
+        /// <summary>
+        /// Reserved for user-to-user krb_tgt_request
+        /// </summary>
         KRB_RESERVED16 = 16,
 
-        // Reserved for user-to-user krb_tgt_reply
+        /// <summary>
+        /// Reserved for user-to-user krb_tgt_reply
+        /// </summary>
         KRB_RESERVED17 = 17,
 
-        // Safe (checksummed) application message
+        /// <summary>
+        /// Safe (checksummed) application message
+        /// </summary>
         KRB_SAFE = 20,
 
-        // Private (encrypted) application message
+        /// <summary>
+        /// Private (encrypted) application message
+        /// </summary>
         KRB_PRIV = 21,
 
-        // Private (encrypted) message to forward credentials
+        /// <summary>
+        /// Private (encrypted) message to forward credentials
+        /// </summary>
         KRB_CRED = 22,
 
-        // Error response
+        /// <summary>
+        /// Error response
+        /// </summary>
         KRB_ERROR = 30
     }
 }

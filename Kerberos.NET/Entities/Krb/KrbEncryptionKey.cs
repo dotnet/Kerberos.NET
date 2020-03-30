@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
@@ -16,6 +17,11 @@ namespace Kerberos.NET.Entities
         public static KrbEncryptionKey Generate(EncryptionType type)
         {
             var crypto = CryptoService.CreateTransform(type);
+
+            if (crypto == null)
+            {
+                throw new InvalidOperationException($"CryptoService couldn't create a transform for type {type}");
+            }
 
             return new KrbEncryptionKey
             {

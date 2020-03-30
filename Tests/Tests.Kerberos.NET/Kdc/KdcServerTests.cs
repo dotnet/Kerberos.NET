@@ -1,11 +1,9 @@
-﻿using Kerberos.NET.Credentials;
-using Kerberos.NET.Crypto;
+﻿using System;
+using System.Threading.Tasks;
+using Kerberos.NET.Credentials;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Buffers;
-using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 {
@@ -19,9 +17,7 @@ namespace Tests.Kerberos.NET
 
             var checksum = new KrbChecksum { };
 
-            ReadOnlySequence<byte> request = new ReadOnlySequence<byte>(checksum.Encode().ToArray());
-
-            var response = await kdc.ProcessMessage(request);
+            var response = await kdc.ProcessMessage(checksum.Encode());
 
             var err = KrbError.DecodeApplication(response);
 
@@ -35,11 +31,9 @@ namespace Tests.Kerberos.NET
         {
             var kdc = new KdcServer(new ListenerOptions { DefaultRealm = "domain.com", IsDebug = true });
 
-            var aprepPart = new KrbEncApRepPart { };
+            var krbCred = new KrbCred { Tickets = new KrbTicket[0] };
 
-            ReadOnlySequence<byte> request = new ReadOnlySequence<byte>(aprepPart.EncodeApplication().ToArray());
-
-            var response = await kdc.ProcessMessage(request);
+            var response = await kdc.ProcessMessage(krbCred.EncodeApplication());
 
             var err = KrbError.DecodeApplication(response);
 
@@ -53,20 +47,18 @@ namespace Tests.Kerberos.NET
         public async Task KdcTagPeekFailureNullBuilder()
         {
             var kdc = new KdcServer(new ListenerOptions { DefaultRealm = "domain.com", IsDebug = true });
-            kdc.RegisterMessageHandler((MessageType)27, (b, o) => null);
+            kdc.RegisterMessageHandler(MessageType.KRB_CRED, (b, o) => null);
 
-            var aprepPart = new KrbEncApRepPart { };
+            var krbCred = new KrbCred { Tickets = new KrbTicket[0] };
 
-            ReadOnlySequence<byte> request = new ReadOnlySequence<byte>(aprepPart.EncodeApplication().ToArray());
-
-            var response = await kdc.ProcessMessage(request);
+            var response = await kdc.ProcessMessage(krbCred.EncodeApplication());
 
             var err = KrbError.DecodeApplication(response);
 
             Assert.IsNotNull(err);
 
             Assert.AreEqual(KerberosErrorCode.KRB_ERR_GENERIC, err.ErrorCode);
-            Assert.IsTrue(err.EText.Contains("Message handler builder 27 must not return null"));
+            Assert.IsTrue(err.EText.Contains("Message handler builder KRB_CRED must not return null"));
         }
 
         [TestMethod, ExpectedException(typeof(InvalidOperationException))]
@@ -96,37 +88,51 @@ namespace Tests.Kerberos.NET
             var domain = "corp.identityintervention.com";
             var hint = DcLocatorHint.DS_AVOID_SELF;
 
-            var messageBytes = new Memory<byte>(new byte[req.Length + 4]);
+            var message = KdcProxyMessage.WrapMessage(req, domain, hint, mode: KdcProxyMessageMode.IncludeLengthPrefix);
 
-            Endian.ConvertToBigEndian(req.Length, messageBytes.Slice(0, 4));
-            req.CopyTo(messageBytes.Slice(4, req.Length));
+            var kdc = new KdcServer(new ListenerOptions { RealmLocator = realm => new FakeRealmService(realm) });
 
-            var message = new KdcProxyMessage
-            {
-                TargetDomain = domain,
-                KerbMessage = messageBytes,
-                DcLocatorHint = hint
-            };
-
-            var kdc = new KdcServer(new ListenerOptions { RealmLocator = LocateFakeRealm });
-
-            var response = await kdc.ProcessMessage(new ReadOnlySequence<byte>(message.Encode()));
+            var response = await kdc.ProcessMessage(message.Encode());
 
             Assert.IsTrue(response.Length > 0);
             Assert.IsFalse(KrbError.CanDecode(response));
 
             var proxy = KdcProxyMessage.Decode(response);
 
-            var preAuthReq = KrbError.DecodeApplication(proxy.UnwrapMessage());
+            var preAuthReq = KrbError.DecodeApplication(proxy.UnwrapMessage(out KdcProxyMessageMode mode));
+
+            Assert.AreEqual(KdcProxyMessageMode.IncludeLengthPrefix, mode);
 
             Assert.AreEqual(KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED, preAuthReq.ErrorCode);
         }
 
-        private static Task<IRealmService> LocateFakeRealm(string realm)
+        [TestMethod]
+        public async Task ParseKdcProxyMessage_WithoutLength()
         {
-            IRealmService service = new FakeRealmService(realm);
+            var req = KrbAsReq.CreateAsReq(
+                new KerberosPasswordCredential("blah@corp.identityintervention.com", "P@ssw0rd!"),
+                0
+            ).EncodeApplication();
 
-            return Task.FromResult(service);
+            var domain = "corp.identityintervention.com";
+            var hint = DcLocatorHint.DS_AVOID_SELF;
+
+            var message = KdcProxyMessage.WrapMessage(req, domain, hint, mode: KdcProxyMessageMode.NoPrefix);
+
+            var kdc = new KdcServer(new ListenerOptions { RealmLocator = realm => new FakeRealmService(realm) });
+
+            var response = await kdc.ProcessMessage(message.Encode());
+
+            Assert.IsTrue(response.Length > 0);
+            Assert.IsFalse(KrbError.CanDecode(response));
+
+            var proxy = KdcProxyMessage.Decode(response);
+
+            var preAuthReq = KrbError.DecodeApplication(proxy.UnwrapMessage(out KdcProxyMessageMode mode));
+
+            Assert.AreEqual(KdcProxyMessageMode.NoPrefix, mode);
+
+            Assert.AreEqual(KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED, preAuthReq.ErrorCode);
         }
     }
 }

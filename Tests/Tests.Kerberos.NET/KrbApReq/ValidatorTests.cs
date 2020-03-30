@@ -1,11 +1,11 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -44,9 +44,10 @@ namespace Tests.Kerberos.NET
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key);
-
-            validator.Now = () => DateTimeOffset.Parse("1/9/2009 5:20:00 PM +00:00", CultureInfo.InvariantCulture);
+            var validator = new KerberosValidator(key)
+            {
+                Now = () => DateTimeOffset.Parse("1/9/2009 5:20:00 PM +00:00", CultureInfo.InvariantCulture)
+            };
 
             var result = await validator.Validate(data);
 
@@ -97,7 +98,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(added);
 
-            Assert.AreEqual(1, logger.Logs.Count());
+            Assert.IsTrue(logger.Logs.Count() > 0);
 
             added = await replay.Add(entry);
 
@@ -127,7 +128,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(added);
 
-            Assert.AreEqual(2, logger.Logs.Count());
+            Assert.IsTrue(logger.Logs.Count() > 1);
         }
 
         [TestMethod]
@@ -150,7 +151,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(KerberosValidationException))]
-        public async Task DecryptedKrbApReq_Validate_NotBefore()
+        public void DecryptedKrbApReq_Validate_NotBefore()
         {
             // generate ticket for the future
 
@@ -159,7 +160,7 @@ namespace Tests.Kerberos.NET
             var notAfter = DateTimeOffset.UtcNow;
             var renewUntil = DateTimeOffset.UtcNow;
 
-            DecryptedKrbApReq decrypted = await CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
+            DecryptedKrbApReq decrypted = CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
 
             decrypted.Validate(ValidationActions.All);
         }
@@ -189,11 +190,11 @@ namespace Tests.Kerberos.NET
             return decrypted;
         }
 
-        private static async Task<DecryptedKrbApReq> CreateDecryptedApReq(DateTimeOffset now, DateTimeOffset notBefore, DateTimeOffset notAfter, DateTimeOffset renewUntil)
+        private static DecryptedKrbApReq CreateDecryptedApReq(DateTimeOffset now, DateTimeOffset notBefore, DateTimeOffset notAfter, DateTimeOffset renewUntil)
         {
             var key = new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96);
 
-            var tgsRep = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
                 EncryptedPartKey = key,
                 Principal = new FakeKerberosPrincipal("test@test.com"),
@@ -223,7 +224,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(KerberosValidationException))]
-        public async Task DecryptedKrbApReq_Validate_NotAfter()
+        public void DecryptedKrbApReq_Validate_NotAfter()
         {
             // generate ticket for the past
 
@@ -232,13 +233,13 @@ namespace Tests.Kerberos.NET
             var notAfter = DateTimeOffset.UtcNow.AddMinutes(-30);
             var renewUntil = DateTimeOffset.UtcNow;
 
-            DecryptedKrbApReq decrypted = await CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
+            DecryptedKrbApReq decrypted = CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
 
             decrypted.Validate(ValidationActions.All);
         }
 
         [TestMethod, ExpectedException(typeof(KerberosValidationException))]
-        public async Task DecryptedKrbApReq_Validate_RenewUntil()
+        public void DecryptedKrbApReq_Validate_RenewUntil()
         {
             // generate ticket for the future
 
@@ -247,13 +248,13 @@ namespace Tests.Kerberos.NET
             var notAfter = DateTimeOffset.UtcNow.AddMinutes(30);
             var renewUntil = DateTimeOffset.UtcNow.AddMinutes(-30);
 
-            DecryptedKrbApReq decrypted = await CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
+            DecryptedKrbApReq decrypted = CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
 
             decrypted.Validate(ValidationActions.All);
         }
 
         [TestMethod, ExpectedException(typeof(KerberosValidationException))]
-        public async Task DecryptedKrbApReq_Validate_Skew()
+        public void DecryptedKrbApReq_Validate_Skew()
         {
             // generate ticket where now is ten minutes ago
 
@@ -262,7 +263,7 @@ namespace Tests.Kerberos.NET
             var notAfter = DateTimeOffset.UtcNow.AddMinutes(30);
             var renewUntil = DateTimeOffset.UtcNow.AddMinutes(30);
 
-            DecryptedKrbApReq decrypted = await CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
+            DecryptedKrbApReq decrypted = CreateDecryptedApReq(now, notBefore, notAfter, renewUntil);
 
             decrypted.Now = () => DateTimeOffset.UtcNow.AddMinutes(-10);
 

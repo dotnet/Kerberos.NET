@@ -1,95 +1,189 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Buffers;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Server
 {
     public class KdcTgsReqMessageHandler : KdcMessageHandlerBase
     {
+        // the logic for a TGS-REQ is relatively simple in the primary case where you have a TGT and want
+        // to get a ticket to another service. It gets a bit more complicated when you need to do something
+        // like a U2U exchange, renew, or get a referral to another realm.
+        //
+        // This process is split into two logical steps
+        //
+        // 1. Validate and authenticate the request
+        // 2. Find and issue a service ticket for the user
+        //
+
+        private static readonly IEnumerable<PaDataType> ExpectedPreAuthTypes = new[] { PaDataType.PA_TGS_REQ };
+
         private readonly ILogger<KdcTgsReqMessageHandler> logger;
 
-        public KdcTgsReqMessageHandler(ReadOnlySequence<byte> message, ListenerOptions options)
+        public KdcTgsReqMessageHandler(ReadOnlyMemory<byte> message, ListenerOptions options)
             : base(message, options)
         {
             logger = options.Log.CreateLoggerSafe<KdcTgsReqMessageHandler>();
+
+            PreAuthHandlers[PaDataType.PA_TGS_REQ] = service => new PaDataTgsTicketHandler(service);
         }
-
-        // a krbtgt ticket will be replayed repeatedly, so maybe lets not fail validation on that
-        // unless a higher power indicates we should
-
-        public ValidationActions Validation { get; set; } = ValidationActions.All & ~ValidationActions.Replay;
 
         protected override IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message)
         {
-            return KrbTgsReq.DecodeApplication(message);
+            var tgsReq = KrbTgsReq.DecodeApplication(message);
+
+            SetRealmContext(tgsReq.Realm);
+
+            return tgsReq;
         }
 
         protected override MessageType MessageType => MessageType.KRB_TGS_REQ;
 
-        public override async Task<PreAuthenticationContext> ValidateTicketRequest(IKerberosMessage message)
+        protected override IEnumerable<PaDataType> GetOrderedPreAuth(PreAuthenticationContext preauth) => ExpectedPreAuthTypes;
+
+        public override void QueryPreValidate(PreAuthenticationContext context)
         {
-            var tgsReq = (KrbTgsReq)message;
-
-            await SetRealmContext(tgsReq.Realm);
-
-            var apReq = ExtractApReq(tgsReq);
-
-            var krbtgtIdentity = await RealmService.Principals.RetrieveKrbtgt();
-            var krbtgtKey = await krbtgtIdentity.RetrieveLongTermCredential();
-
-            var krbtgtApReqDecrypted = DecryptApReq(apReq, krbtgtKey);
-
-            var principal = await RealmService.Principals.Find(krbtgtApReqDecrypted.Ticket.CName.FullyQualifiedName);
-
-            return new PreAuthenticationContext
+            if (context.EvidenceTicketIdentity != null)
             {
-                Principal = principal,
-                EncryptedPartKey = krbtgtApReqDecrypted.SessionKey,
-                Ticket = krbtgtApReqDecrypted.Ticket
-            };
+                return;
+            }
+
+            var apReq = PaDataTgsTicketHandler.ExtractApReq(context);
+
+            context.EvidenceTicketIdentity = RealmService.Principals.Find(apReq.Ticket.SName);
         }
 
-        public override async Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message, PreAuthenticationContext context)
+        public override async Task QueryPreValidateAsync(PreAuthenticationContext context)
         {
-            // the logic for a TGS-REQ is relatively simple in the primary case where you have a TGT and want
-            // to get a ticket to another service. It gets a bit more complicated when you need to do something
-            // like a U2U exchange, renew, or get a referral to another realm. Realm referral isn't supported yet.
+            if (context.EvidenceTicketIdentity != null)
+            {
+                return;
+            }
 
-            // 1. Get the ApReq (TGT) from the PA-Data of the request
-            // 2. Decrypt the TGT and extract the client calling identity
-            // 3. Find the requested service principal
-            // 4. Evaluate whether the client identity should get a ticket to the service
-            // 5. Evaluate whether it should do U2U and if so extract that key instead
-            // 6. Generate a service ticket for the calling client to the service
-            // 7. return to client
+            var apReq = PaDataTgsTicketHandler.ExtractApReq(context);
 
-            var tgsReq = (KrbTgsReq)message;
+            context.EvidenceTicketIdentity = await RealmService.Principals.FindAsync(apReq.Ticket.SName);
+        }
+
+        public override void ValidateTicketRequest(PreAuthenticationContext context)
+        {
+            ProcessPreAuth(context);
+
+            if (!context.PreAuthenticationSatisfied)
+            {
+                throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_PADATA_TYPE_NOSUPP);
+            }
+
+            var state = context.GetState<TgsState>(PaDataType.PA_TGS_REQ);
+
+            if (state.DecryptedApReq == null)
+            {
+                throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_BADOPTION);
+            }
+
+            // now that we have the identity from the ticket we duplicate all its interesting bits
+            // to include in the requested service ticket but excluding any potentially dangerous
+            // authz values if it's from a referred realm
+
+            // NOTE: Transform should never be async. 
+            // It should eventually be a fast transform once the todo is resolved
+
+            var principal = TransformClientIdentity(state.DecryptedApReq, context.EvidenceTicketIdentity);
+
+            // this should never hit since we just copy the principal information from the krbtgt
+            // but callers can override TransformClientIdentity so lets fail quickly to be safe
+
+            context.Principal = principal ?? throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_C_PRINCIPAL_UNKNOWN);
+        }
+
+        protected virtual IKerberosPrincipal TransformClientIdentity(
+            DecryptedKrbApReq clientTicket,
+            IKerberosPrincipal ticketIssuerIdentity
+        )
+        {
+            if (ticketIssuerIdentity.Type == PrincipalType.TrustedDomain)
+            {
+                // it's a referral from another realm so all the copy and filter
+                // goop is in TransitedKerberosPrincipal.GeneratePac()
+
+                return new TransitedKerberosPrincipal(clientTicket);
+            }
+
+            // TODO: shouldn't be calling Find(), but instead copying the existing PAC
+            // This won't need an async call because it'll eventually go away
+
+            return RealmService.Principals.Find(clientTicket.Ticket.CName);
+        }
+
+        public override void QueryPreExecute(PreAuthenticationContext context)
+        {
+            var tgsReq = (KrbTgsReq)context.Message;
 
             logger.LogInformation("TGS-REQ incoming. SPN = {SPN}", tgsReq.Body.SName.FullyQualifiedName);
 
-            var krbtgtIdentity = await RealmService.Principals.RetrieveKrbtgt();
-            var krbtgtKey = await krbtgtIdentity.RetrieveLongTermCredential();
+            context.ServicePrincipal = RealmService.Principals.Find(tgsReq.Body.SName);
+        }
 
-            var servicePrincipal = await RealmService.Principals.Find(tgsReq.Body.SName.FullyQualifiedName);
+        public override async Task QueryPreExecuteAsync(PreAuthenticationContext context)
+        {
+            var tgsReq = (KrbTgsReq)context.Message;
+
+            logger.LogInformation("TGS-REQ incoming. SPN = {SPN}", tgsReq.Body.SName.FullyQualifiedName);
+
+            context.ServicePrincipal = await RealmService.Principals.FindAsync(tgsReq.Body.SName);
+        }
+
+        public override ReadOnlyMemory<byte> ExecuteCore(PreAuthenticationContext context)
+        {
+            // Now that we know who is requesting the ticket we can issue the ticket
+            // 
+            // 3. Find the requested service principal
+            // 4. Determine if the requested service principal is in another realm and if so refer them
+            // 5. Evaluate whether the client identity should get a ticket to the service
+            // 6. Evaluate whether it should do U2U and if so extract that key instead
+            // 7. Generate a service ticket for the calling client to the service
+            // 8. return to client
+
+            var tgsReq = (KrbTgsReq)context.Message;
+
+            if (context.ServicePrincipal == null)
+            {
+                // we can't find what they're asking for, but maybe it's in a realm we can transit?
+
+                context.ServicePrincipal = ProposeTransitedRealm(tgsReq, context);
+            }
+
+            if (context.ServicePrincipal == null)
+            {
+                // we have no idea what service they're asking for and
+                // there isn't a realm we can refer them to that can issue a ticket
+
+                return GenerateError(
+                    KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN,
+                    "",
+                    RealmService.Name,
+                    tgsReq.Body.SName.FullyQualifiedName
+                );
+            }
 
             // renewal is an odd case here because the SName will be krbtgt
             // does this need to be validated more than the Decrypt call?
 
-            await EvaluateSecurityPolicy(context.Principal, servicePrincipal);
+            EvaluateSecurityPolicy(context.Principal, context.ServicePrincipal);
 
             KerberosKey serviceKey;
 
             if (tgsReq.Body.KdcOptions.HasFlag(KdcOptions.EncTktInSkey))
             {
-                serviceKey = GetUserToUserTicketKey(tgsReq.Body.AdditionalTickets, krbtgtKey);
+                serviceKey = GetUserToUserTicketKey(tgsReq.Body.AdditionalTickets, context);
             }
             else
             {
-                serviceKey = await servicePrincipal.RetrieveLongTermCredential();
+                serviceKey = context.ServicePrincipal.RetrieveLongTermCredential();
             }
 
             var now = RealmService.Now();
@@ -106,12 +200,20 @@ namespace Kerberos.NET.Server
                 flags |= TicketFlags.PreAuthenticated;
             }
 
-            var tgsRep = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(
+            var includePac = DetectPacRequirement(tgsReq);
+
+            if (includePac == null)
+            {
+                includePac = context.Ticket?.AuthorizationData?.Any(a => a.Type == AuthorizationDataType.AdIfRelevant) ?? false;
+            }
+
+            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(
                 new ServiceTicketRequest
                 {
-                    Principal =  context.Principal,
+                    KdcAuthorizationKey = context.EvidenceTicketKey,
+                    Principal = context.Principal,
                     EncryptedPartKey = context.EncryptedPartKey,
-                    ServicePrincipal = servicePrincipal,
+                    ServicePrincipal = context.ServicePrincipal,
                     ServicePrincipalKey = serviceKey,
                     RealmName = RealmService.Name,
                     Addresses = tgsReq.Body.Addresses,
@@ -121,14 +223,35 @@ namespace Kerberos.NET.Server
                     Flags = flags,
                     Now = now,
                     Nonce = tgsReq.Body.Nonce,
-                    IncludePac = context.Ticket.AuthorizationData.Any(a => a.Type == AuthorizationDataType.AdIfRelevant)
+                    IncludePac = includePac ?? false
                 }
             );
 
             return tgsRep.EncodeApplication();
         }
 
-        private static KerberosKey GetUserToUserTicketKey(KrbTicket[] tickets, KerberosKey key)
+        private IKerberosPrincipal ProposeTransitedRealm(KrbTgsReq tgsReq, PreAuthenticationContext context)
+        {
+            if (RealmService.TrustedRealms == null)
+            {
+                return null;
+            }
+
+            // the requested sname is not in our realm so we need to find a realm we think can issue a ticket for them
+            // we also can't really determine if that realm can fulfill the request through any fixed logic so we'll
+            // defer to the realm service and they can provide their own logic
+
+            var realm = RealmService.TrustedRealms.ProposeTransit(tgsReq, context);
+
+            if (realm != null)
+            {
+                return realm.Refer();
+            }
+
+            return null;
+        }
+
+        private static KerberosKey GetUserToUserTicketKey(KrbTicket[] tickets, PreAuthenticationContext context)
         {
             if (tickets == null || tickets.Length <= 0)
             {
@@ -138,7 +261,7 @@ namespace Kerberos.NET.Server
             var ticket = tickets[0];
 
             var decryptedTicket = ticket.EncryptedPart.Decrypt(
-                key,
+                context.EvidenceTicketKey,
                 KeyUsage.Ticket,
                 b => KrbEncTicketPart.DecodeApplication(b)
             );
@@ -146,35 +269,14 @@ namespace Kerberos.NET.Server
             return decryptedTicket.Key.AsKey();
         }
 
-        protected virtual Task EvaluateSecurityPolicy(
+        protected virtual void EvaluateSecurityPolicy(
             IKerberosPrincipal principal,
             IKerberosPrincipal servicePrincipal
         )
         {
-            logger.LogDebug("Evaluating policy for {User} to {Service}", principal.PrincipalName, servicePrincipal.PrincipalName);
+            logger.LogDebug("Default policy evaluated for {User} to {Service}", principal.PrincipalName, servicePrincipal.PrincipalName);
 
             // good place to check whether the incoming principal is allowed to access the service principal
-            // TODO: also maybe a good place to evaluate cross-realm requirements?
-
-            return Task.CompletedTask;
-        }
-
-        private DecryptedKrbApReq DecryptApReq(KrbApReq apReq, KerberosKey krbtgtKey)
-        {
-            var apReqDecrypted = new DecryptedKrbApReq(apReq, MessageType.KRB_TGS_REQ);
-
-            apReqDecrypted.Decrypt(krbtgtKey);
-
-            apReqDecrypted.Validate(Validation);
-
-            return apReqDecrypted;
-        }
-
-        private static KrbApReq ExtractApReq(KrbKdcReq tgsReq)
-        {
-            var paData = tgsReq.PaData.First(p => p.Type == PaDataType.PA_TGS_REQ);
-
-            return paData.DecodeApReq();
         }
     }
 }

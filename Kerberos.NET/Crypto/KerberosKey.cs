@@ -70,7 +70,7 @@ namespace Kerberos.NET.Crypto
 
         public KeyUsage? Usage { get; set; }
 
-        public static ReadOnlyMemory<byte> GenerateFile(
+        public static KerberosKey DeriveFromKeyId(
             string password,
             Guid saltGuid,
             KrbPrincipalName name,
@@ -85,6 +85,18 @@ namespace Kerberos.NET.Crypto
                 salt: salt,
                 principalName: name.ToKeyPrincipal()
             );
+
+            return kerbKey;
+        }
+
+        public static ReadOnlyMemory<byte> GenerateFile(
+            string password,
+            Guid saltGuid,
+            KrbPrincipalName name,
+            EncryptionType etype = EncryptionType.AES256_CTS_HMAC_SHA1_96
+        )
+        {
+            var kerbKey = DeriveFromKeyId(password, saltGuid, name, etype);
 
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))

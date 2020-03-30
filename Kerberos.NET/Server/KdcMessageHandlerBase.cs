@@ -1,9 +1,9 @@
-﻿using Kerberos.NET.Entities;
-using System;
-using System.Buffers;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
 {
@@ -14,38 +14,58 @@ namespace Kerberos.NET.Server
         private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> preAuthHandlers =
             new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
 
-        private readonly IMemoryOwner<byte> messagePool;
-        private readonly int messageLength;
+        private readonly ReadOnlyMemory<byte> message;
+        protected readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> PostProcessAuthHandlers =
+                new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
 
         protected ListenerOptions Options { get; }
 
         protected IRealmService RealmService { get; private set; }
 
-        public IDictionary<PaDataType, PreAuthHandlerConstructor> PreAuthHandlers
-        {
-            get => preAuthHandlers;
-        }
+        public IDictionary<PaDataType, PreAuthHandlerConstructor> PreAuthHandlers => preAuthHandlers;
 
         protected abstract MessageType MessageType { get; }
 
-        public abstract Task<PreAuthenticationContext> ValidateTicketRequest(IKerberosMessage message);
-
-        protected KdcMessageHandlerBase(ReadOnlySequence<byte> message, ListenerOptions options)
+        protected KdcMessageHandlerBase(ReadOnlyMemory<byte> message, ListenerOptions options)
         {
-            messageLength = (int)message.Length;
-            messagePool = MemoryPool<byte>.Shared.Rent(messageLength);
-
-            message.CopyTo(messagePool.Memory.Span.Slice(0, messageLength));
-
+            this.message = message;
             Options = options;
         }
 
-        protected async Task SetRealmContext(string realm)
+        protected abstract IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message);
+
+        public virtual void ExecutePreValidate(PreAuthenticationContext context)
         {
-            RealmService = await Options.RealmLocator(realm);
+            InvokeAuthHandlers(
+                context,
+                PreAuthHandlers.Keys,
+                PreAuthHandlers,
+                (handler, req, ctx) =>
+                {
+                    handler.PreValidate(ctx);
+                    return true;
+                }
+            );
         }
 
-        private Task<IKerberosMessage> DecodeMessage(ReadOnlyMemory<byte> message)
+        public abstract Task QueryPreValidateAsync(PreAuthenticationContext context);
+
+        public abstract void QueryPreValidate(PreAuthenticationContext context);
+
+        public virtual Task QueryPreExecuteAsync(PreAuthenticationContext context) => Task.CompletedTask;
+
+        public virtual void QueryPreExecute(PreAuthenticationContext context) { }
+
+        public abstract void ValidateTicketRequest(PreAuthenticationContext context);
+
+        public abstract ReadOnlyMemory<byte> ExecuteCore(PreAuthenticationContext context);
+
+        protected void SetRealmContext(string realm)
+        {
+            RealmService = Options.RealmLocator(realm);
+        }
+
+        private IKerberosMessage DecodeMessage(ReadOnlyMemory<byte> message)
         {
             var decoded = DecodeMessageCore(message);
 
@@ -59,41 +79,74 @@ namespace Kerberos.NET.Server
                 throw new InvalidOperationException($"MessageType should match application class. Actual: {decoded.KerberosMessageType}; Expected: {MessageType}");
             }
 
-            return Task.FromResult(decoded);
+            return decoded;
         }
 
-        protected abstract IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message);
-
-        public async Task<IKerberosMessage> DecodeMessage()
+        public virtual void DecodeMessage(PreAuthenticationContext context)
         {
-            return await DecodeMessage(messagePool.Memory.Slice(0, messageLength));
+            context.Message = DecodeMessage(message);
         }
 
-        public virtual async Task<ReadOnlyMemory<byte>> Execute()
+        public virtual async Task<ReadOnlyMemory<byte>> ExecuteAsync()
         {
             try
             {
-                var message = await DecodeMessage();
+                var context = new PreAuthenticationContext();
 
-                var context = await ValidateTicketRequest(message);
+                DecodeMessage(context);
 
-                return await ExecuteCore(message, context);
+                ExecutePreValidate(context);
+
+                await QueryPreValidateAsync(context);
+
+                ValidateTicketRequest(context);
+
+                await QueryPreExecuteAsync(context);
+
+                return ExecuteCore(context);
             }
             catch (Exception ex)
             {
                 return GenerateGenericError(ex, Options);
             }
-            finally
+        }
+
+        public virtual ReadOnlyMemory<byte> Execute()
+        {
+            try
             {
-                messagePool.Dispose();
+                var context = new PreAuthenticationContext();
+
+                DecodeMessage(context);
+
+                ExecutePreValidate(context);
+
+                QueryPreValidate(context);
+
+                ValidateTicketRequest(context);
+
+                QueryPreExecute(context);
+
+                return ExecuteCore(context);
+            }
+            catch (Exception ex)
+            {
+                return GenerateGenericError(ex, Options);
             }
         }
 
-        public abstract Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message, PreAuthenticationContext context);
-
         internal static ReadOnlyMemory<byte> GenerateGenericError(Exception ex, ListenerOptions options)
         {
-            return GenerateError(KerberosErrorCode.KRB_ERR_GENERIC, options.IsDebug ? $"[Server] {ex}" : null, options.DefaultRealm, "krbtgt");
+            KerberosErrorCode error = KerberosErrorCode.KRB_ERR_GENERIC;
+            string errorText = options.IsDebug ? $"[Server] {ex}" : null;
+
+            if (ex is KerberosProtocolException kex)
+            {
+                error = kex.Error.ErrorCode;
+                errorText = kex.Message;
+            }
+
+            return GenerateError(error, errorText, options.DefaultRealm, "krbtgt");
         }
 
         internal static ReadOnlyMemory<byte> GenerateError(KerberosErrorCode code, string error, string realm, string sname)
@@ -107,7 +160,8 @@ namespace Kerberos.NET.Server
                 {
                     Type = PrincipalNameType.NT_SRV_INST,
                     Name = new[] {
-                        sname, realm
+                        sname,
+                        realm
                     }
                 }
             };
@@ -124,5 +178,93 @@ namespace Kerberos.NET.Server
                 this.preAuthHandlers[handler.Key] = handler.Value;
             }
         }
+
+        protected static bool? DetectPacRequirement(KrbKdcReq asReq)
+        {
+            var pacRequest = asReq.PaData.FirstOrDefault(pa => pa.Type == PaDataType.PA_PAC_REQUEST);
+
+            if (pacRequest != null)
+            {
+                var paPacRequest = KrbPaPacRequest.Decode(pacRequest.Value);
+
+                return paPacRequest.IncludePac;
+            }
+
+            return null;
+        }
+
+        protected void InvokeAuthHandlers(
+            PreAuthenticationContext preauth,
+            IEnumerable<PaDataType> invokingAuthTypes,
+            IDictionary<PaDataType, PreAuthHandlerConstructor> handlers,
+            Func<KdcPreAuthenticationHandlerBase, KrbKdcReq, PreAuthenticationContext, bool> preauthExec
+        )
+        {
+            if (preauth.Message is KrbKdcReq asReq)
+            {
+                foreach (var preAuthType in invokingAuthTypes)
+                {
+                    var func = handlers[preAuthType];
+
+                    var handler = func(RealmService);
+
+                    if (!preauthExec(handler, asReq, preauth))
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        protected virtual IEnumerable<KrbPaData> ProcessPreAuth(PreAuthenticationContext preauth)
+        {
+            // if there are pre-auth handlers registered check whether they intersect with what the user supports.
+            // at some point in the future this should evaluate whether there's at least a m-of-n PA-Data approval
+            // this would probably best be driven by some policy check, which would involve coming up with a logic
+            // system of some sort. Will leave that as an exercise for future me.
+
+            IEnumerable<PaDataType> invokingAuthTypes = GetOrderedPreAuth(preauth);
+
+            var preAuthRequirements = new List<KrbPaData>();
+
+            InvokeAuthHandlers(
+                preauth,
+                invokingAuthTypes,
+                PreAuthHandlers,
+                (handler, req, context) =>
+                {
+                    var preAuthRequirement = handler.Validate(req, context);
+
+                    if (preAuthRequirement != null)
+                    {
+                        preAuthRequirements.Add(preAuthRequirement);
+                    }
+
+                    return !context.PreAuthenticationSatisfied;
+                }
+            );
+
+            // if the pre-auth handlers think auth is required we should check with the
+            // post-auth handlers because they may add hints to help the client like if
+            // they should use specific etypes or salts.
+            //
+            // the post-auth handlers will determine if they need to do anything based
+            // on their own criteria.
+
+            InvokeAuthHandlers(
+               preauth,
+               PostProcessAuthHandlers.Keys,
+               PostProcessAuthHandlers,
+               (handler, req, context) =>
+               {
+                   handler.PostValidate(context.Principal, preAuthRequirements);
+                   return true;
+               }
+           );
+
+            return preAuthRequirements;
+        }
+
+        protected abstract IEnumerable<PaDataType> GetOrderedPreAuth(PreAuthenticationContext preauth);
     }
 }

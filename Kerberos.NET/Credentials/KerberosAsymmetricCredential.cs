@@ -1,7 +1,6 @@
 ﻿using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
@@ -9,9 +8,28 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Kerberos.NET.Credentials
 {
+    /// <summary>
+    /// A credential used for PKINIT during client authentication. This relies on client certificates
+    /// to authenticate callers to the KDC. The KDC will follow defined processes to validate the certificate.
+    /// </summary>
     public class KerberosAsymmetricCredential : KerberosCredential, IDisposable
     {
-        public KerberosAsymmetricCredential(X509Certificate2 cert, string username = null)
+        private static readonly Oid IdPkInitAuthData = new Oid("1.3.6.1.5.2.3.1");
+        private static readonly Oid DiffieHellman = new Oid("1.2.840.10046.2.1");
+
+        private ReadOnlyMemory<byte> clientDHNonce;
+        private IKeyAgreement agreement;
+
+        /// <summary>
+        /// Creates a new instance of an asymmetric credential.
+        /// </summary>
+        /// <param name="cert">The certificate used to authenticate the client.</param>
+        /// <param name="username">Optionally an NT_PRINCIPAL name can be supplied as a 
+        /// hint otherwise the username will be pulled from the certificate.</param>
+        public KerberosAsymmetricCredential(
+            X509Certificate2 cert,
+            string username = null
+        )
         {
             if (cert == null)
             {
@@ -40,47 +58,107 @@ namespace Kerberos.NET.Credentials
             {
                 Domain = domain.ToUpperInvariant();
             }
-
-            SupportsEllipticCurveDiffieHellman = false;
-            SupportsDiffieHellman = true;
-
-            agreement = StartKeyAgreement();
         }
 
+        /// <summary>
+        /// The certificate used during client authentication.
+        /// </summary>
         public X509Certificate2 Certificate { get; }
 
-        private static readonly Oid IdPkInitAuthData = new Oid("1.3.6.1.5.2.3.1");
-        private static readonly Oid DiffieHellman = new Oid("1.2.840.10046.2.1");
+        /// <summary>
+        /// Indicates whether the credential has enough information to skip the initial KDC prompt for credentials step.
+        /// </summary>
+        public override bool SupportsOptimisticPreAuthentication => Certificate != null;
 
-        private readonly IKeyAgreement agreement;
+        /// <summary>
+        /// Indicates how the client certificate should be packaged into the request to the KDC.
+        /// </summary>
+        public X509IncludeOption IncludeOption { get; set; } = X509IncludeOption.ExcludeRoot;
 
+        /// <summary>
+        /// Indicates what key agreement algorithm should be used to negotiate session keys.
+        /// </summary>
+        public KeyAgreementAlgorithm KeyAgreement { get; set; } = KeyAgreementAlgorithm.DiffieHellmanModp14;
+
+        /// <summary>
+        /// Indicates whether the credential should prefer Elliptive Curve algorithms.
+        /// </summary>
+        public bool SupportsEllipticCurveDiffieHellman { get; set; } = false;
+
+        /// <summary>
+        /// Indicates whether the credential should prefer the Diffie-Hellman algorithm.
+        /// </summary>
+        public bool SupportsDiffieHellman { get; set; } = true;
+
+        /// <summary>
+        /// Creates the <see cref="IKeyAgreement"/> that is used to derive session keys.
+        /// </summary>
+        /// <returns>Returns <see cref="IKeyAgreement"/> to derive session keys.</returns>
         protected virtual IKeyAgreement StartKeyAgreement()
         {
-            if (SupportsEllipticCurveDiffieHellman)
+            // We should try and pick smart defaults based on what we know if it's set to none
+
+            if (KeyAgreement == KeyAgreementAlgorithm.None)
             {
-                return CryptoPal.Platform.DiffieHellmanP256();
+                if (SupportsEllipticCurveDiffieHellman)
+                {
+                    KeyAgreement = KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256;
+                }
+                else if (SupportsDiffieHellman)
+                {
+                    KeyAgreement = KeyAgreementAlgorithm.DiffieHellmanModp14;
+                }
             }
 
-            if (SupportsDiffieHellman)
+            // if neither EC nor DH are enabled then KeyAgreement still equals None
+            // None will fall through to null which is validated in TransformKdcReq
+
+            switch (KeyAgreement)
             {
-                return CryptoPal.Platform.DiffieHellmanModp14();
+                case KeyAgreementAlgorithm.DiffieHellmanModp2 when SupportsDiffieHellman:
+                    return CryptoPal.Platform.DiffieHellmanModp2();
+
+                case KeyAgreementAlgorithm.DiffieHellmanModp14 when SupportsDiffieHellman:
+                    return CryptoPal.Platform.DiffieHellmanModp14();
+
+                case KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256 when SupportsEllipticCurveDiffieHellman:
+                    return CryptoPal.Platform.DiffieHellmanP256();
+
+                case KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP384 when SupportsEllipticCurveDiffieHellman:
+                    return CryptoPal.Platform.DiffieHellmanP384();
+
+                case KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP521 when SupportsEllipticCurveDiffieHellman:
+                    return CryptoPal.Platform.DiffieHellmanP521();
             }
 
             return null;
         }
 
-        public bool SupportsEllipticCurveDiffieHellman { get; }
-
-        public bool SupportsDiffieHellman { get; }
-
+        /// <summary>
+        /// If overridden this method will cache the key agreement private keys to reduce key generation time.
+        /// Note that caching Key Agreement private keys is not recommended as these keys should be ephemeral.
+        /// </summary>
+        /// <param name="agreement">The agreement private key to cache.</param>
+        /// <returns>Returns true if the key was cached, otherwise it will return false.</returns>
         protected virtual bool CacheKeyAgreementParameters(IKeyAgreement agreement) => false;
 
-        private ReadOnlyMemory<byte> clientDHNonce;
-
-        public X509IncludeOption IncludeOption { get; set; } = X509IncludeOption.ExcludeRoot;
-
+        /// <summary>
+        /// Applies credential-specific changes to the KDC-REQ message and is what supplies the PKINIT properties to the request.
+        /// </summary>
+        /// <param name="req">The <see cref="KrbKdcReq"/> that will be modified.</param>
         public override void TransformKdcReq(KrbKdcReq req)
         {
+            agreement = StartKeyAgreement();
+
+            // We don't support the straight RSA mode because
+            // it doesn't rely on ephemeral key agreement
+            // which isn't great security-wise
+
+            if (agreement == null)
+            {
+                throw OnlyKeyAgreementSupportedException();
+            }
+
             var padata = req.PaData.ToList();
 
             KrbAuthPack authPack;
@@ -176,6 +254,14 @@ namespace Kerberos.NET.Credentials
             return transformer.GenerateRandomBytes(minSize);
         }
 
+        /// <summary>
+        /// Decrypts the response from the KDC using credential-supplied secrets.
+        /// </summary>
+        /// <typeparam name="T">The return type</typeparam>
+        /// <param name="kdcRep">The response from the KDC to decrypt</param>
+        /// <param name="keyUsage">The KeyUsage salt used to decrypt the response</param>
+        /// <param name="func">The parsing function to process the decrypted response</param>
+        /// <returns>Returns <typeparamref name="T"/> after decryption</returns>
         public override T DecryptKdcRep<T>(KrbKdcRep kdcRep, KeyUsage keyUsage, Func<ReadOnlyMemory<byte>, T> func)
         {
             var paPkRep = kdcRep?.PaData?.FirstOrDefault(a => a.Type == PaDataType.PA_PK_AS_REP);
@@ -234,6 +320,11 @@ namespace Kerberos.NET.Credentials
             return KrbKdcDHKeyInfo.Decode(signed.ContentInfo.Content);
         }
 
+        /// <summary>
+        /// Verifies the PKINIT response from the KDC is signed and validates as expected. 
+        /// Throws <see cref="CryptographicException"/> if the KDC certificate cannot be validated.
+        /// </summary>
+        /// <param name="signed">The signed CMS message within the response</param>
         protected virtual void VerifyKdcSignature(SignedCms signed)
         {
             signed.CheckSignature(verifySignatureOnly: false);
@@ -244,6 +335,9 @@ namespace Kerberos.NET.Credentials
             return cert.Subject;
         }
 
+        /// <summary>
+        /// Validates the credential is well-formed before attempting to use it.
+        /// </summary>
         public override void Validate()
         {
             base.Validate();
@@ -259,6 +353,10 @@ namespace Kerberos.NET.Credentials
             }
         }
 
+        /// <summary>
+        /// Creates the session key used by the KDC exchange.
+        /// </summary>
+        /// <returns>Returns the Key Agreement shared secret</returns>
         public override KerberosKey CreateKey()
         {
             return new KerberosKey(key: sharedSecret.ToArray());

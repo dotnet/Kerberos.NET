@@ -6,19 +6,19 @@ namespace Kerberos.NET.Entities.Pac
     [DebuggerDisplay("{RelativeId} {Attributes}")]
     public class GroupMembership : INdrStruct
     {
-        public int RelativeId;
+        public uint RelativeId;
 
         public SidAttributes Attributes;
 
         public void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteInt32LittleEndian(RelativeId);
+            buffer.WriteUInt32LittleEndian(RelativeId);
             buffer.WriteInt32LittleEndian((int)Attributes);
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            RelativeId = buffer.ReadInt32LittleEndian();
+            RelativeId = buffer.ReadUInt32LittleEndian();
             Attributes = (SidAttributes)buffer.ReadInt32LittleEndian();
         }
     }

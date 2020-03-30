@@ -1,21 +1,15 @@
-﻿using Kerberos.NET.Entities;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Buffers;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Server
 {
-    using PreAuthHandlerConstructor = Func<IRealmService, KdcPreAuthenticationHandlerBase>;
-
     public class KdcAsReqMessageHandler : KdcMessageHandlerBase
     {
-        private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> PostProcessAuthHandlers =
-                new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
-
         private static readonly PaDataType[] PreAuthAscendingPriority = new PaDataType[]
         {
             PaDataType.PA_PK_AS_REQ,
@@ -24,7 +18,7 @@ namespace Kerberos.NET.Server
 
         private readonly ILogger<KdcAsReqMessageHandler> logger;
 
-        public KdcAsReqMessageHandler(ReadOnlySequence<byte> message, ListenerOptions options)
+        public KdcAsReqMessageHandler(ReadOnlyMemory<byte> message, ListenerOptions options)
             : base(message, options)
         {
             this.logger = options.Log.CreateLoggerSafe<KdcAsReqMessageHandler>();
@@ -38,29 +32,48 @@ namespace Kerberos.NET.Server
 
         protected override IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message)
         {
-            return KrbAsReq.DecodeApplication(message);
+            var asReq = KrbAsReq.DecodeApplication(message);
+
+            SetRealmContext(asReq.Realm);
+
+            return asReq;
         }
 
-        public override async Task<PreAuthenticationContext> ValidateTicketRequest(IKerberosMessage message)
+        protected override IEnumerable<PaDataType> GetOrderedPreAuth(PreAuthenticationContext preauth)
         {
-            KrbAsReq asReq = (KrbAsReq)message;
+            var keys = PreAuthHandlers.Keys.Intersect(preauth.Principal.SupportedPreAuthenticationTypes);
 
-            await SetRealmContext(asReq.Realm);
+            keys = keys.OrderBy(k => Array.IndexOf(PreAuthAscendingPriority, k));
 
-            var username = asReq.Body.CName.FullyQualifiedName;
+            return keys;
+        }
 
-            var principal = await RealmService.Principals.Find(username);
+        public override void QueryPreValidate(PreAuthenticationContext context)
+        {
+            KrbAsReq asReq = (KrbAsReq)context.Message;
 
-            var preauth = new PreAuthenticationContext { Principal = principal };
+            context.Principal = RealmService.Principals.Find(asReq.Body.CName);
+            context.ServicePrincipal = RealmService.Principals.Find(KrbPrincipalName.WellKnown.Krbtgt());
+        }
 
+        public override async Task QueryPreValidateAsync(PreAuthenticationContext context)
+        {
+            KrbAsReq asReq = (KrbAsReq)context.Message;
+
+            context.Principal = await RealmService.Principals.FindAsync(asReq.Body.CName);
+            context.ServicePrincipal = await RealmService.Principals.FindAsync(KrbPrincipalName.WellKnown.Krbtgt());
+        }
+
+        public override void ValidateTicketRequest(PreAuthenticationContext preauth)
+        {
             if (preauth.Principal == null)
             {
-                return preauth;
+                return;
             }
 
             try
             {
-                var preauthReq = await ProcessPreAuth(preauth, asReq);
+                var preauthReq = ProcessPreAuth(preauth);
 
                 if (preauth.PaData == null)
                 {
@@ -71,15 +84,13 @@ namespace Kerberos.NET.Server
             }
             catch (KerberosValidationException kex)
             {
-                logger.LogWarning(kex, "AS-REQ failed processing for principal {Principal}", principal);
+                logger.LogWarning(kex, "AS-REQ failed processing for principal {Principal}", preauth.Principal.PrincipalName);
 
                 preauth.Failure = kex;
             }
-
-            return preauth;
         }
 
-        public override async Task<ReadOnlyMemory<byte>> ExecuteCore(IKerberosMessage message, PreAuthenticationContext context)
+        public override ReadOnlyMemory<byte> ExecuteCore(PreAuthenticationContext context)
         {
             // 1. check what pre-auth validation is required for user
             // 2. enumerate all pre-auth handlers that are available
@@ -95,13 +106,13 @@ namespace Kerberos.NET.Server
                 return PreAuthFailed(context);
             }
 
-            KrbAsReq asReq = (KrbAsReq)message;
+            KrbAsReq asReq = (KrbAsReq)context.Message;
 
             if (context.Principal == null)
             {
                 logger.LogInformation("User {User} not found in realm {Realm}", asReq.Body.CName.FullyQualifiedName, RealmService.Name);
 
-                return GenerateError(KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN, null, RealmService.Name, asReq.Body.CName.FullyQualifiedName);
+                return GenerateError(KerberosErrorCode.KDC_ERR_C_PRINCIPAL_UNKNOWN, null, RealmService.Name, asReq.Body.CName.FullyQualifiedName);
             }
 
             if (!context.PreAuthenticationSatisfied)
@@ -109,10 +120,10 @@ namespace Kerberos.NET.Server
                 return RequirePreAuth(context);
             }
 
-            return await GenerateAsRep(context, asReq);
+            return GenerateAsRep(asReq, context);
         }
 
-        private async Task<ReadOnlyMemory<byte>> GenerateAsRep(PreAuthenticationContext preauth, KrbAsReq asReq)
+        private ReadOnlyMemory<byte> GenerateAsRep(KrbAsReq asReq, PreAuthenticationContext context)
         {
             // 1. detect if specific PAC contents are requested (claims)
             // 2. if requested generate PAC for user
@@ -123,33 +134,37 @@ namespace Kerberos.NET.Server
 
             var rst = new ServiceTicketRequest
             {
-                Principal = preauth.Principal,
-                EncryptedPartKey = preauth.EncryptedPartKey,
+                Principal = context.Principal,
+                EncryptedPartKey = context.EncryptedPartKey,
+                ServicePrincipal = context.ServicePrincipal,
                 Addresses = asReq.Body.Addresses,
                 Nonce = asReq.Body.Nonce,
                 IncludePac = true,
                 Flags = TicketFlags.Initial | KrbKdcRep.DefaultFlags
             };
 
+            if (!asReq.Body.KdcOptions.HasFlag(KdcOptions.Canonicalize))
+            {
+                rst.SamAccountName = asReq.Body.CName.FullyQualifiedName;
+            }
+
+            if (context.ClientAuthority != PaDataType.PA_NONE)
+            {
+                rst.Flags |= TicketFlags.PreAuthenticated;
+            }
+
             if (rst.EncryptedPartKey == null)
             {
-                rst.EncryptedPartKey = await rst.Principal.RetrieveLongTermCredential();
+                rst.EncryptedPartKey = rst.Principal.RetrieveLongTermCredential();
             }
 
-            var pacRequest = asReq.PaData.FirstOrDefault(pa => pa.Type == PaDataType.PA_PAC_REQUEST);
+            rst.IncludePac = DetectPacRequirement(asReq) ?? false;
 
-            if (pacRequest != null)
+            var asRep = KrbAsRep.GenerateTgt(rst, RealmService);
+
+            if (context.PaData != null)
             {
-                var paPacRequest = KrbPaPacRequest.Decode(pacRequest.Value);
-
-                rst.IncludePac = paPacRequest.IncludePac;
-            }
-
-            var asRep = await KrbAsRep.GenerateTgt(rst, RealmService);
-
-            if (preauth.PaData != null)
-            {
-                asRep.PaData = preauth.PaData.ToArray();
+                asRep.PaData = context.PaData.ToArray();
             }
 
             return asRep.EncodeApplication();
@@ -185,67 +200,6 @@ namespace Kerberos.NET.Server
             };
 
             return err.EncodeApplication();
-        }
-
-        private async Task<IEnumerable<KrbPaData>> ProcessPreAuth(PreAuthenticationContext preauth, KrbKdcReq asReq)
-        {
-            // if there are pre-auth handlers registered check whether they intersect with what the user supports.
-            // at some point in the future this should evaluate whether there's at least a m-of-n PA-Data approval
-            // this would probably best be driven by some policy check, which would involve coming up with a logic
-            // system of some sort. Will leave that as an exercise for future me.
-
-            IEnumerable<PaDataType> invokingAuthTypes = GetOrderedPreAuth(preauth);
-
-            var preAuthRequirements = new List<KrbPaData>();
-
-            foreach (var preAuthType in invokingAuthTypes)
-            {
-                await InvokePreAuthHandler(asReq, preauth, preAuthRequirements, PreAuthHandlers[preAuthType]);
-            }
-
-            // if the pre-auth handlers think auth is required we should check with the
-            // post-auth handlers because they may add hints to help the client like if
-            // they should use specific etypes or salts.
-            //
-            // the post-auth handlers will determine if they need to do anything based
-            // on their own criteria.
-
-            foreach (var preAuthType in PostProcessAuthHandlers)
-            {
-                var func = preAuthType.Value;
-
-                var handler = func(RealmService);
-
-                await handler.PostValidate(preauth.Principal, preAuthRequirements);
-            }
-
-            return preAuthRequirements;
-        }
-
-        private IEnumerable<PaDataType> GetOrderedPreAuth(PreAuthenticationContext preauth)
-        {
-            var keys = PreAuthHandlers.Keys.Intersect(preauth.Principal.SupportedPreAuthenticationTypes);
-
-            keys = keys.OrderBy(k => Array.IndexOf(PreAuthAscendingPriority, k));
-
-            return keys;
-        }
-
-        private async Task InvokePreAuthHandler(
-            KrbKdcReq asReq,
-            PreAuthenticationContext preauth,
-            List<KrbPaData> preAuthRequirements,
-            PreAuthHandlerConstructor func
-        )
-        {
-            var handler = func(RealmService);
-
-            var preAuthRequirement = await handler.Validate(asReq, preauth);
-
-            if (preAuthRequirement != null)
-            {
-                preAuthRequirements.Add(preAuthRequirement);
-            }
         }
     }
 }

@@ -12,7 +12,6 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public override OSPlatform OSPlatform => OSPlatform.Windows;
 #if WEAKCRYPTO
         public override IHashAlgorithm Md4() => new Win32CspMd4();
 
@@ -32,13 +31,17 @@ namespace Kerberos.NET.Crypto
 
         public override IKeyAgreement DiffieHellmanP256() => throw PlatformNotSupported("ECDH-P256");
 
+        public override IKeyAgreement DiffieHellmanP384() => throw PlatformNotSupported("ECDH-P384");
+
+        public override IKeyAgreement DiffieHellmanP521() => throw PlatformNotSupported("ECDH-P521");
+
         public override IKeyAgreement DiffieHellmanModp2() => new BCryptDiffieHellmanOakleyGroup2();
 
         public override IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey)
         {
             if (privateKey != null)
             {
-                BCryptDiffieHellman.Import(privateKey);
+                return BCryptDiffieHellman.Import(privateKey);
             }
 
             return DiffieHellmanModp2();
@@ -50,7 +53,7 @@ namespace Kerberos.NET.Crypto
         {
             if (privateKey != null)
             {
-                BCryptDiffieHellman.Import(privateKey);
+                return BCryptDiffieHellman.Import(privateKey);
             }
 
             return DiffieHellmanModp14();

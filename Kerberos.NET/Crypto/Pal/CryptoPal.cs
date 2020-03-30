@@ -1,25 +1,22 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Crypto
 {
     public abstract class CryptoPal
     {
-        protected static readonly bool IsWindows
-            = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        protected static readonly bool IsWindows = (Environment.OSVersion.Platform == PlatformID.Win32S)
+            || (Environment.OSVersion.Platform == PlatformID.Win32Windows)
+            || (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            || (Environment.OSVersion.Platform == PlatformID.WinCE);
 
-        protected static readonly bool IsLinux
-            = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        protected static readonly bool IsLinux = (Environment.OSVersion.Platform == PlatformID.Unix);
 
-        protected static readonly bool IsOsX
-            = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        protected static readonly bool IsOsX = (Environment.OSVersion.Platform == PlatformID.MacOSX);
 
         public static CryptoPal Platform => lazyPlatform.Value;
 
         private static readonly Lazy<CryptoPal> lazyPlatform
             = new Lazy<CryptoPal>(() => CreatePal());
-
-        public abstract OSPlatform OSPlatform { get; }
 
         private static Func<CryptoPal> injectedPal;
 
@@ -73,6 +70,10 @@ namespace Kerberos.NET.Crypto
 
         public abstract IKeyAgreement DiffieHellmanP256();
 
+        public abstract IKeyAgreement DiffieHellmanP384();
+
+        public abstract IKeyAgreement DiffieHellmanP521();
+
         public abstract IKeyAgreement DiffieHellmanModp2();
 
         public abstract IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey);
@@ -84,7 +85,7 @@ namespace Kerberos.NET.Crypto
         protected static PlatformNotSupportedException PlatformNotSupported(string algorithm = "CryptoPal")
         {
             throw new PlatformNotSupportedException(
-                $"A crypto implementation of {algorithm} does not exist for {RuntimeInformation.OSDescription}"
+                $"A crypto implementation of {algorithm} does not exist for {Environment.OSVersion.Platform}"
             );
         }
     }

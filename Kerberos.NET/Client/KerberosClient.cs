@@ -1,14 +1,14 @@
-﻿using Kerberos.NET.Credentials;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Transport;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Security;
 using System.Security.Cryptography.Asn1;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Credentials;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Transport;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Client
 {
@@ -99,6 +99,15 @@ namespace Kerberos.NET.Client
         public TimeSpan RenewTicketsThreshold { get; set; } = TimeSpan.FromMinutes(15);
 
         /// <summary>
+        /// Defines how often the cache is polled to check for expiring tickets.
+        /// </summary>
+        public TimeSpan RefreshPollInterval
+        {
+            get => Cache.RefreshInterval;
+            set => Cache.RefreshInterval = value;
+        }
+
+        /// <summary>
         /// The transports this client will attempt to use to communicate with the KDC
         /// </summary>
         public IEnumerable<IKerberosTransport> Transports => transport.Transports;
@@ -121,6 +130,18 @@ namespace Kerberos.NET.Client
             set => transport.ConnectTimeout = value;
         }
 
+        public TimeSpan SendTimeout
+        {
+            get => transport.SendTimeout;
+            set => transport.SendTimeout = value;
+        }
+
+        public TimeSpan ReceiveTimeout
+        {
+            get => transport.ReceiveTimeout;
+            set => transport.ReceiveTimeout = value;
+        }
+
         /// <summary>
         /// Indicates whether the client should cache service tickets.
         /// Ticket-Granting-Tickets are always cached.
@@ -140,7 +161,7 @@ namespace Kerberos.NET.Client
         /// <summary>
         /// The realm of the currently authenticated user.
         /// </summary>
-        public string DefaultDomain { get; private set; }
+        public string DefaultDomain { get; protected set; }
 
         /// <summary>
         /// The logging Id of this client instance.
@@ -150,13 +171,12 @@ namespace Kerberos.NET.Client
             get => scopeId ?? (scopeId = KerberosConstants.GetRequestActivityId()).Value;
             set => scopeId = value;
         }
-        public KrbPrincipalName CNameHint { get; set; }
 
         /// <summary>
         /// Initiates an AS-REQ to get a Ticket-Granting-Ticket for the provided credentials
         /// </summary>
         /// <param name="credential">The credential used to authenticate the user</param>
-        /// <returns></returns>
+        /// <returns>Returns an awaitable task</returns>
         public async Task Authenticate(KerberosCredential credential)
         {
             credential.Validate();
@@ -165,7 +185,10 @@ namespace Kerberos.NET.Client
 
             // The KDC may not require pre-auth so we shouldn't try it until the KDC indicates otherwise
 
-            AuthenticationOptions &= ~AuthenticationOptions.PreAuthenticate;
+            if (!credential.SupportsOptimisticPreAuthentication)
+            {
+                AuthenticationOptions &= ~AuthenticationOptions.PreAuthenticate;
+            }
 
             using (logger.BeginRequestScope(ScopeId))
             {
@@ -216,7 +239,7 @@ namespace Kerberos.NET.Client
         /// </summary>
         /// <param name="rst">The parameters of the request</param>
         /// <param name="cancellation">A cancellation token to exit the request early</param>
-        /// <returns></returns>
+        /// <returns>Returns a <see cref="ApplicationSessionContext"/> containing the service ticket</returns>
         public async Task<ApplicationSessionContext> GetServiceTicket(
             RequestServiceTicket rst,
             CancellationToken cancellation = default
@@ -239,8 +262,6 @@ namespace Kerberos.NET.Client
                 do
                 {
                     cancellation.ThrowIfCancellationRequested();
-
-                    var tgtEntry = await CopyTicket(tgtCacheName);
 
                     if (rst.KdcOptions == 0)
                     {
@@ -267,6 +288,8 @@ namespace Kerberos.NET.Client
                     if (serviceTicketCacheEntry.KdcResponse == null || !CacheServiceTickets)
                     {
                         // nope, try and request it from the KDC that issued the TGT
+
+                        var tgtEntry = await CopyTicket(tgtCacheName);
 
                         rst.Realm = ResolveKdcTarget(tgtEntry);
 
@@ -297,7 +320,7 @@ namespace Kerberos.NET.Client
                         receivedRequestedTicket = true;
                     }
                     else if (!respondedSName.Matches(originalServicePrincipalName) &&
-                             string.Equals(respondedSName.Name[0], "krbtgt", StringComparison.InvariantCultureIgnoreCase))
+                             respondedSName.IsKrbtgt())
                     {
                         // it is a realm referral and we need to chase it
 
@@ -334,6 +357,7 @@ namespace Kerberos.NET.Client
                     {
                         Key = respondedSName.FullyQualifiedName,
                         Container = rst.S4uTarget,
+                        RenewUntil = encKdcRepPart.RenewTill,
                         Expires = encKdcRepPart.EndTime,
                         Value = serviceTicketCacheEntry
                     });
@@ -363,14 +387,14 @@ namespace Kerberos.NET.Client
 
         private static string ResolveKdcTarget(KerberosClientCacheEntry tgtEntry)
         {
-            var krbtgt = tgtEntry.KdcResponse.Ticket;
+            var ticket = tgtEntry.KdcResponse.Ticket;
 
-            if (krbtgt.SName.Name.Length > 1)
+            if (ticket.SName.Name.Length > 1 && ticket.SName.IsKrbtgt())
             {
-                return krbtgt.SName.Name[1];
+                return ticket.SName.Name[1];
             }
 
-            return tgtEntry.KdcResponse.CRealm;
+            return ticket.Realm;
         }
 
         /// <summary>
@@ -381,7 +405,7 @@ namespace Kerberos.NET.Client
         /// <param name="s4u">The optional account name of the user this service is trying to get a ticket on-behalf-of</param>
         /// <param name="s4uTicket">The optional service ticket that grants the S4U privilege</param>
         /// <param name="u2uServerTicket">The optional user-to-user (encrypt in session key) TGT</param>
-        /// <returns></returns>
+        /// <returns>Returns the requested <see cref="KrbApReq"/></returns>
         public async Task<KrbApReq> GetServiceTicket(
             string spn,
             ApOptions options = DefaultApOptions,
@@ -397,8 +421,7 @@ namespace Kerberos.NET.Client
                     ApOptions = options,
                     S4uTarget = s4u,
                     S4uTicket = s4uTicket,
-                    UserToUserTicket = u2uServerTicket,
-                    CNameHint = CNameHint
+                    UserToUserTicket = u2uServerTicket
                 },
                 cancellation.Token
             );
@@ -421,7 +444,7 @@ namespace Kerberos.NET.Client
             // if RenewUntil isn't set or we're past that window we can't renew
             // or if it's renewable but the ticket expiration is already greater
             // than the entire renewal window (you'll just get the same ticket back)
-
+            
             DateTimeOffset ttlRenew;
 
             if (renewUntil > DateTimeOffset.MinValue)
@@ -437,18 +460,38 @@ namespace Kerberos.NET.Client
             // we also don't want to renew too early otherwise it's a waste of energy
             // only renew if the ticket is nearing expiration
 
-            if (entry.TimeToLive > TimeSpan.Zero && entry.TimeToLive <= RenewTicketsThreshold)
+            if (IsRenewable(entry, out KerberosClientCacheEntry ticket))
             {
-                if (entry.Value is KerberosClientCacheEntry ticket)
+                var cname = ticket.KdcResponse.CName.FullyQualifiedName;
+                var sname = ticket.KdcResponse.Ticket.SName.FullyQualifiedName;
+
+                logger.LogInformation("Ticket for {CName} to {SName} is renewing because it's expiring in {TTL}", cname, sname, entry.TimeToLive);
+
+                await RenewTicket(sname);
+            }
+        }
+
+        private bool IsRenewable(MemoryTicketCache.CacheEntry entry, out KerberosClientCacheEntry ticket)
+        {
+            ticket = default;
+
+            if (entry.Value is KerberosClientCacheEntry tick)
+            {
+                if (entry.TimeToLive <= TimeSpan.Zero || entry.TimeToLive > RenewTicketsThreshold)
                 {
-                    var cname = ticket.KdcResponse.CName.FullyQualifiedName;
-                    var sname = ticket.KdcResponse.Ticket.SName.FullyQualifiedName;
+                    return false;
+                }
 
-                    logger.LogInformation("Ticket for {CName} to {SName} is renewing because it's expiring in {TTL}", cname, sname, entry.TimeToLive);
+                // keep it simple. Only ever renew TGTs.
 
-                    await RenewTicket(sname);
+                if (tick.KdcResponse.Ticket.SName.IsKrbtgt())
+                {
+                    ticket = tick;
+                    return true;
                 }
             }
+
+            return false;
         }
 
         private async Task<KerberosClientCacheEntry> RequestTgs(
@@ -485,7 +528,8 @@ namespace Kerberos.NET.Client
                 Nonce = tgsReq.Body.Nonce
             };
 
-            logger.LogInformation("TGS-REP for {SPN}", tgsRep.Ticket.SName);
+            logger.LogInformation("TGS-REP for {SPN}", tgsRep.Ticket.SName.FullyQualifiedName);
+
             return entry;
         }
 
@@ -515,7 +559,7 @@ namespace Kerberos.NET.Client
         /// Attempt to renew a valid ticket still in the cache
         /// </summary>
         /// <param name="spn">The SPN of the ticket to renew. Defaults to the krbtgt ticket.</param>
-        /// <returns></returns>
+        /// <returns>Returns an awaitable task</returns>
         public async Task RenewTicket(string spn = null)
         {
             if (string.IsNullOrWhiteSpace(spn))
@@ -623,6 +667,13 @@ namespace Kerberos.NET.Client
             {
                 if (disposing)
                 {
+                    if (Cache is IDisposable cache)
+                    {
+                        cache.Dispose();
+                    }
+
+                    transport.Dispose();
+
                     clientLoggingScope.Dispose();
                     cancellation.Dispose();
                 }

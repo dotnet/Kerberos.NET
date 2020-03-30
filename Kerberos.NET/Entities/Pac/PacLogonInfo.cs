@@ -46,8 +46,8 @@ namespace Kerberos.NET.Entities.Pac
             buffer.WriteInt16LittleEndian(LogonCount);
             buffer.WriteInt16LittleEndian(BadPasswordCount);
 
-            buffer.WriteInt32LittleEndian(UserId);
-            buffer.WriteInt32LittleEndian(GroupId);
+            buffer.WriteUInt32LittleEndian(UserId);
+            buffer.WriteUInt32LittleEndian(GroupId);
 
             buffer.WriteInt32LittleEndian(GroupCount);
             buffer.WriteDeferredStructArray(GroupIds);
@@ -100,8 +100,8 @@ namespace Kerberos.NET.Entities.Pac
             LogonCount = buffer.ReadInt16LittleEndian();
             BadPasswordCount = buffer.ReadInt16LittleEndian();
 
-            UserId = buffer.ReadInt32LittleEndian();
-            GroupId = buffer.ReadInt32LittleEndian();
+            UserId = buffer.ReadUInt32LittleEndian();
+            GroupId = buffer.ReadUInt32LittleEndian();
 
             var groupCount = buffer.ReadInt32LittleEndian();
 
@@ -164,9 +164,9 @@ namespace Kerberos.NET.Entities.Pac
 
         public short BadPasswordCount { get; set; }
 
-        public int UserId { get; set; }
+        public uint UserId { get; set; }
 
-        public int GroupId { get; set; }
+        public uint GroupId { get; set; }
 
         public int GroupCount => GroupIds?.Count() ?? 0;
 

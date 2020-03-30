@@ -48,11 +48,9 @@ namespace Benchmark.Kerberos.NET
             listener.Stop();
         }
 
-        private Task<IRealmService> LocateRealm(string realm)
+        private IRealmService LocateRealm(string realm)
         {
-            IRealmService service = new FakeRealmService(realm);
-
-            return Task.FromResult(service);
+            return new FakeRealmService(realm);
         }
 
         [Benchmark]

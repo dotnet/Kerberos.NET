@@ -204,6 +204,22 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public void KerberosKeyIdMatches()
+        {
+            var key = KerberosKey.DeriveFromKeyId(
+                "P@ssw0rd!",
+                new Guid("0aa29dcb-3a9b-413f-aee2-8df91fd1118e"),
+                KrbPrincipalName.FromString(
+                    "host/test.identityintervention.com",
+                    PrincipalNameType.NT_SRV_INST,
+                    "corp.identityintervention.com"
+                )
+            );
+
+            AssertKeyMatchesGuid(key.EncryptionType, key);
+        }
+
+        [TestMethod]
         public void KerberosKeyExportFile()
         {
             var file = KerberosKey.GenerateFile(
@@ -222,13 +238,20 @@ namespace Tests.Kerberos.NET
 
             var key = keytab.Entries.First();
 
-            Assert.AreEqual(EncryptionType.AES256_CTS_HMAC_SHA1_96, key.EncryptionType);
+            var kerbKey = key.Key;
+            
+            AssertKeyMatchesGuid(key.EncryptionType.Value, kerbKey);
+        }
 
-            var derivedKey = key.Key.GetKey(null);
+        private static void AssertKeyMatchesGuid(EncryptionType etype, KerberosKey kerbKey)
+        {
+            Assert.AreEqual(EncryptionType.AES256_CTS_HMAC_SHA1_96, etype);
+
+            var derivedKey = kerbKey.GetKey(null);
 
             Assert.IsNotNull(derivedKey);
 
-            var expectedKey = new byte[] 
+            var expectedKey = new byte[]
             {
                 0xbc, 0x31, 0x7e, 0x82, 0x48, 0x55, 0xcb, 0xa0, 0x3f, 0x70, 0xbe, 0x93, 0x0a, 0xa5, 0x0f, 0xef,
                 0x6a, 0x64, 0x7c, 0xc3, 0x99, 0x36, 0x63, 0xee, 0xa5, 0x39, 0x2f, 0xab, 0xd9, 0x01, 0xad, 0xce

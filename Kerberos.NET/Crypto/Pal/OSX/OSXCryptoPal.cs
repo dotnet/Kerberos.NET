@@ -11,7 +11,5 @@ namespace Kerberos.NET.Crypto
                 throw PlatformNotSupported();
             }
         }
-
-        public override OSPlatform OSPlatform => OSPlatform.OSX;
     }
 }

@@ -349,11 +349,47 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to KDC policy has determined the provided Diffie-Hellman key parameters are not acceptable.
+        /// </summary>
+        internal static string KRB_ERROR_KDC_ERR_DH_KEY_PARAMETERS_NOT_ACCEPTED {
+            get {
+                return ResourceManager.GetString("KRB_ERROR_KDC_ERR_DH_KEY_PARAMETERS_NOT_ACCEPTED", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The signature algorithm used to sign the CA certificate is not accepted.
+        /// </summary>
+        internal static string KRB_ERROR_KDC_ERR_DIGEST_IN_CERT_NOT_ACCEPTED {
+            get {
+                return ResourceManager.GetString("KRB_ERROR_KDC_ERR_DIGEST_IN_CERT_NOT_ACCEPTED", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The signature algorithm used to sign the request is not accepted.
+        /// </summary>
+        internal static string KRB_ERROR_KDC_ERR_DIGEST_IN_SIGNED_DATA_NOT_ACCEPTED {
+            get {
+                return ResourceManager.GetString("KRB_ERROR_KDC_ERR_DIGEST_IN_SIGNED_DATA_NOT_ACCEPTED", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to KDC has no support for encryption type.
         /// </summary>
         internal static string KRB_ERROR_KDC_ERR_ETYPE_NOSUPP {
             get {
                 return ResourceManager.GetString("KRB_ERROR_KDC_ERR_ETYPE_NOSUPP", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The client certificate does not contain the KeyPurposeId EKU and is required.
+        /// </summary>
+        internal static string KRB_ERROR_KDC_ERR_INCONSISTENT_KEY_PURPOSE {
+            get {
+                return ResourceManager.GetString("KRB_ERROR_KDC_ERR_INCONSISTENT_KEY_PURPOSE", resourceCulture);
             }
         }
         
@@ -430,6 +466,15 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The client did not include the required paChecksum parameter.
+        /// </summary>
+        internal static string KRB_ERROR_KDC_ERR_PA_CHECKSUM_MUST_BE_INCLUDED {
+            get {
+                return ResourceManager.GetString("KRB_ERROR_KDC_ERR_PA_CHECKSUM_MUST_BE_INCLUDED", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to KDC has no support for padata type.
         /// </summary>
         internal static string KRB_ERROR_KDC_ERR_PADATA_TYPE_NOSUPP {
@@ -480,6 +525,15 @@ namespace Kerberos.NET {
         internal static string KRB_ERROR_KDC_ERR_PRINCIPAL_NOT_UNIQUE {
             get {
                 return ResourceManager.GetString("KRB_ERROR_KDC_ERR_PRINCIPAL_NOT_UNIQUE", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The KDC does not support public key encryption for PKINIT.
+        /// </summary>
+        internal static string KRB_ERROR_KDC_ERR_PUBLIC_KEY_ENCRYPTION_NOT_SUPPORTED {
+            get {
+                return ResourceManager.GetString("KRB_ERROR_KDC_ERR_PUBLIC_KEY_ENCRYPTION_NOT_SUPPORTED", resourceCulture);
             }
         }
         
@@ -844,7 +898,7 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Generic error (description in e-text).
+        ///   Looks up a localized string similar to Generic error.
         /// </summary>
         internal static string KRB_ERROR_KRB_ERR_GENERIC {
             get {

@@ -1,14 +1,16 @@
-﻿using Kerberos.NET.Entities;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Buffers;
+﻿using System;
 using System.Collections.Concurrent;
+using System.Security;
+using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Transport;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Server
 {
-    using MessageHandlerConstructor = Func<ReadOnlySequence<byte>, ListenerOptions, KdcMessageHandlerBase>;
+    using MessageHandlerConstructor = Func<ReadOnlyMemory<byte>, ListenerOptions, KdcMessageHandlerBase>;
     using PreAuthHandlerConstructor = Func<IRealmService, KdcPreAuthenticationHandlerBase>;
 
     public class KdcServer
@@ -54,7 +56,7 @@ namespace Kerberos.NET.Server
 
         private static void ValidateSupportedMessageType(MessageType type)
         {
-            if (type < MessageType.KRB_AS_REQ || type > MessageType.KRB_ERROR)
+            if (!type.IsValidMessageType())
             {
                 throw new InvalidOperationException(
                     $"Cannot register {type}. Can only register application messages >= 10 and <= 30"
@@ -67,7 +69,7 @@ namespace Kerberos.NET.Server
             preAuthHandlers[type] = builder;
         }
 
-        public async Task<ReadOnlyMemory<byte>> ProcessMessage(ReadOnlySequence<byte> request)
+        public async Task<ReadOnlyMemory<byte>> ProcessMessage(ReadOnlyMemory<byte> request)
         {
             // This should probably only process AS-REQs and TGS-REQs
             // Everything else should fail miserably with an error
@@ -76,15 +78,15 @@ namespace Kerberos.NET.Server
 
             // but we also need to process Kdc Proxy messages
 
-            var tag = PeekTag(request.First);
+            var tag = KrbMessage.PeekTag(request);
 
             if (tag == Asn1Tag.Sequence && options.ProxyEnabled)
             {
                 try
                 {
-                    return await ProcessProxyMessage(request);
+                    return await ProcessProxyMessageAsync(request);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (IsProtocolException(ex))
                 {
                     logger.LogWarning(ex, "Proxy message could not be parsed correctly");
 
@@ -92,10 +94,35 @@ namespace Kerberos.NET.Server
                 }
             }
 
-            return await ProcessMessageCore(request, tag);
+            return await ProcessMessageCoreAsync(request, tag);
         }
 
-        internal virtual async Task<ReadOnlyMemory<byte>> ProcessMessageCore(ReadOnlySequence<byte> request, Asn1Tag tag)
+        private static bool IsProtocolException(Exception ex)
+        {
+            // These checks should only apply when you're trying to return a graceful 
+            // failure to the client with a krb-error and a generic error message
+
+            // All other failures should be handled by the caller
+
+            if (ex is KerberosProtocolException || ex is KerberosValidationException || ex is KerberosTransportException)
+            {
+                return true;
+            }
+
+            if (ex is CryptographicException || ex is SecurityException)
+            {
+                return true;
+            }
+
+            if (ex is ArgumentException || ex is ArgumentNullException || ex is InvalidOperationException)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        internal virtual async Task<ReadOnlyMemory<byte>> ProcessMessageCoreAsync(ReadOnlyMemory<byte> request, Asn1Tag tag)
         {
             KdcMessageHandlerBase messageHandler;
 
@@ -103,7 +130,7 @@ namespace Kerberos.NET.Server
             {
                 messageHandler = LocateMessageHandler(request, tag);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (IsProtocolException(ex))
             {
                 logger.LogWarning(ex, "Message handler could not be located for message");
 
@@ -112,9 +139,9 @@ namespace Kerberos.NET.Server
 
             try
             {
-                return await messageHandler.Execute();
+                return await messageHandler.ExecuteAsync();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (IsProtocolException(ex))
             {
                 logger.LogWarning(ex, "Message handler {MessageHandler} could not process message", messageHandler.GetType());
 
@@ -122,13 +149,18 @@ namespace Kerberos.NET.Server
             }
         }
 
-        private KdcMessageHandlerBase LocateMessageHandler(ReadOnlySequence<byte> request, Asn1Tag tag)
+        private KdcMessageHandlerBase LocateMessageHandler(ReadOnlyMemory<byte> request, Asn1Tag tag)
         {
-            MessageType messageType = DetectMessageType(tag);
+            MessageType messageType = KrbMessage.DetectMessageType(tag);
+
+            ValidateSupportedMessageType(messageType);
 
             if (!messageHandlers.TryGetValue(messageType, out MessageHandlerConstructor builder))
             {
-                throw new KerberosProtocolException($"Application tag {messageType} doesn't have a message handler registered");
+                throw new KerberosProtocolException(
+                    KerberosErrorCode.KRB_ERR_GENERIC,
+                    $"Application tag {messageType} doesn't have a message handler registered"
+                );
             }
 
             var handler = builder(request, options);
@@ -143,50 +175,22 @@ namespace Kerberos.NET.Server
             return handler;
         }
 
-        public static MessageType DetectMessageType(ReadOnlyMemory<byte> message)
+        private async Task<ReadOnlyMemory<byte>> ProcessProxyMessageAsync(ReadOnlyMemory<byte> request)
         {
-            var tag = PeekTag(message);
+            var proxyMessage = KdcProxyMessage.Decode(request);
 
-            return DetectMessageType(tag);
+            var unwrapped = proxyMessage.UnwrapMessage(out KdcProxyMessageMode mode);
+
+            var tag = KrbMessage.PeekTag(unwrapped);
+
+            var response = await ProcessMessageCoreAsync(unwrapped, tag);
+
+            return EncodeProxyResponse(response, mode);
         }
 
-        private static MessageType DetectMessageType(Asn1Tag tag)
+        private static ReadOnlyMemory<byte> EncodeProxyResponse(ReadOnlyMemory<byte> response, KdcProxyMessageMode mode)
         {
-            if (tag.TagClass != TagClass.Application)
-            {
-                throw new KerberosProtocolException($"Unknown incoming tag {tag}");
-            }
-
-            var messageType = (MessageType)tag.TagValue;
-
-            ValidateSupportedMessageType(messageType);
-
-            return messageType;
-        }
-
-        private async Task<ReadOnlyMemory<byte>> ProcessProxyMessage(ReadOnlySequence<byte> request)
-        {
-            var proxyMessage = KdcProxyMessage.Decode(request.ToArray());
-
-            var unwrapped = proxyMessage.UnwrapMessage();
-
-            var tag = PeekTag(unwrapped);
-
-            var response = await ProcessMessageCore(new ReadOnlySequence<byte>(unwrapped), tag);
-
-            return EncodeProxyResponse(response);
-        }
-
-        private static ReadOnlyMemory<byte> EncodeProxyResponse(ReadOnlyMemory<byte> response)
-        {
-            return KdcProxyMessage.WrapMessage(response).Encode();
-        }
-
-        private static Asn1Tag PeekTag(ReadOnlyMemory<byte> request)
-        {
-            AsnReader reader = new AsnReader(request, AsnEncodingRules.DER);
-
-            return reader.PeekTag();
+            return KdcProxyMessage.WrapMessage(response, mode: mode).Encode();
         }
     }
 }

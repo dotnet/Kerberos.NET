@@ -2,7 +2,6 @@
 using Kerberos.NET.Crypto;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
-using System.Buffers;
 using System.Diagnostics;
 
 namespace Microsoft.Extensions.Logging
@@ -32,7 +31,7 @@ namespace Microsoft.Extensions.Logging
             logProtocolException(logger, pex);
         }
 
-        public static void TraceBinary(this ILogger logger, ReadOnlySequence<byte> data)
+        public static void TraceBinary(this ILogger logger, ReadOnlyMemory<byte> data)
         {
             if (logger.IsEnabled(LogLevel.Trace))
             {

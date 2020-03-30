@@ -1,18 +1,13 @@
-﻿using Kerberos.NET.Crypto;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Buffers;
-using System.IO.Pipelines;
+﻿using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Server
 {
     internal class KdcSocketWorker : SocketWorkerBase
     {
-        private const int Int32Size = 4;
-
         private readonly KdcServer kdc;
 
         private readonly ILogger<KdcSocketWorker> logger;
@@ -24,84 +19,16 @@ namespace Kerberos.NET.Server
             logger = options.Log.CreateLoggerSafe<KdcSocketWorker>();
         }
 
-        protected override async Task ReadRequest(CancellationToken cancellation)
+        protected override async Task<ReadOnlyMemory<byte>> ProcessRequest(ReadOnlyMemory<byte> request, CancellationToken cancellation)
         {
-            var reader = RequestPipe.Reader;
+            logger.LogTrace("Message incoming. Request length = {RequestLength}", request.Length);
+            logger.TraceBinary(request);
 
-            long messageLength = 0;
-
-            try
-            {
-                while (true)
-                {
-                    if (cancellation.IsCancellationRequested)
-                    {
-                        reader.CancelPendingRead();
-                        break;
-                    }
-
-                    var result = await reader.ReadAsync(cancellation);
-
-                    var buffer = result.Buffer;
-
-                    if (messageLength <= 0)
-                    {
-                        messageLength = buffer.Slice(0, Int32Size).AsLong();
-                    }
-
-                    if (buffer.Length > messageLength)
-                    {
-                        var message = buffer.Slice(Int32Size, messageLength);
-
-                        await ProcessMessage(message, cancellation);
-                        break;
-                    }
-
-                    reader.AdvanceTo(buffer.Start, buffer.End);
-
-                    if (result.IsCompleted)
-                    {
-                        break;
-                    }
-                }
-            }
-            finally
-            {
-                reader.Complete();
-            }
-        }
-
-        protected override async Task FillResponse(PipeWriter writer, ReadOnlyMemory<byte> message, CancellationToken cancellation)
-        {
-            var minResponseLength = Int32Size;
-
-            var totalLength = message.Length + minResponseLength;
-
-            if (totalLength > minResponseLength)
-            {
-                var buffer = writer.GetMemory(totalLength);
-
-                Endian.ConvertToBigEndian(message.Length, buffer.Slice(0, Int32Size));
-
-                message.CopyTo(buffer.Slice(minResponseLength, message.Length));
-
-                writer.Advance(totalLength);
-            }
-
-            await writer.FlushAsync(cancellation);
-            writer.Complete();
-        }
-
-        private async Task ProcessMessage(ReadOnlySequence<byte> message, CancellationToken cancellation)
-        {
-            logger.LogTrace("Message incoming. Request length = {RequestLength}", message.Length);
-            logger.TraceBinary(message);
-
-            var response = await kdc.ProcessMessage(message);
+            var response = await kdc.ProcessMessage(request);
 
             logger.LogTrace("Message processed. Response length = {ResponseLength}", response.Length);
 
-            await FillResponse(ResponsePipe.Writer, response, cancellation);
+            return response;
         }
     }
 }

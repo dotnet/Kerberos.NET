@@ -12,6 +12,7 @@ namespace Kerberos.NET.Entities
     [DebuggerDisplay("{Type} {FullyQualifiedName}")]
     public partial class KrbPrincipalName
     {
+        private const string KrbtgtService = "krbtgt";
         private const string HostServiceName = "host";
 
         public static readonly IDictionary<string, string> ServiceAliases = new ConcurrentDictionary<string, string>(new Dictionary<string, string>()
@@ -304,6 +305,16 @@ namespace Kerberos.NET.Entities
         )
         {
             return FromString(principal.PrincipalName, type, realm);
+        }
+        
+        public bool IsKrbtgt()
+        {
+            return string.Equals(Name[0], KrbtgtService, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public static class WellKnown
+        {
+            public static KrbPrincipalName Krbtgt() => FromString(KrbtgtService);
         }
     }
 }

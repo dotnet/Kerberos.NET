@@ -1,9 +1,7 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Server;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
@@ -17,7 +15,7 @@ namespace Kerberos.NET.Entities
         internal const TicketFlags DefaultFlags = TicketFlags.Renewable |
                                                   TicketFlags.Forwardable;
 
-        public static async Task<T> GenerateServiceTicket<T>(ServiceTicketRequest request)
+        public static T GenerateServiceTicket<T>(ServiceTicketRequest request)
             where T : KrbKdcRep, new()
         {
             if (request.EncryptedPartKey == null)
@@ -40,11 +38,18 @@ namespace Kerberos.NET.Entities
                 throw new ArgumentException("A service principal key must be provided", nameof(request.ServicePrincipalKey));
             }
 
-            var authz = await GenerateAuthorizationData(request.Principal, request);
+            var authz = GenerateAuthorizationData(request);
 
             var sessionKey = KrbEncryptionKey.Generate(request.ServicePrincipalKey.EncryptionType);
 
             var encTicketPart = CreateEncTicketPart(request, authz.ToArray(), sessionKey);
+
+            bool appendRealm = false;
+
+            if (request.ServicePrincipal.PrincipalName.Contains("/"))
+            {
+                appendRealm = true;
+            }
 
             var ticket = new KrbTicket()
             {
@@ -52,7 +57,7 @@ namespace Kerberos.NET.Entities
                 SName = KrbPrincipalName.FromPrincipal(
                     request.ServicePrincipal,
                     PrincipalNameType.NT_SRV_INST,
-                    request.RealmName
+                    appendRealm ? null : request.RealmName
                 ),
                 EncryptedPart = KrbEncryptedData.Encrypt(
                     encTicketPart.EncodeApplication(),
@@ -105,11 +110,9 @@ namespace Kerberos.NET.Entities
                 }
             };
 
-            var cname = KrbPrincipalName.FromPrincipal(request.Principal, realm: request.RealmName);
-
             var rep = new T
             {
-                CName = cname,
+                CName = encTicketPart.CName,
                 CRealm = request.RealmName,
                 MessageType = MessageType.KRB_AS_REP,
                 Ticket = ticket,
@@ -182,10 +185,7 @@ namespace Kerberos.NET.Entities
             };
         }
 
-        private static async Task<IEnumerable<KrbAuthorizationData>> GenerateAuthorizationData(
-            IKerberosPrincipal principal,
-            ServiceTicketRequest request
-        )
+        private static IEnumerable<KrbAuthorizationData> GenerateAuthorizationData(ServiceTicketRequest request)
         {
             // authorization-data is annoying because it's a sequence of 
             // ad-if-relevant, which is a sequence of sequences
@@ -210,7 +210,7 @@ namespace Kerberos.NET.Entities
 
             if (request.IncludePac)
             {
-                var pac = await principal.GeneratePac();
+                var pac = request.Principal.GeneratePac();
 
                 if (pac != null)
                 {
@@ -221,7 +221,7 @@ namespace Kerberos.NET.Entities
                             new KrbAuthorizationData
                             {
                                 Type = AuthorizationDataType.AdWin2kPac,
-                                Data = pac.Encode(request.ServicePrincipalKey, request.ServicePrincipalKey)
+                                Data = pac.Encode(request.KdcAuthorizationKey, request.ServicePrincipalKey)
                             }
                         }
                     };

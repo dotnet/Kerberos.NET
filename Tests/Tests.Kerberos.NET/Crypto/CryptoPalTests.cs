@@ -14,8 +14,6 @@ namespace Tests.Kerberos.NET
             var pal = CryptoPal.Platform;
 
             Assert.IsNotNull(pal);
-
-            Assert.AreEqual(OSPlatform.Windows, pal.OSPlatform);
         }
 #if WEAKCRYPTO
         [TestMethod]
@@ -82,6 +80,24 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(dh);
         }
 
+        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        public void PalSupportsECDHP256()
+        {
+            CryptoPal.Platform.DiffieHellmanP256();
+        }
+
+        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        public void PalSupportsECDHP384()
+        {
+            CryptoPal.Platform.DiffieHellmanP384();
+        }
+
+        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        public void PalSupportsECDHP521()
+        {
+            CryptoPal.Platform.DiffieHellmanP521();
+        }
+
         [TestMethod]
         public void PalSupportsDHModp14_WithImport()
         {
@@ -94,6 +110,8 @@ namespace Tests.Kerberos.NET
             var dh2 = CryptoPal.Platform.DiffieHellmanModp14(pk);
 
             Assert.IsNotNull(dh2);
+
+            Assert.IsTrue(pk.Private.Span.SequenceEqual(dh2.PrivateKey.Private.Span));
         }
     }
 }

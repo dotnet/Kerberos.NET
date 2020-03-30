@@ -12,7 +12,6 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        public override OSPlatform OSPlatform => OSPlatform.Linux;
 #if WEAKCRYPTO
         public override IHashAlgorithm Md4() => throw PlatformNotSupported("MD4");
 
@@ -31,6 +30,10 @@ namespace Kerberos.NET.Crypto
         public override ISymmetricAlgorithm Aes() => new AesAlgorithm();
 
         public override IKeyAgreement DiffieHellmanP256() => throw PlatformNotSupported("ECDH-P256");
+
+        public override IKeyAgreement DiffieHellmanP384() => throw PlatformNotSupported("ECDH-P384");
+
+        public override IKeyAgreement DiffieHellmanP521() => throw PlatformNotSupported("ECDH-P521");
 
         public override IKeyAgreement DiffieHellmanModp2() => throw PlatformNotSupported("DH-MODP-2");
 

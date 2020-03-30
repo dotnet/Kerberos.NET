@@ -1,7 +1,6 @@
-﻿using Kerberos.NET.Asn1;
+﻿using System;
+using Kerberos.NET.Asn1;
 using Kerberos.NET.Server;
-using System;
-using System.Threading.Tasks;
 
 namespace Kerberos.NET.Entities
 {
@@ -17,7 +16,7 @@ namespace Kerberos.NET.Entities
             return DecodeApplication(data);
         }
 
-        public static async Task<KrbAsRep> GenerateTgt(
+        public static KrbAsRep GenerateTgt(
             ServiceTicketRequest rst,
             IRealmService realmService
         )
@@ -33,12 +32,21 @@ namespace Kerberos.NET.Entities
 
             if (rst.ServicePrincipal == null)
             {
-                rst.ServicePrincipal = await realmService.Principals.RetrieveKrbtgt();
+                rst.ServicePrincipal = realmService.Principals.Find(KrbPrincipalName.WellKnown.Krbtgt());
             }
 
             if (rst.ServicePrincipalKey == null)
             {
-                rst.ServicePrincipalKey = await rst.ServicePrincipal.RetrieveLongTermCredential();
+                rst.ServicePrincipalKey = rst.ServicePrincipal.RetrieveLongTermCredential();
+            }
+
+            if (rst.KdcAuthorizationKey == null)
+            {
+                // Not using rst.ServicePrincipal because it may not actually be krbtgt
+
+                var krbtgt = realmService.Principals.Find(KrbPrincipalName.WellKnown.Krbtgt());
+
+                rst.KdcAuthorizationKey = krbtgt.RetrieveLongTermCredential();
             }
 
             var now = realmService.Now();
@@ -53,7 +61,7 @@ namespace Kerberos.NET.Entities
                 rst.Flags = DefaultFlags;
             }
 
-            return await GenerateServiceTicket<KrbAsRep>(rst);
+            return GenerateServiceTicket<KrbAsRep>(rst);
         }
     }
 }

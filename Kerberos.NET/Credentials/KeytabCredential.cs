@@ -23,6 +23,8 @@ namespace Kerberos.NET.Credentials
             }
         }
 
+        public override bool SupportsOptimisticPreAuthentication => keytab != null;
+
         public override KerberosKey CreateKey()
         {
             Validate();

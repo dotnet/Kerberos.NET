@@ -1,10 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace Kerberos.NET
 {
     public interface ITicketCache
     {
         bool RefreshTickets { get; set; }
+
+        TimeSpan RefreshInterval { get; set; }
 
         Task<bool> Add(TicketCacheEntry entry);
 

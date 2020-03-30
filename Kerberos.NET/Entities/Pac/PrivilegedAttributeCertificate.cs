@@ -9,6 +9,10 @@ using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Entities
 {
+    /// <summary>
+    /// The Privilege Attribute Certificate contains memberships, additional credential
+    /// information, profile and policy information, and supporting security metadata.
+    /// </summary>
     public class PrivilegedAttributeCertificate : Restriction
     {
         private const int PAC_VERSION = 0;
@@ -137,64 +141,111 @@ namespace Kerberos.NET.Entities
             return null;
         }
 
+        /// <summary>
+        /// The protocol version of this instance.
+        /// </summary>
         public long Version { get; private set; }
 
+        /// <summary>
+        /// The KERB_VALIDATION_INFO structure is a subset of the NETLOGON_VALIDATION_SAM_INFO4 structure
+        /// ([MS-NRPC] section 2.2.1.4.13). It contains the authorization data of the user including
+        /// group memberships.
+        /// </summary>
         public PacLogonInfo LogonInfo
         {
             get => GetAttribute<PacLogonInfo>(PacType.LOGON_INFO);
             set => attributes[PacType.LOGON_INFO] = value;
         }
 
+        /// <summary>
+        /// Contains the signature of the PAC structure signed using the target service key.
+        /// </summary>
         public PacSignature ServerSignature
         {
             get => GetAttribute<PacSignature>(PacType.SERVER_CHECKSUM);
             set => attributes[PacType.SERVER_CHECKSUM] = value;
         }
 
+        /// <summary>
+        /// A PAC_CREDENTIAL_INFO structure contains the user's encrypted  credentials. The Key Usage Number [RFC4120] used in
+        /// the encryption is KERB_NON_KERB_SALT (16) [MS-KILE] section 3.1.5.9. The encryption key used is the AS reply key.
+        /// The PAC credentials buffer is included only when PKINIT [RFC4556] is used. Therefore, the AS reply key is derived based on PKINIT.
+        /// </summary>
         public PacCredentialInfo CredentialType
         {
             get => GetAttribute<PacCredentialInfo>(PacType.CREDENTIAL_TYPE);
             set => attributes[PacType.CREDENTIAL_TYPE] = value;
         }
 
+        /// <summary>
+        /// Contains the signature of the PAC structure signed using the KDC service key.
+        /// </summary>
         public PacSignature KdcSignature
         {
             get => GetAttribute<PacSignature>(PacType.PRIVILEGE_SERVER_CHECKSUM);
             set => attributes[PacType.PRIVILEGE_SERVER_CHECKSUM] = value;
         }
 
+        /// <summary>
+        /// Contains the claims optionally issued for the client.
+        /// </summary>
         public ClaimsSetMetadata ClientClaims
         {
             get => GetAttribute<ClaimsSetMetadata>(PacType.CLIENT_CLAIMS);
             set => attributes[PacType.CLIENT_CLAIMS] = value;
         }
 
+        /// <summary>
+        /// Contains the claims optionally issued for the device.
+        /// </summary>
         public ClaimsSetMetadata DeviceClaims
         {
             get => GetAttribute<ClaimsSetMetadata>(PacType.DEVICE_CLAIMS);
             set => attributes[PacType.DEVICE_CLAIMS] = value;
         }
 
+        /// <summary>
+        /// It is used to verify that the PAC corresponds to the client of the ticket.
+        /// </summary>
         public PacClientInfo ClientInformation
         {
             get => GetAttribute<PacClientInfo>(PacType.CLIENT_NAME_TICKET_INFO);
             set => attributes[PacType.CLIENT_NAME_TICKET_INFO] = value;
         }
 
+        /// <summary>
+        /// This structure contains the client's UPN and FQDN.
+        /// It is used to provide the UPN and FQDN ) that corresponds to the client of the ticket.
+        /// </summary>
         public UpnDomainInfo UpnDomainInformation
         {
             get => GetAttribute<UpnDomainInfo>(PacType.UPN_DOMAIN_INFO);
             set => attributes[PacType.UPN_DOMAIN_INFO] = value;
         }
 
+        /// <summary>
+        /// This structure lists the services that have been delegated through this Kerberos
+        /// client and subsequent services or servers. The list is used only in a Service
+        /// for User to Proxy (S4U2proxy) [MS-SFU] request. This feature could be used multiple
+        /// times in succession from service to service.
+        /// </summary>
         public PacDelegationInfo DelegationInformation
         {
             get => GetAttribute<PacDelegationInfo>(PacType.CONSTRAINED_DELEGATION_INFO);
             set => attributes[PacType.CONSTRAINED_DELEGATION_INFO] = value;
         }
 
+        /// <summary>
+        /// Indicates whether this PAC contains enough of the required fields to be included in the ticket.
+        /// </summary>
         public bool HasRequiredFields => ServerSignature != null && KdcSignature != null;
 
+        /// <summary>
+        /// Encode the PAC as per [MS-PAC] and sign using both the KDC and service keys.
+        /// </summary>
+        /// <param name="kdcKey">The KDC service key</param>
+        /// <param name="serverKey">The service key</param>
+        /// <returns>Returns an encoded PAC structure</returns>
         public ReadOnlyMemory<byte> Encode(KerberosKey kdcKey, KerberosKey serverKey)
         {
             // pac format

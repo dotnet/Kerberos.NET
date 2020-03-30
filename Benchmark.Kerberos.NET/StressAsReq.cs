@@ -140,11 +140,11 @@ namespace Benchmark.Kerberos.NET
             }
         }
 
-        private static Task<IRealmService> LocateRealm(string realm)
+        private static IRealmService LocateRealm(string realm)
         {
             realmService = realmService ?? new FakeRealmService(realm);
 
-            return Task.FromResult(realmService);
+            return realmService;
         }
     }
 }

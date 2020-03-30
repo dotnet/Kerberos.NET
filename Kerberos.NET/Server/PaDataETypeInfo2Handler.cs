@@ -1,6 +1,5 @@
-﻿using Kerberos.NET.Entities;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
 {
@@ -11,7 +10,7 @@ namespace Kerberos.NET.Server
         {
         }
 
-        public override async Task PostValidate(IKerberosPrincipal principal, List<KrbPaData> preAuthRequirements)
+        public override void PostValidate(IKerberosPrincipal principal, List<KrbPaData> preAuthRequirements)
         {
             if (preAuthRequirements.Count <= 0)
             {
@@ -21,7 +20,7 @@ namespace Kerberos.NET.Server
                 return;
             }
 
-            var cred = await principal.RetrieveLongTermCredential();
+            var cred = principal.RetrieveLongTermCredential();
 
             var etypeInfo = new KrbETypeInfo2
             {

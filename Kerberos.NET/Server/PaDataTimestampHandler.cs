@@ -1,6 +1,5 @@
-﻿using Kerberos.NET.Entities;
-using System;
-using System.Threading.Tasks;
+﻿using System;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
 {
@@ -11,7 +10,7 @@ namespace Kerberos.NET.Server
         {
         }
 
-        public override async Task<KrbPaData> Validate(KrbKdcReq asReq, PreAuthenticationContext preauth)
+        public override KrbPaData Validate(KrbKdcReq asReq, PreAuthenticationContext preauth)
         {
             if (preauth.PreAuthenticationSatisfied)
             {
@@ -19,7 +18,7 @@ namespace Kerberos.NET.Server
             }
 
             var principal = preauth.Principal;
-            var cred = await principal.RetrieveLongTermCredential();
+            var cred = principal.RetrieveLongTermCredential();
 
             var timestamp = asReq.DecryptTimestamp(cred);
 
@@ -43,6 +42,7 @@ namespace Kerberos.NET.Server
             }
 
             preauth.EncryptedPartKey = cred;
+            preauth.ClientAuthority = PaDataType.PA_ENC_TIMESTAMP;
 
             return null;
         }

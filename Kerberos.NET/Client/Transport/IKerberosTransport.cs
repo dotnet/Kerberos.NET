@@ -15,6 +15,10 @@ namespace Kerberos.NET.Transport
 
         TimeSpan ConnectTimeout { get; set; }
 
+        TimeSpan SendTimeout { get; set; }
+
+        TimeSpan ReceiveTimeout { get; set; }
+
         int MaximumAttempts { get; set; }
 
         Task<TResponse> SendMessage<TRequest, TResponse>(

@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET
 {
@@ -21,7 +21,6 @@ namespace Kerberos.NET
             cts = new CancellationTokenSource();
 
             backgroundRunner = Task.Run(RunBackground, cts.Token);
-            backgroundRunner.ContinueWith(t => t, cts.Token);
         }
 
         internal Func<CacheEntry, Task> Refresh { get; set; }
@@ -167,7 +166,7 @@ namespace Kerberos.NET
         {
             cts.Cancel();
             cts.Dispose();
-            backgroundRunner.Dispose();
+            backgroundRunner.ContinueWith(t => t.Dispose());
         }
 
         [DebuggerDisplay("{Key}; E: {Expiration}; R: {RenewUntil};")]

@@ -31,6 +31,8 @@ namespace Kerberos.NET.Transport
             {
                 transport.MaximumAttempts = MaximumAttempts;
                 transport.ConnectTimeout = ConnectTimeout;
+                transport.SendTimeout = SendTimeout;
+                transport.ReceiveTimeout = ReceiveTimeout;
 
                 try
                 {
@@ -44,6 +46,17 @@ namespace Kerberos.NET.Transport
             }
 
             throw LastError ?? new KerberosTransportException("No transport could be used to send the message");
+        }
+
+        public override void Dispose()
+        {
+            foreach (var transport in Transports)
+            {
+                if (transport is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
         }
     }
 }

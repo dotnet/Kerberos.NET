@@ -1,30 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Security.Cryptography.Pkcs;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
-using Kerberos.NET;
+﻿using Kerberos.NET;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using Kerberos.NET.Transport;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using static Tests.Kerberos.NET.KdcListener;
 
 namespace Tests.Kerberos.NET
 
 {
     [TestClass]
-    public class ClientToKdcE2ETests : BaseTest
+    public class ClientToKdcE2ETests : KdcListenerTestBase
     {
-        private const string AdminAtCorpUserName = "administrator@corp.identityintervention.com";
-        private const string TestAtCorpUserName = "testuser@corp.identityintervention.com";
-        private const string FakeAdminAtCorpPassword = "P@ssw0rd!";
-        private const string FakeAppServiceSpn = "host/appservice.corp.identityintervention.com";
-
         private const int ConcurrentThreads = 2;
         private const int RequestsPerThread = 5;
 
@@ -46,17 +36,24 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        private class TrustedAsymmetricCredential : KerberosAsymmetricCredential
+        [TestMethod]
+        [ExpectedException(typeof(KerberosProtocolException))]
+        public async Task E2E_SName_Not_Found()
         {
-            public TrustedAsymmetricCredential(X509Certificate2 cert, string username = null)
-                : base(cert, username)
-            {
-                this.IncludeOption = X509IncludeOption.EndCertOnly;
-            }
+            var port = NextPort();
 
-            protected override void VerifyKdcSignature(SignedCms signed)
+            using (var listener = StartListener(port))
             {
-                signed.CheckSignature(verifySignatureOnly: true);
+                await RequestAndValidateTickets(
+                    listener,
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    spn: "host/not.found",
+                    includePac: false
+                );
+
+                listener.Stop();
             }
         }
 
@@ -77,6 +74,142 @@ namespace Tests.Kerberos.NET
                 );
 
                 listener.Stop();
+            }
+        }
+
+        [TestMethod, ExpectedException(typeof(NotSupportedException))]
+        public async Task PKINIT_Unsupported_KeyAgreement_None()
+        {
+            var port = NextPort();
+
+            var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
+
+            using (var listener = StartListener(port))
+            using (var client = CreateClient(listener))
+            {
+                var kerbCred = new TrustedAsymmetricCredential(cert, AdminAtCorpUserName)
+                {
+                    KeyAgreement = KeyAgreementAlgorithm.None,
+                    SupportsDiffieHellman = false,
+                    SupportsEllipticCurveDiffieHellman = false
+                };
+
+                await client.Authenticate(kerbCred);
+            }
+        }
+
+        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        public async Task PKINIT_Unsupported_KeyAgreement_EC()
+        {
+            var port = NextPort();
+
+            var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
+
+            using (var listener = StartListener(port))
+            using (var client = CreateClient(listener))
+            {
+                var kerbCred = new TrustedAsymmetricCredential(cert, AdminAtCorpUserName)
+                {
+                    KeyAgreement = KeyAgreementAlgorithm.None,
+                    SupportsDiffieHellman = false,
+                    SupportsEllipticCurveDiffieHellman = true
+                };
+
+                await client.Authenticate(kerbCred);
+            }
+        }
+
+        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        public async Task PKINIT_Unsupported_KeyAgreement_P256()
+        {
+            var port = NextPort();
+
+            var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
+
+            using (var listener = StartListener(port))
+            using (var client = CreateClient(listener))
+            {
+                var kerbCred = new TrustedAsymmetricCredential(cert, AdminAtCorpUserName)
+                {
+                    KeyAgreement = KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256,
+                    SupportsDiffieHellman = false,
+                    SupportsEllipticCurveDiffieHellman = true
+                };
+
+                await client.Authenticate(kerbCred);
+            }
+        }
+
+        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        public async Task PKINIT_Unsupported_KeyAgreement_P384()
+        {
+            var port = NextPort();
+
+            var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
+
+            using (var listener = StartListener(port))
+            using (var client = CreateClient(listener))
+            {
+                var kerbCred = new TrustedAsymmetricCredential(cert, AdminAtCorpUserName)
+                {
+                    KeyAgreement = KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP384,
+                    SupportsDiffieHellman = false,
+                    SupportsEllipticCurveDiffieHellman = true
+                };
+
+                await client.Authenticate(kerbCred);
+            }
+        }
+
+        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        public async Task PKINIT_Unsupported_KeyAgreement_P521()
+        {
+            var port = NextPort();
+
+            var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
+
+            using (var listener = StartListener(port))
+            using (var client = CreateClient(listener))
+            {
+                var kerbCred = new TrustedAsymmetricCredential(cert, AdminAtCorpUserName)
+                {
+                    KeyAgreement = KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP521,
+                    SupportsDiffieHellman = false,
+                    SupportsEllipticCurveDiffieHellman = true
+                };
+
+                await client.Authenticate(kerbCred);
+            }
+        }
+
+        [TestMethod, ExpectedException(typeof(KerberosProtocolException))]
+        public async Task E2E_PKINIT_Modp2_Fails()
+        {
+            var port = NextPort();
+
+            var cert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
+
+            using (var listener = StartListener(port))
+            {
+                try
+                {
+                    await RequestAndValidateTickets(
+                        listener,
+                        TestAtCorpUserName,
+                        overrideKdc: $"127.0.0.1:{port}",
+                        cert: cert,
+                        keyAgreement: KeyAgreementAlgorithm.DiffieHellmanModp2
+                    );
+                }
+                catch (KerberosProtocolException kex)
+                {
+                    Assert.IsTrue(kex.Message.Contains("Unsupported Diffie Hellman"));
+                    throw;
+                }
+                finally
+                {
+                    listener.Stop();
+                }
             }
         }
 
@@ -292,10 +425,8 @@ namespace Tests.Kerberos.NET
                 var kerbClientCred = new KerberosPasswordCredential(AdminAtCorpUserName, FakeAdminAtCorpPassword);
                 var kerbServerCred = new KerberosPasswordCredential("u2u@corp.identityintervention.com", FakeAdminAtCorpPassword);
 
-                var kdc = $"127.0.0.1:{port}";
-                
-                using (var client = CreateClient(kdc, listener))
-                using (var server = CreateClient(kdc, listener))
+                using (var client = CreateClient(listener))
+                using (var server = CreateClient(listener))
                 {
                     await client.Authenticate(kerbClientCred);
 
@@ -305,7 +436,10 @@ namespace Tests.Kerberos.NET
 
                     var serverTgt = serverEntry.KdcResponse.Ticket;
 
-                    var apReq = await client.GetServiceTicket("host/u2u", ApOptions.MutualRequired | ApOptions.UseSessionKey, u2uServerTicket: serverTgt);
+                    var apReq = await client.GetServiceTicket("host/u2u.corp.identityintervention.com",
+                        ApOptions.MutualRequired | ApOptions.UseSessionKey,
+                        u2uServerTicket: serverTgt
+                    );
 
                     Assert.IsNotNull(apReq);
 
@@ -319,7 +453,7 @@ namespace Tests.Kerberos.NET
 
                     Assert.IsNotNull(decrypted.Ticket);
 
-                    Assert.AreEqual("host/u2u@CORP.IDENTITYINTERVENTION.COM", decrypted.SName.FullyQualifiedName);
+                    Assert.AreEqual("host/u2u.corp.identityintervention.com", decrypted.SName.FullyQualifiedName);
                 }
 
                 listener.Stop();
@@ -430,226 +564,6 @@ namespace Tests.Kerberos.NET
             //string kdc = "10.0.0.21:88";
 
             await MultithreadedRequests(port, threads, requests, cacheTickets, encodeNego, includePac, kdc);
-        }
-
-        private static async Task MultithreadedRequests(
-            int port,
-            int threads,
-            int requests,
-            bool cacheTickets,
-            bool encodeNego,
-            bool includePac,
-            string kdc,
-            X509Certificate2 cert = null
-        )
-        {
-            using (var listener = StartListener(port))
-            {
-                var exceptions = new List<Exception>();
-
-                KerberosCredential kerbCred;
-
-                if (cert != null)
-                {
-                    kerbCred = new TrustedAsymmetricCredential(cert, TestAtCorpUserName);
-                }
-                else
-                {
-                    kerbCred = new KerberosPasswordCredential(AdminAtCorpUserName, FakeAdminAtCorpPassword);
-                }
-
-                KerberosClient client = CreateClient(kdc, listener);
-
-                using (client)
-                {
-                    client.CacheServiceTickets = cacheTickets;
-
-                    if (!includePac)
-                    {
-                        client.AuthenticationOptions &= ~AuthenticationOptions.IncludePacRequest;
-                    }
-
-                    await client.Authenticate(kerbCred);
-
-                    Task.WaitAll(Enumerable.Range(0, threads).Select(taskNum => Task.Run(async () =>
-                    {
-                        for (var i = 0; i < requests; i++)
-                        {
-                            try
-                            {
-                                if (i % 2 == 0)
-                                {
-                                    await client.Authenticate(kerbCred);
-                                }
-
-                                var ticket = await client.GetServiceTicket(new RequestServiceTicket
-                                {
-                                    ServicePrincipalName = FakeAppServiceSpn,
-                                    ApOptions = ApOptions.MutualRequired
-                                });
-
-                                Assert.IsNotNull(ticket.ApReq);
-
-                                await ValidateTicket(ticket, encodeNego: encodeNego, includePac: includePac);
-                            }
-                            catch (Exception ex)
-                            {
-                                exceptions.Add(ex);
-                            }
-                        }
-                    })).ToArray());
-                }
-
-                listener.Stop();
-
-                if (exceptions.Count > 0)
-                {
-                    throw new AggregateException($"Failed {exceptions.Count}", exceptions.GroupBy(e => e.GetType()).Select(e => e.First()));
-                }
-            }
-        }
-
-        private static KerberosClient CreateClient(string kdc, KdcListener listener)
-        {
-            KerberosClient client;
-
-            if (listener == null)
-            {
-                throw new Exception();
-            }
-            else
-            {
-                IKerberosTransport transport = new InMemoryTransport(listener);
-
-                client = new KerberosClient(transports: transport);
-            }
-
-            return client;
-        }
-
-        private static async Task RequestAndValidateTickets(
-            KdcListener listener,
-            string user,
-            string password = null,
-            string overrideKdc = null,
-            KeyTable keytab = null,
-            string s4u = null,
-            bool encodeNego = false,
-            bool caching = false,
-            bool includePac = true,
-            X509Certificate2 cert = null
-        )
-        {
-            KerberosCredential kerbCred;
-
-            if (cert != null)
-            {
-                kerbCred = new TrustedAsymmetricCredential(cert, user);
-            }
-            else if (keytab != null)
-            {
-                kerbCred = new KeytabCredential(user, keytab);
-            }
-            else
-            {
-                kerbCred = new KerberosPasswordCredential(user, password);
-            }
-
-            KerberosClient client = CreateClient(overrideKdc, listener);
-
-            using (client)
-            {
-                if (!includePac)
-                {
-                    client.AuthenticationOptions &= ~AuthenticationOptions.IncludePacRequest;
-                }
-
-                await client.Authenticate(kerbCred);
-
-                var spn = FakeAppServiceSpn;
-
-                var ticket = await client.GetServiceTicket(
-                    new RequestServiceTicket
-                    {
-                        ServicePrincipalName = spn,
-                        ApOptions = ApOptions.MutualRequired
-                    }
-                );
-
-                await ValidateTicket(ticket, includePac: includePac);
-
-                await client.RenewTicket();
-
-                ticket = await client.GetServiceTicket(
-                    new RequestServiceTicket
-                    {
-                        ServicePrincipalName = FakeAppServiceSpn,
-                        ApOptions = ApOptions.MutualRequired
-                    }
-                );
-
-                await ValidateTicket(ticket, encodeNego, includePac: includePac);
-
-                ticket = await client.GetServiceTicket(
-                    new RequestServiceTicket
-                    {
-                        ServicePrincipalName = FakeAppServiceSpn,
-                        ApOptions = ApOptions.MutualRequired,
-                        S4uTarget = s4u
-                    }
-                );
-
-                await ValidateTicket(ticket, includePac: includePac);
-            }
-        }
-
-        private static async Task ValidateTicket(ApplicationSessionContext context, bool encodeNego = false, bool includePac = true)
-        {
-            var ticket = context.ApReq;
-
-            byte[] encoded;
-
-            if (encodeNego)
-            {
-                encoded = ticket.EncodeGssApi().ToArray();
-            }
-            else
-            {
-                encoded = ticket.EncodeApplication().ToArray();
-            }
-
-            var authenticator = new KerberosAuthenticator(
-                new KeyTable(
-                    new KerberosKey(
-                        FakeAdminAtCorpPassword,
-                        principalName: new PrincipalName(
-                            PrincipalNameType.NT_PRINCIPAL,
-                            "CORP.IDENTITYINTERVENTION.com",
-                            new[] { FakeAppServiceSpn }
-                        ),
-                        saltType: SaltType.ActiveDirectoryUser
-                    )
-                )
-            );
-
-            var validated = (KerberosIdentity)await authenticator.Authenticate(encoded);
-
-            Assert.IsNotNull(validated);
-
-            var sidClaim = validated.FindFirst(ClaimTypes.Sid);
-
-            if (includePac)
-            {
-                Assert.AreEqual("S-1-5-123-456-789-12-321-888", sidClaim?.Value);
-            }
-            else
-            {
-                Assert.IsNull(sidClaim);
-            }
-
-            var sessionKey = context.AuthenticateServiceResponse(validated.ApRep);
-
-            Assert.IsNotNull(sessionKey);
         }
     }
 }

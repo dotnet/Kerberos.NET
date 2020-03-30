@@ -66,6 +66,11 @@ namespace Kerberos.NET.Crypto.AES
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ReadOnlyMemory<byte> GetOrDeriveKey(KerberosKey kerberosKey, KeyUsage usage)
         {
+            if (kerberosKey == null)
+            {
+                throw new InvalidOperationException("Key cannot be null");
+            }
+
             return kerberosKey.GetOrDeriveKey(
                 this,
                 $"{usage}|Ke|{KeySize}|{BlockSize}",

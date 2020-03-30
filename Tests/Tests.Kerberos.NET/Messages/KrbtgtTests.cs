@@ -1,8 +1,7 @@
-﻿using Kerberos.NET.Crypto;
+﻿using System.Linq;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 {
@@ -47,12 +46,12 @@ namespace Tests.Kerberos.NET
         private const string UserUpn = "user@test.internal";
 
         [TestMethod]
-        public async Task GeneratedTgtMatchesActiveDirectory()
+        public void GeneratedTgtMatchesActiveDirectory()
         {
             var realmService = new FakeRealmService(Realm);
-            var principal = await realmService.Principals.Find(UserUpn);
+            var principal = realmService.Principals.Find(KrbPrincipalName.FromString(UserUpn));
 
-            var principalKey = await principal.RetrieveLongTermCredential();
+            var principalKey = principal.RetrieveLongTermCredential();
 
             var rst = new ServiceTicketRequest
             {
@@ -62,7 +61,7 @@ namespace Tests.Kerberos.NET
                 ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96)
             };
 
-            var tgt = await KrbAsRep.GenerateTgt(rst, realmService);
+            var tgt = KrbAsRep.GenerateTgt(rst, realmService);
 
             Assert.IsNotNull(tgt);
 
@@ -102,6 +101,8 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(krbtgt);
 
+            Assert.AreEqual(krbtgt.CName.FullyQualifiedName, asRep.CName.FullyQualifiedName);
+
             Assert.AreEqual(UserUpn, krbtgt.CName.FullyQualifiedName, true);
             Assert.AreEqual(Realm, krbtgt.CRealm);
             Assert.AreEqual(ExpectedFlags, krbtgt.Flags);
@@ -112,12 +113,12 @@ namespace Tests.Kerberos.NET
         private const string TestSamAccountName = "SamAccount";
 
         [TestMethod]
-        public async Task GeneratedTgtMatchesWithOnPremisesSamAccountName()
+        public void GeneratedTgtMatchesWithOnPremisesSamAccountName()
         {
             var realmService = new FakeRealmService(Realm);
-            var principal = await realmService.Principals.Find(UserUpn);
+            var principal = realmService.Principals.Find(KrbPrincipalName.FromString(UserUpn));
 
-            var principalKey = await principal.RetrieveLongTermCredential();
+            var principalKey = principal.RetrieveLongTermCredential();
 
             var rst = new ServiceTicketRequest
             {
@@ -128,7 +129,7 @@ namespace Tests.Kerberos.NET
                 ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96)
             };
 
-            var tgt = await KrbAsRep.GenerateTgt(rst, realmService);
+            var tgt = KrbAsRep.GenerateTgt(rst, realmService);
 
             Assert.IsNotNull(tgt);
 
@@ -143,8 +144,9 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(asRep);
 
-            // CName under reply part should be original UPN
-            Assert.AreEqual(UserUpn, asRep.CName.FullyQualifiedName);
+            // CName under reply part should NOT be original UPN
+            Assert.AreNotEqual(UserUpn, asRep.CName.FullyQualifiedName);
+            Assert.AreEqual(TestSamAccountName, asRep.CName.FullyQualifiedName);
 
             var encPart = asRep.EncPart.Decrypt(
                 clientKey,

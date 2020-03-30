@@ -32,6 +32,8 @@ namespace Kerberos.NET.Credentials
             }
         }
 
+        public override bool SupportsOptimisticPreAuthentication => Salts != null && Salts.Any();
+
         public override void Validate()
         {
             base.Validate();

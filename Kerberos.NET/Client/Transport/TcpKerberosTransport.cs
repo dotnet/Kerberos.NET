@@ -1,16 +1,18 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Dns;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Client;
+using Kerberos.NET.Dns;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Transport
 {
     public class TcpKerberosTransport : KerberosTransportBase
     {
         private const string TcpServiceTemplate = "_kerberos._tcp.{0}";
+
+        private static readonly ISocketPool pool = CreateSocketPool();
 
         private readonly ILogger<TcpKerberosTransport> logger;
 
@@ -22,11 +24,46 @@ namespace Kerberos.NET.Transport
             Enabled = true;
         }
 
+        public static int MaxPoolSize
+        {
+            get => pool.MaxPoolSize;
+            set => pool.MaxPoolSize = value;
+        }
+
+        public static TimeSpan ScavengeWindow
+        {
+            get => pool.ScavengeWindow;
+            set => pool.ScavengeWindow = value;
+        }
+
+        public static ISocketPool CreateSocketPool() => new SocketPool();
+
         public override async Task<T> SendMessage<T>(
             string domain,
             ReadOnlyMemory<byte> encoded,
             CancellationToken cancellation = default
         )
+        {
+            try
+            {
+                using (var client = await GetClient(domain))
+                {
+                    var stream = client.GetStream();
+
+                    await WriteMessage(encoded, stream, cancellation);
+
+                    return await ReadResponse<T>(stream, cancellation);
+                }
+            }
+            catch (SocketException sx)
+            {
+                logger.LogDebug(sx, "TCP Socket exception during Connect {SocketCode}", sx.SocketErrorCode);
+
+                throw new KerberosTransportException("TCP Connect failed", sx);
+            }
+        }
+
+        private async Task<ITcpSocket> GetClient(string domain)
         {
             var attempts = MaximumAttempts;
             SocketException lastThrown = null;
@@ -35,83 +72,63 @@ namespace Kerberos.NET.Transport
             {
                 var target = LocateKdc(domain);
 
-                logger.LogInformation("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
+                logger.LogTrace("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
 
-                using (var client = new TcpClient(AddressFamily.InterNetwork))
+                ITcpSocket client = null;
+
+                bool connected = false;
+
+                try
                 {
-                    client.LingerState = new LingerOption(false, 0);
+                    client = await pool.Request(target, ConnectTimeout);
 
-                    try
+                    if (client != null)
                     {
-                        client.SendTimeout = (int)ConnectTimeout.TotalMilliseconds;
-                        client.ReceiveTimeout = (int)ConnectTimeout.TotalMilliseconds;
-
-                        await client.ConnectAsync(target.Target, target.Port);
+                        connected = true;
                     }
-                    catch (SocketException sx)
-                    {
-                        lastThrown = sx;
-                        target.Ignore = true;
-
-                        continue;
-                    }
-
-                    var stream = client.GetStream();
-
-                    await WriteMessage(encoded, stream, cancellation);
-
-                    return await ReadResponse<T>(stream, cancellation);
                 }
+                catch (SocketException ex)
+                {
+                    lastThrown = ex;
+                }
+
+                if (!connected)
+                {
+                    lastThrown = lastThrown ?? new SocketException((int)SocketError.TimedOut);
+
+                    target.Ignore = true;
+                    continue;
+                }
+
+                logger.LogDebug("TCP connected to {Target} on port {Port}", target.Target, target.Port);
+
+                client.SendTimeout = SendTimeout;
+                client.ReceiveTimeout = ReceiveTimeout;
+
+                return client;
             }
             while (--attempts > 0);
 
-            logger.LogDebug(lastThrown, "TCP Socket exception during Connect {SocketCode}", lastThrown.SocketErrorCode);
-
-            throw new KerberosTransportException("TCP Connect failed", lastThrown);
+            throw lastThrown;
         }
 
         private async Task<T> ReadResponse<T>(NetworkStream stream, CancellationToken cancellation)
             where T : Asn1.IAsn1ApplicationEncoder<T>, new()
         {
-            var messageSizeBytes = await ReadFromStream(4, stream, cancellation);
+            var messageSizeBytes = await Tcp.ReadFromStream(4, stream, cancellation);
 
             var messageSize = (int)messageSizeBytes.AsLong();
 
-            var response = await ReadFromStream(messageSize, stream, cancellation);
+            var response = await Tcp.ReadFromStream(messageSize, stream, cancellation);
 
             return Decode<T>(response);
         }
 
-        private static async Task<byte[]> ReadFromStream(int messageSize, NetworkStream stream, CancellationToken cancellation)
-        {
-            var response = new byte[messageSize];
-
-            int read = 0;
-
-            while (read < response.Length)
-            {
-                read += await stream.ReadAsync(
-                    response,
-                    read,
-                    response.Length - read,
-                    cancellation
-                );
-            }
-
-            return response;
-        }
-
         private static async Task WriteMessage(ReadOnlyMemory<byte> encoded, NetworkStream stream, CancellationToken cancellation)
         {
-            var messageSizeBytes = new byte[4];
-
-            Endian.ConvertToBigEndian(encoded.Length, (Span<byte>)messageSizeBytes);
-
-            await stream.WriteAsync(messageSizeBytes, 0, messageSizeBytes.Length, cancellation);
+            encoded = Tcp.FormatKerberosMessageStream(encoded);
 
             await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation);
-
-            await stream.FlushAsync();
         }
 
         protected DnsRecord LocateKdc(string domain)

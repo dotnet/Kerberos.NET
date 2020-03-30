@@ -379,12 +379,30 @@
     <value>Field is too long for this implementation</value>
   </data>
   <data name="KRB_ERROR_KRB_ERR_GENERIC" xml:space="preserve">
-    <value>Generic error (description in e-text)</value>
+    <value>Generic error</value>
   </data>
   <data name="KRB_ERROR_KRB_ERR_RESPONSE_TOO_BIG" xml:space="preserve">
     <value>Response too big for UDP; retry with TCP</value>
   </data>
   <data name="KRB_ERROR_AS_NONCE_MISMATCH" xml:space="preserve">
     <value>AS-REQ nonce {0} does not match {1}</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_DH_KEY_PARAMETERS_NOT_ACCEPTED" xml:space="preserve">
+    <value>KDC policy has determined the provided Diffie-Hellman key parameters are not acceptable</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_DIGEST_IN_CERT_NOT_ACCEPTED" xml:space="preserve">
+    <value>The signature algorithm used to sign the CA certificate is not accepted</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_DIGEST_IN_SIGNED_DATA_NOT_ACCEPTED" xml:space="preserve">
+    <value>The signature algorithm used to sign the request is not accepted</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_INCONSISTENT_KEY_PURPOSE" xml:space="preserve">
+    <value>The client certificate does not contain the KeyPurposeId EKU and is required</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_PA_CHECKSUM_MUST_BE_INCLUDED" xml:space="preserve">
+    <value>The client did not include the required paChecksum parameter</value>
+  </data>
+  <data name="KRB_ERROR_KDC_ERR_PUBLIC_KEY_ENCRYPTION_NOT_SUPPORTED" xml:space="preserve">
+    <value>The KDC does not support public key encryption for PKINIT</value>
   </data>
 </root>

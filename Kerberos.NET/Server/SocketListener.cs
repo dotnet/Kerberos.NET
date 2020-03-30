@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.Server
@@ -21,7 +22,13 @@ namespace Kerberos.NET.Server
             listeningSocket.Bind(Options.ListeningOn);
             listeningSocket.Listen(Options.QueueLength);
 
-            logger.LogInformation("Listener has started. Endpoint = {Port}; Protocol = {Protocol}", listeningSocket.LocalEndPoint, listeningSocket.ProtocolType);
+            logger.LogInformation(
+                "Listener has started. Endpoint = {Port}; Protocol = {Protocol}",
+                listeningSocket.LocalEndPoint,
+                listeningSocket.ProtocolType
+            );
+
+            options.Cancellation = new CancellationTokenSource();
 
             this.workerFunc = workerFunc;
         }
@@ -30,6 +37,11 @@ namespace Kerberos.NET.Server
         {
             while (true)
             {
+                if (Options.Cancellation.IsCancellationRequested)
+                {
+                    return null;
+                }
+
                 try
                 {
                     var socket = await listeningSocket.AcceptAsync();
@@ -40,10 +52,12 @@ namespace Kerberos.NET.Server
                     when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
                 {
                     logger.LogTrace(sx, "Accept exception raised by socket with code {Error}", sx.SocketErrorCode);
+                    throw;
                 }
                 catch (ObjectDisposedException ex)
                 {
                     logger.LogTrace(ex, "Accept exception raised because object was used after dispose");
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -55,6 +69,8 @@ namespace Kerberos.NET.Server
 
         public override void Dispose()
         {
+            Options.Cancellation.Cancel();
+
             listeningSocket.Dispose();
         }
     }

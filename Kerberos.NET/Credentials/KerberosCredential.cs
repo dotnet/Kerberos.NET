@@ -8,13 +8,15 @@ namespace Kerberos.NET.Credentials
 {
     public abstract class KerberosCredential
     {
-        public IEnumerable<KeyValuePair<EncryptionType, string>> Salts { get; set; }
+        public IEnumerable<KeyValuePair<EncryptionType, string>> Salts { get; set; } = new List<KeyValuePair<EncryptionType, string>>();
 
         public string UserName { get; set; }
 
         public string Domain { get; set; }
 
         public abstract KerberosKey CreateKey();
+
+        public abstract bool SupportsOptimisticPreAuthentication { get; }
 
         public virtual void TransformKdcReq(KrbKdcReq req)
         {
@@ -90,7 +92,7 @@ namespace Kerberos.NET.Credentials
         {
             return kdcRep.EncPart.Decrypt(
                 CreateKey(),
-                KeyUsage.EncAsRepPart,
+                keyUsage,
                 func
             );
         }

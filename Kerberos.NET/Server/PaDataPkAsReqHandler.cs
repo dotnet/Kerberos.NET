@@ -1,6 +1,4 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,7 +6,8 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
 {
@@ -18,25 +17,60 @@ namespace Kerberos.NET.Server
         private static readonly Oid DiffieHellman = new Oid("1.2.840.10046.2.1");
         private static readonly Oid EllipticCurveDiffieHellman = new Oid("1.2.840.10045.2.1");
 
+        private static readonly ReadOnlyMemory<KeyAgreementAlgorithm> DefaultSupportedAlgorithms
+            = new ReadOnlyMemory<KeyAgreementAlgorithm>(new[]
+        {
+            KeyAgreementAlgorithm.DiffieHellmanModp14,
+            KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256,
+            KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP384,
+            KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP521
+        });
+
         public X509IncludeOption IncludeOption { get; set; } = X509IncludeOption.ExcludeRoot;
+
+        public ICollection<KeyAgreementAlgorithm> SupportedKeyAgreementAlgorithms { get; set; }
+            = new List<KeyAgreementAlgorithm>(DefaultSupportedAlgorithms.ToArray());
 
         public PaDataPkAsReqHandler(IRealmService service)
             : base(service)
         {
         }
 
-        public override async Task<KrbPaData> Validate(KrbKdcReq asReq, PreAuthenticationContext preauth)
+        public override void PreValidate(PreAuthenticationContext preauth)
         {
+            var asReq = (KrbKdcReq)preauth.Message;
+
             var paPk = asReq.PaData.FirstOrDefault(p => p.Type == PaDataType.PA_PK_AS_REQ);
 
             if (paPk == null)
             {
-                return null;
+                return;
             }
 
             var pkreq = KrbPaPkAsReq.Decode(paPk.Value);
 
-            var authPack = await ValidateAuthPack(preauth.Principal, pkreq);
+            var signedCms = new SignedCms();
+            signedCms.Decode(pkreq.SignedAuthPack.ToArray());
+
+            var state = new PkInitState
+            {
+                PkInitRequest = pkreq,
+                Cms = signedCms,
+                ClientCertificate = signedCms.Certificates
+            };
+
+            preauth.PreAuthenticationState[PaDataType.PA_PK_AS_REQ] = state;
+        }
+
+        public override KrbPaData Validate(KrbKdcReq asReq, PreAuthenticationContext preauth)
+        {
+            if (!preauth.PreAuthenticationState.TryGetValue(PaDataType.PA_PK_AS_REQ, out PaDataState paState) || 
+                !(paState is PkInitState state))
+            {
+                return null;
+            }
+
+            var authPack = ValidateAuthPack(preauth, state);
 
             ValidateAuthenticator(authPack.PKAuthenticator, asReq.Body);
 
@@ -50,7 +84,7 @@ namespace Kerberos.NET.Server
             }
             else if (requestAlg?.Value == DiffieHellman.Value)
             {
-                agreement = await FromDiffieHellmanDomainParametersAsync(authPack.ClientPublicValue);
+                agreement = FromDiffieHellmanDomainParameters(authPack.ClientPublicValue);
             }
             else
             {
@@ -70,7 +104,7 @@ namespace Kerberos.NET.Server
             {
                 serverDHNonce = transform.GenerateRandomBytes(agreement.PublicKey.KeyLength);
 
-                await Service.Principals.CacheKey(agreement.PrivateKey);
+                Service.Principals.CacheKey(agreement.PrivateKey);
             }
 
             var keyInfo = new KrbKdcDHKeyInfo { SubjectPublicKey = agreement.PublicKey.EncodePublicKey() };
@@ -92,7 +126,7 @@ namespace Kerberos.NET.Server
             {
                 DHInfo = new KrbDHReplyInfo
                 {
-                    DHSignedData = await SignDHResponseAsync(keyInfo),
+                    DHSignedData = SignDHResponse(keyInfo),
                     ServerDHNonce = serverDHNonce
                 }
             };
@@ -107,11 +141,12 @@ namespace Kerberos.NET.Server
             };
 
             preauth.EncryptedPartKey = new KerberosKey(key: sessionKey.ToArray(), etype: etype);
+            preauth.ClientAuthority = PaDataType.PA_PK_AS_REQ;
 
             return null;
         }
 
-        private async Task<ReadOnlyMemory<byte>> SignDHResponseAsync(KrbKdcDHKeyInfo keyInfo)
+        private ReadOnlyMemory<byte> SignDHResponse(KrbKdcDHKeyInfo keyInfo)
         {
             var signed = new SignedCms(
                 new ContentInfo(
@@ -120,7 +155,7 @@ namespace Kerberos.NET.Server
                 )
             );
 
-            var certificate = await Service.Principals.RetrieveKdcCertificate();
+            var certificate = Service.Principals.RetrieveKdcCertificate();
 
             var signer = new CmsSigner(certificate) { IncludeOption = IncludeOption };
 
@@ -131,26 +166,29 @@ namespace Kerberos.NET.Server
 
         private static Exception OnlyKeyAgreementSupportedException() => throw new NotSupportedException("Only key agreement is supported for PKINIT authentication");
 
-        private async Task<IKeyAgreement> FromDiffieHellmanDomainParametersAsync(KrbSubjectPublicKeyInfo clientPublicValue)
+        private IKeyAgreement FromDiffieHellmanDomainParameters(KrbSubjectPublicKeyInfo clientPublicValue)
         {
             var parameters = KrbDiffieHellmanDomainParameters.DecodeSpecial(clientPublicValue.Algorithm.Parameters.Value);
 
-            IKeyAgreement agreement = null;
+            IKeyAgreement agreement;
 
-            switch (parameters.P.Length)
+            if (IsSupportedAlgorithm(KeyAgreementAlgorithm.DiffieHellmanModp14, Oakley.Group14.Prime, parameters.P))
             {
-                case 128:
-                    agreement = CryptoPal.Platform.DiffieHellmanModp2(
-                        await Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp2)
-                    );
-                    break;
-                case 256:
-                    agreement = CryptoPal.Platform.DiffieHellmanModp14(
-                      await Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp14)
-                    );
-                    break;
-                default:
-                    throw new InvalidOperationException("Unknown key agreement parameter");
+                var cachedKey = Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp14);
+
+                agreement = CryptoPal.Platform.DiffieHellmanModp14(cachedKey);
+            }
+            else if (IsSupportedAlgorithm(KeyAgreementAlgorithm.DiffieHellmanModp2, Oakley.Group2.Prime, parameters.P))
+            {
+                var cachedKey = Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp2);
+
+                agreement = CryptoPal.Platform.DiffieHellmanModp2(cachedKey);
+            }
+            else
+            {
+                var length = parameters.P.Length * 8;
+
+                throw new InvalidOperationException($"Unsupported Diffie Hellman key agreement parameter with length {length}");
             }
 
             var publicKey = DiffieHellmanKey.ParsePublicKey(clientPublicValue.SubjectPublicKey, agreement.PublicKey.KeyLength);
@@ -158,6 +196,16 @@ namespace Kerberos.NET.Server
             agreement.ImportPartnerKey(publicKey);
 
             return agreement;
+        }
+
+        private bool IsSupportedAlgorithm(KeyAgreementAlgorithm algorithm, ReadOnlyMemory<byte> expectedPVal, ReadOnlyMemory<byte> actualPVal)
+        {
+            if (!SupportedKeyAgreementAlgorithms.Contains(algorithm))
+            {
+                return false;
+            }
+
+            return expectedPVal.Span.SequenceEqual(actualPVal.Span);
         }
 
         private IKeyAgreement FromEllipticCurveDomainParameters(KrbSubjectPublicKeyInfo _)
@@ -192,23 +240,15 @@ namespace Kerberos.NET.Server
             Debug.Assert(nonce > 0);
         }
 
-        private static async Task<KrbAuthPack> ValidateAuthPack(IKerberosPrincipal principal, KrbPaPkAsReq pkreq)
+        private static KrbAuthPack ValidateAuthPack(PreAuthenticationContext preauth, PkInitState state)
         {
-            SignedCms signedCms = new SignedCms();
-            signedCms.Decode(pkreq.SignedAuthPack.ToArray());
+            state.Cms.CheckSignature(verifySignatureOnly: true);
 
-            signedCms.CheckSignature(verifySignatureOnly: true);
+            preauth.Principal.Validate(state.Cms.Certificates);
 
-            await principal.Validate(signedCms.Certificates);
-
-            var authPack = KrbAuthPack.Decode(signedCms.ContentInfo.Content);
+            var authPack = KrbAuthPack.Decode(state.Cms.ContentInfo.Content);
 
             return authPack;
-        }
-
-        public override Task PostValidate(IKerberosPrincipal principal, List<KrbPaData> preAuthRequirements)
-        {
-            return base.PostValidate(principal, preAuthRequirements);
         }
     }
 }

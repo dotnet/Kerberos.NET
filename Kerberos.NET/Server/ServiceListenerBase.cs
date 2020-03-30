@@ -36,7 +36,6 @@ namespace Kerberos.NET.Server
 
         public ListenerOptions Options { get; }
 
-
         public Task Start()
         {
             ThreadPool.QueueUserWorkItem(state => StartListenerThreads((SocketListener)state), socketListener);
@@ -79,7 +78,7 @@ namespace Kerberos.NET.Server
                         break;
                     }
 
-                    _ = worker.HandleMessage();
+                    _ = worker.HandleSocket();
                 }
             }
             catch (Exception ex)

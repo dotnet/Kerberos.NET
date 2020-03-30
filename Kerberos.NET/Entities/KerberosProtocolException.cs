@@ -12,6 +12,10 @@ namespace Kerberos.NET
 
         public KerberosProtocolException() { }
 
+        public KerberosProtocolException(KerberosErrorCode error, string etext = null)
+            : this(new KrbError() { ErrorCode = error, EText = etext })
+        { }
+
         public KerberosProtocolException(KrbError error)
             : this(GetErrorMessage(error))
         {

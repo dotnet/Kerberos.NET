@@ -1,4 +1,6 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System;
+using System.Collections.Concurrent;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
@@ -6,9 +8,6 @@ using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Buffers;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
 using Tests.Kerberos.NET;
 
 namespace Benchmark.Kerberos.NET
@@ -51,7 +50,7 @@ namespace Benchmark.Kerberos.NET
 
             credential = Creds.GetOrAdd(AlgorithmType, a => new KerberosPasswordCredential(a + user, password));
 
-            asReq = new ReadOnlySequence<byte>(KrbAsReq.CreateAsReq(credential, DefaultAuthentication).EncodeApplication());
+            asReq = KrbAsReq.CreateAsReq(credential, DefaultAuthentication).EncodeApplication();
 
             switch (AlgorithmType)
             {
@@ -68,7 +67,7 @@ namespace Benchmark.Kerberos.NET
         }
 
         private ListenerOptions options;
-        private ReadOnlySequence<byte> asReq;
+        private ReadOnlyMemory<byte> asReq;
         private KerberosPasswordCredential credential;
 
         [GlobalCleanup]
@@ -77,13 +76,13 @@ namespace Benchmark.Kerberos.NET
         }
 
         [Benchmark]
-        public async Task ProcessAsReq()
+        public void ProcessAsReq()
         {
             for (var i = 0; i < AuthenticationAttempts; i++)
             {
                 KdcAsReqMessageHandler handler = new KdcAsReqMessageHandler(asReq, options);
 
-                var response = await handler.Execute();
+                var response = handler.Execute();
 
                 Assert.IsNotNull(response);
             }
@@ -98,12 +97,12 @@ namespace Benchmark.Kerberos.NET
         private const string UserUpn = "user@test.internal";
 
         [Benchmark]
-        public async Task GenerateTgt()
+        public void GenerateTgt()
         {
             var realmService = new FakeRealmService(Realm);
-            var principal = await realmService.Principals.Find(UserUpn);
+            var principal = realmService.Principals.Find(KrbPrincipalName.FromString(UserUpn));
 
-            var principalKey = await principal.RetrieveLongTermCredential();
+            var principalKey = principal.RetrieveLongTermCredential();
 
             var rst = new ServiceTicketRequest
             {
@@ -115,17 +114,15 @@ namespace Benchmark.Kerberos.NET
 
             for (var i = 0; i < AuthenticationAttempts; i++)
             {
-                var tgt = await KrbAsRep.GenerateTgt(rst, realmService);
+                var tgt = KrbAsRep.GenerateTgt(rst, realmService);
 
                 Assert.IsNotNull(tgt);
             }
         }
 
-        private static Task<IRealmService> LocateRealm(string realm)
+        private static IRealmService LocateRealm(string realm)
         {
-            IRealmService realmService = new FakeRealmService(realm);
-
-            return Task.FromResult(realmService);
+            return new FakeRealmService(realm);
         }
     }
 }

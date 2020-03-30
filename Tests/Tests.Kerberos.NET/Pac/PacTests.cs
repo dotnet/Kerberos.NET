@@ -1,13 +1,13 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Entities.Pac;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.Pac;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -271,15 +271,15 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task PacGenerationRoundtrip()
+        public void PacGenerationRoundtrip()
         {
             var realmService = new FakeRealmService("foo.com");
-            var krbtgt = await realmService.Principals.RetrieveKrbtgt();
-            var key = await krbtgt.RetrieveLongTermCredential();
+            var krbtgt = realmService.Principals.Find(KrbPrincipalName.WellKnown.Krbtgt());
+            var key = krbtgt.RetrieveLongTermCredential();
 
-            var user = await realmService.Principals.Find("user@foo.com");
+            var user = realmService.Principals.Find(KrbPrincipalName.FromString("user@foo.com"));
 
-            var pac = await user.GeneratePac();
+            var pac = user.GeneratePac();
 
             Assert.IsNotNull(pac);
 
@@ -288,6 +288,17 @@ namespace Tests.Kerberos.NET
             var decoded = new PrivilegedAttributeCertificate(new KrbAuthorizationData { Type = AuthorizationDataType.AdWin2kPac, Data = encoded });
 
             Assert.IsNotNull(decoded.LogonInfo);
+        }
+
+        [TestMethod]
+        public void Parse31bSid()
+        {
+            var domainSid = new SecurityIdentifier(IdentifierAuthority.AadAuthority, new uint[] { 3579221639, 4203588899, 1178257358, 1362520493 }, 0).ToRpcSid();
+            var userId = 4176169732;
+
+            var sid = SecurityIdentifier.FromRpcSid(domainSid, userId);
+
+            Assert.AreEqual("S-1-12-3579221639-4203588899-1178257358-1362520493-4176169732", sid.Value);
         }
 
         private static async Task<PrivilegedAttributeCertificate> GeneratePac()

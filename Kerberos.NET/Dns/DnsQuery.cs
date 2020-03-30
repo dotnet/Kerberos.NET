@@ -64,6 +64,8 @@ namespace Kerberos.NET.Dns
         public bool Purge => Ignore || Expired;
 
         public bool Expired => stamp.AddSeconds(TimeToLive) <= DateTimeOffset.UtcNow;
+
+        public string Address => $"{Target}:{Port}";
     }
 
     [Flags]

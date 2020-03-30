@@ -1,14 +1,14 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Entities.Pac;
-using Kerberos.NET.Server;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Server;
 
 namespace Tests.Kerberos.NET
 {
@@ -21,42 +21,97 @@ namespace Tests.Kerberos.NET
 
         public IRealmSettings Settings => new FakeRealmSettings();
 
-        public IPrincipalService Principals => new FakePrincipalService();
+        public IPrincipalService Principals => new FakePrincipalService(this.Name);
 
         public string Name { get; }
 
-        public DateTimeOffset Now()
+        public DateTimeOffset Now() => DateTimeOffset.UtcNow;
+
+        public ITrustedRealmService TrustedRealms => new FakeTrustedRealms(this.Name);
+    }
+
+    internal class FakeTrustedRealms : ITrustedRealmService
+    {
+        private readonly string currentRealm;
+
+        public FakeTrustedRealms(string name)
         {
-            return DateTimeOffset.UtcNow;
+            this.currentRealm = name;
+        }
+
+        public IRealmReferral ProposeTransit(KrbTgsReq tgsReq, PreAuthenticationContext context)
+        {
+            if (!tgsReq.Body.SName.FullyQualifiedName.EndsWith(currentRealm) &&
+                !tgsReq.Body.SName.FullyQualifiedName.Contains("not.found"))
+            {
+                return new FakeRealmReferral(tgsReq.Body);
+            }
+
+            return null;
+        }
+    }
+
+    internal class FakeRealmReferral : IRealmReferral
+    {
+        private readonly KrbKdcReqBody body;
+
+        public FakeRealmReferral(KrbKdcReqBody body)
+        {
+            this.body = body;
+        }
+
+        public IKerberosPrincipal Refer()
+        {
+            var fqn = body.SName.FullyQualifiedName;
+            var predictedRealm = fqn.Substring(fqn.IndexOf('.') + 1);
+
+            var krbName = KrbPrincipalName.FromString($"krbtgt/{predictedRealm}");
+
+            return new FakeKerberosPrincipal(krbName.FullyQualifiedName);
         }
     }
 
     internal class FakePrincipalService : IPrincipalService
     {
-        public Task<IKerberosPrincipal> Find(string principalName)
-        {
-            IKerberosPrincipal principal = new FakeKerberosPrincipal(principalName);
+        private readonly string realm;
 
-            return Task.FromResult(principal);
+        public FakePrincipalService(string realm)
+        {
+            this.realm = realm;
         }
 
-        public Task<IKerberosPrincipal> Find(KrbPrincipalName principalName)
+        public Task<IKerberosPrincipal> FindAsync(KrbPrincipalName principalName)
         {
-            return Find(principalName.FullyQualifiedName);
+            return Task.FromResult(Find(principalName));
         }
 
-        public Task<X509Certificate2> RetrieveKdcCertificate()
+        public IKerberosPrincipal Find(KrbPrincipalName principalName)
+        {
+            IKerberosPrincipal principal = null;
+
+            if (principalName.FullyQualifiedName.EndsWith(this.realm, StringComparison.InvariantCultureIgnoreCase) ||
+                principalName.FullyQualifiedName.StartsWith("krbtgt", StringComparison.InvariantCultureIgnoreCase) ||
+                principalName.Type == PrincipalNameType.NT_PRINCIPAL ||
+                principalName.Type == PrincipalNameType.NT_ENTERPRISE)
+            {
+                principal = new FakeKerberosPrincipal(principalName.FullyQualifiedName);
+            }
+
+            return principal;
+        }
+
+        public X509Certificate2 RetrieveKdcCertificate()
         {
             var file = File.ReadAllBytes("data\\kdc.pfx");
 
             var cert = new X509Certificate2(file, "p", X509KeyStorageFlags.UserKeySet);
 
-            return Task.FromResult(cert);
+            return cert;
         }
 
         private static readonly Dictionary<KeyAgreementAlgorithm, IExchangeKey> keyCache = new Dictionary<KeyAgreementAlgorithm, IExchangeKey>();
 
-        public Task<IExchangeKey> RetrieveKeyCache(KeyAgreementAlgorithm algorithm)
+        public IExchangeKey RetrieveKeyCache(KeyAgreementAlgorithm algorithm)
         {
             if (keyCache.TryGetValue(algorithm, out IExchangeKey key))
             {
@@ -66,27 +121,20 @@ namespace Tests.Kerberos.NET
                 }
                 else
                 {
-                    return Task.FromResult(key);
+                    return key;
                 }
             }
 
-            return Task.FromResult<IExchangeKey>(null);
+            return null;
         }
 
-        public Task<IExchangeKey> CacheKey(IExchangeKey key)
+        public IExchangeKey CacheKey(IExchangeKey key)
         {
             key.CacheExpiry = DateTimeOffset.UtcNow.AddMinutes(60);
 
             keyCache[key.Algorithm] = key;
 
-            return Task.FromResult(key);
-        }
-
-        public Task<IKerberosPrincipal> RetrieveKrbtgt()
-        {
-            IKerberosPrincipal krbtgt = new FakeKerberosPrincipal("krbtgt");
-
-            return Task.FromResult(krbtgt);
+            return key;
         }
     }
 
@@ -129,11 +177,34 @@ namespace Tests.Kerberos.NET
             PaDataType.PA_PK_AS_REQ
         };
 
+        public PrincipalType Type
+        {
+            get
+            {
+                if (PrincipalName == "krbtgt" || PrincipalName.Equals($"krbtgt/{realm}", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    return PrincipalType.Service;
+                }
+
+                if (PrincipalName.StartsWith("krbtgt/"))
+                {
+                    return PrincipalType.TrustedDomain;
+                }
+
+                if (PrincipalName.Contains("/"))
+                {
+                    return PrincipalType.Service;
+                }
+
+                return PrincipalType.User;
+            }
+        }
+
         public string PrincipalName { get; set; }
 
         public DateTimeOffset? Expires { get; set; }
 
-        public Task<PrivilegedAttributeCertificate> GeneratePac()
+        public PrivilegedAttributeCertificate GeneratePac()
         {
             var pac = new PrivilegedAttributeCertificate()
             {
@@ -155,7 +226,7 @@ namespace Tests.Kerberos.NET
                 }
             };
 
-            return Task.FromResult(pac);
+            return pac;
         }
 
         private static readonly KerberosKey TgtKey = new KerberosKey(
@@ -167,11 +238,11 @@ namespace Tests.Kerberos.NET
 
         private static readonly ConcurrentDictionary<string, KerberosKey> KeyCache = new ConcurrentDictionary<string, KerberosKey>();
 
-        public Task<KerberosKey> RetrieveLongTermCredential()
+        public KerberosKey RetrieveLongTermCredential()
         {
             KerberosKey key;
 
-            if (PrincipalName == "krbtgt")
+            if (PrincipalName.StartsWith("krbtgt"))
             {
                 key = TgtKey;
             }
@@ -190,7 +261,7 @@ namespace Tests.Kerberos.NET
                 });
             }
 
-            return Task.FromResult(key);
+            return key;
         }
 
         private EncryptionType ExtractEType(string principalName)
@@ -211,9 +282,8 @@ namespace Tests.Kerberos.NET
             return EncryptionType.AES256_CTS_HMAC_SHA1_96;
         }
 
-        public Task Validate(X509Certificate2Collection certificates)
+        public void Validate(X509Certificate2Collection certificates)
         {
-            return Task.CompletedTask;
         }
     }
 

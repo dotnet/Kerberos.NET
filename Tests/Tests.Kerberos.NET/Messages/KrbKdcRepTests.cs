@@ -1,8 +1,7 @@
-﻿using Kerberos.NET.Crypto;
+﻿using System;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 {
@@ -10,20 +9,20 @@ namespace Tests.Kerberos.NET
     public class KrbKdcRepTests
     {
         [TestMethod, ExpectedException(typeof(ArgumentException))]
-        public async Task CreateServiceTicket_NullEncPartKey()
+        public void CreateServiceTicket_NullEncPartKey()
         {
-            await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
                 EncryptedPartKey = null
             });
         }
 
         [TestMethod, ExpectedException(typeof(ArgumentException))]
-        public async Task CreateServiceTicket_NullServicePrincipal()
+        public void CreateServiceTicket_NullServicePrincipal()
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
 
-            await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
                 EncryptedPartKey = key,
                 ServicePrincipal = null
@@ -31,11 +30,11 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(ArgumentException))]
-        public async Task CreateServiceTicket_NullServicePrincipalKey()
+        public void CreateServiceTicket_NullServicePrincipalKey()
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
 
-            await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
                 EncryptedPartKey = key,
                 ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com")
@@ -43,11 +42,11 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod, ExpectedException(typeof(ArgumentException))]
-        public async Task CreateServiceTicket_NullPrincipal()
+        public void CreateServiceTicket_NullPrincipal()
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
 
-            await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
                 EncryptedPartKey = key,
                 ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
@@ -56,11 +55,11 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public async Task CreateServiceTicket()
+        public void CreateServiceTicket()
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
 
-            var ticket = await KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            var ticket = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
                 EncryptedPartKey = key,
                 ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),

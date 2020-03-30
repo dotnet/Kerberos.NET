@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Kerberos.NET.Transport
 {
-    public abstract class KerberosTransportBase : IKerberosTransport
+    public abstract class KerberosTransportBase : IKerberosTransport, IDisposable
     {
         private const int DefaultKerberosPort = 88;
 
@@ -35,9 +35,13 @@ namespace Kerberos.NET.Transport
 
         public bool Enabled { get; set; }
 
-        public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(10);
+        public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(2);
 
-        public int MaximumAttempts { get; set; } = 10;
+        public TimeSpan SendTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+        public TimeSpan ReceiveTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+        public int MaximumAttempts { get; set; } = 30;
 
         protected static T Decode<T>(ReadOnlyMemory<byte> response)
             where T : IAsn1ApplicationEncoder<T>, new()
@@ -106,8 +110,11 @@ namespace Kerberos.NET.Transport
 
             var results = Query(lookup).Where(r => r.Type == DnsRecordType.SRV);
 
-            if (ignored != null)
+            if (ignored != null && ignored.Ignore)
             {
+                // can get here through expiration, and we don't actually want to negative cache
+                // something that has just expired because it could still genuinely be good
+
                 negativeCache[ignored.Target] = ignored;
             }
 
@@ -115,9 +122,9 @@ namespace Kerberos.NET.Transport
 
             var weighted = results.GroupBy(r => r.Weight).OrderBy(r => r.Key).OrderByDescending(r => r.Sum(a => a.Canonical.Count())).FirstOrDefault();
 
-            var rand = random.Next(0, weighted.Count());
+            var rand = random.Next(0, weighted?.Count() ?? 0);
 
-            var srv = weighted.ElementAtOrDefault(rand);
+            var srv = weighted?.ElementAtOrDefault(rand);
 
             if (srv == null)
             {
@@ -136,5 +143,7 @@ namespace Kerberos.NET.Transport
         {
             return DnsQuery.QuerySrv(lookup);
         }
+
+        public virtual void Dispose() { }
     }
 }

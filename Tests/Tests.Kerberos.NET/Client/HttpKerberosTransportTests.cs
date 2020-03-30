@@ -1,14 +1,14 @@
-﻿using Kerberos.NET.Client;
+﻿using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 {
@@ -69,12 +69,12 @@ namespace Tests.Kerberos.NET
 
         private class SuccessKdcMessageDelegatingHandler : DelegatingHandler
         {
-            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 var realmService = new FakeRealmService(Realm);
-                var principal = await realmService.Principals.Find(UserUpn);
+                var principal = realmService.Principals.Find(KrbPrincipalName.FromString(UserUpn));
 
-                var principalKey = await principal.RetrieveLongTermCredential();
+                var principalKey = principal.RetrieveLongTermCredential();
 
                 var rst = new ServiceTicketRequest
                 {
@@ -83,7 +83,7 @@ namespace Tests.Kerberos.NET
                     ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96)
                 };
 
-                var tgt = await KrbAsRep.GenerateTgt(rst, realmService);
+                var tgt = KrbAsRep.GenerateTgt(rst, realmService);
 
                 var encoded = tgt.EncodeApplication();
 
@@ -96,10 +96,10 @@ namespace Tests.Kerberos.NET
                     KerbMessage = response
                 };
 
-                return new HttpResponseMessage(HttpStatusCode.OK)
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new ByteArrayContent(kdcMessage.Encode().ToArray())
-                };
+                });
             }
         }
     }

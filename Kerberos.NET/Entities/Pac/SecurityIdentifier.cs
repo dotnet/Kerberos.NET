@@ -19,18 +19,18 @@ namespace Kerberos.NET.Entities.Pac
             Attributes = attributes;
         }
 
-        public SecurityIdentifier(SecurityIdentifier sub, int id)
+        public SecurityIdentifier(SecurityIdentifier sub, uint id)
             : this(sub.authority, Concat(sub.subAuthorities, id), sub.Attributes)
         {
 
         }
 
-        public static SecurityIdentifier FromRpcSid(RpcSid sid, int id = 0, SidAttributes attributes = 0)
+        public static SecurityIdentifier FromRpcSid(RpcSid sid, uint id = 0, SidAttributes attributes = 0)
         {
             return new SecurityIdentifier(sid.IdentifierAuthority.Authority, Concat(sid.SubAuthority, id), attributes);
         }
 
-        public int Id => subAuthorities.Length > 0 ? (int)subAuthorities[subAuthorities.Length - 1] : 0;
+        public uint Id => subAuthorities.Length > 0 ? subAuthorities[subAuthorities.Length - 1] : 0;
 
         public SidAttributes Attributes { get; }
 
@@ -93,15 +93,15 @@ namespace Kerberos.NET.Entities.Pac
             return ToString().GetHashCode();
         }
 
-        private static uint[] Concat(ReadOnlyMemory<uint> subAuthority, int id)
+        private static uint[] Concat(ReadOnlyMemory<uint> subAuthority, uint id)
         {
             uint[] final;
 
-            if (id > 0)
+            if (id != 0)
             {
                 final = new uint[subAuthority.Length + 1];
 
-                final[final.Length - 1] = (uint)id;
+                final[final.Length - 1] = id;
             }
             else
             {
