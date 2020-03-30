@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 
 namespace Kerberos.NET.Crypto
@@ -14,10 +15,7 @@ namespace Kerberos.NET.Crypto
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ConvertToLittleEndian(int val, Span<byte> bytes)
         {
-            bytes[0] = (byte)(val & 0xFF);
-            bytes[1] = (byte)((val >> 8) & 0xFF);
-            bytes[2] = (byte)((val >> 16) & 0xFF);
-            bytes[3] = (byte)((val >> 24) & 0xFF);
+            BinaryPrimitives.WriteInt32LittleEndian(bytes, val);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -29,10 +27,7 @@ namespace Kerberos.NET.Crypto
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ConvertToBigEndian(int val, Span<byte> bytes)
         {
-            bytes[0] = (byte)((val >> 24) & 0xff);
-            bytes[1] = (byte)((val >> 16) & 0xff);
-            bytes[2] = (byte)((val >> 8) & 0xff);
-            bytes[3] = (byte)((val) & 0xff);
+            BinaryPrimitives.WriteInt32BigEndian(bytes, val);
         }
     }
 }
