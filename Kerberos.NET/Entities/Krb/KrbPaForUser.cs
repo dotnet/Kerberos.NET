@@ -1,6 +1,7 @@
-﻿using Kerberos.NET.Crypto;
-using System;
+﻿using System;
+using System.Buffers.Binary;
 using System.Security;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
@@ -29,7 +30,7 @@ namespace Kerberos.NET.Entities
 
             var checksumData = new Memory<byte>(new byte[dataLength]);
 
-            Endian.ConvertToLittleEndian((int)userName.Type, checksumData);
+            BinaryPrimitives.WriteInt32LittleEndian(checksumData.Span, (int)userName.Type);
 
             var position = 4;
 

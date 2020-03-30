@@ -1,5 +1,5 @@
-﻿using Kerberos.NET.Crypto;
-using System;
+﻿using System;
+using System.Buffers.Binary;
 using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
@@ -10,7 +10,7 @@ namespace Kerberos.NET.Entities
         {
             var kerbMessage = new Memory<byte>(new byte[message.Length + 4]);
 
-            Endian.ConvertToBigEndian(message.Length, kerbMessage.Slice(0, 4));
+            BinaryPrimitives.WriteInt32BigEndian(kerbMessage.Span.Slice(0, 4), message.Length);
 
             message.CopyTo(kerbMessage.Slice(4));
 
