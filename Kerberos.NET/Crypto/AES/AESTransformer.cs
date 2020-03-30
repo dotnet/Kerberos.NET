@@ -1,9 +1,10 @@
-﻿using Kerberos.NET.Entities;
-using System;
+﻿using System;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using Kerberos.NET.Entities;
 
 #pragma warning disable S101 // Types should be named in camel case
 
@@ -135,9 +136,9 @@ namespace Kerberos.NET.Crypto.AES
             {
                 var constant = constantPool.Memory.Slice(0, 5);
 
-                constant.Span.Fill(0);
-
-                Endian.ConvertToBigEndian((int)usage, constant.Span);
+                Span<byte> span = constant.Span;
+                span.Clear();
+                BinaryPrimitives.WriteInt32BigEndian(span, (int)usage);
 
                 constant.Span[4] = (byte)kdf;
 

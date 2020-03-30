@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Security;
 using System.Text;
 
@@ -84,11 +85,11 @@ namespace Kerberos.NET.Crypto
         {
             var ksign = HMACMD5(key, ChecksumSignatureKey);
 
-            var span = new Span<byte>(new byte[4 + data.Length]);
+            Span<byte> span = new byte[4 + data.Length];
 
             data.CopyTo(span.Slice(4));
 
-            Endian.ConvertToLittleEndian((int)keyUsage, span);
+            BinaryPrimitives.WriteInt32LittleEndian(span, (int)keyUsage);
 
             var tmp = MD5(span);
 

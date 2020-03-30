@@ -1,10 +1,10 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Dns;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
+using System.Buffers.Binary;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Dns;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Transport
 {
@@ -103,9 +103,9 @@ namespace Kerberos.NET.Transport
 
         private static async Task WriteMessage(ReadOnlyMemory<byte> encoded, NetworkStream stream, CancellationToken cancellation)
         {
-            var messageSizeBytes = new byte[4];
+            var messageSizeBytes = new byte[sizeof(int)];
 
-            Endian.ConvertToBigEndian(encoded.Length, (Span<byte>)messageSizeBytes);
+            BinaryPrimitives.WriteInt32BigEndian(messageSizeBytes, encoded.Length);
 
             await stream.WriteAsync(messageSizeBytes, 0, messageSizeBytes.Length, cancellation);
 

@@ -1,18 +1,16 @@
-﻿using Kerberos.NET.Crypto;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.IO.Pipelines;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Server
 {
     internal class KdcSocketWorker : SocketWorkerBase
     {
-        private const int Int32Size = 4;
-
         private readonly KdcServer kdc;
 
         private readonly ILogger<KdcSocketWorker> logger;
@@ -46,12 +44,12 @@ namespace Kerberos.NET.Server
 
                     if (messageLength <= 0)
                     {
-                        messageLength = buffer.Slice(0, Int32Size).AsLong();
+                        messageLength = buffer.Slice(0, sizeof(int)).AsLong();
                     }
 
                     if (buffer.Length > messageLength)
                     {
-                        var message = buffer.Slice(Int32Size, messageLength);
+                        var message = buffer.Slice(sizeof(int), messageLength);
 
                         await ProcessMessage(message, cancellation);
                         break;
@@ -73,17 +71,15 @@ namespace Kerberos.NET.Server
 
         protected override async Task FillResponse(PipeWriter writer, ReadOnlyMemory<byte> message, CancellationToken cancellation)
         {
-            var minResponseLength = Int32Size;
+            var totalLength = message.Length + sizeof(int);
 
-            var totalLength = message.Length + minResponseLength;
-
-            if (totalLength > minResponseLength)
+            if (totalLength > sizeof(int))
             {
                 var buffer = writer.GetMemory(totalLength);
 
-                Endian.ConvertToBigEndian(message.Length, buffer.Slice(0, Int32Size));
+                BinaryPrimitives.WriteInt32BigEndian(buffer.Span.Slice(0, sizeof(int)), message.Length);
 
-                message.CopyTo(buffer.Slice(minResponseLength, message.Length));
+                message.CopyTo(buffer.Slice(sizeof(int), message.Length));
 
                 writer.Advance(totalLength);
             }

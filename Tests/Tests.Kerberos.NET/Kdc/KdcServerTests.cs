@@ -1,11 +1,11 @@
-﻿using Kerberos.NET.Credentials;
-using Kerberos.NET.Crypto;
+﻿using System;
+using System.Buffers;
+using System.Buffers.Binary;
+using System.Threading.Tasks;
+using Kerberos.NET.Credentials;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Buffers;
-using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 {
@@ -98,7 +98,7 @@ namespace Tests.Kerberos.NET
 
             var messageBytes = new Memory<byte>(new byte[req.Length + 4]);
 
-            Endian.ConvertToBigEndian(req.Length, messageBytes.Slice(0, 4));
+            BinaryPrimitives.WriteInt32BigEndian(messageBytes.Span.Slice(0, 4), req.Length);
             req.CopyTo(messageBytes.Slice(4, req.Length));
 
             var message = new KdcProxyMessage
