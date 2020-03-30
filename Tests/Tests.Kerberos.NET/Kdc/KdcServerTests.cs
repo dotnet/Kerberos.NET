@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Threading.Tasks;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Entities;

@@ -1,5 +1,5 @@
-﻿using Kerberos.NET.Transport;
-using System;
+﻿using System;
+using System.Buffers.Binary;
 using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities

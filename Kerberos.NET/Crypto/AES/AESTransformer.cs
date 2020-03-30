@@ -1,9 +1,10 @@
-﻿using Kerberos.NET.Entities;
-using System;
+﻿using System;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using Kerberos.NET.Entities;
 
 #pragma warning disable S101 // Types should be named in camel case
 
@@ -140,9 +141,9 @@ namespace Kerberos.NET.Crypto.AES
             {
                 var constant = constantPool.Memory.Slice(0, 5);
 
-                constant.Span.Fill(0);
-
-                Endian.ConvertToBigEndian((int)usage, constant.Span);
+                Span<byte> span = constant.Span;
+                span.Clear();
+                BinaryPrimitives.WriteInt32BigEndian(span, (int)usage);
 
                 constant.Span[4] = (byte)kdf;
 
@@ -195,14 +196,7 @@ namespace Kerberos.NET.Crypto.AES
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int ConvertInt(byte[] bytes, int offset)
         {
-            var val = 0;
-
-            val += (bytes[offset + 0] & 0xff) << 24;
-            val += (bytes[offset + 1] & 0xff) << 16;
-            val += (bytes[offset + 2] & 0xff) << 8;
-            val += (bytes[offset + 3] & 0xff);
-
-            return val;
+            return BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(offset));
         }
 
         private static ReadOnlyMemory<byte> DR(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
