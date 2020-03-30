@@ -108,13 +108,8 @@ namespace Kerberos.NET.Crypto
                     break;
             }
 
-            var salt = new byte[4]
-            {
-                (byte)(usage & 0xff),
-                (byte)((usage >> 8) & 0xff),
-                (byte)((usage >> 16) & 0xff),
-                (byte)((usage >> 24) & 0xff)
-            };
+            var salt = new byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32LittleEndian(salt, usage);
 
             return salt;
         }

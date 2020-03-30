@@ -191,14 +191,7 @@ namespace Kerberos.NET.Crypto.AES
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int ConvertInt(byte[] bytes, int offset)
         {
-            var val = 0;
-
-            val += (bytes[offset + 0] & 0xff) << 24;
-            val += (bytes[offset + 1] & 0xff) << 16;
-            val += (bytes[offset + 2] & 0xff) << 8;
-            val += (bytes[offset + 3] & 0xff);
-
-            return val;
+            return BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(offset));
         }
 
         private static ReadOnlyMemory<byte> DR(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
