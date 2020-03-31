@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Security.Cryptography.Asn1;
+using Kerberos.NET.Transport;
 
 namespace Kerberos.NET.Entities
 {

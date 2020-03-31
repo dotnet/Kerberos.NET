@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Buffers.Binary;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Client;
 using Kerberos.NET.Dns;
 using Microsoft.Extensions.Logging;
 
