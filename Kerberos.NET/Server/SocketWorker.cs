@@ -1,12 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Server
 {
@@ -158,7 +159,7 @@ namespace Kerberos.NET.Server
                 {
                     if (!MemoryMarshal.TryGetArray(buffer.First, out ArraySegment<byte> fillBuffer))
                     {
-                        fillBufferBytes = ArrayPool<byte>.Shared.Rent((int)buffer.Length);
+                        fillBufferBytes = CryptoPool.Rent((int)buffer.Length);
 
                         fillBuffer = new ArraySegment<byte>(fillBufferBytes);
                     }
@@ -174,7 +175,7 @@ namespace Kerberos.NET.Server
                 {
                     if (fillBufferBytes != null)
                     {
-                        ArrayPool<byte>.Shared.Return(fillBufferBytes);
+                        CryptoPool.Return(fillBufferBytes);
                     }
                 }
 
@@ -196,7 +197,7 @@ namespace Kerberos.NET.Server
                     {
                         if (!MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> fillBuffer))
                         {
-                            fillBufferBytes = ArrayPool<byte>.Shared.Rent(buffer.Length);
+                            fillBufferBytes = CryptoPool.Rent(buffer.Length);
 
                             fillBuffer = new ArraySegment<byte>(fillBufferBytes);
                         }
@@ -214,7 +215,7 @@ namespace Kerberos.NET.Server
                     {
                         if (fillBufferBytes != null)
                         {
-                            ArrayPool<byte>.Shared.Return(fillBufferBytes);
+                            CryptoPool.Return(fillBufferBytes);
                         }
                     }
                 });
