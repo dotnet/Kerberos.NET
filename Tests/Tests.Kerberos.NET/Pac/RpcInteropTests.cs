@@ -346,7 +346,7 @@ namespace Tests.Kerberos.NET
 
             Assert.AreEqual(logonInfoDecoded.DomainSid, final.LogonDomainId->ToSecurityIdentifier());
 
-            Assert.AreEqual(logonInfoDecoded.UserId, (int)final.UserId);
+            Assert.AreEqual(logonInfoDecoded.UserId, final.UserId);
 
             Assert.AreEqual(logonInfoDecoded.GroupCount, (int)final.GroupCount);
 
@@ -391,7 +391,7 @@ namespace Tests.Kerberos.NET
                 var actual = actualGroups[i];
 
                 Assert.AreEqual(expected.Attributes, actual.Attributes);
-                Assert.AreEqual(expected.RelativeId, (int)actual.RelativeId);
+                Assert.AreEqual(expected.RelativeId, actual.RelativeId);
             }
         }
 
