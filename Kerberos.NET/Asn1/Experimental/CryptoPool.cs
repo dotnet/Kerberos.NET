@@ -4,6 +4,7 @@
 
 using System.Buffers;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace System.Security.Cryptography
 {
@@ -26,31 +27,39 @@ namespace System.Security.Cryptography
 
             if (!clearWholeArray && clearSize != 0)
             {
-                Array.Clear(array, 0, clearSize);
+                ZeroMemory(array.AsSpan(0, clearSize));
             }
 
             ArrayPool<T>.Shared.Return(array, clearWholeArray);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        private static void ZeroMemory<T>(Span<T> buffer)
+        {
+            // NoOptimize to prevent the optimizer from deciding this call is unnecessary
+            // NoInlining to prevent the inliner from forgetting that the method was no-optimize
+            buffer.Clear();
         }
     }
 
     internal struct CryptoMemoryOwner<T> : IMemoryOwner<T>
     {
-        private readonly T[] memory;
-        private readonly bool clearAll;
+        private readonly T[] _memory;
+        private readonly bool _clearAll;
 
         public CryptoMemoryOwner(int minimumLength, bool clearAll = true)
         {
-            memory = CryptoPool.SharedRent<T>(minimumLength);
-            this.clearAll = clearAll;
+            _memory = CryptoPool.SharedRent<T>(minimumLength);
+            _clearAll = clearAll;
 
-            Memory = new Memory<T>(memory);
+            Memory = _memory.AsMemory();
         }
 
         public Memory<T> Memory { get; }
 
         public void Dispose()
         {
-            CryptoPool.Return(memory, clearAll ? -1 : 0);
+            CryptoPool.Return(_memory, _clearAll ? -1 : 0);
         }
     }
 }
