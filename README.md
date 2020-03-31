@@ -1,7 +1,7 @@
 # Kerberos.NET
 A complete Kerberos library built entirely in managed code without (many) OS dependencies.
 
-[![Build Status](https://syfuhs2.visualstudio.com/Kerberos.NET/_apis/build/status/Kerberos.NET%20YAML?branchName=master)](https://syfuhs2.visualstudio.com/Kerberos.NET/_build/latest?definitionId=3&branchName=master)
+[![Build Status](https://syfuhs2.visualstudio.com/Kerberos.NET/_apis/build/status/dotnet.Kerberos.NET?branchName=develop)](https://syfuhs2.visualstudio.com/Kerberos.NET/_build/latest?definitionId=5&branchName=develop)
 [![Nuget Package](https://img.shields.io/nuget/v/Kerberos.NET.svg)](https://www.nuget.org/packages/Kerberos.NET)
 
 ### .NET Foundation
