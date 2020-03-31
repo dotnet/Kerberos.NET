@@ -1,9 +1,9 @@
 trigger:
-- master
+- develop
 - rel/*
 
 pr:
-- master
+- develop
 - rel/*
 
 pool:
