@@ -30,20 +30,13 @@ namespace KerberosKdcHostApp
                 Log = logger,
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(),
                 IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
+                RealmLocator = realm => new FakeRealmService(realm),
                 ReceiveTimeout = TimeSpan.FromHours(1)
             });
 
             await listener.Start();
 
             listener.Dispose();
-        }
-
-        private static Task<IRealmService> LocateRealm(string realm)
-        {
-            IRealmService service = new FakeRealmService(realm);
-
-            return Task.FromResult(service);
         }
     }
 }

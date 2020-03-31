@@ -1,10 +1,9 @@
-using Kerberos.NET.Transport;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Transport;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Server
