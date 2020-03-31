@@ -1,11 +1,11 @@
 <Project>
   <PropertyGroup>
-    <Copyright>Copyright (c) Steve Syfuhs</Copyright>
+    <Copyright>Copyright (c) .NET Foundation and Contributors</Copyright>
     <MinClientVersion>2.12</MinClientVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Authors>Steve Syfuhs</Authors>
-    <Company>Steve Syfuhs</Company>
-    <PackageProjectUrl>https://github.com/SteveSyfuhs/Kerberos.NET</PackageProjectUrl>
+    <Authors>Steve Syfuhs;dotnetfoundation</Authors>
+    <Company>.NET Foundation</Company>
+    <PackageProjectUrl>https://github.com/dotnet/Kerberos.NET</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NoWarn>$(NoWarn);1701;1702;CS1591;NU5105</NoWarn>
     <DefaultLanguage>en-US</DefaultLanguage>
@@ -21,7 +21,6 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
-
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
