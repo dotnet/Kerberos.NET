@@ -24,7 +24,7 @@ namespace Kerberos.NET.Crypto.Pal.Windows
             Interop.BCryptOpenAlgorithmProvider(out _hAlgorithm, algorithm).CheckSuccess();
 
             ref byte rSecret = ref MemoryMarshal.GetReference(secret);
-            Interop.BCryptCreateHash(_hAlgorithm, out _hHash, IntPtr.Zero, 0, ref rSecret, secret.Length).CheckSuccess();
+            Interop.BCryptCreateHash(_hAlgorithm, out _hHash, IntPtr.Zero, 0, ref rSecret, secret.Length, Interop.BCryptCreateHashFlags.BCRYPT_HASH_REUSABLE_FLAG).CheckSuccess();
         }
 
         public ReadOnlyMemory<byte> ComputeHash(byte[] data) => ComputeHash(data.AsSpan());

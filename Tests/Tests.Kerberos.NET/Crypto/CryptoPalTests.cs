@@ -120,6 +120,9 @@ namespace Tests.Kerberos.NET
         {
             var rnd = new Random(42);
 
+            using var algorithm = CryptoPal.Platform.Md5();
+            using var algorithmNet = MD5.Create();
+
             for (int i = 1; i <= 100; ++i)
             {
                 var data = new byte[i];
@@ -128,15 +131,8 @@ namespace Tests.Kerberos.NET
                 ReadOnlyMemory<byte> hash0 = null;
                 ReadOnlyMemory<byte> hash1 = null;
 
-                using (var md5 = CryptoPal.Platform.Md5())
-                {
-                    hash0 = md5.ComputeHash(data);
-                }
-
-                using (var md5 = MD5.Create())
-                {
-                    hash1 = md5.ComputeHash(data);
-                }
+                hash0 = algorithm.ComputeHash(data);
+                hash1 = algorithmNet.ComputeHash(data);
 
                 Assert.IsTrue(hash0.Span.SequenceEqual(hash1.Span));
             }
@@ -148,6 +144,9 @@ namespace Tests.Kerberos.NET
         {
             var rnd = new Random(42);
 
+            using var algorithm = CryptoPal.Platform.Sha1();
+            using var algorithmNet = SHA1.Create();
+
             for (int i = 1; i <= 100; ++i)
             {
                 var data = new byte[i];
@@ -156,15 +155,8 @@ namespace Tests.Kerberos.NET
                 ReadOnlyMemory<byte> hash0 = null;
                 ReadOnlyMemory<byte> hash1 = null;
 
-                using (var sha1 = CryptoPal.Platform.Sha1())
-                {
-                    hash0 = sha1.ComputeHash(data);
-                }
-
-                using (var sha1 = SHA1.Create())
-                {
-                    hash1 = sha1.ComputeHash(data);
-                }
+                hash0 = algorithm.ComputeHash(data);
+                hash1 = algorithmNet.ComputeHash(data);
 
                 Assert.IsTrue(hash0.Span.SequenceEqual(hash1.Span));
             }
@@ -175,6 +167,9 @@ namespace Tests.Kerberos.NET
         {
             var rnd = new Random(42);
 
+            using var algorithm = CryptoPal.Platform.Sha256();
+            using var algorithmNet = SHA256.Create();
+
             for (int i = 1; i <= 100; ++i)
             {
                 var data = new byte[i];
@@ -183,15 +178,8 @@ namespace Tests.Kerberos.NET
                 ReadOnlyMemory<byte> hash0 = null;
                 ReadOnlyMemory<byte> hash1 = null;
 
-                using (var sha256 = CryptoPal.Platform.Sha256())
-                {
-                    hash0 = sha256.ComputeHash(data);
-                }
-
-                using (var sha256 = SHA256.Create())
-                {
-                    hash1 = sha256.ComputeHash(data);
-                }
+                hash0 = algorithm.ComputeHash(data);
+                hash1 = algorithmNet.ComputeHash(data);
 
                 Assert.IsTrue(hash0.Span.SequenceEqual(hash1.Span));
             }
