@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Crypto
@@ -58,11 +59,11 @@ namespace Kerberos.NET.Crypto
             int flags
         );
 
-        [DllImport(ADVAPI32, CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport(ADVAPI32, SetLastError = true)]
         private static extern bool CryptGetHashParam(
             IntPtr hHash,
             int dwParam,
-            [Out] byte[] pbData,
+            byte* pbData,
             ref int pdwDataLen,
             int dwFlags
         );
@@ -87,6 +88,16 @@ namespace Kerberos.NET.Crypto
 
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
         {
+            byte[] hash = new byte[HashSize];
+
+            ComputeHash(data, hash, out int bytesWritten);
+            Debug.Assert(bytesWritten == hash.Length);
+
+            return hash;
+        }
+
+        public void ComputeHash(ReadOnlySpan<byte> data, Span<byte> hash, out int bytesWritten)
+        {
             fixed (byte* pData = data)
             {
                 if (!CryptHashData(hHash, pData, data.Length, 0))
@@ -95,16 +106,18 @@ namespace Kerberos.NET.Crypto
                 }
             }
 
-            var hashSize = HashSize;
+            Debug.Assert(hash.Length >= HashSize);
+            int hashSize = HashSize;
 
-            byte[] hashValue = new byte[hashSize];
-
-            if (!CryptGetHashParam(hHash, HP_HASHVAL, hashValue, ref hashSize, 0))
+            fixed (byte* pHash = &MemoryMarshal.GetReference(hash))
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
+                if (!CryptGetHashParam(hHash, HP_HASHVAL, pHash, ref hashSize, 0))
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                }
 
-            return new ReadOnlyMemory<byte>(hashValue);
+                bytesWritten = hashSize;
+            }
         }
 
         public void Dispose()
