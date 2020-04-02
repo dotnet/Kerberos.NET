@@ -34,8 +34,7 @@ namespace Kerberos.NET.Crypto
                 x = Concat(sharedSecret, clientNonce, serverNonce, x);
 
                 Span<byte> fill = stackalloc byte[HashSizes.SHA1];
-                sha1.ComputeHash(Concat(0, x, concat), fill, out int bytesWritten);
-                Debug.Assert(bytesWritten == fill.Length);
+                sha1.ComputeHash(Concat(0, x, concat), fill);
 
                 int position = 0;
                 int count = 0;
@@ -53,8 +52,7 @@ namespace Kerberos.NET.Crypto
                     {
                         count++;
 
-                        sha1.ComputeHash(Concat((byte)count, concatSize, concat), fill, out bytesWritten);
-                        Debug.Assert(bytesWritten == fill.Length);
+                        sha1.ComputeHash(Concat((byte)count, concatSize, concat), fill);
 
                         index = 0;
                         position = 1;

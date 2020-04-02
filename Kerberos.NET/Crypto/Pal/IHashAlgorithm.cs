@@ -7,6 +7,6 @@ namespace Kerberos.NET.Crypto
         ReadOnlyMemory<byte> ComputeHash(byte[] data);
         ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data);
         ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> data);
-        void ComputeHash(ReadOnlySpan<byte> data, Span<byte> hash, out int bytesWritten);
+        void ComputeHash(ReadOnlySpan<byte> data, Span<byte> hash);
     }
 }

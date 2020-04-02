@@ -1,35 +1,30 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Crypto.Pal.Windows
 {
-    internal unsafe abstract class Win32CspHash : IHashAlgorithm
+    internal abstract class Win32CspHash : IHashAlgorithm
     {
-        private readonly IntPtr _hProvider;
+        // TODO gfoidl: Cache, see remarks https://docs.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptopenalgorithmprovider#remarks
+        private readonly IntPtr _hAlgorithm;
         private readonly IntPtr _hHash;
 
         public string Algorithm { get; }
-        public int CAlg { get; }
         public int HashSize { get; }
 
-        protected Win32CspHash(string algorithm, int calg, int hashSize)
+        protected Win32CspHash(string algorithm, int hashSize, ReadOnlySpan<byte> secret = default)
         {
+            Debug.Assert(algorithm != null);
+            Debug.Assert(hashSize >= 0);
+
             Algorithm = algorithm;
-            CAlg = calg;
             HashSize = hashSize;
 
-            if (!Interop.CryptAcquireContext(ref _hProvider, Algorithm, null, (int)Interop.ProviderType.PROV_RSA_AES, (uint)Interop.CryptAcquireContextFlags.None)
-             && !Interop.CryptAcquireContext(ref _hProvider, Algorithm, null, (int)Interop.ProviderType.PROV_RSA_AES, (uint)Interop.CryptAcquireContextFlags.CRYPT_NEWKEYSET))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
+            Interop.BCryptOpenAlgorithmProvider(out _hAlgorithm, algorithm).CheckSuccess();
 
-            if (!Interop.CryptCreateHash(_hProvider, CAlg, IntPtr.Zero, 0, ref _hHash))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
+            ref byte rSecret = ref MemoryMarshal.GetReference(secret);
+            Interop.BCryptCreateHash(_hAlgorithm, out _hHash, IntPtr.Zero, 0, ref rSecret, secret.Length).CheckSuccess();
         }
 
         public ReadOnlyMemory<byte> ComputeHash(byte[] data) => ComputeHash(data.AsSpan());
@@ -37,43 +32,23 @@ namespace Kerberos.NET.Crypto.Pal.Windows
 
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
         {
-            byte[] hash = new byte[HashSize];
+            var hash = new byte[HashSize];
 
-            ComputeHash(data, hash, out int bytesWritten);
-            Debug.Assert(bytesWritten == hash.Length);
+            ComputeHash(data, hash);
 
             return hash;
         }
 
-        public void ComputeHash(ReadOnlySpan<byte> data, Span<byte> hash, out int bytesWritten)
+        public void ComputeHash(ReadOnlySpan<byte> data, Span<byte> hash)
         {
-            CheckDisposed();
+            ref byte rData = ref MemoryMarshal.GetReference(data);
+            ref byte rHash = ref MemoryMarshal.GetReference(hash);
 
-            fixed (byte* pData = data)
-            {
-                if (!Interop.CryptHashData(_hHash, pData, data.Length, 0))
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error());
-                }
-            }
-
-            Debug.Assert(hash.Length >= HashSize);
-            int hashSize = HashSize;
-
-            fixed (byte* pHash = &MemoryMarshal.GetReference(hash))
-            {
-                if (!Interop.CryptGetHashParam(_hHash, Interop.HP_HASHVAL, pHash, ref hashSize, 0))
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error());
-                }
-
-                bytesWritten = hashSize;
-            }
+            Interop.BCryptHashData(_hHash, ref rData, data.Length).CheckSuccess();
+            Interop.BCryptFinishHash(_hHash, ref rHash, hash.Length).CheckSuccess();
         }
 
         private bool _isDisposed;
-
-        private void CheckDisposed() => Debug.Assert(!_isDisposed);
 
         public void Dispose()
         {
@@ -81,23 +56,26 @@ namespace Kerberos.NET.Crypto.Pal.Windows
             GC.SuppressFinalize(this);
         }
 
-        ~Win32CspHash() => Dispose(false);
-
-        protected void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
-            if (_isDisposed) return;
+            if (_isDisposed)
+            {
+                return;
+            }
 
             _isDisposed = true;
 
-            if (_hHash != IntPtr.Zero)
+            if (_hAlgorithm != IntPtr.Zero)
             {
-                Interop.CryptDestroyHash(_hHash);
+                Interop.BCryptCloseAlgorithmProvider(_hAlgorithm);
             }
 
-            if (_hProvider != IntPtr.Zero)
+            if (_hHash != IntPtr.Zero)
             {
-                Interop.CryptReleaseContext(_hProvider, 0);
+                Interop.BCryptDestroyHash(_hHash);
             }
         }
+
+        ~Win32CspHash() => Dispose(false);
     }
 }
