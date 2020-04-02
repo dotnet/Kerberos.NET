@@ -1,18 +1,9 @@
-﻿using System;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 
 namespace Kerberos.NET.Crypto
 {
-    internal class Sha256 : IHashAlgorithm
+    internal sealed class Sha256 : PalHashAlgorithm
     {
-        public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
-        {
-            using (var hash = SHA256.Create())
-            {
-                return hash.ComputeHash(data.ToArray());
-            }
-        }
-
-        public void Dispose() { }
+        public Sha256() : base(SHA256.Create()) { }
     }
 }

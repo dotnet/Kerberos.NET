@@ -1,22 +1,11 @@
-﻿using System;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 
 namespace Kerberos.NET.Crypto
 {
 #if WEAKCRYPTO
-    internal class Md5 : IHashAlgorithm
+    internal sealed class Md5 : PalHashAlgorithm
     {
-        public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
-        {
-            var dataArray = data.ToArray();
-
-            using (var md5 = MD5.Create())
-            {
-                return md5.ComputeHash(dataArray);
-            }
-        }
-
-        public void Dispose() { }
+        public Md5() : base(MD5.Create()) { }
     }
 #endif
 }
