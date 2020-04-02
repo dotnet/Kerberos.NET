@@ -8,7 +8,8 @@ namespace Kerberos.NET.Crypto.Pal.Windows
         {
             // https://docs.microsoft.com/en-us/windows/win32/seccng/cng-algorithm-identifiers
 
-            public const string AES = "AES";            // BCRYPT_AES_ALGORITHM   
+            public const string AES = "AES";            // BCRYPT_AES_ALGORITHM
+            public const string DH = "DH";              // BCRYPT_DH_ALGORITHM
             public const string MD4 = "MD4";            // BCRYPT_MD4_ALGORITHM   
             public const string MD5 = "MD5";            // BCRYPT_MD5_ALGORITHM   
             public const string SHA1 = "SHA1";          // BCRYPT_SHA1_ALGORITHM  
