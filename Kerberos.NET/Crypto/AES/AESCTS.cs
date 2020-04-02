@@ -36,7 +36,7 @@ namespace Kerberos.NET.Crypto
                     plaintextRented = rental.Memory.Slice(0, maxLength);
                     plainText.CopyTo(plaintextRented);
 
-                    plaintextRented.Span.Slice(plaintextRented.Length - padSize).Fill(0);
+                    plaintextRented.Span.Slice(plaintextRented.Length - padSize).Clear();
                 }
 
                 var aes = CryptoPal.Platform.Aes();

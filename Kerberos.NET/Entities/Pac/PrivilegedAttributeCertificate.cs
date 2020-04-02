@@ -71,7 +71,7 @@ namespace Kerberos.NET.Entities
 
                 if (exclusionStart > 0 && exclusionLength > 0)
                 {
-                    pacData.Span.Slice((int)offset + exclusionStart, exclusionLength).Fill(0);
+                    pacData.Span.Slice((int)offset + exclusionStart, exclusionLength).Clear();
                 }
             }
 
@@ -277,7 +277,7 @@ namespace Kerberos.NET.Entities
 
             foreach (var element in pacElements.Where(e => e is PacSignature).Cast<PacSignature>())
             {
-                element.Signature.Span.Fill(0);
+                element.Signature.Span.Clear();
             }
 
             var pacUnsigned = GeneratePac(pacElements);
