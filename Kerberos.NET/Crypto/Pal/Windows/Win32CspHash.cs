@@ -6,7 +6,8 @@ namespace Kerberos.NET.Crypto.Pal.Windows
 {
     internal abstract class Win32CspHash : IHashAlgorithm
     {
-        // TODO: Cache, see remarks https://docs.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptopenalgorithmprovider#remarks
+        // According to https://docs.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptopenalgorithmprovider#remarks
+        // _hAlgorithm should be cached and reused, as its creation is costly.
         private readonly IntPtr _hAlgorithm;
         private readonly IntPtr _hHash;
 
@@ -21,7 +22,7 @@ namespace Kerberos.NET.Crypto.Pal.Windows
             Algorithm = algorithm;
             HashSize = hashSize;
 
-            Interop.BCryptOpenAlgorithmProvider(out _hAlgorithm, algorithm).CheckSuccess();
+            _hAlgorithm = BCryptAlgorithmProviderCache.GetCachedBCrypptAlgorithmProvider(algorithm);
 
             ref byte rSecret = ref MemoryMarshal.GetReference(secret);
             Interop.BCryptCreateHash(_hAlgorithm, out _hHash, IntPtr.Zero, 0, ref rSecret, secret.Length, Interop.BCryptCreateHashFlags.BCRYPT_HASH_REUSABLE_FLAG).CheckSuccess();
@@ -35,6 +36,9 @@ namespace Kerberos.NET.Crypto.Pal.Windows
             ref byte rData = ref MemoryMarshal.GetReference(data);
             ref byte rHash = ref MemoryMarshal.GetReference(hash);
 
+            // TODO: https://docs.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptcreatehash
+            // pbHashObject: memory managment in the function added by windows 7 -- do we need to bother with
+            // older version? 
             Interop.BCryptHashData(_hHash, ref rData, data.Length).CheckSuccess();
             Interop.BCryptFinishHash(_hHash, ref rHash, hash.Length).CheckSuccess();
         }
@@ -65,10 +69,11 @@ namespace Kerberos.NET.Crypto.Pal.Windows
 
             _isDisposed = true;
 
-            if (_hAlgorithm != IntPtr.Zero)
-            {
-                Interop.BCryptCloseAlgorithmProvider(_hAlgorithm);
-            }
+            // Note: don't dispose, as _hAlgorithm comes from a cache (see comment at the field declaration)
+            //if (_hAlgorithm != IntPtr.Zero)
+            //{
+            //    Interop.BCryptCloseAlgorithmProvider(_hAlgorithm);
+            //}
 
             if (_hHash != IntPtr.Zero)
             {
