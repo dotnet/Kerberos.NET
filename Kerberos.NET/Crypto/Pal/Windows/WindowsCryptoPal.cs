@@ -23,9 +23,9 @@ namespace Kerberos.NET.Crypto.Pal
 
         public override IKeyDerivationAlgorithm Rfc2898DeriveBytes() => new Rfc2898DeriveBytes();
 
-        public override IHashAlgorithm Sha1() => new Sha1();
+        public override IHashAlgorithm Sha1() => new Win32CspSha1();
 
-        public override IHashAlgorithm Sha256() => new Sha256();
+        public override IHashAlgorithm Sha256() => new Win32CspSha256();
 
         public override ISymmetricAlgorithm Aes() => new AesAlgorithm();
 

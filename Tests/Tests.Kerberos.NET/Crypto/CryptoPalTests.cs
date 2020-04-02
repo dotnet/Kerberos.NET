@@ -1,7 +1,7 @@
-﻿using Kerberos.NET.Crypto;
+﻿using System;
+using System.Security.Cryptography;
+using Kerberos.NET.Crypto;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Runtime.InteropServices;
 
 namespace Tests.Kerberos.NET
 {
@@ -112,6 +112,89 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(dh2);
 
             Assert.IsTrue(pk.Private.Span.SequenceEqual(dh2.PrivateKey.Private.Span));
+        }
+
+#if WEAKCRYPTO
+        [TestMethod]
+        public void CrosstestMd5()
+        {
+            var rnd = new Random(42);
+
+            for (int i = 1; i <= 100; ++i)
+            {
+                var data = new byte[i];
+                rnd.NextBytes(data);
+
+                ReadOnlyMemory<byte> hash0 = null;
+                ReadOnlyMemory<byte> hash1 = null;
+
+                using (var md5 = CryptoPal.Platform.Md5())
+                {
+                    hash0 = md5.ComputeHash(data);
+                }
+
+                using (var md5 = MD5.Create())
+                {
+                    hash1 = md5.ComputeHash(data);
+                }
+
+                Assert.IsTrue(hash0.Span.SequenceEqual(hash1.Span));
+            }
+        }
+#endif
+
+        [TestMethod]
+        public void CrosstestSha1()
+        {
+            var rnd = new Random(42);
+
+            for (int i = 1; i <= 100; ++i)
+            {
+                var data = new byte[i];
+                rnd.NextBytes(data);
+
+                ReadOnlyMemory<byte> hash0 = null;
+                ReadOnlyMemory<byte> hash1 = null;
+
+                using (var sha1 = CryptoPal.Platform.Sha1())
+                {
+                    hash0 = sha1.ComputeHash(data);
+                }
+
+                using (var sha1 = SHA1.Create())
+                {
+                    hash1 = sha1.ComputeHash(data);
+                }
+
+                Assert.IsTrue(hash0.Span.SequenceEqual(hash1.Span));
+            }
+        }
+
+        [TestMethod]
+        public void CrosstestSha256()
+        {
+            var rnd = new Random(42);
+
+            for (int i = 1; i <= 100; ++i)
+            {
+                var data = new byte[i];
+                rnd.NextBytes(data);
+
+                ReadOnlyMemory<byte> hash0 = null;
+                ReadOnlyMemory<byte> hash1 = null;
+
+                using (var sha256 = CryptoPal.Platform.Sha256())
+                {
+                    hash0 = sha256.ComputeHash(data);
+                }
+
+                using (var sha256 = SHA256.Create())
+                {
+                    hash1 = sha256.ComputeHash(data);
+                }
+
+                Assert.IsTrue(hash0.Span.SequenceEqual(hash1.Span));
+            }
         }
     }
 }
