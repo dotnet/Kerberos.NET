@@ -7,7 +7,7 @@ namespace Kerberos.NET.Crypto.Pal.Windows
     {
         private const string BCryptLib = "BCrypt.dll";
 
-        [DllImport(BCryptLib, CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport(BCryptLib, CharSet = CharSet.Unicode)]
         public static extern NTSTATUS BCryptOpenAlgorithmProvider(
             out IntPtr phAlgorithm,
             string pszAlgId,
@@ -15,13 +15,13 @@ namespace Kerberos.NET.Crypto.Pal.Windows
             BCryptOpenAlgorithmProviderFlags dwFlags = BCryptOpenAlgorithmProviderFlags.None
         );
 
-        [DllImport(BCryptLib, CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport(BCryptLib, CharSet = CharSet.Unicode)]
         public static extern NTSTATUS BCryptCloseAlgorithmProvider(
             IntPtr hAlgorithm,
             int dwFlags = 0
         );
 
-        [DllImport(BCryptLib, CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport(BCryptLib, CharSet = CharSet.Unicode)]
         public static extern NTSTATUS BCryptCreateHash(
             IntPtr hAlgorithm,
             out IntPtr phHash,
@@ -32,12 +32,12 @@ namespace Kerberos.NET.Crypto.Pal.Windows
             BCryptCreateHashFlags dwFlags = BCryptCreateHashFlags.None
         );
 
-        [DllImport(BCryptLib, CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport(BCryptLib, CharSet = CharSet.Unicode)]
         public static extern NTSTATUS BCryptDestroyHash(
             IntPtr hHash
         );
 
-        [DllImport(BCryptLib, CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport(BCryptLib, CharSet = CharSet.Unicode)]
         public static extern NTSTATUS BCryptHashData(
             IntPtr hHash,
             ref byte pbInput,
@@ -45,7 +45,7 @@ namespace Kerberos.NET.Crypto.Pal.Windows
             int dwFlags = 0
         );
 
-        [DllImport(BCryptLib, CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport(BCryptLib, CharSet = CharSet.Unicode)]
         public static extern NTSTATUS BCryptFinishHash(
             IntPtr hHash,
             ref byte pbOutput,

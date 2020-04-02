@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Crypto.Pal.Windows
 {
@@ -9,7 +8,7 @@ namespace Kerberos.NET.Crypto.Pal.Windows
         {
             if (status != NTSTATUS.STATUS_SUCCESS)
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
+                throw new Win32Exception((int)status);
             }
         }
     }
