@@ -1,6 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using Kerberos.NET.Crypto.Pal.Windows;
 
-namespace Kerberos.NET.Crypto
+namespace Kerberos.NET.Crypto.Pal
 {
     internal class WindowsCryptoPal : CryptoPal
     {

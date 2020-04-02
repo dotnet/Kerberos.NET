@@ -1,4 +1,4 @@
-﻿namespace Kerberos.NET.Crypto
+﻿namespace Kerberos.NET.Crypto.Pal.Windows
 {
 #if WEAKCRYPTO
     internal sealed class Win32CspMd4 : Win32CspHash

@@ -3,85 +3,34 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace Kerberos.NET.Crypto
+namespace Kerberos.NET.Crypto.Pal.Windows
 {
     internal unsafe abstract class Win32CspHash : IHashAlgorithm
     {
+        private readonly IntPtr _hProvider;
+        private readonly IntPtr _hHash;
+
+        public string Algorithm { get; }
+        public int CAlg { get; }
+        public int HashSize { get; }
+
         protected Win32CspHash(string algorithm, int calg, int hashSize)
         {
             Algorithm = algorithm;
             CAlg = calg;
             HashSize = hashSize;
 
-            if (!CryptAcquireContext(ref hProvider, Algorithm, null, PROV_RSA_AES, 0))
+            if (!Interop.CryptAcquireContext(ref _hProvider, Algorithm, null, (int)Interop.ProviderType.PROV_RSA_AES, (uint)Interop.CryptAcquireContextFlags.None)
+             && !Interop.CryptAcquireContext(ref _hProvider, Algorithm, null, (int)Interop.ProviderType.PROV_RSA_AES, (uint)Interop.CryptAcquireContextFlags.CRYPT_NEWKEYSET))
             {
-                if (!CryptAcquireContext(ref hProvider, Algorithm, null, PROV_RSA_AES, CRYPT_NEWKEYSET))
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error());
-                }
+                throw new Win32Exception(Marshal.GetLastWin32Error());
             }
 
-            if (!CryptCreateHash(hProvider, CAlg, IntPtr.Zero, 0, ref hHash))
+            if (!Interop.CryptCreateHash(_hProvider, CAlg, IntPtr.Zero, 0, ref _hHash))
             {
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
         }
-
-        private const string ADVAPI32 = "advapi32.dll";
-        private const int PROV_RSA_AES = 24;
-        private const int CRYPT_NEWKEYSET = 0x00000008;
-
-        private const int HP_HASHVAL = 0x0002;
-
-        [DllImport(ADVAPI32, CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern bool CryptAcquireContext(
-            ref IntPtr hProv,
-            string pszContainer,
-            string pszProvider,
-            int dwProvType,
-            int dwFlags
-        );
-
-        [DllImport(ADVAPI32, CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool CryptCreateHash(
-            IntPtr hProv,
-            int algId,
-            IntPtr hKey,
-            int dwFlags,
-            ref IntPtr phHash
-        );
-
-        [DllImport(ADVAPI32, SetLastError = true)]
-        private static extern bool CryptHashData(
-            IntPtr hHash,
-            byte* pbData,
-            int dataLen,
-            int flags
-        );
-
-        [DllImport(ADVAPI32, SetLastError = true)]
-        private static extern bool CryptGetHashParam(
-            IntPtr hHash,
-            int dwParam,
-            byte* pbData,
-            ref int pdwDataLen,
-            int dwFlags
-        );
-
-        [DllImport(ADVAPI32)]
-        private static extern bool CryptReleaseContext(IntPtr hProv, int dwFlags);
-
-        [DllImport(ADVAPI32, SetLastError = true)]
-        private static extern bool CryptDestroyHash(IntPtr hHash);
-
-        private readonly IntPtr hProvider;
-        private readonly IntPtr hHash;
-
-        public string Algorithm { get; }
-
-        public int CAlg { get; }
-
-        public int HashSize { get; }
 
         public ReadOnlyMemory<byte> ComputeHash(byte[] data) => ComputeHash(data.AsSpan());
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> data) => ComputeHash(data.Span);
@@ -98,9 +47,11 @@ namespace Kerberos.NET.Crypto
 
         public void ComputeHash(ReadOnlySpan<byte> data, Span<byte> hash, out int bytesWritten)
         {
+            CheckDisposed();
+
             fixed (byte* pData = data)
             {
-                if (!CryptHashData(hHash, pData, data.Length, 0))
+                if (!Interop.CryptHashData(_hHash, pData, data.Length, 0))
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error());
                 }
@@ -111,7 +62,7 @@ namespace Kerberos.NET.Crypto
 
             fixed (byte* pHash = &MemoryMarshal.GetReference(hash))
             {
-                if (!CryptGetHashParam(hHash, HP_HASHVAL, pHash, ref hashSize, 0))
+                if (!Interop.CryptGetHashParam(_hHash, Interop.HP_HASHVAL, pHash, ref hashSize, 0))
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error());
                 }
@@ -120,16 +71,32 @@ namespace Kerberos.NET.Crypto
             }
         }
 
+        private bool _isDisposed;
+
+        private void CheckDisposed() => Debug.Assert(!_isDisposed);
+
         public void Dispose()
         {
-            if (hHash != IntPtr.Zero)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~Win32CspHash() => Dispose(false);
+
+        protected void Dispose(bool disposing)
+        {
+            if (_isDisposed) return;
+
+            _isDisposed = true;
+
+            if (_hHash != IntPtr.Zero)
             {
-                CryptDestroyHash(hHash);
+                Interop.CryptDestroyHash(_hHash);
             }
 
-            if (hProvider != IntPtr.Zero)
+            if (_hProvider != IntPtr.Zero)
             {
-                CryptReleaseContext(hProvider, 0);
+                Interop.CryptReleaseContext(_hProvider, 0);
             }
         }
     }
