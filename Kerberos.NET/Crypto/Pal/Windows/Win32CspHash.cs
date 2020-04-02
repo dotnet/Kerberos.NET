@@ -6,7 +6,7 @@ namespace Kerberos.NET.Crypto.Pal.Windows
 {
     internal abstract class Win32CspHash : IHashAlgorithm
     {
-        // TODO gfoidl: Cache, see remarks https://docs.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptopenalgorithmprovider#remarks
+        // TODO: Cache, see remarks https://docs.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptopenalgorithmprovider#remarks
         private readonly IntPtr _hAlgorithm;
         private readonly IntPtr _hHash;
 
@@ -30,15 +30,6 @@ namespace Kerberos.NET.Crypto.Pal.Windows
         public ReadOnlyMemory<byte> ComputeHash(byte[] data) => ComputeHash(data.AsSpan());
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> data) => ComputeHash(data.Span);
 
-        public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
-        {
-            var hash = new byte[HashSize];
-
-            ComputeHash(data, hash);
-
-            return hash;
-        }
-
         public void ComputeHash(ReadOnlySpan<byte> data, Span<byte> hash)
         {
             ref byte rData = ref MemoryMarshal.GetReference(data);
@@ -46,6 +37,15 @@ namespace Kerberos.NET.Crypto.Pal.Windows
 
             Interop.BCryptHashData(_hHash, ref rData, data.Length).CheckSuccess();
             Interop.BCryptFinishHash(_hHash, ref rHash, hash.Length).CheckSuccess();
+        }
+
+        private ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
+        {
+            var hash = new byte[HashSize];
+
+            ComputeHash(data, hash);
+
+            return hash;
         }
 
         private bool _isDisposed;

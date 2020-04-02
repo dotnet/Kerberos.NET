@@ -16,7 +16,6 @@ namespace Kerberos.NET.Crypto
         }
 
         public ReadOnlyMemory<byte> ComputeHash(byte[] data) => _algorithm.ComputeHash(data);
-        public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data) => _algorithm.ComputeHash(data.ToArray());
 
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> data)
         {
@@ -27,7 +26,7 @@ namespace Kerberos.NET.Crypto
 
         public void ComputeHash(ReadOnlySpan<byte> data, Span<byte> hash)
         {
-            ReadOnlyMemory<byte> buffer = ComputeHash(data);
+            ReadOnlyMemory<byte> buffer = ComputeHash(data.ToArray());
             buffer.Span.CopyTo(hash);
         }
 
