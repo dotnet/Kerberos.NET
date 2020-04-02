@@ -1,23 +1,18 @@
 ﻿using System;
 using System.Security.Cryptography;
-using static Kerberos.NET.BinaryExtensions;
 
 namespace Kerberos.NET.Crypto
 {
     internal class HmacSha1 : IHmacAlgorithm
     {
-        public ReadOnlyMemory<byte> ComputeHash(
-            ReadOnlyMemory<byte> key,
-            ReadOnlyMemory<byte> data
-        )
+        public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
         {
-            var keyArray = TryGetArrayFast(key);
-            var dataArray = TryGetArrayFast(data);
+            byte[] keyArray = key.TryGetArrayFast();
 
-            using (var hmac = new HMACSHA1(keyArray))
-            {
-                return hmac.ComputeHash(dataArray, 0, data.Length);
-            }
+            using var hmac = new HMACSHA1(keyArray);
+            ArraySegment<byte> dataArray = data.GetArraySegment();
+
+            return hmac.ComputeHash(dataArray.Array, dataArray.Offset, dataArray.Count);
         }
     }
 }

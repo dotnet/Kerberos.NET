@@ -85,11 +85,10 @@ namespace Kerberos.NET.Crypto
         {
             var ksign = HMACMD5(key, ChecksumSignatureKey);
 
-            Span<byte> span = new byte[4 + data.Length];
-
-            data.CopyTo(span.Slice(4));
+            var span = new byte[sizeof(int) + data.Length];
 
             BinaryPrimitives.WriteInt32LittleEndian(span, (int)keyUsage);
+            data.CopyTo(span.AsSpan(sizeof(int)));
 
             var tmp = MD5(span);
 
@@ -114,7 +113,7 @@ namespace Kerberos.NET.Crypto
             return salt;
         }
 
-        private static ReadOnlyMemory<byte> MD5(ReadOnlySpan<byte> data)
+        private static ReadOnlyMemory<byte> MD5(ReadOnlyMemory<byte> data)
         {
             using (var md5 = CryptoPal.Platform.Md5())
             {

@@ -82,6 +82,9 @@ namespace Kerberos.NET.Crypto
 
         public int HashSize { get; }
 
+        public ReadOnlyMemory<byte> ComputeHash(byte[] data) => ComputeHash(data.AsSpan());
+        public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> data) => ComputeHash(data.Span);
+
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
         {
             fixed (byte* pData = data)

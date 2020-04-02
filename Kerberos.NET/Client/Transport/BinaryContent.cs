@@ -3,29 +3,28 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using static Kerberos.NET.BinaryExtensions;
 
 namespace Kerberos.NET.Transport
 {
     internal class BinaryContent : HttpContent
     {
-        private readonly ReadOnlyMemory<byte> data;
+        private readonly ReadOnlyMemory<byte> _data;
 
         public BinaryContent(ReadOnlyMemory<byte> data)
         {
-            this.data = data;
+            _data = data;
         }
 
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
-            var bytes = TryGetArrayFast(data);
+            ArraySegment<byte> bytes = _data.GetArraySegment();
 
-            return stream.WriteAsync(bytes, 0, bytes.Length);
+            return stream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count);
         }
 
         protected override bool TryComputeLength(out long length)
         {
-            length = data.Length;
+            length = _data.Length;
 
             return true;
         }

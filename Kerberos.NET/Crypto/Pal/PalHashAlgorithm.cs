@@ -15,7 +15,16 @@ namespace Kerberos.NET.Crypto
             _algorithm = algorithm;
         }
 
+        public ReadOnlyMemory<byte> ComputeHash(byte[] data) => _algorithm.ComputeHash(data);
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data) => _algorithm.ComputeHash(data.ToArray());
+
+        public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> data)
+        {
+            ArraySegment<byte> array = data.GetArraySegment();
+
+            return _algorithm.ComputeHash(array.Array, array.Offset, array.Count);
+        }
+
         public void Dispose() => _algorithm.Dispose();
     }
 }

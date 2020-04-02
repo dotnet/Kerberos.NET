@@ -219,7 +219,7 @@ namespace Kerberos.NET.Server
             {
                 var encoded = body.Encode();
 
-                var paChecksum = sha1.ComputeHash(encoded.Span);
+                var paChecksum = sha1.ComputeHash(encoded);
 
                 if (!KerberosCryptoTransformer.AreEqualSlow(paChecksum.Span, authenticator.PaChecksum.Value.Span))
                 {

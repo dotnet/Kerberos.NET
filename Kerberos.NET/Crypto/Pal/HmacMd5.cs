@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Security.Cryptography;
-using static Kerberos.NET.BinaryExtensions;
 
 namespace Kerberos.NET.Crypto
 {
@@ -9,13 +8,12 @@ namespace Kerberos.NET.Crypto
     {
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
         {
-            var keyArray = TryGetArrayFast(key);
-            var dataArray = TryGetArrayFast(data);
+            byte[] keyArray = key.TryGetArrayFast();
 
-            using (HMACMD5 hmac = new HMACMD5(keyArray))
-            {
-                return hmac.ComputeHash(dataArray, 0, data.Length);
-            }
+            using var hmac = new HMACMD5(keyArray);
+            ArraySegment<byte> dataArray = data.GetArraySegment();
+
+            return hmac.ComputeHash(dataArray.Array, dataArray.Offset, dataArray.Count);
         }
     }
 #endif
