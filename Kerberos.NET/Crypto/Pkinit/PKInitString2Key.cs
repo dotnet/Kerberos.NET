@@ -33,8 +33,7 @@ namespace Kerberos.NET.Crypto
             {
                 x = Concat(sharedSecret, clientNonce, serverNonce, x);
 
-                const int hashSize = 160 / 8;
-                Span<byte> fill = stackalloc byte[hashSize];
+                Span<byte> fill = stackalloc byte[HashSizes.SHA1];
                 sha1.ComputeHash(Concat(0, x, concat), fill, out int bytesWritten);
                 Debug.Assert(bytesWritten == fill.Length);
 

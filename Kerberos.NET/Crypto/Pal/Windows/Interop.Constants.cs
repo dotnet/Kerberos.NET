@@ -11,6 +11,14 @@ namespace Kerberos.NET.Crypto.Pal.Windows
             PROV_RSA_AES = 24
         }
 
+        public enum Algorithms : int
+        {
+            CALG_MD4 = 0x00008002,
+            CALG_MD5 = 0x00008003,
+            CALG_SHA1 = 0x00008004,
+            CALG_SHA_256 = 0x0000800c
+        }
+
         [Flags]
         public enum CryptAcquireContextFlags : uint
         {
