@@ -57,6 +57,7 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(result);
 
             Assert.AreEqual("Administrator@identityintervention.com", result.Name);
+            Assert.AreEqual(27, result.Claims.Count());
         }
 
         [TestMethod]
