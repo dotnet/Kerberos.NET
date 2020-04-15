@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security;
 using System.Security.Cryptography.Asn1;
 using System.Threading;
@@ -324,24 +325,19 @@ namespace Kerberos.NET.Client
                     {
                         // it is a realm referral and we need to chase it
 
+                        string referral = TryFindReferralShortcut(encKdcRepPart);
+
+                        if(string.IsNullOrWhiteSpace(referral))
+                        {
+                            referral = originalServicePrincipalName.FullyQualifiedName;
+                        }
+
+                        rst.ServicePrincipalName = referral;
+
                         receivedRequestedTicket = false;
 
                         tgtCacheName = respondedSName.FullyQualifiedName;
                         serviceTicketCacheEntry.SessionKey = encKdcRepPart.Key;
-
-                        if (string.Equals(rst.ServicePrincipalName, respondedSName.FullyQualifiedName, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            // it's the final krbtgt for the realm
-                            // can switch it to query the original SPN
-
-                            rst.ServicePrincipalName = originalServicePrincipalName.FullyQualifiedName;
-                        }
-                        else
-                        {
-                            // go get a TGT for the chased realm
-
-                            rst.ServicePrincipalName = tgtCacheName;
-                        }
                     }
                     else
                     {
@@ -383,6 +379,20 @@ namespace Kerberos.NET.Client
                     SequenceNumber = authenticator.SequenceNumber
                 };
             }
+        }
+
+        private string TryFindReferralShortcut(KrbEncTgsRepPart encKdcRepPart)
+        {
+            var svrReferralPaData = encKdcRepPart.EncryptedPaData?.MethodData?.FirstOrDefault(d => d.Type == PaDataType.PA_SVR_REFERRAL_INFO);
+
+            if (svrReferralPaData == null)
+            {
+                return null;
+            }
+
+            var svrReferral = KrbPaSvrReferralData.Decode(svrReferralPaData.Value);
+
+            return $"krbtgt/{svrReferral.ReferredRealm}";
         }
 
         private static string ResolveKdcTarget(KerberosClientCacheEntry tgtEntry)
@@ -444,7 +454,7 @@ namespace Kerberos.NET.Client
             // if RenewUntil isn't set or we're past that window we can't renew
             // or if it's renewable but the ticket expiration is already greater
             // than the entire renewal window (you'll just get the same ticket back)
-            
+
             DateTimeOffset ttlRenew;
 
             if (renewUntil > DateTimeOffset.MinValue)
