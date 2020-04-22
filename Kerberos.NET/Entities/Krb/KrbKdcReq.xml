@@ -17,7 +17,7 @@
 
   <asn:Integer name="ProtocolVersionNumber" explicitTag="1" backingType="int" />
   <asn:Integer name="MessageType" explicitTag="2" backingType="enum" enumType="MessageType" />
-  <asn:SequenceOf name="PaData" explicitTag="3">
+  <asn:SequenceOf name="PaData" explicitTag="3" optional="true">
     <asn:AsnType typeName="KrbPaData" />
   </asn:SequenceOf>
   <asn:AsnType typeName="KrbKdcReqBody" name="Body" explicitTag="4" />
