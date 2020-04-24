@@ -78,7 +78,7 @@ namespace Kerberos.NET.Entities
         {
             var principalName = KrbPrincipalName.FromString(credential.UserName);
 
-            if (principalName.Type == PrincipalNameType.NT_SRV_HST)
+            if (principalName.IsServiceName)
             {
                 return principalName;
             }
