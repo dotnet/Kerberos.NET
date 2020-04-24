@@ -171,6 +171,28 @@ namespace Kerberos.NET.Entities
             return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
         }
 
+        /// <summary>
+        /// Indicates whether the provided <see cref="KrbPrincipalName"/> is
+        /// considered a service instead of a user
+        /// </summary>
+        /// <returns>Returns true if the name is for a service</returns>
+        public bool IsServiceName
+        {
+            get
+            {
+                switch (Type)
+                {
+                    case PrincipalNameType.NT_SRV_HST:
+                    case PrincipalNameType.NT_SRV_INST:
+                    case PrincipalNameType.NT_SRV_XHST:
+                        return true;
+
+                    default:
+                        return false;
+                }
+            }
+        }
+
         public static KrbPrincipalName FromString(
             string principal,
             PrincipalNameType? type = null,
