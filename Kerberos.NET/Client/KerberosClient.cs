@@ -444,7 +444,7 @@ namespace Kerberos.NET.Client
             // if RenewUntil isn't set or we're past that window we can't renew
             // or if it's renewable but the ticket expiration is already greater
             // than the entire renewal window (you'll just get the same ticket back)
-            
+
             DateTimeOffset ttlRenew;
 
             if (renewUntil > DateTimeOffset.MinValue)
@@ -634,7 +634,7 @@ namespace Kerberos.NET.Client
             var decrypted = credential.DecryptKdcRep(
                 asRep,
                 KeyUsage.EncAsRepPart,
-                d => KrbEncAsRepPart.DecodeApplication(d)
+                d => DecodeEncKdcRepPart(d)
             );
 
             VerifyNonces(asReqMessage.Body.Nonce, decrypted.Nonce);
@@ -642,6 +642,20 @@ namespace Kerberos.NET.Client
             DefaultDomain = credential.Domain;
 
             await CacheTgt(asRep, decrypted);
+        }
+
+        private static KrbEncKdcRepPart DecodeEncKdcRepPart(ReadOnlyMemory<byte> decrypted)
+        {
+            if (KrbEncAsRepPart.CanDecode(decrypted))
+            {
+                return KrbEncAsRepPart.DecodeApplication(decrypted);
+            }
+            else if (KrbEncTgsRepPart.CanDecode(decrypted))
+            {
+                return KrbEncTgsRepPart.DecodeApplication(decrypted);
+            }
+
+            throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_BADOPTION);
         }
 
         private static void VerifyNonces(int reqNonce, int repNonce)
