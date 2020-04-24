@@ -14,7 +14,7 @@ namespace Kerberos.NET.Entities
 
             var tag = reader.ReadTagAndLength(out _, out _);
 
-            return tag.HasSameClassAndValue(tag);
+            return tag.HasSameClassAndValue(expectedTag);
         }
     }
 }
