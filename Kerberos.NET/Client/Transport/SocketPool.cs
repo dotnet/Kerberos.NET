@@ -100,6 +100,7 @@ namespace Kerberos.NET.Client
                 if (Queue.TryDequeue(out socket))
                 {
                     socket.Free();
+                    Interlocked.Decrement(ref activeConnections);
                 }
             }
         }
