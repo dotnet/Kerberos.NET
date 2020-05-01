@@ -324,11 +324,47 @@ namespace KerbDump
             var settings = new JsonSerializerSettings
             {
                 Formatting = Formatting.Indented,
-                Converters = new[] { new StringEnumArrayConverter() },
+                Converters = new JsonConverter[] { new StringEnumArrayConverter(), new BinaryConverter() },
                 ContractResolver = new KerberosIgnoreResolver()
             };
 
             return JsonConvert.SerializeObject(obj, settings);
+        }
+
+        private class BinaryConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                Debug.WriteLine(objectType.Name);
+
+                return objectType == typeof(ReadOnlyMemory<byte>) || objectType == typeof(ReadOnlyMemory<byte>?);
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                ReadOnlyMemory<byte> mem = default;
+
+                if (value.GetType() == typeof(ReadOnlyMemory<byte>))
+                {
+                    mem = (ReadOnlyMemory<byte>)value;
+                }
+                else if (value.GetType() == typeof(ReadOnlyMemory<byte>))
+                {
+                    var val = (ReadOnlyMemory<byte>?)value;
+
+                    if (val != null)
+                    {
+                        mem = val.Value;
+                    }
+                }
+
+                writer.WriteValue(Convert.ToBase64String(mem.ToArray()));
+            }
         }
 
         private class StringEnumArrayConverter : StringEnumConverter
