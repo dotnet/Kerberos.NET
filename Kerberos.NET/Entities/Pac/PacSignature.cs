@@ -59,7 +59,11 @@ namespace Kerberos.NET.Entities.Pac
 
             buffer.WriteInt32LittleEndian((int)Type);
             buffer.WriteSpan(Signature.Span);
-            buffer.WriteInt16LittleEndian(RODCIdentifier);
+
+            if (RODCIdentifier > 0)
+            {
+                buffer.WriteInt16LittleEndian(RODCIdentifier);
+            }
 
             return buffer.ToSpan();
         }

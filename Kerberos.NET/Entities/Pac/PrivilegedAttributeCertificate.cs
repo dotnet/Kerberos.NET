@@ -1,11 +1,11 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities.Pac;
-using Kerberos.NET.Ndr;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities
 {
@@ -26,7 +26,9 @@ namespace Kerberos.NET.Entities
         {
             var pac = authz.Data;
 
-            pacData = MemoryMarshal.AsMemory(pac);
+            pacData = new byte[pac.Length];
+
+            pac.CopyTo(pacData);
 
             var stream = new NdrBuffer(pac, align: false);
 
@@ -289,57 +291,95 @@ namespace Kerberos.NET.Entities
 
         private static void SignPac(IEnumerable<PacObject> pacElements, Memory<byte> pacUnsigned, KerberosKey kdcKey, KerberosKey serverKey)
         {
-            foreach (var element in pacElements.Where(e => e is PacSignature).Cast<PacSignature>())
+            PacSignature serverSignature = null;
+
+            foreach (var element in pacElements.Where(e => e is PacSignature).OrderBy(e => e.PacType).Cast<PacSignature>())
             {
                 if (element.PacType == PacType.SERVER_CHECKSUM)
                 {
+                    serverSignature = element;
+
                     element.Sign(pacUnsigned, serverKey);
                 }
 
                 if (element.PacType == PacType.PRIVILEGE_SERVER_CHECKSUM)
                 {
-                    element.Sign(pacUnsigned, kdcKey);
+                    element.Sign(serverSignature.Signature, kdcKey);
                 }
             }
         }
 
+        private static int Align(int position, int mask)
+        {
+            var shift = position & mask - 1;
+
+            if (shift != 0)
+            {
+                var seek = 8 - shift;
+
+                return seek;
+            }
+
+            return 0;
+        }
+
+        [DebuggerDisplay("{Type} {Offset} {Length}")]
+        private struct PacBuffer
+        {
+            public PacType Type { get; set; }
+
+            public int Length { get; set; }
+
+            public int Offset { get; set; }
+
+            public PacObject Element { get; set; }
+        }
+
         private static Memory<byte> GeneratePac(IEnumerable<PacObject> pacElements)
         {
-            var buffer = new NdrBuffer(align: false);
+            var offset = 8 + (pacElements.Count() * 16);
+
+            var buffers = new PacBuffer[pacElements.Count()];
+
+            for (var i = 0; i < buffers.Length; i++)
+            {
+                var element = pacElements.ElementAt(i);
+
+                offset += Align(offset, 8);
+
+                var pacBuffer = new PacBuffer
+                {
+                    Type = element.PacType,
+                    Element = element,
+                    Length = element.Encode().Length,
+                    Offset = offset
+                };
+
+                offset += pacBuffer.Length;
+
+                buffers[i] = pacBuffer;
+            }
+
+            var buffer = new NdrBuffer(new Memory<byte>(new byte[offset]), align: false);
 
             buffer.WriteInt32LittleEndian(pacElements.Count());
             buffer.WriteInt32LittleEndian(PAC_VERSION);
 
-            var headerLength = 8 + (pacElements.Count() * 16);
-            var offset = headerLength;
-
-            foreach (var element in pacElements)
+            foreach (var element in buffers)
             {
-                buffer.WriteInt32LittleEndian((int)element.PacType);
+                buffer.WriteInt32LittleEndian((int)element.Type);
 
                 // encoded value is cached internally within element
                 // unless it's been marked dirty, which only happens
                 // when it's been signed
 
-                var encoded = element.Encode();
+                buffer.WriteInt32LittleEndian(element.Length);
+                buffer.WriteInt64LittleEndian(element.Offset);
 
-                buffer.WriteInt32LittleEndian(encoded.Length);
-                buffer.WriteInt64LittleEndian(offset);
-
-                offset += encoded.Length;
+                buffer.WriteSpan(element.Element.Encode().Span, element.Offset);
             }
 
-            foreach (var element in pacElements)
-            {
-                // the encoded value is cached internally unless it's marked
-                // as dirty, where it will be regenerated on next call to encode
-
-                var encoded = element.Encode();
-
-                buffer.WriteSpan(encoded.Span);
-            }
-
-            return buffer.ToMemory();
+            return buffer.ToMemory(alignment: 8);
         }
 
         private IEnumerable<PacObject> CollectElements(KerberosKey kdcKey, KerberosKey serverKey)
@@ -358,8 +398,11 @@ namespace Kerberos.NET.Entities
             // explicitly add the server and kdc signatures here
             // so someone can't screw with the values within
 
-            elements.Add(new PacSignature(PacType.SERVER_CHECKSUM, serverKey.EncryptionType));
-            elements.Add(new PacSignature(PacType.PRIVILEGE_SERVER_CHECKSUM, kdcKey.EncryptionType));
+            this.ServerSignature = new PacSignature(PacType.SERVER_CHECKSUM, serverKey.EncryptionType);
+            this.KdcSignature = new PacSignature(PacType.PRIVILEGE_SERVER_CHECKSUM, kdcKey.EncryptionType);
+
+            elements.Add(this.ServerSignature);
+            elements.Add(this.KdcSignature);
 
             return elements;
         }
@@ -368,6 +411,8 @@ namespace Kerberos.NET.Entities
         {
             if (element != null)
             {
+                element.IsDirty = true;
+
                 elements.Add(element);
             }
         }

@@ -11,9 +11,20 @@ namespace Kerberos.NET.Ndr
 {
     public partial class NdrBuffer
     {
-        private int referent = 0x20000;
+        private readonly bool fixedSize;
 
+        private int referent = 0x20000;
         private IMemoryOwner<byte> rental;
+
+        public NdrBuffer(Memory<byte> memory, bool align = true)
+            : this(align)
+        {
+            fixedSize = true;
+
+            backingBuffer = memory;
+
+            MoveByOffset(0);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Span<byte> MoveWriteHead(int length)
@@ -54,15 +65,17 @@ namespace Kerberos.NET.Ndr
             MoveByOffset(0);
         }
 
-        public Memory<byte> ToMemory() => ToArray();
+        public Memory<byte> ToMemory(int alignment) => ToArray(alignment);
 
-        public Span<byte> ToSpan() => ToArray();
+        public Span<byte> ToSpan(int alignment = 0) => ToArray(alignment);
 
-        private byte[] ToArray()
+        private byte[] ToArray(int alignment)
         {
-            var final = new byte[Offset];
+            Align(alignment);
 
-            backingBuffer.Slice(0, Offset).CopyTo(final);
+            var final = new byte[fixedSize ? backingBuffer.Length : Offset];
+
+            backingBuffer.Slice(0, final.Length).CopyTo(final);
 
             if (rental != null)
             {
@@ -81,6 +94,11 @@ namespace Kerberos.NET.Ndr
         public void WriteSpan(ReadOnlySpan<byte> val)
         {
             val.CopyTo(MoveWriteHead(val.Length));
+        }
+
+        public void WriteSpan(ReadOnlySpan<byte> val, int offset)
+        {
+            val.CopyTo(backingBuffer.Span.Slice(offset));
         }
 
         public void WriteByte(byte val)
@@ -127,6 +145,8 @@ namespace Kerberos.NET.Ndr
             {
                 WriteStruct(thing);
             }
+
+            Align(8);
 
             var typeLength = Offset - RpcHeader.HeaderLength;
 

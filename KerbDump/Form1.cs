@@ -353,7 +353,7 @@ namespace KerbDump
                 {
                     mem = (ReadOnlyMemory<byte>)value;
                 }
-                else if (value.GetType() == typeof(ReadOnlyMemory<byte>))
+                else if (value.GetType() == typeof(ReadOnlyMemory<byte>?))
                 {
                     var val = (ReadOnlyMemory<byte>?)value;
 
