@@ -110,26 +110,41 @@ namespace Kerberos.NET.Entities
 
             var attribute = (PacObject)Activator.CreateInstance(pacObjectType);
 
-            if (pacInfoBuffer.Length > 0)
+            if (pacInfoBuffer.Length <= 0)
             {
-                PacSignature signature = null;
+                return;
+            }
 
-                if (attribute is PacSignature)
-                {
-                    signature = (PacSignature)attribute;
-                    signature.SignatureData = pacData;
-                }
+            PacSignature signature = null;
 
-                attribute.Unmarshal(pacInfoBuffer);
+            if (attribute is PacSignature sig)
+            {
+                signature = ProcessSignature(sig, type);
+            }
 
-                if (signature != null)
-                {
-                    exclusionStart = signature.SignaturePosition;
-                    exclusionLength = signature.Signature.Length;
-                }
+            attribute.Unmarshal(pacInfoBuffer);
+
+            if (signature != null)
+            {
+                exclusionStart = signature.SignaturePosition;
+                exclusionLength = signature.Signature.Length;
             }
 
             attributes[type] = attribute;
+        }
+
+        private PacSignature ProcessSignature(PacSignature signature, PacType type)
+        {
+            if (type == PacType.PRIVILEGE_SERVER_CHECKSUM)
+            {
+                signature.SignatureData = this.ServerSignature.Signature;
+            }
+            else
+            {
+                signature.SignatureData = pacData;
+            }
+
+            return signature;
         }
 
         private T GetAttribute<T>(PacType type)
