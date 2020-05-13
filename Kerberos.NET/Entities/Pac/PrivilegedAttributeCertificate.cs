@@ -372,7 +372,7 @@ namespace Kerberos.NET.Entities
 
             var buffer = new NdrBuffer(new Memory<byte>(new byte[offset]), align: false);
 
-            buffer.WriteInt32LittleEndian(pacElements.Count());
+            buffer.WriteInt32LittleEndian(pacCount);
             buffer.WriteInt32LittleEndian(PAC_VERSION);
 
             foreach (var element in buffers)
