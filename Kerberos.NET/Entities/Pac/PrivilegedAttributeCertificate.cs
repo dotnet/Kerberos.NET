@@ -345,9 +345,11 @@ namespace Kerberos.NET.Entities
 
         private static Memory<byte> GeneratePac(IEnumerable<PacObject> pacElements)
         {
-            var offset = 8 + (pacElements.Count() * 16);
+            var pacCount = pacElements.Count();
 
-            var buffers = new PacBuffer[pacElements.Count()];
+            var offset = 8 + (pacCount * 16);
+
+            var buffers = new PacBuffer[pacCount];
 
             for (var i = 0; i < buffers.Length; i++)
             {
