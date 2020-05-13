@@ -19,8 +19,10 @@ namespace Kerberos.NET.Entities
         {
             var buffer = new NdrBuffer();
 
+            NameLength = (short)(Name.Length * sizeof(char));
+
             buffer.WriteStruct(ClientId);
-            buffer.WriteInt16LittleEndian((short)(Name.Length * sizeof(char)));
+            buffer.WriteInt16LittleEndian(NameLength);
 
             if (NameLength > 0)
             {
