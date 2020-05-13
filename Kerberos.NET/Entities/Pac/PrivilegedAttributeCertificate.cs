@@ -328,14 +328,7 @@ namespace Kerberos.NET.Entities
         {
             var shift = position & mask - 1;
 
-            if (shift != 0)
-            {
-                var seek = 8 - shift;
-
-                return seek;
-            }
-
-            return 0;
+            return shift == 0 ? 0 : 8 - shift;
         }
 
         [DebuggerDisplay("{Type} {Offset} {Length}")]
