@@ -13,7 +13,7 @@ namespace Kerberos.NET.Entities.Pac
 
             buffer.MarshalObject(this);
 
-            return buffer.ToSpan();
+            return buffer.ToSpan(alignment: 8);
         }
 
         public abstract void Unmarshal(NdrBuffer buffer);
@@ -34,7 +34,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public abstract void Unmarshal(ReadOnlyMemory<byte> bytes);
 
-        protected bool IsDirty { get; set; }
+        internal bool IsDirty { get; set; }
 
         private ReadOnlyMemory<byte> cachedEncodedValue;
 

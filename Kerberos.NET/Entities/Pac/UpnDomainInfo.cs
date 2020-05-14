@@ -27,17 +27,17 @@ namespace Kerberos.NET.Entities
             buffer.WriteInt16LittleEndian(2 + 2 + 2 + 2 + 4 + 4); // + 4 to align on 8 boundary
 
             buffer.WriteInt16LittleEndian((short)domainBytes.Length);
-            buffer.WriteInt16LittleEndian((short)(2 + 2 + 2 + 2 + 4 + 4 + upnBytes.Length));
+            buffer.WriteInt16LittleEndian((short)(2 + 2 + 2 + 2 + 2 + 4 + 4 + upnBytes.Length));
 
             buffer.WriteInt32LittleEndian((int)Flags);
 
             buffer.WriteInt32LittleEndian(0);
             buffer.WriteFixedPrimitiveArray(upnBytes);
 
-            buffer.WriteInt32LittleEndian(0);
+            buffer.WriteInt16LittleEndian(0);
             buffer.WriteFixedPrimitiveArray(domainBytes);
 
-            return buffer.ToSpan();
+            return buffer.ToSpan(alignment: 8);
         }
 
         public override void Unmarshal(ReadOnlyMemory<byte> bytes)

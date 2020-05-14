@@ -179,8 +179,6 @@ namespace Tests.Kerberos.NET
 
             var pacDecoded = new PrivilegedAttributeCertificate(new KrbAuthorizationData { Type = AuthorizationDataType.AdWin2kPac, Data = encoded });
 
-            ;
-
             pacDecoded.ServerSignature.Validator.Validate(key);
             pacDecoded.KdcSignature.Validator.Validate(key);
         }
