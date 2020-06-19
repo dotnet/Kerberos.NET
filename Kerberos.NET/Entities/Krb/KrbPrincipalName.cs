@@ -157,8 +157,6 @@ namespace Kerberos.NET.Entities
         {
             switch (obj)
             {
-                case null:
-                    return false;
                 case KrbPrincipalName other:
                 {
                     var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
