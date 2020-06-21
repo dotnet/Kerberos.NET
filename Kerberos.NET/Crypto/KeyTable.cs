@@ -121,6 +121,7 @@ namespace Kerberos.NET.Crypto
             this.Key = key;
             this.Principal = key.PrincipalName;
             this.EncryptionType = key.EncryptionType;
+            this.Version = key.Version ?? 5;
             this.Timestamp = DateTimeOffset.UtcNow;
         }
 
