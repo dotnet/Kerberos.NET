@@ -155,20 +155,25 @@ namespace Kerberos.NET.Entities
 
         public bool Matches(object obj)
         {
-            if (obj is null)
+            switch (obj)
             {
-                return false;
+                case KrbPrincipalName other:
+                {
+                    var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
+                    var otherName = MakeFullName(other.Name, other.Type, normalizeAlias: true);
+
+                    return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
+                }
+                case PrincipalName principal:
+                {
+                    var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
+                    var otherName = MakeFullName(principal.Names, principal.NameType, normalizeAlias: true);
+
+                    return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
+                }
+                default:
+                    return false;
             }
-
-            if (!(obj is KrbPrincipalName other))
-            {
-                return false;
-            }
-
-            var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
-            var otherName = MakeFullName(other.Name, other.Type, normalizeAlias: true);
-
-            return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
         }
 
         /// <summary>
@@ -328,7 +333,7 @@ namespace Kerberos.NET.Entities
         {
             return FromString(principal.PrincipalName, type, realm);
         }
-        
+
         public bool IsKrbtgt()
         {
             return string.Equals(Name[0], KrbtgtService, StringComparison.InvariantCultureIgnoreCase);
