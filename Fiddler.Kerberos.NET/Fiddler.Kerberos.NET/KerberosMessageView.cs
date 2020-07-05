@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using System.Windows.Forms;
+using Fiddler.Kerberos.NET.Json;
 using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
@@ -50,11 +51,21 @@ namespace Fiddler.Kerberos.NET
 
         public void ResetLayout()
         {
+            messageParsed = false;
+
+            warning = null;
             tvMessageStructure.Nodes.Clear();
         }
 
+        private bool messageParsed = false;
+
         internal void ProcessMessage(byte[] message, string source = null)
         {
+            if (messageParsed)
+            {
+                return;
+            }
+
             ResetLayout();
 
             object parsedMessage = null;
@@ -92,10 +103,14 @@ namespace Fiddler.Kerberos.NET
                 ProcessKerberos(kerb, source);
             }
 
-            if (KdcProxyMessage.TryDecode(message, out KdcProxyMessage proxyMessage))
+            try
             {
-                ProcessKdcProxy(proxyMessage, source);
+                if (KdcProxyMessage.TryDecode(message, out KdcProxyMessage proxyMessage))
+                {
+                    ProcessKdcProxy(proxyMessage, source);
+                }
             }
+            catch { }
         }
 
         private void ProcessKdcProxy(KdcProxyMessage proxyMessage, string source)
@@ -141,7 +156,7 @@ namespace Fiddler.Kerberos.NET
             }
             catch (Exception ex)
             {
-                FiddlerApplication.Log.LogString($"Debug: failed to parse message {ex.Message}");
+                FiddlerApplication.Log.LogString($"[Kerberos debug]: failed to parse message {ex.Message}");
 
                 return null;
             }
@@ -190,6 +205,8 @@ namespace Fiddler.Kerberos.NET
             ExplodeObject(thing, baseNodeText, node);
 
             tvMessageStructure.EndUpdate();
+
+            messageParsed = true;
         }
 
         private static void ExplodeObject(object thing, string baseNodeText, TreeNode tree)
@@ -202,7 +219,7 @@ namespace Fiddler.Kerberos.NET
         private static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings
         {
             Formatting = Formatting.Indented,
-            Converters = new JsonConverter[] { new StringEnumConverter(), new BinaryConverter() },
+            Converters = new JsonConverter[] { new StringEnumConverter(), new BinaryConverter(), new RpcConverter() },
             ContractResolver = new KerberosIgnoreResolver()
         };
 
@@ -243,10 +260,78 @@ namespace Fiddler.Kerberos.NET
             }
         }
 
+        private static void OnClickDecodeAsAdWin2kPac(object sender, EventArgs e)
+        {
+            ParseNode(sender, out string text, out TreeNode parentNode);
+
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                try
+                {
+                    DecodeAsAdWin2kPac(Convert.FromBase64String(text), parentNode);
+                }
+                catch (Exception ex)
+                {
+                    FiddlerApplication.Log.LogString($"DecodeAsAdWin2kPac exception: {ex}");
+                }
+            }
+        }
+
+        private static void OnClickDecodeAsAdIfRelevant(object sender, EventArgs e)
+        {
+            ParseNode(sender, out string text, out TreeNode parentNode);
+
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                try
+                {
+                    DecodeAsAdIfRelevant(Convert.FromBase64String(text), parentNode);
+                }
+                catch (Exception ex)
+                {
+                    FiddlerApplication.Log.LogString($"DecodeAsAdIfRelevant exception: {ex}");
+                }
+            }
+        }
+
+        private static void DecodeAsAdWin2kPac(byte[] bytes, TreeNode parentNode)
+        {
+            var pac = new PrivilegedAttributeCertificate(new KrbAuthorizationData { Data = bytes, Type = AuthorizationDataType.AdWin2kPac });
+
+            ExplodeObject(pac, "Privilege Attribute Certificate", parentNode);
+        }
+
+        private static void DecodeAsAdIfRelevant(byte[] bytes, TreeNode parentNode)
+        {
+            var seq = KrbAuthorizationDataSequence.Decode(bytes);
+
+            foreach (var authz in seq.AuthorizationData)
+            {
+                ExplodeObject(authz, "AuthorizationData", parentNode);
+            }
+        }
+
         private static void OnClickDecodeAsApReq(object sender, EventArgs e)
         {
-            string text = null;
-            TreeNode parentNode = null;
+            ParseNode(sender, out string text, out TreeNode parentNode);
+
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                try
+                {
+                    DecodeAsApReq(Convert.FromBase64String(text), parentNode);
+                }
+                catch (Exception ex)
+                {
+                    FiddlerApplication.Log.LogString($"DecodeAsApReq exception: {ex}");
+                }
+            }
+        }
+
+        private static void ParseNode(object sender, out string text, out TreeNode parentNode)
+        {
+            text = null;
+            parentNode = null;
 
             if (sender is MenuItem item &&
                 item.Parent is MenuItem parentItem &&
@@ -263,15 +348,6 @@ namespace Fiddler.Kerberos.NET
                     parentNode = tree.SelectedNode;
                 }
             }
-
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                try
-                {
-                    DecodeAsApReq(Convert.FromBase64String(text), parentNode);
-                }
-                catch { }
-            }
         }
 
         private static void DecodeAsApReq(byte[] bytes, TreeNode parentNode)
@@ -287,7 +363,12 @@ namespace Fiddler.Kerberos.NET
             {
                 new MenuItem("Copy", OnClickCopy, Shortcut.CtrlC),
                 new MenuItem("Send to TextWizard", OnClickSendToTextWizard, Shortcut.CtrlE),
-                new MenuItem("Decode As...", new [] { new MenuItem("AP-REQ", OnClickDecodeAsApReq, Shortcut.CtrlShiftP) })
+                new MenuItem("Decode As...", new []
+                {
+                    new MenuItem("AP-REQ", OnClickDecodeAsApReq, Shortcut.CtrlShiftP),
+                    new MenuItem("Ad-If-Relevant", OnClickDecodeAsAdIfRelevant, Shortcut.CtrlShiftP),
+                    new MenuItem("Ad-Win2k-Pac", OnClickDecodeAsAdWin2kPac, Shortcut.CtrlShiftP),
+                })
             })
             {
                 Tag = tag

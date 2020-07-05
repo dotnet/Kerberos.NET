@@ -30,9 +30,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Fiddler">
-      <HintPath>C:\Program Files (x86)\Fiddler\Fiddler.exe</HintPath>
+      <HintPath>$(LocalAppData)\Programs\Fiddler\Fiddler.exe</HintPath>
     </Reference>
     <Reference Include="Kerberos.NET, Version=4.0.0.0, Culture=neutral, PublicKeyToken=10b231fbfc8c4b4d, processorArchitecture=MSIL">
       <HintPath>..\packages\Kerberos.NET.4.0.16\lib\netstandard2.0\Kerberos.NET.dll</HintPath>
@@ -81,10 +84,11 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BinaryConverter.cs" />
+    <Compile Include="Json\BinaryConverter.cs" />
     <Compile Include="CredUI.cs" />
+    <Compile Include="Json\RpcConverter.cs" />
     <Compile Include="KerberosAnalyzerExtension.cs" />
-    <Compile Include="KerberosIgnoreResolver.cs" />
+    <Compile Include="Json\KerberosIgnoreResolver.cs" />
     <Compile Include="KerberosInspector.cs" />
     <Compile Include="KerberosMessageView.cs">
       <SubType>UserControl</SubType>
@@ -107,8 +111,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>XCOPY "$(TargetDir)\*.dll" "%25userprofile%25\Documents\Fiddler2\Inspectors\" /S /Y
-XCOPY "$(TargetDir)\*.pdb" "%25userprofile%25\Documents\Fiddler2\Inspectors\" /S /Y</PostBuildEvent>
+    <PostBuildEvent>XCOPY "$(TargetDir)*.dll" "%25userprofile%25\Documents\Fiddler2\Inspectors\" /S /Y
+XCOPY "$(TargetDir)*.pdb" "%25userprofile%25\Documents\Fiddler2\Inspectors\" /S /Y
+XCOPY "$(TargetPath)" "%25userprofile%25\Documents\Fiddler2\Scripts\" /S /Y</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>taskkill /im fiddler.exe /t /f 2&gt;&amp;1 | exit /B 0</PreBuildEvent>
