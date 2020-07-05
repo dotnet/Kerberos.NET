@@ -365,8 +365,8 @@ namespace Fiddler.Kerberos.NET
                 new MenuItem("Send to TextWizard", OnClickSendToTextWizard, Shortcut.CtrlE),
                 new MenuItem("Decode As...", new []
                 {
-                    new MenuItem("AP-REQ", OnClickDecodeAsApReq, Shortcut.CtrlShiftP),
-                    new MenuItem("Ad-If-Relevant", OnClickDecodeAsAdIfRelevant, Shortcut.CtrlShiftP),
+                    new MenuItem("AP-REQ", OnClickDecodeAsApReq, Shortcut.CtrlShiftA),
+                    new MenuItem("Ad-If-Relevant", OnClickDecodeAsAdIfRelevant, Shortcut.CtrlShiftR),
                     new MenuItem("Ad-Win2k-Pac", OnClickDecodeAsAdWin2kPac, Shortcut.CtrlShiftP),
                 })
             })
