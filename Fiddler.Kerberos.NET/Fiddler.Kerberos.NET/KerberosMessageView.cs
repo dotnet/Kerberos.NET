@@ -558,9 +558,34 @@ namespace Fiddler.Kerberos.NET
 
             var encryptedData = token.ToObject<KrbEncryptedData>(serializer);
 
-            KerberosKey key = ConvertKey(creds);
+            object decrypted = null;
 
-            var decrypted = encryptedData.Decrypt(key, decoder.usage, decoder.decoder);
+            try
+            {
+                var key = ConvertKey(creds, tryAsKey: false);
+
+                decrypted = encryptedData.Decrypt(key, decoder.usage, decoder.decoder);
+            }
+            catch (Exception ex)
+            {
+                FiddlerApplication.Log.LogString($"[Kerberos debug] Decrypt failed as password. Trying as key next. Exception: {ex}");
+            }
+
+            try
+            {
+                var key = ConvertKey(creds, tryAsKey: true);
+
+                decrypted = encryptedData.Decrypt(key, decoder.usage, decoder.decoder);
+            }
+            catch (Exception ex)
+            {
+                FiddlerApplication.Log.LogString($"[Kerberos debug] Decrypt failed as key. Nothing else to try. Exception: {ex}");
+            }
+
+            if (decrypted == null)
+            {
+                throw new SecurityException($"The provided key couldn't decrypt the message as either a password or as the derived key");
+            }
 
             var serialized = FormatSerialize(decrypted);
 
@@ -571,7 +596,7 @@ namespace Fiddler.Kerberos.NET
             node.ExpandAll();
         }
 
-        private static KerberosKey ConvertKey(NetworkCredential creds)
+        private static KerberosKey ConvertKey(NetworkCredential creds, bool tryAsKey)
         {
             string domain = creds.Domain ?? "";
 
@@ -586,7 +611,22 @@ namespace Fiddler.Kerberos.NET
 
             var name = KrbPrincipalName.FromString(username, realm: domain);
 
-            return new KerberosKey(creds.Password, new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, name.Name), host: username);
+            if (tryAsKey)
+            {
+                return new KerberosKey(
+                    key: Convert.FromBase64String(creds.Password),
+                    principal: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, name.Name),
+                    host: username
+                );
+            }
+            else
+            {
+                return new KerberosKey(
+                    creds.Password,
+                    new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, name.Name),
+                    host: username
+                );
+            }
         }
 
         private static readonly Dictionary<string, (KeyUsage usage, Func<ReadOnlyMemory<byte>, object> decoder)> EncryptedFields
