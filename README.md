@@ -531,7 +531,7 @@ There are samples!
     - aes256-spnego-data
  - [KerbTester](Samples/KerbTester) A command line tool used to test real tickets and dump the parsed results.
  - [KerberosMiddlewareEndToEndSample](Samples/KerberosMiddlewareEndToEndSample) An end-to-end sample that shows how the server prompts for negotiation and the emulated browser's response.
- - [KerberosMiddlewareSample](Samples/KerberosMiddlewareEndToEndSample) A simple pass/fail middleware sample that decodes a ticket if present, but otherwise never prompts to negotiate.
+ - [KerberosMiddlewareSample](Samples/KerberosMiddlewareSample) A simple pass/fail middleware sample that decodes a ticket if present, but otherwise never prompts to negotiate.
  - [KerberosWebSample](Samples/KerberosWebSample) A sample web project intended to be hosted in IIS that prompts to negotiate and validates any incoming tickets from the browser.
 
 # License
