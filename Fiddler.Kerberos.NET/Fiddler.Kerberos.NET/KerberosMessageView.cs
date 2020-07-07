@@ -503,9 +503,21 @@ namespace Fiddler.Kerberos.NET
 
         private static void ConfigureDecryption(TreeNode inTreeNode, JToken token, string scope)
         {
+            var decryptMenuItems = new List<MenuItem>();
+
+            foreach (KeyUsage k in Enum.GetValues(typeof(KeyUsage)))
+            {
+                decryptMenuItems.Add(new MenuItem($"({(int)k}) {k}", DecryptMessageWithKeyUsage) { Tag = k });
+            }
+
             inTreeNode.ContextMenu = new ContextMenu(new[]
             {
-                new MenuItem("Decrypt", DecryptMessage)
+                new MenuItem("Decrypt", DecryptMessage, Shortcut.CtrlD)
+                {
+                    Tag = token,
+                    Name = scope
+                },
+                new MenuItem("Decrypt With...", decryptMenuItems.ToArray())
                 {
                     Tag = token,
                     Name = scope
@@ -516,13 +528,29 @@ namespace Fiddler.Kerberos.NET
             };
         }
 
+        private static void DecryptMessageWithKeyUsage(object sender, EventArgs e)
+        {
+            if (sender is MenuItem item && item.Tag is KeyUsage usage && item.Parent is MenuItem parentItem)
+            {
+                Decrypt(parentItem, usage);
+            }
+        }
+
         private static void DecryptMessage(object sender, EventArgs e)
+        {
+            if (sender is MenuItem item && item.Tag is JToken)
+            {
+                Decrypt(item);
+            }
+        }
+
+        private static void Decrypt(object sender, KeyUsage? usage = null)
         {
             if (sender is MenuItem item && item.Tag is JToken token)
             {
                 try
                 {
-                    PopAndDecrypt(token, item);
+                    PopAndDecrypt(token, item, usage);
                 }
                 catch (SecurityException ex)
                 {
@@ -535,7 +563,7 @@ namespace Fiddler.Kerberos.NET
             }
         }
 
-        private static void PopAndDecrypt(JToken token, MenuItem item)
+        private static void PopAndDecrypt(JToken token, MenuItem item, KeyUsage? usage)
         {
             var creds = CredUI.Prompt("Decryption Credentials", "Provide the credentials used to decrypt this message");
 
@@ -564,7 +592,7 @@ namespace Fiddler.Kerberos.NET
             {
                 var key = ConvertKey(creds, tryAsKey: false);
 
-                decrypted = encryptedData.Decrypt(key, decoder.usage, decoder.decoder);
+                decrypted = encryptedData.Decrypt(key, usage ?? decoder.usage, decoder.decoder);
             }
             catch (Exception ex)
             {
@@ -635,6 +663,7 @@ namespace Fiddler.Kerberos.NET
                 { "KrbApReq.Ticket.EncryptedPart", (KeyUsage.Ticket, b => KrbEncTicketPart.DecodeApplication(b)) },
                 { "KrbApReq.Authenticator", (KeyUsage.ApReqAuthenticator, b => KrbAuthenticator.DecodeApplication(b)) },
                 { "Ticket.EncryptedPart", (KeyUsage.Ticket, b => KrbEncTicketPart.DecodeApplication(b)) },
+                { "Body.EncAuthorizationData", (KeyUsage.Ticket, b => KrbEncTicketPart.DecodeApplication(b)) },
             };
 
         private static bool IsDecryptable(string scope)
