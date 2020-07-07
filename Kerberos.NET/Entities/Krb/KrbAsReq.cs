@@ -18,6 +18,7 @@ namespace Kerberos.NET.Entities
 
         public string Realm => Body.Realm;
 
+        [KerberosIgnore]
         public int KerberosProtocolVersionNumber => ProtocolVersionNumber;
 
         public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options)

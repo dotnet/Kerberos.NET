@@ -37,6 +37,7 @@ namespace Kerberos.NET.Entities.Pac
             return signatureValue;
         }
 
+        [KerberosIgnore]
         public ReadOnlyMemory<byte> SignatureData { get; set; }
 
         public KerberosChecksum Validator { get; set; }
