@@ -306,7 +306,22 @@ namespace Kerberos.NET
 
             var domainSid = logonInfo.DomainSid.Value;
 
-            foreach (var g in logonInfo.GroupSids)
+            AddSids(claims, domainSid, logonInfo.GroupSids);
+
+            if (logonInfo.UserFlags.HasFlag(UserFlags.LOGON_EXTRA_SIDS))
+            {
+                AddSids(claims, domainSid, logonInfo.ExtraSids);
+            }
+
+            if (logonInfo.UserFlags.HasFlag(UserFlags.LOGON_RESOURCE_GROUPS))
+            {
+                AddSids(claims, domainSid, logonInfo.ResourceGroups);
+            }
+        }
+
+        private static void AddSids(ICollection<Claim> claims, string domainSid, IEnumerable<SecurityIdentifier> sids)
+        {
+            foreach (var g in sids)
             {
                 var sid = g.Value;
 

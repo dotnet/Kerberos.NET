@@ -64,7 +64,7 @@ namespace Kerberos.NET.Crypto
 
             using (var rented = CryptoPool.Rent<byte>(structSize))
             {
-                rented.Memory.Span.Fill(0);
+                rented.Memory.Span.Clear();
 
                 fixed (byte* pParam = &MemoryMarshal.GetReference(rented.Memory.Span))
                 {
@@ -223,7 +223,7 @@ namespace Kerberos.NET.Crypto
 
             using (var rented = CryptoPool.Rent<byte>(structSize))
             {
-                rented.Memory.Span.Fill(0);
+                rented.Memory.Span.Clear();
 
                 fixed (byte* pbInput = &MemoryMarshal.GetReference(rented.Memory.Span))
                 {

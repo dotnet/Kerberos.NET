@@ -42,16 +42,21 @@ namespace Kerberos.NET.Entities
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             writer.WriteInteger((long)MessageType);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
-            writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
 
-            writer.PushSequence();
-            for (int i = 0; i < PaData.Length; i++)
+            if (Asn1Extension.HasValue(PaData))
             {
-                PaData[i]?.Encode(writer); 
-            }
-            writer.PopSequence();
+                writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
 
-            writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
+                writer.PushSequence();
+                for (int i = 0; i < PaData.Length; i++)
+                {
+                    PaData[i]?.Encode(writer); 
+                }
+                writer.PopSequence();
+
+                writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
+            }
+
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
             Body?.Encode(writer);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
@@ -148,24 +153,27 @@ namespace Kerberos.NET.Entities
             explicitReader.ThrowIfNotEmpty();
 
 
-            explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
-
-            // Decode SEQUENCE OF for PaData
+            if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 3)))
             {
-                collectionReader = explicitReader.ReadSequence();
-                var tmpList = new List<KrbPaData>();
-                KrbPaData tmpItem;
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
 
-                while (collectionReader.HasData)
+                // Decode SEQUENCE OF for PaData
                 {
-                    KrbPaData.Decode<KrbPaData>(collectionReader, out tmpItem); 
-                    tmpList.Add(tmpItem);
+                    collectionReader = explicitReader.ReadSequence();
+                    var tmpList = new List<KrbPaData>();
+                    KrbPaData tmpItem;
+
+                    while (collectionReader.HasData)
+                    {
+                        KrbPaData.Decode<KrbPaData>(collectionReader, out tmpItem); 
+                        tmpList.Add(tmpItem);
+                    }
+
+                    decoded.PaData = tmpList.ToArray();
                 }
 
-                decoded.PaData = tmpList.ToArray();
+                explicitReader.ThrowIfNotEmpty();
             }
-
-            explicitReader.ThrowIfNotEmpty();
 
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 4));

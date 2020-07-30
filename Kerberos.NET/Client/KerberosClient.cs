@@ -27,6 +27,7 @@ namespace Kerberos.NET.Client
         //                   -> cache TGT/cache service ticket
 
         private const AuthenticationOptions DefaultAuthentication =
+            AuthenticationOptions.RepPartCompatible |
             AuthenticationOptions.IncludePacRequest |
             AuthenticationOptions.RenewableOk |
             AuthenticationOptions.Canonicalize |
@@ -644,7 +645,7 @@ namespace Kerberos.NET.Client
             var decrypted = credential.DecryptKdcRep(
                 asRep,
                 KeyUsage.EncAsRepPart,
-                d => KrbEncAsRepPart.DecodeApplication(d)
+                d => DecodeEncKdcRepPart<KrbEncAsRepPart>(d)
             );
 
             VerifyNonces(asReqMessage.Body.Nonce, decrypted.Nonce);
@@ -652,6 +653,49 @@ namespace Kerberos.NET.Client
             DefaultDomain = credential.Domain;
 
             await CacheTgt(asRep, decrypted);
+        }
+
+        private KrbEncKdcRepPart DecodeEncKdcRepPart<T>(ReadOnlyMemory<byte> decrypted)
+            where T : KrbEncKdcRepPart, new()
+        {
+            // Certain legacy Kerberos implementations will return EncTgsRepPart instead
+            // of EncAsRepPart for historical reasons and when that happens this breaks.
+            // We should honor that and detect what type it is.
+            //
+            // https://tools.ietf.org/html/rfc4120#section-5.4.2
+            //
+            // Compatibility note: Some implementations unconditionally send an
+            // encrypted EncTGSRepPart (application tag number 26) in this field
+            // regardless of whether the reply is a AS-REP or a TGS-REP.  In the
+            // interest of compatibility, implementors MAY relax the check on the
+            // tag number of the decrypted ENC-PART.
+
+            KrbEncKdcRepPart repPart = null;
+
+            if (KrbEncAsRepPart.CanDecode(decrypted))
+            {
+                repPart = KrbEncAsRepPart.DecodeApplication(decrypted);
+            }
+            else if (KrbEncTgsRepPart.CanDecode(decrypted))
+            {
+                repPart = KrbEncTgsRepPart.DecodeApplication(decrypted);
+            }
+
+            if (repPart != null)
+            {
+                logger.LogDebug(
+                    "EncPart expected to be {ExpectedType} and is actually {ActualType}",
+                    typeof(T).Name,
+                    repPart.GetType().Name
+                );
+
+                if (AuthenticationOptions.HasFlag(AuthenticationOptions.RepPartCompatible) || repPart is T)
+                {
+                    return repPart;
+                }
+            }
+
+            throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_BADOPTION);
         }
 
         private static void VerifyNonces(int reqNonce, int repNonce)

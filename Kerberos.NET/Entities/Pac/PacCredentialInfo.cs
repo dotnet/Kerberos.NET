@@ -23,7 +23,7 @@ namespace Kerberos.NET.Entities
             buffer.WriteInt32LittleEndian((int)EncryptionType);
             buffer.WriteSpan(SerializedData.Span);
 
-            return buffer.ToSpan();
+            return buffer.ToSpan(alignment: 8);
         }
 
         public override void Unmarshal(ReadOnlyMemory<byte> bytes)

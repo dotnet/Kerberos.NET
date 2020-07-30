@@ -29,7 +29,7 @@ namespace Kerberos.NET.Entities
 
             buffer.MarshalObject(claimsSet);
 
-            ReadOnlySpan<byte> encoded = buffer.ToSpan();
+            ReadOnlySpan<byte> encoded = buffer.ToSpan(alignment: 8);
 
             originalSize = encoded.Length;
 

@@ -37,6 +37,7 @@ namespace Kerberos.NET.Entities.Pac
             return signatureValue;
         }
 
+        [KerberosIgnore]
         public ReadOnlyMemory<byte> SignatureData { get; set; }
 
         public KerberosChecksum Validator { get; set; }
@@ -59,7 +60,11 @@ namespace Kerberos.NET.Entities.Pac
 
             buffer.WriteInt32LittleEndian((int)Type);
             buffer.WriteSpan(Signature.Span);
-            buffer.WriteInt16LittleEndian(RODCIdentifier);
+
+            if (RODCIdentifier > 0)
+            {
+                buffer.WriteInt16LittleEndian(RODCIdentifier);
+            }
 
             return buffer.ToSpan();
         }

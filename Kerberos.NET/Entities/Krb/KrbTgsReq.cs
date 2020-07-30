@@ -13,10 +13,13 @@ namespace Kerberos.NET.Entities
             MessageType = MessageType.KRB_TGS_REQ;
         }
 
+        [KerberosIgnore]
         public MessageType KerberosMessageType => MessageType;
 
+        [KerberosIgnore]
         public string Realm => Body.Realm;
 
+        [KerberosIgnore]
         public int KerberosProtocolVersionNumber => ProtocolVersionNumber;
 
         public KrbTgsReq DecodeAsApplication(ReadOnlyMemory<byte> encoded)

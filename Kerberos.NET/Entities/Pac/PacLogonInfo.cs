@@ -171,6 +171,7 @@ namespace Kerberos.NET.Entities.Pac
         public int GroupCount => GroupIds?.Count() ?? 0;
 
         //[SizeIs("GroupCount")]
+        [KerberosIgnore]
         public IEnumerable<GroupMembership> GroupIds { get; set; }
 
         public UserFlags UserFlags { get; set; }
@@ -181,6 +182,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public RpcString DomainName { get; set; } = RpcString.Empty;
 
+        [KerberosIgnore]
         public RpcSid DomainId { get; set; }
 
         //[FixedSize(2)]
@@ -201,6 +203,7 @@ namespace Kerberos.NET.Entities.Pac
         public int ExtraSidCount => ExtraIds?.Count() ?? 0;
 
         //[SizeIs("ExtraSidCount")]
+        [KerberosIgnore]
         public IEnumerable<RpcSidAttributes> ExtraIds { get; set; }
 
         public RpcSid ResourceDomainId { get; set; }
@@ -208,6 +211,7 @@ namespace Kerberos.NET.Entities.Pac
         public int ResourceGroupCount => ResourceGroupIds?.Count() ?? 0;
 
         //[SizeIs("ResourceGroupCount")]
+        [KerberosIgnore]
         public IEnumerable<GroupMembership> ResourceGroupIds { get; set; }
 
         public SecurityIdentifier UserSid

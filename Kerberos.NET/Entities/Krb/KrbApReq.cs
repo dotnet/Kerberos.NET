@@ -2,6 +2,7 @@
 using Kerberos.NET.Crypto;
 using System;
 using System.Security.Cryptography;
+using System.Security.Cryptography.Asn1;
 
 namespace Kerberos.NET.Entities
 {
@@ -14,6 +15,15 @@ namespace Kerberos.NET.Entities
         }
 
         internal const int ApplicationTagValue = 14;
+
+        public static bool CanDecode(ReadOnlyMemory<byte> encoded)
+        {
+            var reader = new AsnReader(encoded, AsnEncodingRules.DER);
+
+            var tag = reader.ReadTagAndLength(out _, out _);
+
+            return tag.HasSameClassAndValue(ApplicationTag);
+        }
 
         public KrbApReq DecodeAsApplication(ReadOnlyMemory<byte> data)
         {

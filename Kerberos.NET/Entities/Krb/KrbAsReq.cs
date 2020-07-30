@@ -18,6 +18,7 @@ namespace Kerberos.NET.Entities
 
         public string Realm => Body.Realm;
 
+        [KerberosIgnore]
         public int KerberosProtocolVersionNumber => ProtocolVersionNumber;
 
         public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options)
@@ -50,11 +51,7 @@ namespace Kerberos.NET.Entities
                             Address = Encoding.ASCII.GetBytes(hostAddress.PadRight(16, ' '))
                         }
                     },
-                    CName = KrbPrincipalName.FromString(
-                        credential.UserName, 
-                        PrincipalNameType.NT_ENTERPRISE, 
-                        credential.Domain
-                    ),
+                    CName = ExtractCName(credential),
                     EType = KerberosConstants.ETypes.ToArray(),
                     KdcOptions = kdcOptions,
                     Nonce = KerberosConstants.GetNonce(),
@@ -76,6 +73,22 @@ namespace Kerberos.NET.Entities
             }
 
             return asreq;
+        }
+
+        private static KrbPrincipalName ExtractCName(KerberosCredential credential)
+        {
+            var principalName = KrbPrincipalName.FromString(credential.UserName);
+
+            if (principalName.IsServiceName)
+            {
+                return principalName;
+            }
+
+            return KrbPrincipalName.FromString(
+                credential.UserName,
+                PrincipalNameType.NT_ENTERPRISE,
+                credential.Domain
+            );
         }
     }
 }

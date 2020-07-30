@@ -155,20 +155,47 @@ namespace Kerberos.NET.Entities
 
         public bool Matches(object obj)
         {
-            if (obj is null)
+            switch (obj)
             {
-                return false;
-            }
+                case KrbPrincipalName other:
+                {
+                    var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
+                    var otherName = MakeFullName(other.Name, other.Type, normalizeAlias: true);
 
-            if (!(obj is KrbPrincipalName other))
+                    return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
+                }
+                case PrincipalName principal:
+                {
+                    var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
+                    var otherName = MakeFullName(principal.Names, principal.NameType, normalizeAlias: true);
+
+                    return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
+                }
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether the provided <see cref="KrbPrincipalName"/> is
+        /// considered a service instead of a user
+        /// </summary>
+        /// <returns>Returns true if the name is for a service</returns>
+        public bool IsServiceName
+        {
+            get
             {
-                return false;
+                switch (Type)
+                {
+                    case PrincipalNameType.NT_SRV_HST:
+                    case PrincipalNameType.NT_SRV_INST:
+                    case PrincipalNameType.NT_SRV_XHST:
+                        return true;
+
+                    default:
+                        return false;
+                }
             }
-
-            var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
-            var otherName = MakeFullName(other.Name, other.Type, normalizeAlias: true);
-
-            return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
         }
 
         public static KrbPrincipalName FromString(
@@ -306,7 +333,7 @@ namespace Kerberos.NET.Entities
         {
             return FromString(principal.PrincipalName, type, realm);
         }
-        
+
         public bool IsKrbtgt()
         {
             return string.Equals(Name[0], KrbtgtService, StringComparison.InvariantCultureIgnoreCase);
