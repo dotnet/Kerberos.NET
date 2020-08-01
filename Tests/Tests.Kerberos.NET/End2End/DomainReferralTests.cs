@@ -72,16 +72,6 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual("Administrator", apreq.Ticket.CName.FullyQualifiedName);
             Assert.AreEqual(CRealm, apreq.Ticket.CRealm);
 
-            var serialized = JsonConvert.SerializeObject(
-                new {
-                    ApReq = ticket,
-                    Ticket = apreq.Ticket,
-                    Authenticator = apreq.Authenticator
-                },
-                Formatting.Indented,
-                new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }
-            );
-
             var adif = apreq.Ticket.AuthorizationData.FirstOrDefault(f => f.Type == AuthorizationDataType.AdIfRelevant).DecodeAdIfRelevant();
 
             var pacStr = adif.FirstOrDefault(f => f.Type == AuthorizationDataType.AdWin2kPac);
