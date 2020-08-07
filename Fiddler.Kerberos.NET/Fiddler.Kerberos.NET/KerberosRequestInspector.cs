@@ -10,6 +10,8 @@ namespace Fiddler.Kerberos.NET
 
         public bool bReadOnly { get; set; } = true;
 
+        protected override bool IsRequest => true;
+
         HTTPRequestHeaders IRequestInspector2.headers { get; set; }
 
         public override void Inspect(Session session)

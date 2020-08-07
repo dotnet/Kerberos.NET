@@ -87,7 +87,6 @@
     <Compile Include="Json\BinaryConverter.cs" />
     <Compile Include="CredUI.cs" />
     <Compile Include="Json\RpcConverter.cs" />
-    <Compile Include="KerberosAnalyzerExtension.cs" />
     <Compile Include="Json\KerberosIgnoreResolver.cs" />
     <Compile Include="KerberosInspector.cs" />
     <Compile Include="KerberosMessageView.cs">

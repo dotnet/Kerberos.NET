@@ -52,17 +52,34 @@ namespace Fiddler.Kerberos.NET
 
         public void ResetLayout()
         {
-            messageParsed = false;
+            MessageParsed = false;
 
             warning = null;
             tvMessageStructure.Nodes.Clear();
         }
 
-        private bool messageParsed = false;
+        public bool MessageParsed { get; private set; }
+
+        public bool IsProbablyMessage(byte[] body)
+        {
+            return CanDecode(body);
+        }
+
+        public static bool CanDecode(byte[] message)
+        {
+            try
+            {
+                return KdcProxyMessage.TryDecode(message, out _);
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         internal void ProcessMessage(byte[] message, string source = null)
         {
-            if (messageParsed)
+            if (MessageParsed)
             {
                 return;
             }
@@ -207,7 +224,7 @@ namespace Fiddler.Kerberos.NET
 
             tvMessageStructure.EndUpdate();
 
-            messageParsed = true;
+            MessageParsed = true;
         }
 
         private static void ExplodeObject(object thing, string baseNodeText, TreeNode tree)

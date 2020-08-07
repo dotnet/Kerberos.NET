@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Windows.Forms;
-using Kerberos.NET.Entities;
+﻿using System.Windows.Forms;
 
 namespace Fiddler.Kerberos.NET
 {
@@ -18,7 +15,47 @@ namespace Fiddler.Kerberos.NET
             o.Controls.Add(View);
         }
 
+        protected virtual bool IsRequest => false;
+
+        protected virtual bool IsResponse => false;
+
         public abstract void Inspect(Session session);
+
+        public override int ScoreForSession(Session oS)
+        {
+            if (oS.RequestHeaders["User-Agent"].OICStartsWith("kerberos/"))
+            {
+                return 100;
+            }
+
+            if ((401 == oS.responseCode && oS.ResponseHeaders["WWW-Authenticate"].OICStartsWith("N")) ||
+                (407 == oS.responseCode && oS.ResponseHeaders["Proxy-Authenticate"].OICStartsWith("N")))
+            {
+                return 100;
+            }
+
+            if (View.IsProbablyMessage(oS.RequestBody) && IsRequest)
+            {
+                return 100;
+            }
+
+            if (View.IsProbablyMessage(oS.ResponseBody) && IsResponse)
+            {
+                return 100;
+            }
+
+            if (oS.RequestHeaders["Authorization"].OICStartsWith("N") && IsRequest)
+            {
+                return 100;
+            }
+
+            if (oS.RequestHeaders["Authorization"].OICStartsWith("K") && IsRequest)
+            {
+                return 100;
+            }
+
+            return 0;
+        }
 
         public virtual void TryDetectKdcProxy(Session session, byte[] body)
         {
