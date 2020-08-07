@@ -24,6 +24,7 @@ namespace Fiddler.Kerberos.NET
             InitializeComponent();
 
             this.Dock = DockStyle.Fill;
+            tvMessageStructure.BackColor = CONFIG.colorDisabledEdit;
         }
 
         private string warning;
