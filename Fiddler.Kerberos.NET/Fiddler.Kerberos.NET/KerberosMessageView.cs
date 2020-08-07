@@ -58,7 +58,24 @@ namespace Fiddler.Kerberos.NET
             tvMessageStructure.Nodes.Clear();
         }
 
-        public bool MessageParsed { get; set; }
+        public bool MessageParsed { get; private set; }
+
+        public bool IsProbablyMessage(byte[] body)
+        {
+            return CanDecode(body);
+        }
+
+        public static bool CanDecode(byte[] message)
+        {
+            try
+            {
+                return KdcProxyMessage.TryDecode(message, out _);
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         internal void ProcessMessage(byte[] message, string source = null)
         {

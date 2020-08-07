@@ -15,6 +15,10 @@ namespace Fiddler.Kerberos.NET
             o.Controls.Add(View);
         }
 
+        protected virtual bool IsRequest => false;
+
+        protected virtual bool IsResponse => false;
+
         public abstract void Inspect(Session session);
 
         public override int ScoreForSession(Session oS)
@@ -30,21 +34,24 @@ namespace Fiddler.Kerberos.NET
                 return 100;
             }
 
-            TryDetectKdcProxy(oS, oS.ResponseBody);
-
-            if (View.MessageParsed)
+            if (View.IsProbablyMessage(oS.RequestBody) && IsRequest)
             {
                 return 100;
             }
 
-            if (oS.RequestHeaders["Authorization"].OICStartsWith("N"))
+            if (View.IsProbablyMessage(oS.ResponseBody) && IsResponse)
             {
-                return 1;
+                return 100;
             }
 
-            if (oS.RequestHeaders["Authorization"].OICStartsWith("K"))
+            if (oS.RequestHeaders["Authorization"].OICStartsWith("N") && IsRequest)
             {
-                return 1;
+                return 100;
+            }
+
+            if (oS.RequestHeaders["Authorization"].OICStartsWith("K") && IsRequest)
+            {
+                return 100;
             }
 
             return 0;

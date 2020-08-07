@@ -12,6 +12,8 @@ namespace Fiddler.Kerberos.NET
 
         public bool bReadOnly { get; set; }
 
+        protected override bool IsResponse => true;
+
         public override void Inspect(Session session)
         {
             var authz = session.ResponseHeaders["WWW-Authenticate"];
