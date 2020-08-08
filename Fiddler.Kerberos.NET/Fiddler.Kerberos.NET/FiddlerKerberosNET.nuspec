@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>FiddlerKerberosNET</id>
+    <version>4.0.1</version>
+    <title>Kerberos.NET Fiddler Extension</title>
+    <authors>Kerberos.NET</authors>
+    <owners>.NET Foundation</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A Fiddler extension that parses Kerberos messages using the Kerberos.NET library.</description>
+  </metadata>
+  <files>
+    <file src="DeltaCompressionDotNet.dll" target="lib\net45\DeltaCompressionDotNet.dll" />
+    <file src="DeltaCompressionDotNet.MsDelta.dll" target="lib\net45\DeltaCompressionDotNet.MsDelta.dll" />
+    <file src="DeltaCompressionDotNet.PatchApi.dll" target="lib\net45\DeltaCompressionDotNet.PatchApi.dll" />
+    <file src="Fiddler.Kerberos.NET.dll" target="lib\net45\Fiddler.Kerberos.NET.dll" />
+    <file src="InstallHost.exe" target="lib\net45\InstallHost.exe" />
+    <file src="KerberosInstaller.dll" target="lib\net45\KerberosInstaller.dll" />
+    <file src="Kerberos.NET.dll" target="lib\net45\Kerberos.NET.dll" />
+    <file src="Microsoft.Extensions.Logging.Abstractions.dll" target="lib\net45\Microsoft.Extensions.Logging.Abstractions.dll" />
+    <file src="Mono.Cecil.dll" target="lib\net45\Mono.Cecil.dll" />
+    <file src="Mono.Cecil.Mdb.dll" target="lib\net45\Mono.Cecil.Mdb.dll" />
+    <file src="Mono.Cecil.Pdb.dll" target="lib\net45\Mono.Cecil.Pdb.dll" />
+    <file src="Mono.Cecil.Rocks.dll" target="lib\net45\Mono.Cecil.Rocks.dll" />
+    <file src="Newtonsoft.Json.dll" target="lib\net45\Newtonsoft.Json.dll" />
+    <file src="NuGet.Squirrel.dll" target="lib\net45\NuGet.Squirrel.dll" />
+    <file src="SharpCompress.dll" target="lib\net45\SharpCompress.dll" />
+    <file src="Splat.dll" target="lib\net45\Splat.dll" />
+    <file src="Squirrel.dll" target="lib\net45\Squirrel.dll" />
+    <file src="System.Buffers.dll" target="lib\net45\System.Buffers.dll" />
+    <file src="System.IO.Pipelines.dll" target="lib\net45\System.IO.Pipelines.dll" />
+    <file src="System.Memory.dll" target="lib\net45\System.Memory.dll" />
+    <file src="System.Numerics.Vectors.dll" target="lib\net45\System.Numerics.Vectors.dll" />
+    <file src="System.Runtime.CompilerServices.Unsafe.dll" target="lib\net45\System.Runtime.CompilerServices.Unsafe.dll" />
+    <file src="System.Security.Cryptography.Pkcs.dll" target="lib\net45\System.Security.Cryptography.Pkcs.dll" />
+    <file src="System.Threading.Tasks.Extensions.dll" target="lib\net45\System.Threading.Tasks.Extensions.dll" />
+  </files>
+</package>

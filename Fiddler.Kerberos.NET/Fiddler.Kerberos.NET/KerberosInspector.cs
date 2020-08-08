@@ -1,9 +1,22 @@
-﻿using System.Windows.Forms;
+﻿using System;
+using System.Windows.Forms;
 
 namespace Fiddler.Kerberos.NET
 {
     public abstract class KerberosInspector : Inspector2
     {
+        protected KerberosInspector()
+        {
+            try
+            {
+                InstallManager.Watch();
+            }
+            catch (Exception ex)
+            {
+                FiddlerApplication.Log.LogString("Kerberos Inspector Update Exception: " + ex.ToString());
+            }
+        }
+
         protected KerberosMessageView View { get; } = new KerberosMessageView();
 
         public override void AddToTab(TabPage o)

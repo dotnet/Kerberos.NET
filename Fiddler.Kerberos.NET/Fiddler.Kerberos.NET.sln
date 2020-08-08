@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.30225.117
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fiddler.Kerberos.NET", "Fiddler.Kerberos.NET\Fiddler.Kerberos.NET.csproj", "{4B76BD9D-C771-45CC-BC4A-5702B3DBD11E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstallHost", "InstallHost\InstallHost.csproj", "{2B5D7B76-A951-4DF5-B0A6-2A110FF194D2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerberosInstaller", "KerberosInstaller\KerberosInstaller.csproj", "{9686F73F-5526-4C9A-B603-C7ACBFCB1976}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{4B76BD9D-C771-45CC-BC4A-5702B3DBD11E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4B76BD9D-C771-45CC-BC4A-5702B3DBD11E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4B76BD9D-C771-45CC-BC4A-5702B3DBD11E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B5D7B76-A951-4DF5-B0A6-2A110FF194D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B5D7B76-A951-4DF5-B0A6-2A110FF194D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B5D7B76-A951-4DF5-B0A6-2A110FF194D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B5D7B76-A951-4DF5-B0A6-2A110FF194D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9686F73F-5526-4C9A-B603-C7ACBFCB1976}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9686F73F-5526-4C9A-B603-C7ACBFCB1976}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9686F73F-5526-4C9A-B603-C7ACBFCB1976}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9686F73F-5526-4C9A-B603-C7ACBFCB1976}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
