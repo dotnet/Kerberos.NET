@@ -106,15 +106,33 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="FiddlerKerberosNET.nuspec" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\InstallHost\InstallHost.csproj">
+      <Project>{2b5d7b76-a951-4df5-b0a6-2a110ff194d2}</Project>
+      <Name>InstallHost</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\KerberosInstaller\KerberosInstaller.csproj">
+      <Project>{9686f73f-5526-4c9a-b603-c7acbfcb1976}</Project>
+      <Name>KerberosInstaller</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>XCOPY "$(TargetDir)*.dll" "%25userprofile%25\Documents\Fiddler2\Inspectors\" /S /Y
-XCOPY "$(TargetDir)*.pdb" "%25userprofile%25\Documents\Fiddler2\Inspectors\" /S /Y
-XCOPY "$(TargetPath)" "%25userprofile%25\Documents\Fiddler2\Scripts\" /S /Y</PostBuildEvent>
+    <PostBuildEvent>rem XCOPY "$(TargetDir)*.dll" "%25userprofile%25\Documents\Fiddler2\Inspectors\" /S /Y
+rem XCOPY "$(TargetDir)*.pdb" "%25userprofile%25\Documents\Fiddler2\Inspectors\" /S /Y
+rem XCOPY "$(TargetPath)" "%25userprofile%25\Documents\Fiddler2\Scripts\" /S /Y</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>taskkill /im fiddler.exe /t /f 2&gt;&amp;1 | exit /B 0</PreBuildEvent>
   </PropertyGroup>
+  <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release'">
+    <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
+      <Output TaskParameter="Assemblies" ItemName="myAssemblyInfo" />
+    </GetAssemblyIdentity>
+    <Exec Command="nuget pack FiddlerKerberosNet.nuspec -Version %(myAssemblyInfo.Version) -Properties Configuration=Release -OutputDirectory $(OutDir) -BasePath $(OutDir)" />
+    <Exec Command="squirrel --releasify $(OutDir)FiddlerKerberosNet.$([System.Version]::Parse(%(myAssemblyInfo.Version)).ToString(3)).nupkg" />
+  </Target>
 </Project>
