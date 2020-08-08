@@ -148,7 +148,7 @@ namespace Kerberos.NET.Client
         /// Indicates whether the client should cache service tickets.
         /// Ticket-Granting-Tickets are always cached.
         /// </summary>
-        public bool CacheServiceTickets { get; set; }
+        public bool CacheServiceTickets { get; set; } = true;
 
         /// <summary>
         /// The Kerberos options used during the AS-REQ flow.
@@ -258,57 +258,74 @@ namespace Kerberos.NET.Client
 
             using (logger.BeginRequestScope(ScopeId))
             {
-                KrbEncTgsRepPart encKdcRepPart;
+                KrbEncTgsRepPart encKdcRepPart = null;
+                KrbEncryptionKey sessionKey;
                 KerberosClientCacheEntry serviceTicketCacheEntry;
+
+                if (rst.KdcOptions == 0)
+                {
+                    rst.KdcOptions = KdcOptions;
+                }
+
+                if (rst.UserToUserTicket != null)
+                {
+                    rst.KdcOptions |= KdcOptions.EncTktInSkey;
+                }
+
+                if (!string.IsNullOrWhiteSpace(rst.S4uTarget))
+                {
+                    rst.KdcOptions |= KdcOptions.Forwardable;
+                }
 
                 do
                 {
                     cancellation.ThrowIfCancellationRequested();
 
-                    if (rst.KdcOptions == 0)
-                    {
-                        rst.KdcOptions = KdcOptions;
-                    }
-
-                    if (rst.UserToUserTicket != null)
-                    {
-                        rst.KdcOptions |= KdcOptions.EncTktInSkey;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(rst.S4uTarget))
-                    {
-                        rst.KdcOptions |= KdcOptions.Forwardable;
-                    }
-
                     // first of all, do we already have the ticket?
 
-                    serviceTicketCacheEntry = await Cache.Get<KerberosClientCacheEntry>(
+                    serviceTicketCacheEntry = Cache.GetCacheItem<KerberosClientCacheEntry>(
                         originalServicePrincipalName.FullyQualifiedName,
                         rst.S4uTarget
                     );
+
+                    bool cacheResult = false;
 
                     if (serviceTicketCacheEntry.KdcResponse == null || !CacheServiceTickets)
                     {
                         // nope, try and request it from the KDC that issued the TGT
 
-                        var tgtEntry = await CopyTicket(tgtCacheName);
+                        var tgtEntry = CopyTicket(tgtCacheName);
 
                         rst.Realm = ResolveKdcTarget(tgtEntry);
 
                         serviceTicketCacheEntry = await RequestTgs(rst, tgtEntry, cancellation);
+
+                        cacheResult = true;
                     }
 
-                    // we got a ticket of some sort from the KDC
+                    // we got a ticket of some sort from the cache or the KDC
 
-                    encKdcRepPart = serviceTicketCacheEntry.KdcResponse.EncPart.Decrypt(
-                        serviceTicketCacheEntry.SessionKey.AsKey(),
-                        serviceTicketCacheEntry.SessionKey.Usage,
-                        d => KrbEncTgsRepPart.DecodeApplication(d)
-                    );
+                    KrbPrincipalName respondedSName;
 
-                    VerifyNonces(serviceTicketCacheEntry.Nonce, encKdcRepPart.Nonce);
+                    if (serviceTicketCacheEntry.KdcResponse?.EncPart?.Cipher.Length > 0)
+                    {
+                        encKdcRepPart = serviceTicketCacheEntry.KdcResponse.EncPart.Decrypt(
+                            serviceTicketCacheEntry.SessionKey.AsKey(),
+                            serviceTicketCacheEntry.SessionKey.Usage,
+                            d => KrbEncTgsRepPart.DecodeApplication(d)
+                        );
 
-                    var respondedSName = encKdcRepPart.SName;
+                        VerifyNonces(serviceTicketCacheEntry.Nonce, encKdcRepPart.Nonce);
+
+                        sessionKey = encKdcRepPart.Key;
+                        respondedSName = encKdcRepPart.SName;
+                    }
+                    else
+                    {
+                        // cache shortcut when using krb5cc
+                        sessionKey = serviceTicketCacheEntry.SessionKey;
+                        respondedSName = serviceTicketCacheEntry.SName;
+                    }
 
                     receivedRequestedTicket = false;
 
@@ -328,7 +345,7 @@ namespace Kerberos.NET.Client
 
                         string referral = TryFindReferralShortcut(encKdcRepPart);
 
-                        if(string.IsNullOrWhiteSpace(referral))
+                        if (string.IsNullOrWhiteSpace(referral))
                         {
                             referral = originalServicePrincipalName.FullyQualifiedName;
                         }
@@ -347,17 +364,20 @@ namespace Kerberos.NET.Client
                         receivedRequestedTicket = true;
                     }
 
-                    // regardless of what state we're in we got a valuable ticket
-                    // that can be used in future requests
-
-                    await Cache.Add(new TicketCacheEntry
+                    if (cacheResult)
                     {
-                        Key = respondedSName.FullyQualifiedName,
-                        Container = rst.S4uTarget,
-                        RenewUntil = encKdcRepPart.RenewTill,
-                        Expires = encKdcRepPart.EndTime,
-                        Value = serviceTicketCacheEntry
-                    });
+                        // regardless of what state we're in we got a valuable ticket
+                        // that can be used in future requests
+
+                        Cache.Add(new TicketCacheEntry
+                        {
+                            Key = respondedSName.FullyQualifiedName,
+                            Container = rst.S4uTarget,
+                            RenewUntil = encKdcRepPart.RenewTill,
+                            Expires = encKdcRepPart.EndTime,
+                            Value = serviceTicketCacheEntry
+                        });
+                    }
 
                     // if we didn't receive the ticket we requested but got a referral
                     // we need to kick off a new request
@@ -370,11 +390,11 @@ namespace Kerberos.NET.Client
                 {
                     ApReq = KrbApReq.CreateApReq(
                         serviceTicketCacheEntry.KdcResponse,
-                        encKdcRepPart.Key.AsKey(),
+                        sessionKey.AsKey(),
                         rst.ApOptions,
                         out KrbAuthenticator authenticator
                     ),
-                    SessionKey = authenticator.Subkey ?? encKdcRepPart.Key,
+                    SessionKey = authenticator.Subkey ?? sessionKey,
                     CTime = authenticator.CTime,
                     CuSec = authenticator.CuSec,
                     SequenceNumber = authenticator.SequenceNumber
@@ -544,9 +564,9 @@ namespace Kerberos.NET.Client
             return entry;
         }
 
-        private async Task<KerberosClientCacheEntry> CopyTicket(string spn)
+        private KerberosClientCacheEntry CopyTicket(string spn)
         {
-            var entry = await Cache.Get<KerberosClientCacheEntry>(spn);
+            var entry = Cache.GetCacheItem<KerberosClientCacheEntry>(spn);
 
             lock (_syncTicketCache)
             {
@@ -578,7 +598,7 @@ namespace Kerberos.NET.Client
                 spn = $"krbtgt/{DefaultDomain}";
             }
 
-            var entry = await CopyTicket(spn);
+            var entry = CopyTicket(spn);
 
             var tgs = KrbTgsReq.CreateTgsReq(
                 new RequestServiceTicket
@@ -605,16 +625,16 @@ namespace Kerberos.NET.Client
                 d => KrbEncTgsRepPart.DecodeApplication(d)
             );
 
-            await CacheTgt(tgsRep, encKdcRepPart);
+            CacheTgt(tgsRep, encKdcRepPart);
         }
 
-        private async Task CacheTgt(KrbKdcRep kdcRep, KrbEncKdcRepPart encKdcRepPart)
+        private void CacheTgt(KrbKdcRep kdcRep, KrbEncKdcRepPart encKdcRepPart)
         {
             var key = kdcRep.Ticket.SName.FullyQualifiedName;
 
             encKdcRepPart.Key.Usage = KeyUsage.EncTgsRepPartSessionKey;
 
-            await Cache.Add(new TicketCacheEntry
+            Cache.Add(new TicketCacheEntry
             {
                 Key = key,
                 Expires = encKdcRepPart.EndTime,
@@ -652,7 +672,7 @@ namespace Kerberos.NET.Client
 
             DefaultDomain = credential.Domain;
 
-            await CacheTgt(asRep, decrypted);
+            CacheTgt(asRep, decrypted);
         }
 
         private KrbEncKdcRepPart DecodeEncKdcRepPart<T>(ReadOnlyMemory<byte> decrypted)

@@ -1,0 +1,157 @@
+﻿using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+namespace Kerberos.NET.Client
+{
+    [DebuggerDisplay("{cache}")]
+    public class Krb5TicketCache : TicketCacheBase
+    {
+        private readonly string filePath;
+        private readonly Krb5CredentialCache cache;
+
+        private readonly object fileSync = new object();
+
+        public Krb5TicketCache(string filePath, ILoggerFactory logger = null)
+            : this(logger)
+        {
+            this.filePath = filePath;
+            this.ReadCache();
+        }
+
+        public Krb5TicketCache(byte[] cache, ILoggerFactory logger = null)
+            : this(logger)
+        {
+            this.ReadCache(cache);
+        }
+
+        protected Krb5TicketCache(ILoggerFactory logger)
+            : base(logger)
+        {
+            this.cache = new Krb5CredentialCache();
+            this.cache.Header[Krb5CredentialCacheTag.KdcClientOffset] = new byte[8];
+        }
+
+        private void ReadCache(byte[] cache)
+        {
+            if (cache == null || cache.Length <= 0)
+            {
+                return;
+            }
+
+            this.cache.Read(cache);
+        }
+
+        private void ReadCache()
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return;
+            }
+
+            using (var file = this.OpenFile())
+            {
+                var cache = new byte[file.Length];
+
+                int offset = 0, read = 0;
+
+                do
+                {
+                    read = file.Read(cache, offset, cache.Length - offset);
+
+                    offset += read;
+                }
+                while (read > 0);
+
+                this.ReadCache(cache);
+            }
+        }
+
+        public override bool Add(TicketCacheEntry entry)
+        {
+            this.ReadCache();
+
+            this.cache.Add(entry);
+
+            this.WriteCache();
+
+            return true;
+        }
+
+        private void WriteCache()
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return;
+            }
+
+            lock (this.fileSync)
+            {
+                using (var stream = this.OpenFile())
+                {
+                    byte[] bytes = Serialize();
+
+                    stream.Seek(0, SeekOrigin.Begin);
+
+                    stream.Write(bytes, 0, bytes.Length);
+                    stream.Flush();
+                }
+            }
+        }
+
+        public byte[] Serialize()
+        {
+            return this.cache.Serialize();
+        }
+
+        private FileStream OpenFile()
+        {
+            return File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        }
+
+        public override object GetCacheItem(string key, string container = null)
+        {
+            this.ReadCache();
+
+            return this.cache.GetCacheItem(key);
+        }
+
+        public override T GetCacheItem<T>(string key, string container = null)
+        {
+            if (this.GetCacheItem(key, container) is T result)
+            {
+                return result;
+            }
+
+            return default;
+        }
+
+        public override bool Contains(TicketCacheEntry entry)
+        {
+            this.ReadCache();
+
+            return this.cache.Contains(entry);
+        }
+
+        public override Task<bool> AddAsync(TicketCacheEntry entry)
+        {
+            return Task.FromResult(this.Add(entry));
+        }
+
+        public override Task<bool> ContainsAsync(TicketCacheEntry entry)
+        {
+            return Task.FromResult(this.Contains(entry));
+        }
+
+        public override Task<object> GetCacheItemAsync(string key, string container = null)
+        {
+            return Task.FromResult(this.GetCacheItem(key, container));
+        }
+
+        public override Task<T> GetCacheItemAsync<T>(string key, string container = null)
+        {
+            return Task.FromResult(this.GetCacheItem<T>(key, container));
+        }
+    }
+}

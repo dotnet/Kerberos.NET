@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
@@ -116,6 +117,11 @@ namespace KerberosClientApp
             string serviceSalt
         )
         {
+            if (File.Exists("krb5cc"))
+            {
+                File.Delete("krb5cc");
+            }
+
             while (true)
             {
                 try
@@ -327,11 +333,11 @@ namespace KerberosClientApp
                     }
                 };
 
-                client = new KerberosClient(factory, kdcProxyTransport);
+                client = new KerberosClient(factory, kdcProxyTransport) { Cache = new Krb5TicketCache("krb5cc", factory) };
             }
             else
             {
-                client = new KerberosClient(overrideKdc, factory);
+                client = new KerberosClient(overrideKdc, factory) { Cache = new Krb5TicketCache("krb5cc", factory) };
             }
 
             KrbPrincipalName cnameHint = null;

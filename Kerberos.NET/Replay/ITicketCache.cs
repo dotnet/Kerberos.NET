@@ -9,12 +9,20 @@ namespace Kerberos.NET
 
         TimeSpan RefreshInterval { get; set; }
 
-        Task<bool> Add(TicketCacheEntry entry);
+        Task<bool> AddAsync(TicketCacheEntry entry);
 
-        Task<bool> Contains(TicketCacheEntry entry);
+        bool Add(TicketCacheEntry entry);
 
-        Task<object> Get(string key, string container = null);
+        Task<bool> ContainsAsync(TicketCacheEntry entry);
 
-        Task<T> Get<T>(string key, string container = null);
+        bool Contains(TicketCacheEntry entry);
+
+        Task<object> GetCacheItemAsync(string key, string container = null);
+
+        object GetCacheItem(string key, string container = null);
+
+        Task<T> GetCacheItemAsync<T>(string key, string container = null);
+
+        T GetCacheItem<T>(string key, string container = null);
     }
 }

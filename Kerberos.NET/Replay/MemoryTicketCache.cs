@@ -2,85 +2,16 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET
 {
-    internal sealed class MemoryTicketCache : ITicketCache, IDisposable
+    internal sealed class MemoryTicketCache : TicketCacheBase
     {
-        private readonly ILogger logger;
-        private readonly Task backgroundRunner;
-        private readonly CancellationTokenSource cts;
-
         public MemoryTicketCache(ILoggerFactory logger)
+            : base(logger)
         {
-            this.logger = logger.CreateLoggerSafe<MemoryTicketCache>();
-
-            cts = new CancellationTokenSource();
-
-            backgroundRunner = Task.Run(RunBackground, cts.Token);
-        }
-
-        internal Func<CacheEntry, Task> Refresh { get; set; }
-
-        public bool RefreshTickets { get; set; }
-
-        public TimeSpan RefreshInterval { get; set; } = TimeSpan.FromSeconds(30);
-
-        private async Task RunBackground()
-        {
-            while (true)
-            {
-                if (cts.Token.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                try
-                {
-                    await BackgroundCacheOperation();
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Background cache operation failed");
-                }
-
-                await Task.Delay(RefreshInterval, cts.Token);
-            }
-        }
-
-        private async Task BackgroundCacheOperation()
-        {
-            var originalKeys = cache.Keys.ToArray();
-
-            foreach (var kv in originalKeys)
-            {
-                if (!cache.TryGetValue(kv, out CacheEntry entry))
-                {
-                    continue;
-                }
-
-                if (entry.IsExpired())
-                {
-                    cache.TryRemove(kv, out _);
-                }
-                else if (RefreshTickets)
-                {
-                    await Refresh?.Invoke(entry);
-                }
-            }
-
-            var finalKeys = cache.Keys.ToArray();
-
-            var newKeys = finalKeys.Except(originalKeys);
-            var purgedKeys = originalKeys.Except(finalKeys);
-
-            if (newKeys.Any() || purgedKeys.Any())
-            {
-                logger.LogDebug("Cache Operation. New: {NewKeys}; Purged: {PurgedKeys}", string.Join("; ", newKeys), string.Join("; ", purgedKeys));
-            }
         }
 
         private readonly ConcurrentDictionary<string, CacheEntry> cache
@@ -88,9 +19,48 @@ namespace Kerberos.NET
 
         public bool BlockUpdates { get; set; }
 
-        public async Task<bool> Add(TicketCacheEntry entry)
+        protected override async Task BackgroundCacheOperation()
         {
-            var cacheEntry = new CacheEntry(entry.Computed, entry.Value, logger);
+            var originalKeys = this.cache.Keys.ToArray();
+
+            foreach (var kv in originalKeys)
+            {
+                if (!this.cache.TryGetValue(kv, out CacheEntry entry))
+                {
+                    continue;
+                }
+
+                if (entry.IsExpired())
+                {
+                    this.cache.TryRemove(kv, out _);
+                }
+                else if (this.RefreshTickets)
+                {
+                    await(this.Refresh?.Invoke(entry)).ConfigureAwait(true);
+                }
+            }
+
+            var finalKeys = this.cache.Keys.ToArray();
+
+            var newKeys = finalKeys.Except(originalKeys);
+            var purgedKeys = originalKeys.Except(finalKeys);
+
+            if (newKeys.Any() || purgedKeys.Any())
+            {
+                this.Logger.LogDebug("Cache Operation. New: {NewKeys}; Purged: {PurgedKeys}", string.Join("; ", newKeys), string.Join("; ", purgedKeys));
+            }
+        }
+
+        public override Task<bool> AddAsync(TicketCacheEntry entry)
+        {
+            var added = this.Add(entry);
+
+            return Task.FromResult(added);
+        }
+
+        public override bool Add(TicketCacheEntry entry)
+        {
+            var cacheEntry = new CacheEntry(entry.Computed, entry.Value, this.Logger);
 
             if (entry.Expires > DateTimeOffset.UtcNow)
             {
@@ -99,74 +69,89 @@ namespace Kerberos.NET
 
             bool added = false;
 
-            if (BlockUpdates)
+            if (this.BlockUpdates)
             {
-                var got = await GetInternal(cacheEntry.Key);
+                var got = this.GetInternal(cacheEntry.Key);
 
                 if (got == null)
                 {
-                    added = cache.TryAdd(cacheEntry.Key, cacheEntry);
+                    added = this.cache.TryAdd(cacheEntry.Key, cacheEntry);
                 }
             }
             else
             {
-                cache.AddOrUpdate(cacheEntry.Key, cacheEntry, (_, __) => cacheEntry);
+                this.cache.AddOrUpdate(cacheEntry.Key, cacheEntry, (_, __) => cacheEntry);
                 added = true;
             }
 
             return added;
         }
 
-        public Task<bool> Contains(TicketCacheEntry entry)
+        public override Task<bool> ContainsAsync(TicketCacheEntry entry)
         {
-            var exists = cache.ContainsKey(entry.Computed);
+            var exists = this.cache.ContainsKey(entry.Computed);
 
             return Task.FromResult(exists);
         }
 
-        public Task<object> Get(string key, string container = null)
+        public override bool Contains(TicketCacheEntry entry)
+        {
+            return this.cache.ContainsKey(entry.Computed);
+        }
+
+        public override Task<object> GetCacheItemAsync(string key, string container = null)
+        {
+            return Task.FromResult(this.GetCacheItem(key, container));
+        }
+
+        public override object GetCacheItem(string key, string container = null)
         {
             var entryKey = TicketCacheEntry.GenerateKey(key: key, container: container);
 
-            return GetInternal(entryKey);
+            return this.GetInternal(entryKey);
         }
 
-        private Task<object> GetInternal(string entryKey)
+        public override T GetCacheItem<T>(string key, string container = null)
         {
-            if (cache.TryGetValue(entryKey, out CacheEntry entry))
+            var result = this.GetCacheItem(key, container);
+
+            if (result is T value)
+            {
+                return value;
+            }
+
+            return default;
+        }
+
+        private object GetInternal(string entryKey)
+        {
+            if (this.cache.TryGetValue(entryKey, out CacheEntry entry))
             {
                 if (entry.IsExpired())
                 {
-                    Evict(entryKey);
+                    this.Evict(entryKey);
                 }
                 else
                 {
-                    return Task.FromResult(entry.Value);
+                    return entry.Value;
                 }
             }
 
-            return Task.FromResult<object>(null);
+            return null;
         }
 
         private void Evict(string entryKey)
         {
-            var removed = cache.TryRemove(entryKey, out _);
+            var removed = this.cache.TryRemove(entryKey, out _);
 
-            logger.LogDebug($"Removal triggered for {entryKey}. Succeeded: {removed}");
+            this.Logger.LogDebug($"Removal triggered for {entryKey}. Succeeded: {removed}");
         }
 
-        public async Task<T> Get<T>(string key, string container = null)
+        public override async Task<T> GetCacheItemAsync<T>(string key, string container = null)
         {
-            var result = await Get(key, container);
+            var result = await this.GetCacheItemAsync(key, container).ConfigureAwait(true);
 
             return result != null ? (T)result : default;
-        }
-
-        public void Dispose()
-        {
-            cts.Cancel();
-            cts.Dispose();
-            backgroundRunner.ContinueWith(t => t.Dispose());
         }
 
         [DebuggerDisplay("{Key}; E: {Expiration}; R: {RenewUntil};")]
@@ -193,19 +178,19 @@ namespace Kerberos.NET
 
             public DateTimeOffset? RenewUntil { get; private set; }
 
-            public TimeSpan TimeToLive => (Expiration ?? DateTimeOffset.MaxValue) - DateTimeOffset.UtcNow;
+            public TimeSpan TimeToLive => (this.Expiration ?? DateTimeOffset.MaxValue) - DateTimeOffset.UtcNow;
 
             public void MarkLifetime(DateTimeOffset expiration, DateTimeOffset? renewUntil)
             {
-                logger.LogTrace("Caching ticket until {Expiration} for {Key} with renewal option until {RenewUntil}", expiration, Key, renewUntil);
+                this.logger.LogTrace("Caching ticket until {Expiration} for {Key} with renewal option until {RenewUntil}", expiration, this.Key, renewUntil);
 
-                Expiration = expiration;
-                RenewUntil = renewUntil;
+                this.Expiration = expiration;
+                this.RenewUntil = renewUntil;
             }
 
             public bool IsExpired()
             {
-                return TimeToLive <= TimeSpan.Zero;
+                return this.TimeToLive <= TimeSpan.Zero;
             }
         }
     }

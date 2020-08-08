@@ -9,5 +9,7 @@ namespace Kerberos.NET.Client
         public KrbKdcRep KdcResponse;
 
         public int Nonce { get; set; }
+
+        public KrbPrincipalName SName { get; set; }
     }
 }
