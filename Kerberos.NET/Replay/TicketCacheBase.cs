@@ -31,13 +31,7 @@ namespace Kerberos.NET
 
         private async Task RunBackground()
         {
-            while (true)
-            {
-                if (this.Cancellation.Token.IsCancellationRequested)
-                {
-                    break;
-                }
-
+            while (!this.Cancellation.IsCancellationRequested)
                 try
                 {
                     await this.BackgroundCacheOperation().ConfigureAwait(true);
