@@ -432,7 +432,7 @@ namespace Tests.Kerberos.NET
 
                     await server.Authenticate(kerbClientCred);
 
-                    var serverEntry = await server.Cache.Get<KerberosClientCacheEntry>($"krbtgt/{server.DefaultDomain}");
+                    var serverEntry = server.Cache.GetCacheItem<KerberosClientCacheEntry>($"krbtgt/{server.DefaultDomain}");
 
                     var serverTgt = serverEntry.KdcResponse.Ticket;
 

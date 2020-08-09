@@ -22,12 +22,12 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void ServiceTicketsNotCached()
+        public void ServiceTicketsCached()
         {
             using (var client = new KerberosClient())
             {
                 Assert.IsNotNull(client.Cache);
-                Assert.IsFalse(client.CacheServiceTickets);
+                Assert.IsTrue(client.CacheServiceTickets);
             }
         }
 

@@ -122,9 +122,19 @@ namespace Kerberos.NET.Ndr
             BinaryPrimitives.WriteInt16LittleEndian(MoveWriteHeadByPrimitiveTypeSize<short>(), value);
         }
 
+        public void WriteInt16BigEndian(short value)
+        {
+            BinaryPrimitives.WriteInt16BigEndian(MoveWriteHeadByPrimitiveTypeSize<short>(), value);
+        }
+
         public void WriteInt32LittleEndian(int value)
         {
             BinaryPrimitives.WriteInt32LittleEndian(MoveWriteHeadByPrimitiveTypeSize<int>(), value);
+        }
+
+        public void WriteInt32BigEndian(int value)
+        {
+            BinaryPrimitives.WriteInt32BigEndian(MoveWriteHeadByPrimitiveTypeSize<int>(), value);
         }
 
         public void WriteUInt32LittleEndian(uint value)

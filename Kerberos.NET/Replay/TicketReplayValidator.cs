@@ -14,12 +14,12 @@ namespace Kerberos.NET
 
         public async Task<bool> Add(TicketCacheEntry entry)
         {
-            return await cache.Add(entry);
+            return await cache.AddAsync(entry);
         }
 
         public async Task<bool> Contains(TicketCacheEntry entry)
         {
-            var got = await cache.Get(entry.Key);
+            var got = await cache.GetCacheItemAsync(entry.Key);
 
             return got != null;
         }
