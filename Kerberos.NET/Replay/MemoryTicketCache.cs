@@ -9,9 +9,6 @@ namespace Kerberos.NET
 {
     internal sealed class MemoryTicketCache : TicketCacheBase
     {
-        private static readonly ValueTask<bool> TrueTask = new ValueTask<bool>(true);
-        private static readonly ValueTask<bool> FalseTask = new ValueTask<bool>(false);
-
         private readonly ConcurrentDictionary<string, CacheEntry> cache
             = new ConcurrentDictionary<string, CacheEntry>();
 
@@ -58,10 +55,10 @@ namespace Kerberos.NET
         {
             if (this.Add(entry))
             {
-                return TrueTask;
+                return new ValueTask<bool>(true);
             }
 
-            return FalseTask;
+            return new ValueTask<bool>(false);
         }
 
         public override bool Add(TicketCacheEntry entry)
@@ -97,7 +94,7 @@ namespace Kerberos.NET
         {
             var exists = this.cache.ContainsKey(entry.Computed);
 
-            return exists ? TrueTask : FalseTask;
+            return new ValueTask<bool>(exists);
         }
 
         public override bool Contains(TicketCacheEntry entry)
