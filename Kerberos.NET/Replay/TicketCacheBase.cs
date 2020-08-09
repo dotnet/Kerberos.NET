@@ -64,19 +64,19 @@ namespace Kerberos.NET
             this.backgroundRunner.ContinueWith(t => t.Dispose(), TaskScheduler.Default);
         }
 
-        public abstract Task<bool> AddAsync(TicketCacheEntry entry);
+        public abstract ValueTask<bool> AddAsync(TicketCacheEntry entry);
 
         public abstract bool Add(TicketCacheEntry entry);
 
-        public abstract Task<bool> ContainsAsync(TicketCacheEntry entry);
+        public abstract ValueTask<bool> ContainsAsync(TicketCacheEntry entry);
 
         public abstract bool Contains(TicketCacheEntry entry);
 
-        public abstract Task<object> GetCacheItemAsync(string key, string container = null);
+        public abstract ValueTask<object> GetCacheItemAsync(string key, string container = null);
 
         public abstract object GetCacheItem(string key, string container = null);
 
-        public abstract Task<T> GetCacheItemAsync<T>(string key, string container = null);
+        public abstract ValueTask<T> GetCacheItemAsync<T>(string key, string container = null);
 
         public abstract T GetCacheItem<T>(string key, string container = null);
     }

@@ -134,24 +134,24 @@ namespace Kerberos.NET.Client
             return this.cache.Contains(entry);
         }
 
-        public override Task<bool> AddAsync(TicketCacheEntry entry)
+        public override ValueTask<bool> AddAsync(TicketCacheEntry entry)
         {
-            return Task.FromResult(this.Add(entry));
+            return new ValueTask<bool>(this.Add(entry));
         }
 
-        public override Task<bool> ContainsAsync(TicketCacheEntry entry)
+        public override ValueTask<bool> ContainsAsync(TicketCacheEntry entry)
         {
-            return Task.FromResult(this.Contains(entry));
+            return new ValueTask<bool>(this.Contains(entry));
         }
 
-        public override Task<object> GetCacheItemAsync(string key, string container = null)
+        public override ValueTask<object> GetCacheItemAsync(string key, string container = null)
         {
-            return Task.FromResult(this.GetCacheItem(key, container));
+            return new ValueTask<object>(this.GetCacheItem(key, container));
         }
 
-        public override Task<T> GetCacheItemAsync<T>(string key, string container = null)
+        public override ValueTask<T> GetCacheItemAsync<T>(string key, string container = null)
         {
-            return Task.FromResult(this.GetCacheItem<T>(key, container));
+            return new ValueTask<T>(this.GetCacheItem<T>(key, container));
         }
     }
 }

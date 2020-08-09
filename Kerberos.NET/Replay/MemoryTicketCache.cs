@@ -9,13 +9,16 @@ namespace Kerberos.NET
 {
     internal sealed class MemoryTicketCache : TicketCacheBase
     {
+        private static readonly ValueTask<bool> TrueTask = new ValueTask<bool>(true);
+        private static readonly ValueTask<bool> FalseTask = new ValueTask<bool>(false);
+
+        private readonly ConcurrentDictionary<string, CacheEntry> cache
+            = new ConcurrentDictionary<string, CacheEntry>();
+
         public MemoryTicketCache(ILoggerFactory logger)
             : base(logger)
         {
         }
-
-        private readonly ConcurrentDictionary<string, CacheEntry> cache
-            = new ConcurrentDictionary<string, CacheEntry>();
 
         public bool BlockUpdates { get; set; }
 
@@ -36,7 +39,7 @@ namespace Kerberos.NET
                 }
                 else if (this.RefreshTickets)
                 {
-                    await(this.Refresh?.Invoke(entry)).ConfigureAwait(true);
+                    await (this.Refresh?.Invoke(entry)).ConfigureAwait(true);
                 }
             }
 
@@ -51,11 +54,14 @@ namespace Kerberos.NET
             }
         }
 
-        public override Task<bool> AddAsync(TicketCacheEntry entry)
+        public override ValueTask<bool> AddAsync(TicketCacheEntry entry)
         {
-            var added = this.Add(entry);
+            if (this.Add(entry))
+            {
+                return TrueTask;
+            }
 
-            return Task.FromResult(added);
+            return FalseTask;
         }
 
         public override bool Add(TicketCacheEntry entry)
@@ -87,11 +93,11 @@ namespace Kerberos.NET
             return added;
         }
 
-        public override Task<bool> ContainsAsync(TicketCacheEntry entry)
+        public override ValueTask<bool> ContainsAsync(TicketCacheEntry entry)
         {
             var exists = this.cache.ContainsKey(entry.Computed);
 
-            return Task.FromResult(exists);
+            return exists ? TrueTask : FalseTask;
         }
 
         public override bool Contains(TicketCacheEntry entry)
@@ -99,9 +105,9 @@ namespace Kerberos.NET
             return this.cache.ContainsKey(entry.Computed);
         }
 
-        public override Task<object> GetCacheItemAsync(string key, string container = null)
+        public override ValueTask<object> GetCacheItemAsync(string key, string container = null)
         {
-            return Task.FromResult(this.GetCacheItem(key, container));
+            return new ValueTask<object>(this.GetCacheItem(key, container));
         }
 
         public override object GetCacheItem(string key, string container = null)
@@ -147,7 +153,7 @@ namespace Kerberos.NET
             this.Logger.LogDebug($"Removal triggered for {entryKey}. Succeeded: {removed}");
         }
 
-        public override async Task<T> GetCacheItemAsync<T>(string key, string container = null)
+        public override async ValueTask<T> GetCacheItemAsync<T>(string key, string container = null)
         {
             var result = await this.GetCacheItemAsync(key, container).ConfigureAwait(true);
 

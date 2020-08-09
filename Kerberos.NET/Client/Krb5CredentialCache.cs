@@ -15,8 +15,6 @@ namespace Kerberos.NET.Client
         private const byte Magic = 5;
         private const byte ExpectedVersion = 4;
 
-        private static readonly DateTimeOffset UNIX_EPOCH_BASE = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
-
         /* The format of this file is described here: https://web.mit.edu/kerberos/krb5-devel/doc/formats/ccache_file_format.html
          * 
          * The first byte of the file always has the value 5, and the value of the second byte contains the version number (1 through 4).
@@ -109,14 +107,14 @@ namespace Kerberos.NET.Client
 
             var magic = buffer.Read(1)[0];
 
-            if (Magic != magic)
+            if (magic != Magic)
             {
                 throw new InvalidOperationException($"Unknown file format. Expected 0x{Magic}; Actual 0x{magic}.");
             }
 
             var version = buffer.Read(1)[0];
 
-            if (ExpectedVersion != version)
+            if (version != ExpectedVersion)
             {
                 throw new InvalidOperationException($"Unknown file format version. Expected 0x{ExpectedVersion}; Actual 0x{version}.");
             }
@@ -199,7 +197,7 @@ namespace Kerberos.NET.Client
         {
             Krb5Credential cred = FindCredential(key);
 
-            if (cred == null)
+            if (cred is null)
             {
                 return cred;
             }
@@ -432,9 +430,7 @@ namespace Kerberos.NET.Client
         {
             var time = buffer.ReadInt32BigEndian();
 
-            var ts = TimeSpan.FromSeconds(time);
-
-            return UNIX_EPOCH_BASE.Add(ts);
+            return DateTimeOffset.FromUnixTimeSeconds(time);
         }
 
         private static void WriteKeyBlock(KeyValuePair<EncryptionType, ReadOnlyMemory<byte>> kv, NdrBuffer buffer)
@@ -548,18 +544,7 @@ namespace Kerberos.NET.Client
 
         private static int GetEpoch(DateTimeOffset dt)
         {
-            TimeSpan ts;
-
-            if (dt == DateTimeOffset.MinValue)
-            {
-                ts = TimeSpan.Zero;
-            }
-            else
-            {
-                ts = dt.Subtract(UNIX_EPOCH_BASE);
-            }
-
-            return (int)ts.TotalSeconds;
+            return dt == DateTimeOffset.MinValue ? 0 : (int)dt.ToUnixTimeSeconds();
         }
 
         [DebuggerDisplay("{Client} {Server}")]
