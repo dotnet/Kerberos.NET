@@ -14,6 +14,10 @@ A library built in .NET that lets you operate on Kerberos messages. You can run 
 
 A [deep dive into the design of Kerberos.NET](https://syfuhs.net/a-deep-dive-into-the-design-kerberos-net) is available and worth a read.
 
+# Fiddler Extension
+
+You can find the Fiddler extension installer under [releases](https://github.com/dotnet/Kerberos.NET/releases) on the right hand side of this page. For more information go read [a write up on how to install and use it](https://syfuhs.net/a-fiddler-extension-for-kerberos-messages).
+
 # Cross Platform Support
 
 The library will work on all [supported .NET Standard 2.0 platforms with some caveats](https://syfuhs.net/cross-platform-support-for-kerberos).
