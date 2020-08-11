@@ -1,120 +1,86 @@
 ﻿using System;
-using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace Kerberos.NET.Crypto
+namespace Kerberos.NET.Crypto.Pal.Windows
 {
-    internal unsafe abstract class Win32CspHash : IHashAlgorithm
+    internal abstract class Win32CspHash : IHashAlgorithm
     {
-        protected Win32CspHash(string algorithm, int calg, int hashSize)
-        {
-            Algorithm = algorithm;
-            CAlg = calg;
-            HashSize = hashSize;
-
-            if (!CryptAcquireContext(ref hProvider, Algorithm, null, PROV_RSA_AES, 0))
-            {
-                if (!CryptAcquireContext(ref hProvider, Algorithm, null, PROV_RSA_AES, CRYPT_NEWKEYSET))
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error());
-                }
-            }
-
-            if (!CryptCreateHash(hProvider, CAlg, IntPtr.Zero, 0, ref hHash))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-        }
-
-        private const string ADVAPI32 = "advapi32.dll";
-        private const int PROV_RSA_AES = 24;
-        private const int CRYPT_NEWKEYSET = 0x00000008;
-
-        private const int HP_HASHVAL = 0x0002;
-
-        [DllImport(ADVAPI32, CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern bool CryptAcquireContext(
-            ref IntPtr hProv,
-            string pszContainer,
-            string pszProvider,
-            int dwProvType,
-            int dwFlags
-        );
-
-        [DllImport(ADVAPI32, CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool CryptCreateHash(
-            IntPtr hProv,
-            int algId,
-            IntPtr hKey,
-            int dwFlags,
-            ref IntPtr phHash
-        );
-
-        [DllImport(ADVAPI32, SetLastError = true)]
-        private static extern bool CryptHashData(
-            IntPtr hHash,
-            byte* pbData,
-            int dataLen,
-            int flags
-        );
-
-        [DllImport(ADVAPI32, CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool CryptGetHashParam(
-            IntPtr hHash,
-            int dwParam,
-            [Out] byte[] pbData,
-            ref int pdwDataLen,
-            int dwFlags
-        );
-
-        [DllImport(ADVAPI32)]
-        private static extern bool CryptReleaseContext(IntPtr hProv, int dwFlags);
-
-        [DllImport(ADVAPI32, SetLastError = true)]
-        private static extern bool CryptDestroyHash(IntPtr hHash);
-
-        private readonly IntPtr hProvider;
-        private readonly IntPtr hHash;
+        // According to https://docs.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptopenalgorithmprovider#remarks
+        // _hAlgorithm should be cached and reused, as its creation is costly.
+        private readonly IntPtr _hAlgorithm;
+        private readonly IntPtr _hHash;
 
         public string Algorithm { get; }
-
-        public int CAlg { get; }
-
         public int HashSize { get; }
 
-        public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
+        protected Win32CspHash(string algorithm, int hashSize, ReadOnlySpan<byte> secret = default)
         {
-            fixed (byte* pData = data)
-            {
-                if (!CryptHashData(hHash, pData, data.Length, 0))
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error());
-                }
-            }
+            Debug.Assert(algorithm != null);
+            Debug.Assert(hashSize >= 0);
 
-            var hashSize = HashSize;
+            Algorithm = algorithm;
+            HashSize = hashSize;
 
-            byte[] hashValue = new byte[hashSize];
+            _hAlgorithm = BCryptAlgorithmProviderCache.GetCachedBCrypptAlgorithmProvider(algorithm);
 
-            if (!CryptGetHashParam(hHash, HP_HASHVAL, hashValue, ref hashSize, 0))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-
-            return new ReadOnlyMemory<byte>(hashValue);
+            ref byte rSecret = ref MemoryMarshal.GetReference(secret);
+            Interop.BCryptCreateHash(_hAlgorithm, out _hHash, IntPtr.Zero, 0, ref rSecret, secret.Length, Interop.BCryptCreateHashFlags.BCRYPT_HASH_REUSABLE_FLAG).CheckSuccess();
         }
+
+        public ReadOnlyMemory<byte> ComputeHash(byte[] data) => ComputeHash(data.AsSpan());
+        public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> data) => ComputeHash(data.Span);
+
+        public void ComputeHash(ReadOnlySpan<byte> data, Span<byte> hash)
+        {
+            ref byte rData = ref MemoryMarshal.GetReference(data);
+            ref byte rHash = ref MemoryMarshal.GetReference(hash);
+
+            // TODO: https://docs.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptcreatehash
+            // pbHashObject: memory managment in the function added by windows 7 -- do we need to bother with
+            // older version? 
+            Interop.BCryptHashData(_hHash, ref rData, data.Length).CheckSuccess();
+            Interop.BCryptFinishHash(_hHash, ref rHash, hash.Length).CheckSuccess();
+        }
+
+        private ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
+        {
+            var hash = new byte[HashSize];
+
+            ComputeHash(data, hash);
+
+            return hash;
+        }
+
+        private bool _isDisposed;
 
         public void Dispose()
         {
-            if (hHash != IntPtr.Zero)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_isDisposed)
             {
-                CryptDestroyHash(hHash);
+                return;
             }
 
-            if (hProvider != IntPtr.Zero)
+            _isDisposed = true;
+
+            // Note: don't dispose, as _hAlgorithm comes from a cache (see comment at the field declaration)
+            //if (_hAlgorithm != IntPtr.Zero)
+            //{
+            //    Interop.BCryptCloseAlgorithmProvider(_hAlgorithm);
+            //}
+
+            if (_hHash != IntPtr.Zero)
             {
-                CryptReleaseContext(hProvider, 0);
+                Interop.BCryptDestroyHash(_hHash);
             }
         }
+
+        ~Win32CspHash() => Dispose(false);
     }
 }

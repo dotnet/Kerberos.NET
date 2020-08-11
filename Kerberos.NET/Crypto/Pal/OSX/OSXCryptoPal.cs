@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-
-namespace Kerberos.NET.Crypto
+﻿namespace Kerberos.NET.Crypto.Pal
 {
     internal class OSXCryptoPal : LinuxCryptoPal
     {

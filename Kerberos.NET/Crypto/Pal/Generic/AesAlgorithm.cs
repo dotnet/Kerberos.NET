@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
-using static Kerberos.NET.BinaryExtensions;
 
 namespace Kerberos.NET.Crypto
 {
@@ -25,9 +24,9 @@ namespace Kerberos.NET.Crypto
            bool encrypt
        )
         {
-            var keyArray = TryGetArrayFast(key);
-            var ivArray = TryGetArrayFast(iv);
-            var dataArray = TryGetArrayFast(data);
+            byte[] keyArray = key.TryGetArrayFast();
+            byte[] ivArray = iv.TryGetArrayFast();
+            byte[] dataArray = data.TryGetArrayFast();
 
             ICryptoTransform transform;
 

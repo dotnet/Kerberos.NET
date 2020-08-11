@@ -1,4 +1,5 @@
 ﻿using System;
+using Kerberos.NET.Crypto.Pal;
 
 namespace Kerberos.NET.Crypto
 {

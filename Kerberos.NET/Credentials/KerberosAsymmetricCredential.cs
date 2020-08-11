@@ -213,7 +213,7 @@ namespace Kerberos.NET.Credentials
             {
                 var encoded = body.Encode();
 
-                var paChecksum = sha1.ComputeHash(encoded.Span);
+                var paChecksum = sha1.ComputeHash(encoded);
 
                 var parametersAreCached = CacheKeyAgreementParameters(agreement);
 

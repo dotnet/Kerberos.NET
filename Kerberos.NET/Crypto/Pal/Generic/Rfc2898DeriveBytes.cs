@@ -1,5 +1,4 @@
 ﻿using System;
-using static Kerberos.NET.BinaryExtensions;
 using Rfc2898DeriveBytesAlgorithm = System.Security.Cryptography.Rfc2898DeriveBytes;
 
 namespace Kerberos.NET.Crypto
@@ -13,8 +12,8 @@ namespace Kerberos.NET.Crypto
             int keySize
         )
         {
-            var passwordArray = TryGetArrayFast(passwordBytes);
-            var saltArray = TryGetArrayFast(salt);
+            byte[] passwordArray = passwordBytes.TryGetArrayFast();
+            byte[] saltArray = salt.TryGetArrayFast();
 
             using (var derive = new Rfc2898DeriveBytesAlgorithm(
                 passwordArray,

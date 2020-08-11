@@ -1,7 +1,7 @@
-﻿using Kerberos.NET.Crypto;
+﻿using System;
+using System.Security.Cryptography;
+using Kerberos.NET.Crypto;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Runtime.InteropServices;
 
 namespace Tests.Kerberos.NET
 {
@@ -112,6 +112,77 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(dh2);
 
             Assert.IsTrue(pk.Private.Span.SequenceEqual(dh2.PrivateKey.Private.Span));
+        }
+
+#if WEAKCRYPTO
+        [TestMethod]
+        public void CrosstestMd5()
+        {
+            var rnd = new Random(42);
+
+            using var algorithm = CryptoPal.Platform.Md5();
+            using var algorithmNet = MD5.Create();
+
+            for (int i = 1; i <= 100; ++i)
+            {
+                var data = new byte[i];
+                rnd.NextBytes(data);
+
+                ReadOnlyMemory<byte> hash0 = null;
+                ReadOnlyMemory<byte> hash1 = null;
+
+                hash0 = algorithm.ComputeHash(data);
+                hash1 = algorithmNet.ComputeHash(data);
+
+                Assert.IsTrue(hash0.Span.SequenceEqual(hash1.Span));
+            }
+        }
+#endif
+
+        [TestMethod]
+        public void CrosstestSha1()
+        {
+            var rnd = new Random(42);
+
+            using var algorithm = CryptoPal.Platform.Sha1();
+            using var algorithmNet = SHA1.Create();
+
+            for (int i = 1; i <= 100; ++i)
+            {
+                var data = new byte[i];
+                rnd.NextBytes(data);
+
+                ReadOnlyMemory<byte> hash0 = null;
+                ReadOnlyMemory<byte> hash1 = null;
+
+                hash0 = algorithm.ComputeHash(data);
+                hash1 = algorithmNet.ComputeHash(data);
+
+                Assert.IsTrue(hash0.Span.SequenceEqual(hash1.Span));
+            }
+        }
+
+        [TestMethod]
+        public void CrosstestSha256()
+        {
+            var rnd = new Random(42);
+
+            using var algorithm = CryptoPal.Platform.Sha256();
+            using var algorithmNet = SHA256.Create();
+
+            for (int i = 1; i <= 100; ++i)
+            {
+                var data = new byte[i];
+                rnd.NextBytes(data);
+
+                ReadOnlyMemory<byte> hash0 = null;
+                ReadOnlyMemory<byte> hash1 = null;
+
+                hash0 = algorithm.ComputeHash(data);
+                hash1 = algorithmNet.ComputeHash(data);
+
+                Assert.IsTrue(hash0.Span.SequenceEqual(hash1.Span));
+            }
         }
     }
 }
