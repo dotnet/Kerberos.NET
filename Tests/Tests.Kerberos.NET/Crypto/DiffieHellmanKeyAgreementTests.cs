@@ -53,7 +53,7 @@ namespace Tests.Kerberos.NET
             using (var alice = new BCryptDiffieHellmanOakleyGroup14())
             using (var bob = new BCryptDiffieHellmanOakleyGroup14())
             {
-                Assert.IsFalse(bob.PublicKey.Public.Span.SequenceEqual(alice.PublicKey.Public.Span));
+                Assert.IsFalse(bob.PublicKey.PublicComponent.Span.SequenceEqual(alice.PublicKey.PublicComponent.Span));
 
                 alice.ImportPartnerKey(GetRightPublicKey(alice.PublicKey, bob.PublicKey));
                 bob.ImportPartnerKey(GetRightPublicKey(bob.PublicKey, alice.PublicKey));
@@ -88,7 +88,7 @@ namespace Tests.Kerberos.NET
             using (var alice = new BCryptDiffieHellmanOakleyGroup2())
             using (var bob = new BCryptDiffieHellmanOakleyGroup2())
             {
-                Assert.IsFalse(bob.PublicKey.Public.Span.SequenceEqual(alice.PublicKey.Public.Span));
+                Assert.IsFalse(bob.PublicKey.PublicComponent.Span.SequenceEqual(alice.PublicKey.PublicComponent.Span));
 
                 alice.ImportPartnerKey(GetRightPublicKey(alice.PublicKey, bob.PublicKey));
                 bob.ImportPartnerKey(GetRightPublicKey(bob.PublicKey, alice.PublicKey));
@@ -102,14 +102,14 @@ namespace Tests.Kerberos.NET
             var left = a as DiffieHellmanKey;
             var right = b as DiffieHellmanKey;
 
-            var pub = right.Public.ToArray();
+            var pub = right.PublicComponent.ToArray();
 
             var key = new DiffieHellmanKey
             {
                 KeyLength = left.Modulus.Length,
                 Modulus = left.Modulus.ToArray(),
                 Generator = left.Generator.ToArray(),
-                Public = pub
+                PublicComponent = pub
             };
 
             return key;
@@ -124,7 +124,7 @@ namespace Tests.Kerberos.NET
 
                 var eveMod = new BigInteger(evePubKey.Modulus.Span.ToArray());
                 var eveGen = new BigInteger(evePubKey.Generator.Span.ToArray());
-                var evePub = new BigInteger(evePubKey.Public.Span.ToArray());
+                var evePub = new BigInteger(evePubKey.PublicComponent.Span.ToArray());
 
                 for (var i = 0; i < 100; i++)
                 {
@@ -142,8 +142,8 @@ namespace Tests.Kerberos.NET
                         var aliceMod = new BigInteger(alicePubKey.Modulus.Span.ToArray());
                         var bobMod = new BigInteger(bobPubKey.Modulus.Span.ToArray());
 
-                        var alicePub = new BigInteger(alice.PublicKey.Public.Span.ToArray());
-                        var bobPub = new BigInteger(bob.PublicKey.Public.Span.ToArray());
+                        var alicePub = new BigInteger(alice.PublicKey.PublicComponent.Span.ToArray());
+                        var bobPub = new BigInteger(bob.PublicKey.PublicComponent.Span.ToArray());
 
                         Assert.AreEqual(aliceMod, bobMod);
                         Assert.AreNotEqual(alicePub, bobPub);
@@ -302,9 +302,9 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(alice.Modulus.Span.SequenceEqual(bob.Modulus.Span));
             Assert.IsTrue(alice.Generator.Span.SequenceEqual(bob.Generator.Span));
             Assert.IsTrue(alice.Factor.Span.SequenceEqual(bob.Factor.Span));
-            Assert.IsTrue(alice.Public.Span.SequenceEqual(bob.Public.Span));
+            Assert.IsTrue(alice.PublicComponent.Span.SequenceEqual(bob.PublicComponent.Span));
 
-            Assert.IsTrue(alice.Private.Span.SequenceEqual(bob.Private.Span));
+            Assert.IsTrue(alice.PrivateComponent.Span.SequenceEqual(bob.PrivateComponent.Span));
         }
 
         private ReadOnlyMemory<byte> Pad(ReadOnlyMemory<byte> data, int length)

@@ -80,12 +80,12 @@ namespace Tests.Kerberos.NET
             this.realm = realm;
         }
 
-        public Task<IKerberosPrincipal> FindAsync(KrbPrincipalName principalName)
+        public Task<IKerberosPrincipal> FindAsync(KrbPrincipalName principalName, string realm = null)
         {
             return Task.FromResult(Find(principalName));
         }
 
-        public IKerberosPrincipal Find(KrbPrincipalName principalName)
+        public IKerberosPrincipal Find(KrbPrincipalName principalName, string realm = null)
         {
             IKerberosPrincipal principal = null;
 

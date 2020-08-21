@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -14,6 +14,7 @@ namespace Kerberos.NET.Client
 
         PreAuthenticate = 1L << 63,
         IncludePacRequest = 1L << 62,
+        RepPartCompatible = (long)1 << 61,
 
         Forwardable = 1 << 30,
         Forwarded = 1 << 29,

@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -126,9 +126,19 @@ namespace Kerberos.NET.Ndr
             BinaryPrimitives.WriteInt16LittleEndian(this.MoveWriteHeadByPrimitiveTypeSize<short>(), value);
         }
 
+        public void WriteInt16BigEndian(short value)
+        {
+            BinaryPrimitives.WriteInt16BigEndian(MoveWriteHeadByPrimitiveTypeSize<short>(), value);
+        }
+
         public void WriteInt32LittleEndian(int value)
         {
             BinaryPrimitives.WriteInt32LittleEndian(this.MoveWriteHeadByPrimitiveTypeSize<int>(), value);
+        }
+
+        public void WriteInt32BigEndian(int value)
+        {
+            BinaryPrimitives.WriteInt32BigEndian(MoveWriteHeadByPrimitiveTypeSize<int>(), value);
         }
 
         public void WriteUInt32LittleEndian(uint value)

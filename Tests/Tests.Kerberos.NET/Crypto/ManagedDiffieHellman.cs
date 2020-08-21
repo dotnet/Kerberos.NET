@@ -62,7 +62,7 @@ namespace Kerberos.NET.Crypto
                 Type = AsymmetricKeyType.Public,
                 Generator = Depad(this.generator.ToByteArray(), true),
                 Modulus = Depad(this.prime.ToByteArray(), true),
-                Public = Depad(y.ToByteArray(), true),
+                PublicComponent = Depad(y.ToByteArray(), true),
                 Factor = Depad(this.factor.ToByteArray(), true),
                 KeyLength = prime.Length
             };
@@ -72,9 +72,9 @@ namespace Kerberos.NET.Crypto
                 Type = AsymmetricKeyType.Private,
                 Generator = Depad(this.generator.ToByteArray(), true),
                 Modulus = Depad(this.prime.ToByteArray(), true),
-                Public = Depad(y.ToByteArray(), true),
+                PublicComponent = Depad(y.ToByteArray(), true),
                 Factor = Depad(this.factor.ToByteArray(), true),
-                Private = Depad(x.ToByteArray(), true),
+                PrivateComponent = Depad(x.ToByteArray(), true),
                 KeyLength = prime.Length
             };
         }
@@ -138,7 +138,7 @@ namespace Kerberos.NET.Crypto
 
         public void ImportPartnerKey(IExchangeKey publicKey)
         {
-            this.partnerKey = ParseBigInteger(publicKey.Public, true);
+            this.partnerKey = ParseBigInteger(publicKey.PublicComponent, true);
         }
 
         private byte[] Depad(byte[] data, bool reverse = false)

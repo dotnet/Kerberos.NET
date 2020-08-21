@@ -1,4 +1,8 @@
-﻿using Kerberos.NET.Server;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -6,9 +10,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using Kerberos.NET.Server;
 
 namespace Kerberos.NET.Entities
 {
+    /// <summary>
+    /// Represents a krb-principal-name entity.
+    /// </summary>
     [DebuggerDisplay("{Type} {FullyQualifiedName}")]
     public partial class KrbPrincipalName
     {
@@ -74,17 +82,17 @@ namespace Kerberos.NET.Entities
 
         internal PrincipalName ToKeyPrincipal()
         {
-            string realm = "";
+            string realm = string.Empty;
 
-            if (Name.Length > 2)
+            if (this.Name.Length > 2)
             {
-                realm = Name[2];
+                realm = this.Name[2];
             }
 
-            return new PrincipalName(Type, realm, Name.Take(2));
+            return new PrincipalName(this.Type, realm, this.Name.Take(2));
         }
 
-        public string FullyQualifiedName => MakeFullName(Name, Type);
+        public string FullyQualifiedName => MakeFullName(this.Name, this.Type);
 
         private static string MakeFullName(IEnumerable<string> names, PrincipalNameType type, bool normalizeAlias = false)
         {
@@ -94,7 +102,7 @@ namespace Kerberos.NET.Entities
             {
                 if (!enumerator.MoveNext())
                 {
-                    return "";
+                    return string.Empty;
                 }
 
                 var sb = new StringBuilder();
@@ -139,7 +147,8 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        private static readonly string[] NameTypeSeperator = new[] {
+        private static readonly string[] NameTypeSeperator = new[]
+        {
             "@", // NT_UNKNOWN = 0,
             "@", // NT_PRINCIPAL = 1,
             "/", // NT_SRV_INST = 2,
@@ -204,6 +213,11 @@ namespace Kerberos.NET.Entities
             string realm = null
         )
         {
+            if (string.IsNullOrWhiteSpace(principal))
+            {
+                return new KrbPrincipalName() { Name = Array.Empty<string>() };
+            }
+
             var actualType = type ?? TryDetectType(principal);
 
             var splitOn = NameTypeSeperator[(int)actualType][0];
@@ -252,7 +266,7 @@ namespace Kerberos.NET.Entities
             {
                 var last = nameSplit.Last();
 
-                if (!last.StartsWith("DC="))
+                if (!last.StartsWith("DC=", StringComparison.InvariantCultureIgnoreCase))
                 {
                     var realmSplit = realm.Split('.');
 
@@ -331,17 +345,18 @@ namespace Kerberos.NET.Entities
             string realm = null
         )
         {
-            return FromString(principal.PrincipalName, type, realm);
+            return FromString(principal?.PrincipalName, type, realm);
         }
 
         public bool IsKrbtgt()
         {
-            return string.Equals(Name[0], KrbtgtService, StringComparison.InvariantCultureIgnoreCase);
+            return string.Equals(this.Name[0], KrbtgtService, StringComparison.InvariantCultureIgnoreCase);
         }
 
         public static class WellKnown
         {
-            public static KrbPrincipalName Krbtgt() => FromString(KrbtgtService);
+            public static KrbPrincipalName Krbtgt(string realm = null) =>
+                FromString(KrbtgtService, PrincipalNameType.NT_SRV_INST, realm);
         }
     }
 }

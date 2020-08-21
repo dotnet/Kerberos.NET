@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -60,9 +60,19 @@ namespace Kerberos.NET.Ndr
             return BinaryPrimitives.ReadInt16LittleEndian(this.MoveByPrimitiveTypeSize<short>());
         }
 
+        public short ReadInt16BigEndian()
+        {
+            return BinaryPrimitives.ReadInt16BigEndian(MoveByPrimitiveTypeSize<short>());
+        }
+
         public int ReadInt32LittleEndian()
         {
             return BinaryPrimitives.ReadInt32LittleEndian(this.MoveByPrimitiveTypeSize<int>());
+        }
+
+        public int ReadInt32BigEndian()
+        {
+            return BinaryPrimitives.ReadInt32BigEndian(MoveByPrimitiveTypeSize<int>());
         }
 
         public uint ReadUInt32LittleEndian()

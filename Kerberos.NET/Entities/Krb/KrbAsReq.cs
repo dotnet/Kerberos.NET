@@ -1,9 +1,14 @@
-﻿using Kerberos.NET.Client;
-using Kerberos.NET.Credentials;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Kerberos.NET.Client;
+using Kerberos.NET.Credentials;
 
 namespace Kerberos.NET.Entities
 {
@@ -11,18 +16,23 @@ namespace Kerberos.NET.Entities
     {
         public KrbAsReq()
         {
-            MessageType = MessageType.KRB_AS_REQ;
+            this.MessageType = MessageType.KRB_AS_REQ;
         }
 
-        public MessageType KerberosMessageType => MessageType;
+        public MessageType KerberosMessageType => this.MessageType;
 
-        public string Realm => Body.Realm;
+        public string Realm => this.Body.Realm;
 
         [KerberosIgnore]
-        public int KerberosProtocolVersionNumber => ProtocolVersionNumber;
+        public int KerberosProtocolVersionNumber => this.ProtocolVersionNumber;
 
         public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options)
         {
+            if (credential == null)
+            {
+                throw new ArgumentNullException(nameof(credential));
+            }
+
             var kdcOptions = (KdcOptions)(options & ~AuthenticationOptions.AllAuthentication);
 
             var hostAddress = Environment.MachineName;
@@ -45,8 +55,10 @@ namespace Kerberos.NET.Entities
             {
                 Body = new KrbKdcReqBody
                 {
-                    Addresses = new[] {
-                        new KrbHostAddress {
+                    Addresses = new[]
+                    {
+                        new KrbHostAddress
+                        {
                             AddressType = AddressType.NetBios,
                             Address = Encoding.ASCII.GetBytes(hostAddress.PadRight(16, ' '))
                         }

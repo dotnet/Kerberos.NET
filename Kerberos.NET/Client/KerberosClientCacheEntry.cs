@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -15,6 +15,8 @@ namespace Kerberos.NET.Client
         public KrbKdcRep KdcResponse { get; set; }
 
         public int Nonce { get; set; }
+
+        public KrbPrincipalName SName { get; set; }
 
         public override bool Equals(object obj)
         {
@@ -39,6 +41,11 @@ namespace Kerberos.NET.Client
             }
 
             if (other.Nonce != this.Nonce)
+            {
+                return false;
+            }
+
+            if (!other.SName.Matches(this.SName))
             {
                 return false;
             }

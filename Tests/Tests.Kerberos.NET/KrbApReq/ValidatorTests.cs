@@ -215,7 +215,7 @@ namespace Tests.Kerberos.NET
                 d => KrbEncTgsRepPart.DecodeApplication(d)
             );
 
-            var apReq = KrbApReq.CreateApReq(tgsRep, encKdcRepPart.Key.AsKey(), 0, out KrbAuthenticator authenticator);
+            var apReq = KrbApReq.CreateApReq(tgsRep, encKdcRepPart.Key.AsKey(), default, out KrbAuthenticator authenticator);
 
             var decrypted = new DecryptedKrbApReq(apReq);
 

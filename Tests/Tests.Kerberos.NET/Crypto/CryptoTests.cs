@@ -405,7 +405,7 @@ namespace Tests.Kerberos.NET
 
         private static async Task AssertDecode(byte[] data, byte[] key, EncryptionType etype)
         {
-            var validator = new IntrospectiveValidator(key) { ValidateAfterDecrypt = DefaultActions };
+            var validator = new IntrospectiveValidator(key, etype) { ValidateAfterDecrypt = DefaultActions };
 
             var authenticator = new KerberosAuthenticator(validator);
 
@@ -426,8 +426,8 @@ namespace Tests.Kerberos.NET
 
         private class IntrospectiveValidator : KerberosValidator
         {
-            public IntrospectiveValidator(byte[] key)
-                : base(key, ticketCache: null)
+            public IntrospectiveValidator(byte[] key, EncryptionType etype)
+                : base(new KerberosKey(key, etype: etype), ticketCache: null)
             {
             }
 

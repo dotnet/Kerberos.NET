@@ -231,9 +231,9 @@ namespace KerberosClientApp
                     Type = (AsymmetricKeyType)((long)dictionary["Type"]),
                     Modulus = Convert.FromBase64String(dictionary["Modulus"].ToString()),
                     Generator = Convert.FromBase64String(dictionary["Generator"].ToString()),
-                    Public = Convert.FromBase64String(dictionary["PublicKey"].ToString()),
+                    PublicComponent = Convert.FromBase64String(dictionary["PublicKey"].ToString()),
                     Factor = Convert.FromBase64String(dictionary["Factor"].ToString()),
-                    Private = Convert.FromBase64String(dictionary["PrivateKey"].ToString())
+                    PrivateComponent = Convert.FromBase64String(dictionary["PrivateKey"].ToString())
                 };
 
                 return key;
@@ -246,9 +246,9 @@ namespace KerberosClientApp
                     { "Type", key.Type },
                     { "Modulus", key.Modulus.ToArray() },
                     { "Generator", key.Generator.ToArray() },
-                    { "PublicKey", key.Public.ToArray() },
+                    { "PublicKey", key.PublicComponent.ToArray() },
                     { "Factor", key.Factor.ToArray() },
-                    { "PrivateKey", key.Private.ToArray() }
+                    { "PrivateKey", key.PrivateComponent.ToArray() }
                 };
             }
 
@@ -322,14 +322,10 @@ namespace KerberosClientApp
 
             if (Uri.TryCreate(overrideKdc, UriKind.Absolute, out Uri kdcProxy))
             {
-                var kdcProxyTransport = new HttpsKerberosTransport()
-                {
-                    DomainPaths = new Dictionary<string, Uri>
-                    {
-                        { kdcProxy.DnsSafeHost.ToLowerInvariant(), kdcProxy },
-                        { kerbCred.Domain.ToLowerInvariant(), kdcProxy }
-                    }
-                };
+                var kdcProxyTransport = new HttpsKerberosTransport();
+
+                kdcProxyTransport.DomainPaths[kdcProxy.DnsSafeHost.ToLowerInvariant()] = kdcProxy;
+                kdcProxyTransport.DomainPaths[kerbCred.Domain.ToLowerInvariant()] = kdcProxy;
 
                 client = new KerberosClient(factory, kdcProxyTransport) { Cache = new Krb5TicketCache("krb5cc", factory) };
             }

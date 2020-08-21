@@ -111,7 +111,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(dh2);
 
-            Assert.IsTrue(pk.Private.Span.SequenceEqual(dh2.PrivateKey.Private.Span));
+            Assert.IsTrue(pk.PrivateComponent.Span.SequenceEqual(dh2.PrivateKey.PrivateComponent.Span));
         }
     }
 }

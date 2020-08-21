@@ -134,7 +134,7 @@ namespace Tests.Kerberos.NET
             var auth = new KrbAuthenticator
             {
                 AuthorizationData = new[] { new KrbAuthorizationData { Data = new byte[16], Type = AuthorizationDataType.AdAndOr } },
-                Checksum = KrbChecksum.Create(new byte[16], new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96), KeyUsage.AcceptorSeal),
+                Checksum = KrbChecksum.Create(new byte[16], new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96), KeyUsage.ApReqAuthenticator),
                 CName = KrbPrincipalName.FromString("blah@blah.com"),
                 CTime = DateTimeOffset.UtcNow,
                 CuSec = 1234,
