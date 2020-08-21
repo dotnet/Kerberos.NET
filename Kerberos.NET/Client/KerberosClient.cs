@@ -422,7 +422,7 @@ namespace Kerberos.NET.Client
                 {
                     ApReq = KrbApReq.CreateApReq(
                         serviceTicketCacheEntry.KdcResponse,
-                        encKdcRepPart.Key.AsKey(),
+                        sessionKey.AsKey(),
                         rst,
                         out KrbAuthenticator authenticator
                     ),
