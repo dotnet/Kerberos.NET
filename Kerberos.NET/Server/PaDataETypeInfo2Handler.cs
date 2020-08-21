@@ -1,4 +1,10 @@
-﻿using System.Collections.Generic;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using System.Collections.Generic;
 using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
@@ -12,6 +18,16 @@ namespace Kerberos.NET.Server
 
         public override void PostValidate(IKerberosPrincipal principal, List<KrbPaData> preAuthRequirements)
         {
+            if (principal == null)
+            {
+                throw new ArgumentNullException(nameof(principal));
+            }
+
+            if (preAuthRequirements == null)
+            {
+                throw new ArgumentNullException(nameof(preAuthRequirements));
+            }
+
             if (preAuthRequirements.Count <= 0)
             {
                 // we don't want to include this if nothing is required otherwise we could
@@ -24,8 +40,10 @@ namespace Kerberos.NET.Server
 
             var etypeInfo = new KrbETypeInfo2
             {
-                ETypeInfo = new[] {
-                    new  KrbETypeInfo2Entry {
+                ETypeInfo = new[]
+                {
+                    new  KrbETypeInfo2Entry
+                    {
                         EType = cred.EncryptionType,
                         Salt = cred.Salt
                     }

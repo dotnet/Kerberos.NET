@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -24,13 +25,13 @@ namespace System.Security.Cryptography.Asn1
         /// <summary>
         ///   The tag class to which this tag belongs.
         /// </summary>
-        public TagClass TagClass => (TagClass)(_controlFlags & ClassMask);
+        public TagClass TagClass => (TagClass)(this._controlFlags & ClassMask);
 
         /// <summary>
         ///   Indicates if the tag represents a constructed encoding (<c>true</c>), or
         ///   a primitive encoding (<c>false</c>).
         /// </summary>
-        public bool IsConstructed => (_controlFlags & ConstructedMask) != 0;
+        public bool IsConstructed => (this._controlFlags & ConstructedMask) != 0;
 
         /// <summary>
         ///   The numeric value for this tag.
@@ -44,8 +45,8 @@ namespace System.Security.Cryptography.Asn1
         [DebuggerStepThrough]
         private Asn1Tag(byte controlFlags, int tagValue)
         {
-            _controlFlags = (byte)(controlFlags & ControlMask);
-            TagValue = tagValue;
+            this._controlFlags = (byte)(controlFlags & ControlMask);
+            this.TagValue = tagValue;
         }
 
         /// <summary>
@@ -118,7 +119,7 @@ namespace System.Security.Cryptography.Asn1
         /// </returns>
         public Asn1Tag AsConstructed()
         {
-            return new Asn1Tag((byte)(_controlFlags | ConstructedMask), TagValue);
+            return new Asn1Tag((byte)(this._controlFlags | ConstructedMask), this.TagValue);
         }
 
         /// <summary>
@@ -131,7 +132,7 @@ namespace System.Security.Cryptography.Asn1
         /// </returns>
         public Asn1Tag AsPrimitive()
         {
-            return new Asn1Tag((byte)(_controlFlags & ~ConstructedMask), TagValue);
+            return new Asn1Tag((byte)(this._controlFlags & ~ConstructedMask), this.TagValue);
         }
 
         /// <summary>
@@ -143,7 +144,7 @@ namespace System.Security.Cryptography.Asn1
         /// <param name="tag">
         ///   The decoded <see cref="Asn1Tag"/>.
         /// </param>
-        /// <param name="bytesConsumed"></param>
+        /// <param name="bytesConsumed">Returns the number of bytes that would be consumed from source</param>
         /// <returns>
         ///   <c>true</c> if a tag was correctly decoded, <c>false</c> otherwise.
         /// </returns>
@@ -161,13 +162,13 @@ namespace System.Security.Cryptography.Asn1
         /// <param name="tag">
         ///   The decoded <see cref="Asn1Tag"/>.
         /// </param>
-        /// <param name="bytesConsumed"></param>
+        /// <param name="bytesConsumed">Returns the number of bytes that would be consumed from source</param>
         /// <returns>
         ///   <c>true</c> if a tag was correctly decoded, <c>false</c> otherwise.
         /// </returns>
         public static bool TryDecode(ReadOnlySpan<byte> source, out Asn1Tag tag, out int bytesConsumed)
         {
-            tag = default(Asn1Tag);
+            tag = default;
             bytesConsumed = 0;
 
             if (source.IsEmpty)
@@ -258,16 +259,30 @@ namespace System.Security.Cryptography.Asn1
             const int TwentyOneBits = 0b0001_1111_1111_1111_1111_1111;
             const int TwentyEightBits = 0b0000_1111_1111_1111_1111_1111_1111_1111;
 
-            if (TagValue < TagNumberMask)
+            if (this.TagValue < TagNumberMask)
+            {
                 return 1;
-            if (TagValue <= SevenBits)
+            }
+
+            if (this.TagValue <= SevenBits)
+            {
                 return 2;
-            if (TagValue <= FourteenBits)
+            }
+
+            if (this.TagValue <= FourteenBits)
+            {
                 return 3;
-            if (TagValue <= TwentyOneBits)
+            }
+
+            if (this.TagValue <= TwentyOneBits)
+            {
                 return 4;
-            if (TagValue <= TwentyEightBits)
+            }
+
+            if (this.TagValue <= TwentyEightBits)
+            {
                 return 5;
+            }
 
             return 6;
         }
@@ -287,7 +302,7 @@ namespace System.Security.Cryptography.Asn1
         /// </returns>
         public bool TryEncode(Span<byte> destination, out int bytesWritten)
         {
-            int spaceRequired = CalculateEncodedSize();
+            int spaceRequired = this.CalculateEncodedSize();
 
             if (destination.Length < spaceRequired)
             {
@@ -297,16 +312,16 @@ namespace System.Security.Cryptography.Asn1
 
             if (spaceRequired == 1)
             {
-                byte value = (byte)(_controlFlags | TagValue);
+                byte value = (byte)(this._controlFlags | this.TagValue);
                 destination[0] = value;
                 bytesWritten = 1;
                 return true;
             }
 
-            byte firstByte = (byte)(_controlFlags | TagNumberMask);
+            byte firstByte = (byte)(this._controlFlags | TagNumberMask);
             destination[0] = firstByte;
 
-            int remaining = TagValue;
+            int remaining = this.TagValue;
             int idx = spaceRequired - 1;
 
             while (remaining > 0)
@@ -314,7 +329,7 @@ namespace System.Security.Cryptography.Asn1
                 int segment = remaining & 0x7F;
 
                 // The last byte doesn't get the marker, which we write first.
-                if (remaining != TagValue)
+                if (remaining != this.TagValue)
                 {
                     segment |= 0x80;
                 }
@@ -345,7 +360,7 @@ namespace System.Security.Cryptography.Asn1
         /// </returns>
         public bool TryEncode(ArraySegment<byte> destination, out int bytesWritten)
         {
-            return TryEncode(destination.AsSpan(), out bytesWritten);
+            return this.TryEncode(destination.AsSpan(), out bytesWritten);
         }
 
         /// <summary>
@@ -363,7 +378,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public int Encode(Span<byte> destination)
         {
-            if (TryEncode(destination, out int bytesWritten))
+            if (this.TryEncode(destination, out int bytesWritten))
             {
                 return bytesWritten;
             }
@@ -386,7 +401,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public int Encode(ArraySegment<byte> destination)
         {
-            return Encode(destination.AsSpan());
+            return this.Encode(destination.AsSpan());
         }
 
         /// <summary>
@@ -402,7 +417,7 @@ namespace System.Security.Cryptography.Asn1
         /// </returns>
         public bool Equals(Asn1Tag other)
         {
-            return _controlFlags == other._controlFlags && TagValue == other.TagValue;
+            return this._controlFlags == other._controlFlags && this.TagValue == other.TagValue;
         }
 
         /// <summary>
@@ -416,8 +431,12 @@ namespace System.Security.Cryptography.Asn1
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            return obj is Asn1Tag tag && Equals(tag);
+            if (obj is null)
+            {
+                return false;
+            }
+
+            return obj is Asn1Tag tag && this.Equals(tag);
         }
 
         /// <summary>
@@ -431,7 +450,7 @@ namespace System.Security.Cryptography.Asn1
             // Most TagValue values will be in the 0-30 range,
             // the GetHashCode value only has collisions when TagValue is
             // between 2^29 and uint.MaxValue
-            return (_controlFlags << 24) ^ TagValue;
+            return (this._controlFlags << 24) ^ this.TagValue;
         }
 
         /// <summary>
@@ -473,7 +492,7 @@ namespace System.Security.Cryptography.Asn1
         /// </returns>
         public bool HasSameClassAndValue(Asn1Tag other)
         {
-            return TagValue == other.TagValue && TagClass == other.TagClass;
+            return this.TagValue == other.TagValue && this.TagClass == other.TagClass;
         }
 
         /// <summary>
@@ -487,16 +506,16 @@ namespace System.Security.Cryptography.Asn1
             const string ConstructedPrefix = "Constructed ";
             string classAndValue;
 
-            if (TagClass == TagClass.Universal)
+            if (this.TagClass == TagClass.Universal)
             {
-                classAndValue = ((UniversalTagNumber)TagValue).ToString();
+                classAndValue = ((UniversalTagNumber)this.TagValue).ToString();
             }
             else
             {
-                classAndValue = TagClass + "-" + TagValue;
+                classAndValue = this.TagClass + "-" + this.TagValue;
             }
 
-            if (IsConstructed)
+            if (this.IsConstructed)
             {
                 return ConstructedPrefix + classAndValue;
             }

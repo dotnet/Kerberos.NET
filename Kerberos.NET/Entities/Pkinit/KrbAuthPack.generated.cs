@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Collections.Generic;
@@ -13,11 +17,15 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAuthPack
     {
-        public KrbPKAuthenticator PKAuthenticator;
-        public KrbSubjectPublicKeyInfo ClientPublicValue;
-        public KrbAlgorithmIdentifier[] SupportedCMSTypes;
-        public ReadOnlyMemory<byte>? ClientDHNonce;
-      
+        public KrbPKAuthenticator PKAuthenticator { get; set; }
+  
+        public KrbSubjectPublicKeyInfo ClientPublicValue { get; set; }
+  
+        public KrbAlgorithmIdentifier[] SupportedCMSTypes { get; set; }
+  
+        public ReadOnlyMemory<byte>? ClientDHNonce { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -26,7 +34,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -47,21 +55,21 @@ namespace Kerberos.NET.Entities
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             }
 
-
             if (Asn1Extension.HasValue(SupportedCMSTypes))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
-
                 writer.PushSequence();
+            
                 for (int i = 0; i < SupportedCMSTypes.Length; i++)
                 {
                     SupportedCMSTypes[i]?.Encode(writer); 
                 }
+
                 writer.PopSequence();
 
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             }
-
+  
 
             if (Asn1Extension.HasValue(ClientDHNonce))
             {
@@ -69,7 +77,6 @@ namespace Kerberos.NET.Entities
                 writer.WriteOctetString(ClientDHNonce.Value.Span);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             }
-
             writer.PopSequence(tag);
         }
         
@@ -126,7 +133,9 @@ namespace Kerberos.NET.Entities
           where T: KrbAuthPack, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -135,34 +144,35 @@ namespace Kerberos.NET.Entities
           where T: KrbAuthPack, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
             
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
-            KrbPKAuthenticator.Decode<KrbPKAuthenticator>(explicitReader, out decoded.PKAuthenticator);
-            explicitReader.ThrowIfNotEmpty();
+            KrbPKAuthenticator.Decode<KrbPKAuthenticator>(explicitReader, out KrbPKAuthenticator tmpPKAuthenticator);
+            decoded.PKAuthenticator = tmpPKAuthenticator;
 
+            explicitReader.ThrowIfNotEmpty();
 
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-                KrbSubjectPublicKeyInfo tmpClientPublicValue;
-                KrbSubjectPublicKeyInfo.Decode<KrbSubjectPublicKeyInfo>(explicitReader, out tmpClientPublicValue);
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));                
+            
+                KrbSubjectPublicKeyInfo.Decode<KrbSubjectPublicKeyInfo>(explicitReader, out KrbSubjectPublicKeyInfo tmpClientPublicValue);
                 decoded.ClientPublicValue = tmpClientPublicValue;
-
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 2)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
-
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));                
+            
                 // Decode SEQUENCE OF for SupportedCMSTypes
                 {
                     collectionReader = explicitReader.ReadSequence();
@@ -171,20 +181,20 @@ namespace Kerberos.NET.Entities
 
                     while (collectionReader.HasData)
                     {
-                        KrbAlgorithmIdentifier.Decode<KrbAlgorithmIdentifier>(collectionReader, out tmpItem); 
+                        KrbAlgorithmIdentifier.Decode<KrbAlgorithmIdentifier>(collectionReader, out KrbAlgorithmIdentifier tmp);
+                        tmpItem = tmp; 
                         tmpList.Add(tmpItem);
                     }
 
                     decoded.SupportedCMSTypes = tmpList.ToArray();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 3)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));                
+            
 
                 if (explicitReader.TryReadPrimitiveOctetStringBytes(out ReadOnlyMemory<byte> tmpClientDHNonce))
                 {
@@ -194,10 +204,8 @@ namespace Kerberos.NET.Entities
                 {
                     decoded.ClientDHNonce = explicitReader.ReadOctetString();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

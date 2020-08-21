@@ -1,5 +1,9 @@
-﻿using System;
-using System.Buffers.Binary;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Security.Cryptography.Asn1;
 using Kerberos.NET.Transport;
 
@@ -64,7 +68,7 @@ namespace Kerberos.NET.Entities
         /// <returns>Returns the unwrapped message</returns>
         public ReadOnlyMemory<byte> UnwrapMessage()
         {
-            return UnwrapMessage(out _);
+            return this.UnwrapMessage(out _);
         }
 
         /// <summary>
@@ -74,12 +78,12 @@ namespace Kerberos.NET.Entities
         /// <returns>Returns the unwrapped message</returns>
         public ReadOnlyMemory<byte> UnwrapMessage(out KdcProxyMessageMode mode)
         {
-            var prefix = KerbMessage.Slice(0, 4).AsLong();
-            var message = KerbMessage;
+            var prefix = this.KerbMessage.Slice(0, 4).AsLong();
+            var message = this.KerbMessage;
 
-            if (prefix != KerbMessage.Length - 4)
+            if (prefix != this.KerbMessage.Length - 4)
             {
-                var possibleMessageType = KrbMessage.DetectMessageType(KerbMessage);
+                var possibleMessageType = KrbMessage.DetectMessageType(this.KerbMessage);
 
                 if (!possibleMessageType.IsValidMessageType())
                 {
@@ -92,7 +96,7 @@ namespace Kerberos.NET.Entities
             }
             else
             {
-                message = KerbMessage.Slice(4);
+                message = this.KerbMessage.Slice(4);
                 mode = KdcProxyMessageMode.IncludeLengthPrefix;
             }
 

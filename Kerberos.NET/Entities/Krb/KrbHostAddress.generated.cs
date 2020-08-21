@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,9 +16,11 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbHostAddress
     {
-        public AddressType AddressType;
-        public ReadOnlyMemory<byte> Address;
-      
+        public AddressType AddressType { get; set; }
+    
+        public ReadOnlyMemory<byte> Address { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -23,7 +29,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -95,7 +101,9 @@ namespace Kerberos.NET.Entities
           where T: KrbHostAddress, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -104,22 +112,25 @@ namespace Kerberos.NET.Entities
           where T: KrbHostAddress, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (!explicitReader.TryReadInt32(out decoded.AddressType))
+            if (!explicitReader.TryReadInt32(out AddressType tmpAddressType))
             {
                 explicitReader.ThrowIfNotEmpty();
             }
+            
+            decoded.AddressType = tmpAddressType;
 
             explicitReader.ThrowIfNotEmpty();
-
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
 
@@ -133,7 +144,6 @@ namespace Kerberos.NET.Entities
             }
 
             explicitReader.ThrowIfNotEmpty();
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

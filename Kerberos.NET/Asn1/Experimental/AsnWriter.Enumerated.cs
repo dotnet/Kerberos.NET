@@ -1,6 +1,9 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
+
+using System.Globalization;
 
 namespace System.Security.Cryptography.Asn1
 {
@@ -24,9 +27,11 @@ namespace System.Security.Cryptography.Asn1
         public void WriteEnumeratedValue(object enumValue)
         {
             if (enumValue == null)
+            {
                 throw new ArgumentNullException(nameof(enumValue));
+            }
 
-            WriteEnumeratedValue(Asn1Tag.Enumerated, enumValue);
+            this.WriteEnumeratedValue(Asn1Tag.Enumerated, enumValue);
         }
 
         /// <summary>
@@ -44,9 +49,10 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         /// <seealso cref="WriteEnumeratedValue(Asn1Tag,object)"/>
         /// <seealso cref="WriteEnumeratedValue{TEnum}(TEnum)"/>
-        public void WriteEnumeratedValue<TEnum>(TEnum enumValue) where TEnum : struct
+        public void WriteEnumeratedValue<TEnum>(TEnum enumValue)
+            where TEnum : struct
         {
-            WriteEnumeratedValue(Asn1Tag.Enumerated, typeof(TEnum), enumValue);
+            this.WriteEnumeratedValue(Asn1Tag.Enumerated, typeof(TEnum), enumValue);
         }
 
         /// <summary>
@@ -72,9 +78,11 @@ namespace System.Security.Cryptography.Asn1
         public void WriteEnumeratedValue(Asn1Tag tag, object enumValue)
         {
             if (enumValue == null)
+            {
                 throw new ArgumentNullException(nameof(enumValue));
+            }
 
-            WriteEnumeratedValue(tag.AsPrimitive(), enumValue.GetType(), enumValue);
+            this.WriteEnumeratedValue(tag.AsPrimitive(), enumValue.GetType(), enumValue);
         }
 
         /// <summary>
@@ -97,9 +105,10 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         /// <seealso cref="WriteEnumeratedValue(Asn1Tag,object)"/>
         /// <seealso cref="WriteEnumeratedValue{T}(T)"/>
-        public void WriteEnumeratedValue<TEnum>(Asn1Tag tag, TEnum enumValue) where TEnum : struct
+        public void WriteEnumeratedValue<TEnum>(Asn1Tag tag, TEnum enumValue)
+            where TEnum : struct
         {
-            WriteEnumeratedValue(tag.AsPrimitive(), typeof(TEnum), enumValue);
+            this.WriteEnumeratedValue(tag.AsPrimitive(), typeof(TEnum), enumValue);
         }
 
         // T-REC-X.690-201508 sec 8.4
@@ -118,16 +127,18 @@ namespace System.Security.Cryptography.Asn1
 
             if (backingType == typeof(ulong))
             {
-                ulong numericValue = Convert.ToUInt64(enumValue);
+                ulong numericValue = Convert.ToUInt64(enumValue, CultureInfo.InvariantCulture);
+
                 // T-REC-X.690-201508 sec 8.4
-                WriteNonNegativeIntegerCore(tag, numericValue);
+                this.WriteNonNegativeIntegerCore(tag, numericValue);
             }
             else
             {
                 // All other types fit in a (signed) long.
-                long numericValue = Convert.ToInt64(enumValue);
+                long numericValue = Convert.ToInt64(enumValue, CultureInfo.InvariantCulture);
+
                 // T-REC-X.690-201508 sec 8.4
-                WriteIntegerCore(tag, numericValue);
+                this.WriteIntegerCore(tag, numericValue);
             }
         }
     }

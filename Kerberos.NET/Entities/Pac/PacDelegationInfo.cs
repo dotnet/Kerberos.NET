@@ -1,7 +1,13 @@
-﻿using Kerberos.NET.Entities.Pac;
-using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities
 {
@@ -9,20 +15,30 @@ namespace Kerberos.NET.Entities
     {
         public override void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteStruct(S4U2ProxyTarget);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            buffer.WriteInt32LittleEndian(S4UTransitedServices.Count());
+            buffer.WriteStruct(this.S4U2ProxyTarget);
 
-            buffer.WriteDeferredStructArray(S4UTransitedServices);
+            buffer.WriteInt32LittleEndian(this.S4UTransitedServices.Count());
+
+            buffer.WriteDeferredStructArray(this.S4UTransitedServices);
         }
 
         public override void Unmarshal(NdrBuffer buffer)
         {
-            S4U2ProxyTarget = buffer.ReadStruct<RpcString>();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            this.S4U2ProxyTarget = buffer.ReadStruct<RpcString>();
 
             var transitedListSize = buffer.ReadInt32LittleEndian();
 
-            buffer.ReadDeferredStructArray<RpcString>(transitedListSize, v => S4UTransitedServices = v);
+            buffer.ReadDeferredStructArray<RpcString>(transitedListSize, v => this.S4UTransitedServices = v);
         }
 
         public RpcString S4U2ProxyTarget { get; set; }
@@ -33,7 +49,7 @@ namespace Kerberos.NET.Entities
 
         public override string ToString()
         {
-            return $"{S4U2ProxyTarget} => {string.Join(", ", S4UTransitedServices)}";
+            return $"{this.S4U2ProxyTarget} => {string.Join(", ", this.S4UTransitedServices)}";
         }
     }
 }

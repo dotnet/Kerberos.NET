@@ -1,7 +1,12 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Credentials
 {
@@ -23,24 +28,24 @@ namespace Kerberos.NET.Credentials
 
             TrySplitUserNameDomain(username, out username, ref domain);
 
-            UserName = username;
+            this.UserName = username;
             this.password = password;
 
             if (!string.IsNullOrWhiteSpace(domain))
             {
-                Domain = domain.ToUpperInvariant();
+                this.Domain = domain.ToUpperInvariant();
             }
         }
 
-        public override bool SupportsOptimisticPreAuthentication => Salts != null && Salts.Any();
+        public override bool SupportsOptimisticPreAuthentication => this.Salts != null && this.Salts.Any();
 
         public override void Validate()
         {
             base.Validate();
 
-            if (string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(this.password))
             {
-                throw new ArgumentException("Password cannot be null or empty", nameof(password));
+                throw new InvalidOperationException("Password cannot be null or empty");
             }
         }
 
@@ -50,27 +55,27 @@ namespace Kerberos.NET.Credentials
 
         public override KerberosKey CreateKey()
         {
-            if (cacheKey == null)
+            if (this.cacheKey == null)
             {
-                lock (_syncCache)
+                lock (this._syncCache)
                 {
-                    if (cacheKey == null)
+                    if (this.cacheKey == null)
                     {
-                        var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, Domain, new[] { UserName });
+                        var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, this.Domain, new[] { this.UserName });
 
                         var etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
-                        var salt = "";
+                        var salt = string.Empty;
 
-                        if (Salts != null && Salts.Count() > 0)
+                        if (this.Salts != null && this.Salts.Any())
                         {
-                            var kv = Salts.ElementAt(0);
+                            var kv = this.Salts.ElementAt(0);
 
                             etype = kv.Key;
                             salt = kv.Value;
                         }
 
-                        cacheKey = new KerberosKey(
-                            password,
+                        this.cacheKey = new KerberosKey(
+                            this.password,
                             principalName: principalName,
                             etype: etype,
                             saltType: SaltType.ActiveDirectoryUser,
@@ -80,7 +85,7 @@ namespace Kerberos.NET.Credentials
                 }
             }
 
-            return cacheKey;
+            return this.cacheKey;
         }
     }
 }

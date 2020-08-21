@@ -1,4 +1,10 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -32,13 +38,18 @@ namespace Kerberos.NET.Crypto
 
         public static string HexDump(this byte[] bytes, int bytesPerLine = 16)
         {
+            if (bytes == null)
+            {
+                throw new ArgumentNullException(nameof(bytes));
+            }
+
             var sb = new StringBuilder();
 
             for (int line = 0; line < bytes.Length; line += bytesPerLine)
             {
                 var lineBytes = bytes.Skip(line).Take(bytesPerLine).ToArray();
 
-                sb.AppendFormat("{0:x8} ", line);
+                sb.AppendFormat(CultureInfo.InvariantCulture, "{0:x8} ", line);
 
                 sb.Append(string.Join(" ", lineBytes.Select(b => HEX_INDEX[b]).ToArray()).PadRight((bytesPerLine * 3)));
 
@@ -90,7 +101,8 @@ namespace Kerberos.NET.Crypto
             return result.ToString();
         }
 
-        internal static readonly string[] HEX_INDEX = new string[] {
+        internal static readonly string[] HEX_INDEX = new string[]
+        {
             "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "0a", "0b", "0c", "0d", "0e", "0f",
             "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "1a", "1b", "1c", "1d", "1e", "1f",
             "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "2a", "2b", "2c", "2d", "2e", "2f",

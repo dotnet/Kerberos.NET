@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
@@ -21,9 +26,11 @@ namespace Kerberos.NET.Crypto
 
         public abstract int KeySize { get; }
 
+        public abstract ChecksumType ChecksumType { get; }
+
         public virtual ReadOnlyMemory<byte> GenerateKey()
         {
-            return GenerateRandomBytes(KeySize);
+            return this.GenerateRandomBytes(this.KeySize);
         }
 
         public abstract ReadOnlyMemory<byte> String2Key(KerberosKey key);

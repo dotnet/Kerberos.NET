@@ -1,6 +1,11 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -13,8 +18,8 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAuthorizationDataSequence
     {
-        public KrbAuthorizationData[] AuthorizationData;
-
+        public KrbAuthorizationData[] AuthorizationData { get; set; }
+  
 #if DEBUG
         static KrbAuthorizationDataSequence()
         {
@@ -32,6 +37,7 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(Asn1Tag.Sequence, "AuthorizationData");
         }
 #endif
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -48,14 +54,17 @@ namespace Kerberos.NET.Entities
             if (AuthorizationData != null)
             {
                 if (wroteValue)
+                {
                     throw new CryptographicException();
+                }
                 
-
                 writer.PushSequence();
+            
                 for (int i = 0; i < AuthorizationData.Length; i++)
                 {
                     AuthorizationData[i]?.Encode(writer); 
                 }
+
                 writer.PopSequence();
 
                 wroteValue = true;
@@ -99,15 +108,17 @@ namespace Kerberos.NET.Entities
           where T: KrbAuthorizationDataSequence, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             Asn1Tag tag = reader.PeekTag();
             AsnReader collectionReader;
             
             if (tag.HasSameClassAndValue(Asn1Tag.Sequence))
             {
-
                 // Decode SEQUENCE OF for AuthorizationData
                 {
                     collectionReader = reader.ReadSequence();
@@ -116,13 +127,13 @@ namespace Kerberos.NET.Entities
 
                     while (collectionReader.HasData)
                     {
-                        KrbAuthorizationData.Decode<KrbAuthorizationData>(collectionReader, out tmpItem); 
+                        KrbAuthorizationData.Decode<KrbAuthorizationData>(collectionReader, out KrbAuthorizationData tmp);
+                        tmpItem = tmp; 
                         tmpList.Add(tmpItem);
                     }
 
                     decoded.AuthorizationData = tmpList.ToArray();
                 }
-
             }
             else
             {

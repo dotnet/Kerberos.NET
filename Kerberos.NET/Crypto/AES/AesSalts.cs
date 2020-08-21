@@ -1,4 +1,9 @@
-﻿using System.Linq;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System.Linq;
 using System.Text;
 
 namespace Kerberos.NET.Crypto.AES
@@ -55,7 +60,7 @@ namespace Kerberos.NET.Crypto.AES
 
         private static void GenerateActiveDirectoryUserSalt(KerberosKey key, StringBuilder salt)
         {
-            // User accounts: 
+            // User accounts:
             //
             // < DNS of the realm, converted to upper case> | < user name >
             //
@@ -67,12 +72,12 @@ namespace Kerberos.NET.Crypto.AES
 
         private static void GenerateActiveDirectoryServiceSalt(KerberosKey key, StringBuilder salt)
         {
-            // Computer accounts: 
+            // Computer accounts:
             //
-            // < DNS name of the realm, converted to upper case > | 
-            // "host" | 
-            // < computer name, converted to lower case with trailing "$" stripped off > | 
-            // "." | 
+            // < DNS name of the realm, converted to upper case > |
+            // "host" |
+            // < computer name, converted to lower case with trailing "$" stripped off > |
+            // "." |
             // < DNS name of the realm, converted to lower case >
             //
             // Ex: REALM.COMhostappservice.realm.com

@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 
@@ -15,7 +16,7 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public void WriteBoolean(bool value)
         {
-            WriteBooleanCore(Asn1Tag.Boolean, value);
+            this.WriteBooleanCore(Asn1Tag.Boolean, value);
         }
 
         /// <summary>
@@ -33,19 +34,20 @@ namespace System.Security.Cryptography.Asn1
         {
             CheckUniversalTag(tag, UniversalTagNumber.Boolean);
 
-            WriteBooleanCore(tag.AsPrimitive(), value);
+            this.WriteBooleanCore(tag.AsPrimitive(), value);
         }
 
         // T-REC-X.690-201508 sec 11.1, 8.2
         private void WriteBooleanCore(Asn1Tag tag, bool value)
         {
             Debug.Assert(!tag.IsConstructed);
-            WriteTag(tag);
-            WriteLength(1);
+            this.WriteTag(tag);
+            this.WriteLength(1);
+
             // Ensured by WriteLength
-            Debug.Assert(_offset < _buffer.Length);
-            _buffer[_offset] = (byte)(value ? 0xFF : 0x00);
-            _offset++;
+            Debug.Assert(this._offset < this._buffer.Length);
+            this._buffer[this._offset] = (byte)(value ? 0xFF : 0x00);
+            this._offset++;
         }
     }
 }

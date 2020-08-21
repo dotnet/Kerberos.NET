@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET
@@ -12,7 +17,7 @@ namespace Kerberos.NET
 
     public class TicketCacheEntry
     {
-        public string Computed { get { return GenerateKey(Container, Key); } }
+        public string Computed => GenerateKey(this.Container, this.Key);
 
         internal static string GenerateKey(string container = null, string key = null)
         {

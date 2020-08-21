@@ -1,6 +1,11 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
+
 using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -12,9 +17,10 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaPkAsRep
     {
-        public KrbDHReplyInfo DHInfo;
-        public ReadOnlyMemory<byte>? EncKeyPack;
-
+        public KrbDHReplyInfo DHInfo { get; set; }
+  
+        public ReadOnlyMemory<byte>? EncKeyPack { get; set; }
+  
 #if DEBUG
         static KrbPaPkAsRep()
         {
@@ -33,6 +39,7 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(new Asn1Tag(TagClass.ContextSpecific, 1), "EncKeyPack");
         }
 #endif
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -49,25 +56,27 @@ namespace Kerberos.NET.Entities
             if (Asn1Extension.HasValue(DHInfo))
             {
                 if (wroteValue)
+                {
                     throw new CryptographicException();
+                }
                 
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
                 DHInfo?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
                 wroteValue = true;
             }
-
             if (Asn1Extension.HasValue(EncKeyPack))
             {
                 if (wroteValue)
+                {
                     throw new CryptographicException();
+                }
                 
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteOctetString(EncKeyPack.Value.Span);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 wroteValue = true;
             }
-
             if (!wroteValue)
             {
                 throw new CryptographicException();
@@ -106,19 +115,20 @@ namespace Kerberos.NET.Entities
           where T: KrbPaPkAsRep, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             Asn1Tag tag = reader.PeekTag();
             AsnReader explicitReader;
             
             if (tag.HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 0)))
             {
                 explicitReader = reader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
-                KrbDHReplyInfo tmpDHInfo;
-                KrbDHReplyInfo.Decode<KrbDHReplyInfo>(explicitReader, out tmpDHInfo);
+                KrbDHReplyInfo.Decode<KrbDHReplyInfo>(explicitReader, out KrbDHReplyInfo tmpDHInfo);
                 decoded.DHInfo = tmpDHInfo;
-
                 explicitReader.ThrowIfNotEmpty();
             }
             else if (tag.HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
@@ -133,7 +143,6 @@ namespace Kerberos.NET.Entities
                 {
                     decoded.EncKeyPack = explicitReader.ReadOctetString();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
             else

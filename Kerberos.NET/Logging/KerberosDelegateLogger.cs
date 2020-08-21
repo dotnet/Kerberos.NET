@@ -1,8 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Logging;
 using LogFunc = System.Action<
     System.Diagnostics.TraceLevel,
     string,
@@ -20,19 +25,29 @@ namespace Kerberos.NET.Logging
 
         public KerberosDelegateLogger(LogFunc action)
         {
-            log = action;
+            this.log = action;
         }
 
-        public void AddProvider(ILoggerProvider provider) { }
+        public void AddProvider(ILoggerProvider provider)
+        {
+        }
 
         public ILogger CreateLogger(string categoryName)
         {
-            return new DelegateLogger(log, categoryName);
+            return new DelegateLogger(this.log, categoryName);
         }
 
-        public void Dispose() { }
+        protected virtual void Dispose(bool disposing)
+        {
+        }
 
-        private class DelegateLogger : ILogger
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private class DelegateLogger : ILogger, IDisposable
         {
             private readonly LogFunc log;
             private readonly string categoryName;
@@ -45,12 +60,12 @@ namespace Kerberos.NET.Logging
             {
                 get
                 {
-                    if (scopes.TryPeek(out LoggerScope scope))
+                    if (this.scopes.TryPeek(out LoggerScope scope))
                     {
                         return scope;
                     }
 
-                    return defaultScope;
+                    return this.defaultScope;
                 }
             }
 
@@ -59,14 +74,14 @@ namespace Kerberos.NET.Logging
                 this.log = log;
                 this.categoryName = categoryName;
 
-                defaultScope = new LoggerScope(null, log, categoryName, scopes);
+                this.defaultScope = new LoggerScope(null, log, categoryName, this.scopes);
             }
 
             public IDisposable BeginScope<TState>(TState state)
             {
-                var scope = new LoggerScope(state, log, categoryName, scopes);
+                var scope = new LoggerScope(state, this.log, this.categoryName, this.scopes);
 
-                scopes.Push(scope);
+                this.scopes.Push(scope);
 
                 return scope;
             }
@@ -75,7 +90,12 @@ namespace Kerberos.NET.Logging
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
             {
-                Scope.Log(logLevel, eventId, state, exception, formatter);
+                this.Scope.Log(logLevel, eventId, state, exception, formatter);
+            }
+
+            public void Dispose()
+            {
+                this.defaultScope?.Dispose();
             }
 
             private class LoggerScope : IDisposable
@@ -95,7 +115,9 @@ namespace Kerberos.NET.Logging
 
                 public void Dispose()
                 {
-                    while (scopes.TryPop(out LoggerScope scope))
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                    while (this.scopes.TryPop(out LoggerScope scope))
+#pragma warning restore CA2000 // Dispose objects before losing scope
                     {
                         if (ReferenceEquals(scope, this))
                         {
@@ -108,7 +130,7 @@ namespace Kerberos.NET.Logging
                 {
                     TraceLevel level = ConvertLogLevel(logLevel);
 
-                    log(level, categoryName, eventId.Id, this.state, state, exception, formatter(state, exception));
+                    this.log(level, this.categoryName, eventId.Id, this.state, state, exception, formatter(state, exception));
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]

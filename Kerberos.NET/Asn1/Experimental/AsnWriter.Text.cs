@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -28,9 +29,11 @@ namespace System.Security.Cryptography.Asn1
         public void WriteCharacterString(UniversalTagNumber encodingType, string str)
         {
             if (str == null)
+            {
                 throw new ArgumentNullException(nameof(str));
+            }
 
-            WriteCharacterString(encodingType, str.AsSpan());
+            this.WriteCharacterString(encodingType, str.AsSpan());
         }
 
         /// <summary>
@@ -52,7 +55,7 @@ namespace System.Security.Cryptography.Asn1
         {
             Text.Encoding encoding = AsnCharacterStringEncodings.GetEncoding(encodingType);
 
-            WriteCharacterStringCore(new Asn1Tag(encodingType), encoding, str);
+            this.WriteCharacterStringCore(new Asn1Tag(encodingType), encoding, str);
         }
 
         /// <summary>
@@ -80,9 +83,11 @@ namespace System.Security.Cryptography.Asn1
         public void WriteCharacterString(Asn1Tag tag, UniversalTagNumber encodingType, string str)
         {
             if (str == null)
+            {
                 throw new ArgumentNullException(nameof(str));
+            }
 
-            WriteCharacterString(tag, encodingType, str.AsSpan());
+            this.WriteCharacterString(tag, encodingType, str.AsSpan());
         }
 
         /// <summary>
@@ -111,7 +116,7 @@ namespace System.Security.Cryptography.Asn1
             CheckUniversalTag(tag, encodingType);
 
             Text.Encoding encoding = AsnCharacterStringEncodings.GetEncoding(encodingType);
-            WriteCharacterStringCore(tag, encoding, str);
+            this.WriteCharacterStringCore(tag, encoding, str);
         }
 
         // T-REC-X.690-201508 sec 8.23
@@ -120,7 +125,7 @@ namespace System.Security.Cryptography.Asn1
             int size = -1;
 
             // T-REC-X.690-201508 sec 9.2
-            if (RuleSet == AsnEncodingRules.CER)
+            if (this.RuleSet == AsnEncodingRules.CER)
             {
                 // TODO: Split this for netstandard vs netcoreapp for span?.
                 unsafe
@@ -132,7 +137,7 @@ namespace System.Security.Cryptography.Asn1
                         // If it exceeds the primitive segment size, use the constructed encoding.
                         if (size > AsnReader.MaxCERSegmentSize)
                         {
-                            WriteConstructedCerCharacterString(tag, encoding, str, size);
+                            this.WriteConstructedCerCharacterString(tag, encoding, str, size);
                             return;
                         }
                     }
@@ -150,9 +155,9 @@ namespace System.Security.Cryptography.Asn1
                     }
 
                     // Clear the constructed tag, if present.
-                    WriteTag(tag.AsPrimitive());
-                    WriteLength(size);
-                    Span<byte> dest = _buffer.AsSpan(_offset, size);
+                    this.WriteTag(tag.AsPrimitive());
+                    this.WriteLength(size);
+                    Span<byte> dest = this._buffer.AsSpan(this._offset, size);
 
                     fixed (byte* destPtr = &MemoryMarshal.GetReference(dest))
                     {
@@ -165,7 +170,7 @@ namespace System.Security.Cryptography.Asn1
                         }
                     }
 
-                    _offset += size;
+                    this._offset += size;
                 }
             }
         }
@@ -196,7 +201,7 @@ namespace System.Security.Cryptography.Asn1
                 }
             }
 
-            WriteConstructedCerOctetString(tag, tmp.AsSpan(0, size));
+            this.WriteConstructedCerOctetString(tag, tmp.AsSpan(0, size));
             CryptoPool.Return(tmp, size);
         }
     }

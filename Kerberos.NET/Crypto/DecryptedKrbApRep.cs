@@ -1,5 +1,10 @@
-﻿using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto
 {
@@ -22,7 +27,7 @@ namespace Kerberos.NET.Crypto
 
         public override void Decrypt(KerberosKey key)
         {
-            Response = response.EncryptedPart.Decrypt(
+            this.Response = this.response.EncryptedPart.Decrypt(
                 key,
                 KeyUsage.EncApRepPart,
                 data => KrbEncApRepPart.DecodeApplication(data)
@@ -31,36 +36,36 @@ namespace Kerberos.NET.Crypto
 
         public override void Validate(ValidationActions validation)
         {
-            var now = Now();
+            var now = this.Now();
 
-            var ctime = Response.CTime.AddTicks(Response.CuSec / 10);
+            var ctime = this.Response.CTime.AddTicks(this.Response.CuSec / 10);
 
             if (validation.HasFlag(ValidationActions.TokenWindow))
             {
-                ValidateTicketSkew(now, Skew, ctime);
+                this.ValidateTicketSkew(now, this.Skew, ctime);
             }
 
-            if (KerberosConstants.TimeEquals(CTime, Response.CTime))
+            if (KerberosConstants.TimeEquals(this.CTime, this.Response.CTime))
             {
                 throw new KerberosValidationException(
-                    $"CTime does not match. Sent: {CTime.Ticks}; Received: {Response.CTime.Ticks}",
-                    nameof(CTime)
+                    $"CTime does not match. Sent: {this.CTime.Ticks}; Received: {this.Response.CTime.Ticks}",
+                    nameof(this.CTime)
                 );
             }
 
-            if (CuSec != Response.CuSec)
+            if (this.CuSec != this.Response.CuSec)
             {
                 throw new KerberosValidationException(
-                    $"CuSec does not match. Sent: {CuSec}; Received: {Response.CuSec}",
-                    nameof(CuSec)
+                    $"CuSec does not match. Sent: {this.CuSec}; Received: {this.Response.CuSec}",
+                    nameof(this.CuSec)
                 );
             }
 
-            if (SequenceNumber != Response.SequenceNumber)
+            if (this.SequenceNumber != this.Response.SequenceNumber)
             {
                 throw new KerberosValidationException(
-                    $"SequenceNumber does not match. Sent: {SequenceNumber}; Received: {Response.SequenceNumber}",
-                    nameof(SequenceNumber)
+                    $"SequenceNumber does not match. Sent: {this.SequenceNumber}; Received: {this.Response.SequenceNumber}",
+                    nameof(this.SequenceNumber)
                 );
             }
         }

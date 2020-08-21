@@ -1,9 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Server
 {
@@ -22,40 +27,46 @@ namespace Kerberos.NET.Server
         private readonly Stack<SocketListener> openListeners = new Stack<SocketListener>();
 
         private readonly ILogger<ServiceListenerBase> logger;
+        private bool disposedValue;
 
         protected ServiceListenerBase(
-            ListenerOptions options,
-            Func<Socket, ListenerOptions, SocketWorkerBase> workerFunc
+            KdcServerOptions options,
+            Func<Socket, KdcServerOptions, SocketWorkerBase> workerFunc
         )
         {
-            Options = options;
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
 
-            logger = options.Log.CreateLoggerSafe<ServiceListenerBase>();
-            socketListener = new SocketListener(options, workerFunc);
+            this.Options = options;
+
+            this.logger = options.Log.CreateLoggerSafe<ServiceListenerBase>();
+            this.socketListener = new SocketListener(options, workerFunc);
         }
 
-        public ListenerOptions Options { get; }
+        public KdcServerOptions Options { get; }
 
         public Task Start()
         {
-            ThreadPool.QueueUserWorkItem(state => StartListenerThreads((SocketListener)state), socketListener);
-            return startTcs.Task;
+            ThreadPool.QueueUserWorkItem(state => this.StartListenerThreads((SocketListener)state), this.socketListener);
+            return this.startTcs.Task;
         }
 
         public void Stop()
         {
-            while (openListeners.Count != 0)
+            while (this.openListeners.Count != 0)
             {
-                SocketListener listener = openListeners.Pop();
+                SocketListener listener = this.openListeners.Pop();
                 listener.Dispose();
             }
 
-            startTcs.SetResult(null);
+            this.startTcs.SetResult(null);
         }
 
         private void StartListenerThreads(SocketListener listener)
         {
-            _ = AcceptConnections(listener);
+            _ = this.AcceptConnections(listener);
         }
 
         private async Task AcceptConnections(SocketListener socketListener)
@@ -65,13 +76,13 @@ namespace Kerberos.NET.Server
                 return;
             }
 
-            openListeners.Push(socketListener);
+            this.openListeners.Push(socketListener);
 
             try
             {
                 while (true)
                 {
-                    var worker = await socketListener.Accept();
+                    var worker = await socketListener.Accept().ConfigureAwait(true);
 
                     if (worker == null)
                     {
@@ -83,20 +94,31 @@ namespace Kerberos.NET.Server
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Accept connection failed with exception");
+                this.logger.LogWarning(ex, "Accept connection failed with exception");
             }
             finally
             {
-                Stop();
+                this.Stop();
             }
         }
 
-        public virtual void Dispose()
+        protected virtual void Dispose(bool disposing)
         {
-            if (socketListener != null)
+            if (!this.disposedValue)
             {
-                socketListener.Dispose();
+                if (disposing)
+                {
+                    this.socketListener.Dispose();
+                }
+
+                this.disposedValue = true;
             }
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

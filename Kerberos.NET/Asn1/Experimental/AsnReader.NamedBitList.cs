@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -28,8 +29,9 @@ namespace System.Security.Cryptography.Asn1
         ///   <typeparamref name="TFlagsEnum"/> was not declared with <see cref="FlagsAttribute"/>
         /// </exception>
         /// <seealso cref="ReadNamedBitListValue{TFlagsEnum}(Asn1Tag)"/>
-        public TFlagsEnum ReadNamedBitListValue<TFlagsEnum>() where TFlagsEnum : struct =>
-            ReadNamedBitListValue<TFlagsEnum>(Asn1Tag.PrimitiveBitString);
+        public TFlagsEnum ReadNamedBitListValue<TFlagsEnum>()
+            where TFlagsEnum : struct =>
+            this.ReadNamedBitListValue<TFlagsEnum>(Asn1Tag.PrimitiveBitString);
 
         /// <summary>
         ///   Reads the next value as a NamedBitList with tag UNIVERSAL 3, converting it to the
@@ -97,11 +99,12 @@ namespace System.Security.Cryptography.Asn1
         ///   the example enum uses values thar are different from
         ///   System.Security.Cryptography.X509Certificates.X509KeyUsageFlags.
         /// </remarks>
-        public TFlagsEnum ReadNamedBitListValue<TFlagsEnum>(Asn1Tag expectedTag) where TFlagsEnum : struct
+        public TFlagsEnum ReadNamedBitListValue<TFlagsEnum>(Asn1Tag expectedTag)
+            where TFlagsEnum : struct
         {
             Type tFlagsEnum = typeof(TFlagsEnum);
 
-            return (TFlagsEnum)Enum.ToObject(tFlagsEnum, ReadNamedBitListValue(expectedTag, tFlagsEnum));
+            return (TFlagsEnum)Enum.ToObject(tFlagsEnum, this.ReadNamedBitListValue(expectedTag, tFlagsEnum));
         }
 
         /// <summary>
@@ -124,7 +127,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         /// <seealso cref="ReadNamedBitListValue{TFlagsEnum}(Asn1Tag)"/>
         public Enum ReadNamedBitListValue(Type tFlagsEnum) =>
-            ReadNamedBitListValue(Asn1Tag.PrimitiveBitString, tFlagsEnum);
+            this.ReadNamedBitListValue(Asn1Tag.PrimitiveBitString, tFlagsEnum);
 
         /// <summary>
         ///   Reads the next value as a NamedBitList with tag UNIVERSAL 3, converting it to the
@@ -160,19 +163,22 @@ namespace System.Security.Cryptography.Asn1
             if (!tFlagsEnum.IsDefined(typeof(FlagsAttribute), false))
             {
                 throw new ArgumentException(
-                    SR.Resource("Cryptography_Asn_NamedBitListRequiresFlagsEnum",
-                    nameof(tFlagsEnum)));
+                    SR.Resource(
+                        "Cryptography_Asn_NamedBitListRequiresFlagsEnum",
+                        nameof(tFlagsEnum)
+                    )
+                );
             }
 
             int sizeLimit = Marshal.SizeOf(backingType);
             Span<byte> stackSpan = stackalloc byte[sizeLimit];
-            ReadOnlyMemory<byte> saveData = _data;
+            ReadOnlyMemory<byte> saveData = this._data;
 
             // If TryCopyBitStringBytes succeeds but anything else fails _data will have moved,
             // so if anything throws here just move _data back to what it was.
             try
             {
-                if (!TryCopyBitStringBytes(expectedTag, stackSpan, out int unusedBitCount, out int bytesWritten))
+                if (!this.TryCopyBitStringBytes(expectedTag, stackSpan, out int unusedBitCount, out int bytesWritten))
                 {
                     throw new CryptographicException(
                         SR.Resource("Cryptography_Asn_NamedBitListValueTooBig", tFlagsEnum.Name));
@@ -187,10 +193,10 @@ namespace System.Security.Cryptography.Asn1
                 ReadOnlySpan<byte> valueSpan = stackSpan.Slice(0, bytesWritten);
 
                 // Now that the 0-bounds check is out of the way:
-                // 
+                //
                 // T-REC-X.690-201508 sec 11.2.2
-                if (RuleSet == AsnEncodingRules.DER ||
-                    RuleSet == AsnEncodingRules.CER)
+                if (this.RuleSet == AsnEncodingRules.DER ||
+                    this.RuleSet == AsnEncodingRules.CER)
                 {
                     byte lastByte = valueSpan[bytesWritten - 1];
 
@@ -233,7 +239,7 @@ namespace System.Security.Cryptography.Asn1
             }
             catch
             {
-                _data = saveData;
+                this._data = saveData;
                 throw;
             }
         }

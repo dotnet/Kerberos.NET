@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
@@ -16,48 +21,53 @@ namespace Kerberos.NET.Win32
 
         private const int MaxTokenSize = 16 * 1024;
 
-        private const ContextFlag DefaultRequiredFlags =
-                                    ContextFlag.Connection |
-                                    ContextFlag.ReplayDetect |
-                                    ContextFlag.SequenceDetect |
-                                    ContextFlag.Confidentiality |
-                                    ContextFlag.AllocateMemory |
-                                    ContextFlag.Delegate |
-                                    ContextFlag.InitExtendedError;
+        private const InitContextFlag DefaultRequiredFlags =
+                                    InitContextFlag.Connection |
+                                    InitContextFlag.ReplayDetect |
+                                    InitContextFlag.SequenceDetect |
+                                    InitContextFlag.Confidentiality |
+                                    InitContextFlag.AllocateMemory |
+                                    InitContextFlag.Delegate |
+                                    InitContextFlag.InitExtendedError;
 
-        private const ContextFlag DefaultServerRequiredFlags =
-                                    DefaultRequiredFlags |
-                                    ContextFlag.AcceptStream |
-                                    ContextFlag.AcceptExtendedError;
-
-        private SECURITY_HANDLE credentialsHandle = new SECURITY_HANDLE();
-        private SECURITY_HANDLE securityContext = new SECURITY_HANDLE();
+        private const AcceptContextFlag DefaultServerRequiredFlags =
+                                    AcceptContextFlag.Connection |
+                                    AcceptContextFlag.ReplayDetect |
+                                    AcceptContextFlag.SequenceDetect |
+                                    AcceptContextFlag.Confidentiality |
+                                    AcceptContextFlag.AllocateMemory |
+                                    AcceptContextFlag.Delegate |
+                                    AcceptContextFlag.AcceptStream |
+                                    AcceptContextFlag.AcceptExtendedError;
 
         private readonly HashSet<object> disposable = new HashSet<object>();
 
         private readonly Credential credential;
-        private readonly ContextFlag clientFlags;
-        private readonly ContextFlag serverFlags;
+        private readonly InitContextFlag clientFlags;
+        private readonly AcceptContextFlag serverFlags;
+
+        private SECURITY_HANDLE credentialsHandle = default;
+        private SECURITY_HANDLE securityContext = default;
 
         public SspiSecurityContext(
             Credential credential,
             string package,
-            ContextFlag clientFlags = DefaultRequiredFlags,
-            ContextFlag serverFlags = DefaultServerRequiredFlags
+            InitContextFlag clientFlags = DefaultRequiredFlags,
+            AcceptContextFlag serverFlags = DefaultServerRequiredFlags
         )
         {
             this.credential = credential;
             this.clientFlags = clientFlags;
             this.serverFlags = serverFlags;
 
-            Package = package;
+            this.Package = package;
         }
 
         public bool Impersonating { get; private set; }
 
         public string Package { get; }
 
-        public string UserName { get { return QueryContextAttributeAsString(SecurityContextAttribute.SECPKG_ATTR_NAMES); } }
+        public string UserName => this.QueryContextAttributeAsString(SecurityContextAttribute.SECPKG_ATTR_NAMES);
 
         public unsafe string QueryContextAttributeAsString(SecurityContextAttribute attr)
         {
@@ -66,7 +76,9 @@ namespace Kerberos.NET.Win32
             string strValue = null;
 
             RuntimeHelpers.PrepareConstrainedRegions();
-            try { }
+            try
+            {
+            }
             finally
             {
                 status = QueryContextAttributesString(ref this.securityContext, attr, ref pBuffer);
@@ -79,17 +91,25 @@ namespace Kerberos.NET.Win32
                     }
                     finally
                     {
-                        FreeContextBuffer(pBuffer.sValue);
+                        ThrowIfError(FreeContextBuffer(pBuffer.sValue));
                     }
-                }
-
-                if (status != SecStatus.SEC_E_UNSUPPORTED_FUNCTION && status > SecStatus.SEC_E_ERROR)
-                {
-                    throw new Win32Exception((int)status);
                 }
             }
 
+            if (status != SecStatus.SEC_E_UNSUPPORTED_FUNCTION && status > SecStatus.SEC_E_ERROR)
+            {
+                throw new Win32Exception((int)status);
+            }
+
             return strValue;
+        }
+
+        private static void ThrowIfError(uint result)
+        {
+            if (result != 0 && result != 0x80090301)
+            {
+                throw new Win32Exception((int)result);
+            }
         }
 
         public ContextStatus InitializeSecurityContext(string targetName, byte[] serverResponse, out byte[] clientRequest)
@@ -112,27 +132,29 @@ namespace Kerberos.NET.Win32
             {
                 do
                 {
+                    InitContextFlag contextFlags;
+
                     clientToken = new SecBufferDesc(tokenSize);
 
-                    if (!credentialsHandle.IsSet || result == SecStatus.SEC_I_CONTINUE_NEEDED)
+                    if (!this.credentialsHandle.IsSet || result == SecStatus.SEC_I_CONTINUE_NEEDED)
                     {
-                        AcquireCredentials();
+                        this.AcquireCredentials();
                     }
 
                     if (serverResponse == null)
                     {
                         result = InitializeSecurityContext_0(
-                            ref credentialsHandle,
+                            ref this.credentialsHandle,
                             IntPtr.Zero,
                             targetNameNormalized,
-                            clientFlags,
+                            this.clientFlags,
                             0,
                             SECURITY_NETWORK_DREP,
                             IntPtr.Zero,
                             0,
-                            ref securityContext,
+                            ref this.securityContext,
                             ref clientToken,
-                            out ContextFlag ContextFlags,
+                            out contextFlags,
                             IntPtr.Zero
                         );
                     }
@@ -143,17 +165,17 @@ namespace Kerberos.NET.Win32
                             IntPtr pExpiry = IntPtr.Zero;
 
                             result = InitializeSecurityContext_1(
-                                ref credentialsHandle,
-                                ref securityContext,
+                                ref this.credentialsHandle,
+                                ref this.securityContext,
                                 targetNameNormalized,
-                                clientFlags,
+                                this.clientFlags,
                                 0,
                                 SECURITY_NETWORK_DREP,
                                 ref pInputBuffer,
                                 0,
-                                ref securityContext,
+                                ref this.securityContext,
                                 ref clientToken,
-                                out ContextFlag ContextFlags,
+                                out contextFlags,
                                 ref pExpiry
                             );
                         }
@@ -195,9 +217,9 @@ namespace Kerberos.NET.Win32
         {
             serverResponse = null;
 
-            if (!credentialsHandle.IsSet)
+            if (!this.credentialsHandle.IsSet)
             {
-                AcquireCredentials();
+                this.AcquireCredentials();
             }
 
             var pInput = new SecBufferDesc(clientRequest);
@@ -213,31 +235,31 @@ namespace Kerberos.NET.Win32
                 {
                     pOutput = new SecBufferDesc(tokenSize);
 
-                    if (!securityContext.IsSet)
+                    if (!this.securityContext.IsSet)
                     {
                         result = AcceptSecurityContext_0(
-                            ref credentialsHandle,
+                            ref this.credentialsHandle,
                             IntPtr.Zero,
                             ref pInput,
-                            serverFlags,
+                            this.serverFlags,
                             SECURITY_NETWORK_DREP,
-                            ref securityContext,
+                            ref this.securityContext,
                             out pOutput,
-                            out ContextFlag pfContextAttr,
+                            out AcceptContextFlag pfContextAttr,
                             out SECURITY_INTEGER ptsTimeStamp
                         );
                     }
                     else
                     {
                         result = AcceptSecurityContext_1(
-                            ref credentialsHandle,
-                            ref securityContext,
+                            ref this.credentialsHandle,
+                            ref this.securityContext,
                             ref pInput,
-                            serverFlags,
+                            this.serverFlags,
                             SECURITY_NETWORK_DREP,
-                            ref securityContext,
+                            ref this.securityContext,
                             out pOutput,
-                            out ContextFlag pfContextAttr,
+                            out AcceptContextFlag pfContextAttr,
                             out SECURITY_INTEGER ptsTimeStamp
                         );
                     }
@@ -254,7 +276,7 @@ namespace Kerberos.NET.Win32
                 }
                 while (result == SecStatus.SEC_I_INCOMPLETE_CREDENTIALS || result == SecStatus.SEC_E_INSUFFICENT_MEMORY);
 
-                TrackUnmanaged(securityContext);
+                this.TrackUnmanaged(this.securityContext);
 
                 if (result > SecStatus.SEC_E_ERROR)
                 {
@@ -279,30 +301,32 @@ namespace Kerberos.NET.Win32
 
         private void TrackUnmanaged(object thing)
         {
-            disposable.Add(thing);
+            this.disposable.Add(thing);
         }
 
         private unsafe void AcquireCredentials()
         {
-            CredentialHandle creds = credential.Structify();
+            CredentialHandle creds = this.credential.Structify();
 
-            TrackUnmanaged(creds);
+            this.TrackUnmanaged(creds);
 
             SecStatus result;
 
             RuntimeHelpers.PrepareConstrainedRegions();
-            try { }
+            try
+            {
+            }
             finally
             {
                 result = AcquireCredentialsHandle(
                     null,
-                    Package,
+                    this.Package,
                     SECPKG_CRED_BOTH,
                     IntPtr.Zero,
                     (void*)creds.DangerousGetHandle(),
                     IntPtr.Zero,
                     IntPtr.Zero,
-                    ref credentialsHandle,
+                    ref this.credentialsHandle,
                     IntPtr.Zero
                );
             }
@@ -312,12 +336,12 @@ namespace Kerberos.NET.Win32
                 throw new Win32Exception((int)result);
             }
 
-            TrackUnmanaged(credentialsHandle);
+            this.TrackUnmanaged(this.credentialsHandle);
         }
 
         public unsafe void Dispose()
         {
-            foreach (var thing in disposable)
+            foreach (var thing in this.disposable)
             {
                 if (thing is IDisposable managedDispose)
                 {
@@ -326,7 +350,8 @@ namespace Kerberos.NET.Win32
                 else if (thing is SECURITY_HANDLE handle)
                 {
                     DeleteSecurityContext(&handle);
-                    FreeCredentialsHandle(&handle);
+
+                    ThrowIfError(FreeCredentialsHandle(&handle));
                 }
                 else if (thing is IntPtr pThing)
                 {

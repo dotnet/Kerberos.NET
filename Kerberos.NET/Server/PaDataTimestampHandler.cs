@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
@@ -12,6 +17,16 @@ namespace Kerberos.NET.Server
 
         public override KrbPaData Validate(KrbKdcReq asReq, PreAuthenticationContext preauth)
         {
+            if (asReq == null)
+            {
+                throw new ArgumentNullException(nameof(asReq));
+            }
+
+            if (preauth == null)
+            {
+                throw new ArgumentNullException(nameof(preauth));
+            }
+
             if (preauth.PreAuthenticationSatisfied)
             {
                 return null;
@@ -30,9 +45,9 @@ namespace Kerberos.NET.Server
                 };
             }
 
-            var skew = Service.Settings.MaximumSkew;
+            var skew = this.Service.Settings.MaximumSkew;
 
-            DateTimeOffset now = Service.Now();
+            DateTimeOffset now = this.Service.Now();
 
             if (Abs(now - timestamp) > skew)
             {

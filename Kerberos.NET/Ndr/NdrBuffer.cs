@@ -1,8 +1,13 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Ndr
 {
@@ -51,7 +56,7 @@ namespace Kerberos.NET.Ndr
     {
         public NdrBuffer(bool align = true)
         {
-            IsAligned = align;
+            this.IsAligned = align;
         }
 
         private readonly DeferralStack deferrals = new DeferralStack();
@@ -63,21 +68,21 @@ namespace Kerberos.NET.Ndr
 
         public int Offset { get; private set; }
 
-        public int BytesAvailable => workingBuffer.Length;
+        public int BytesAvailable => this.workingBuffer.Length;
 
-        public void DebugBuffer() => Hex.Debug(workingBuffer.ToArray());
+        public void DebugBuffer() => Hex.Debug(this.workingBuffer.ToArray());
 
-        public void Skip(int length) => MoveByOffset(length);
+        public void Skip(int length) => this.MoveByOffset(length);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Align(int mask)
         {
-            if (!IsAligned)
+            if (!this.IsAligned)
             {
                 return;
             }
 
-            var shift = Offset & mask - 1;
+            var shift = this.Offset & mask - 1;
 
             if (mask != 0 && shift != 0)
             {
@@ -85,7 +90,7 @@ namespace Kerberos.NET.Ndr
 
                 if (seek > 0)
                 {
-                    MoveByOffset(seek);
+                    this.MoveByOffset(seek);
                 }
             }
         }
@@ -96,30 +101,31 @@ namespace Kerberos.NET.Ndr
         {
             var size = sizeof(T);
 
-            Align(size);
+            this.Align(size);
 
-            return MoveByOffset(size).Span;
+            return this.MoveByOffset(size).Span;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Memory<byte> MoveByOffset(int offset)
         {
-            if (offset > workingBuffer.Length)
+            if (offset > this.workingBuffer.Length)
             {
-                throw new ArgumentException($"Offset {offset} greater than buffer length {workingBuffer.Length}", nameof(offset));
+                throw new ArgumentException($"Offset {offset} greater than buffer length {this.workingBuffer.Length}", nameof(offset));
             }
 
-            var current = workingBuffer.Slice(0);
+            var current = this.workingBuffer.Slice(0);
 
-            Offset += offset;
+            this.Offset += offset;
 
-            workingBuffer = backingBuffer.Slice(Offset);
+            this.workingBuffer = this.backingBuffer.Slice(this.Offset);
 
             return current;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int SizeOf<T>() where T : struct
+        private static int SizeOf<T>()
+            where T : struct
         {
             int size;
 

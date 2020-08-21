@@ -1,4 +1,7 @@
-﻿using System.Runtime.InteropServices;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
 
 namespace Kerberos.NET.Crypto
 {
@@ -19,6 +22,7 @@ namespace Kerberos.NET.Crypto
 
         public override IHmacAlgorithm HmacMd5() => new HmacMd5();
 #endif
+
         public override IHmacAlgorithm HmacSha1() => new HmacSha1();
 
         public override IKeyDerivationAlgorithm Rfc2898DeriveBytes() => new Rfc2898DeriveBytes();
@@ -44,7 +48,7 @@ namespace Kerberos.NET.Crypto
                 return BCryptDiffieHellman.Import(privateKey);
             }
 
-            return DiffieHellmanModp2();
+            return this.DiffieHellmanModp2();
         }
 
         public override IKeyAgreement DiffieHellmanModp14() => new BCryptDiffieHellmanOakleyGroup14();
@@ -56,7 +60,7 @@ namespace Kerberos.NET.Crypto
                 return BCryptDiffieHellman.Import(privateKey);
             }
 
-            return DiffieHellmanModp14();
+            return this.DiffieHellmanModp14();
         }
     }
 }

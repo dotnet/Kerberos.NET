@@ -1,6 +1,11 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -13,8 +18,8 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbETypeList
     {
-        public EncryptionType[] List;
-
+        public EncryptionType[] List { get; set; }
+  
 #if DEBUG
         static KrbETypeList()
         {
@@ -32,6 +37,7 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(Asn1Tag.Sequence, "List");
         }
 #endif
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -48,14 +54,17 @@ namespace Kerberos.NET.Entities
             if (List != null)
             {
                 if (wroteValue)
+                {
                     throw new CryptographicException();
+                }
                 
-
                 writer.PushSequence();
+            
                 for (int i = 0; i < List.Length; i++)
                 {
                     writer.WriteInteger((long)List[i]); 
                 }
+
                 writer.PopSequence();
 
                 wroteValue = true;
@@ -99,15 +108,17 @@ namespace Kerberos.NET.Entities
           where T: KrbETypeList, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             Asn1Tag tag = reader.PeekTag();
             AsnReader collectionReader;
             
             if (tag.HasSameClassAndValue(Asn1Tag.Sequence))
             {
-
                 // Decode SEQUENCE OF for List
                 {
                     collectionReader = reader.ReadSequence();
@@ -117,17 +128,17 @@ namespace Kerberos.NET.Entities
                     while (collectionReader.HasData)
                     {
 
-                        if (!collectionReader.TryReadInt32(out tmpItem))
+                        if (!collectionReader.TryReadInt32(out EncryptionType tmp))
                         {
                             collectionReader.ThrowIfNotEmpty();
                         }
- 
+            
+            tmpItem = tmp; 
                         tmpList.Add(tmpItem);
                     }
 
                     decoded.List = tmpList.ToArray();
                 }
-
             }
             else
             {

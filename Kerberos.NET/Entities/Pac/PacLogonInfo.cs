@@ -1,7 +1,12 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -12,128 +17,138 @@ namespace Kerberos.NET.Entities.Pac
 
         public PacLogonInfo()
         {
-            LogonTime = DateTimeOffset.MinValue;
-            LogoffTime = DateTimeOffset.MinValue;
-            KickOffTime = DateTimeOffset.MinValue;
-            PwdLastChangeTime = DateTimeOffset.MinValue;
-            PwdCanChangeTime = DateTimeOffset.MinValue;
-            PwdMustChangeTime = DateTimeOffset.MinValue;
-            LastSuccessfulILogon = DateTimeOffset.MinValue;
-            LastFailedILogon = DateTimeOffset.MinValue;
+            this.LogonTime = DateTimeOffset.MinValue;
+            this.LogoffTime = DateTimeOffset.MinValue;
+            this.KickOffTime = DateTimeOffset.MinValue;
+            this.PwdLastChangeTime = DateTimeOffset.MinValue;
+            this.PwdCanChangeTime = DateTimeOffset.MinValue;
+            this.PwdMustChangeTime = DateTimeOffset.MinValue;
+            this.LastSuccessfulILogon = DateTimeOffset.MinValue;
+            this.LastFailedILogon = DateTimeOffset.MinValue;
 
-            Reserved1 = Reserved1FixedValue;
-            UserSessionKey = ReservedSessionKey;
+            this.Reserved1 = Reserved1FixedValue;
+            this.UserSessionKey = ReservedSessionKey;
         }
 
         public override PacType PacType => PacType.LOGON_INFO;
 
         public override void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteStruct(LogonTime);
-            buffer.WriteStruct(LogoffTime);
-            buffer.WriteStruct(KickOffTime);
-            buffer.WriteStruct(PwdLastChangeTime);
-            buffer.WriteStruct(PwdCanChangeTime);
-            buffer.WriteStruct(PwdMustChangeTime);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            buffer.WriteStruct(UserName);
-            buffer.WriteStruct(UserDisplayName);
-            buffer.WriteStruct(LogonScript);
-            buffer.WriteStruct(ProfilePath);
-            buffer.WriteStruct(HomeDirectory);
-            buffer.WriteStruct(HomeDrive);
+            buffer.WriteStruct(this.LogonTime);
+            buffer.WriteStruct(this.LogoffTime);
+            buffer.WriteStruct(this.KickOffTime);
+            buffer.WriteStruct(this.PwdLastChangeTime);
+            buffer.WriteStruct(this.PwdCanChangeTime);
+            buffer.WriteStruct(this.PwdMustChangeTime);
 
-            buffer.WriteInt16LittleEndian(LogonCount);
-            buffer.WriteInt16LittleEndian(BadPasswordCount);
+            buffer.WriteStruct(this.UserName);
+            buffer.WriteStruct(this.UserDisplayName);
+            buffer.WriteStruct(this.LogonScript);
+            buffer.WriteStruct(this.ProfilePath);
+            buffer.WriteStruct(this.HomeDirectory);
+            buffer.WriteStruct(this.HomeDrive);
 
-            buffer.WriteUInt32LittleEndian(UserId);
-            buffer.WriteUInt32LittleEndian(GroupId);
+            buffer.WriteInt16LittleEndian(this.LogonCount);
+            buffer.WriteInt16LittleEndian(this.BadPasswordCount);
 
-            buffer.WriteInt32LittleEndian(GroupCount);
-            buffer.WriteDeferredStructArray(GroupIds);
+            buffer.WriteUInt32LittleEndian(this.UserId);
+            buffer.WriteUInt32LittleEndian(this.GroupId);
 
-            buffer.WriteInt32LittleEndian((int)UserFlags);
+            buffer.WriteInt32LittleEndian(this.GroupCount);
+            buffer.WriteDeferredStructArray(this.GroupIds);
 
-            buffer.WriteMemory(UserSessionKey);
+            buffer.WriteInt32LittleEndian((int)this.UserFlags);
 
-            buffer.WriteStruct(ServerName);
-            buffer.WriteStruct(DomainName);
+            buffer.WriteMemory(this.UserSessionKey);
 
-            buffer.WriteConformantStruct(DomainId);
+            buffer.WriteStruct(this.ServerName);
+            buffer.WriteStruct(this.DomainName);
 
-            buffer.WriteFixedPrimitiveArray(Reserved1.Span);
+            buffer.WriteConformantStruct(this.DomainId);
 
-            buffer.WriteInt32LittleEndian((int)UserAccountControl);
-            buffer.WriteInt32LittleEndian(SubAuthStatus);
+            buffer.WriteFixedPrimitiveArray(this.Reserved1.Span);
 
-            buffer.WriteStruct(LastSuccessfulILogon);
-            buffer.WriteStruct(LastFailedILogon);
-            buffer.WriteInt32LittleEndian(FailedILogonCount);
+            buffer.WriteInt32LittleEndian((int)this.UserAccountControl);
+            buffer.WriteInt32LittleEndian(this.SubAuthStatus);
 
-            buffer.WriteInt32LittleEndian(Reserved3);
+            buffer.WriteStruct(this.LastSuccessfulILogon);
+            buffer.WriteStruct(this.LastFailedILogon);
+            buffer.WriteInt32LittleEndian(this.FailedILogonCount);
 
-            buffer.WriteInt32LittleEndian(ExtraSidCount);
-            buffer.WriteDeferredConformantStructArray(ExtraIds);
+            buffer.WriteInt32LittleEndian(this.Reserved3);
 
-            buffer.WriteConformantStruct(ResourceDomainId);
+            buffer.WriteInt32LittleEndian(this.ExtraSidCount);
+            buffer.WriteDeferredConformantStructArray(this.ExtraIds);
 
-            buffer.WriteInt32LittleEndian(ResourceGroupCount);
-            buffer.WriteDeferredStructArray(ResourceGroupIds);
+            buffer.WriteConformantStruct(this.ResourceDomainId);
+
+            buffer.WriteInt32LittleEndian(this.ResourceGroupCount);
+            buffer.WriteDeferredStructArray(this.ResourceGroupIds);
         }
 
         public override void Unmarshal(NdrBuffer buffer)
         {
-            LogonTime = buffer.ReadStruct<RpcFileTime>();
-            LogoffTime = buffer.ReadStruct<RpcFileTime>();
-            KickOffTime = buffer.ReadStruct<RpcFileTime>();
-            PwdLastChangeTime = buffer.ReadStruct<RpcFileTime>();
-            PwdCanChangeTime = buffer.ReadStruct<RpcFileTime>();
-            PwdMustChangeTime = buffer.ReadStruct<RpcFileTime>();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            UserName = buffer.ReadStruct<RpcString>();
-            UserDisplayName = buffer.ReadStruct<RpcString>();
-            LogonScript = buffer.ReadStruct<RpcString>();
-            ProfilePath = buffer.ReadStruct<RpcString>();
-            HomeDirectory = buffer.ReadStruct<RpcString>();
-            HomeDrive = buffer.ReadStruct<RpcString>();
+            this.LogonTime = buffer.ReadStruct<RpcFileTime>();
+            this.LogoffTime = buffer.ReadStruct<RpcFileTime>();
+            this.KickOffTime = buffer.ReadStruct<RpcFileTime>();
+            this.PwdLastChangeTime = buffer.ReadStruct<RpcFileTime>();
+            this.PwdCanChangeTime = buffer.ReadStruct<RpcFileTime>();
+            this.PwdMustChangeTime = buffer.ReadStruct<RpcFileTime>();
 
-            LogonCount = buffer.ReadInt16LittleEndian();
-            BadPasswordCount = buffer.ReadInt16LittleEndian();
+            this.UserName = buffer.ReadStruct<RpcString>();
+            this.UserDisplayName = buffer.ReadStruct<RpcString>();
+            this.LogonScript = buffer.ReadStruct<RpcString>();
+            this.ProfilePath = buffer.ReadStruct<RpcString>();
+            this.HomeDirectory = buffer.ReadStruct<RpcString>();
+            this.HomeDrive = buffer.ReadStruct<RpcString>();
 
-            UserId = buffer.ReadUInt32LittleEndian();
-            GroupId = buffer.ReadUInt32LittleEndian();
+            this.LogonCount = buffer.ReadInt16LittleEndian();
+            this.BadPasswordCount = buffer.ReadInt16LittleEndian();
+
+            this.UserId = buffer.ReadUInt32LittleEndian();
+            this.GroupId = buffer.ReadUInt32LittleEndian();
 
             var groupCount = buffer.ReadInt32LittleEndian();
 
-            buffer.ReadDeferredStructArray<GroupMembership>(groupCount, v => GroupIds = v);
+            buffer.ReadDeferredStructArray<GroupMembership>(groupCount, v => this.GroupIds = v);
 
-            UserFlags = (UserFlags)buffer.ReadInt32LittleEndian();
+            this.UserFlags = (UserFlags)buffer.ReadInt32LittleEndian();
 
-            UserSessionKey = buffer.ReadMemory(16);
+            this.UserSessionKey = buffer.ReadMemory(16);
 
-            ServerName = buffer.ReadStruct<RpcString>();
-            DomainName = buffer.ReadStruct<RpcString>();
+            this.ServerName = buffer.ReadStruct<RpcString>();
+            this.DomainName = buffer.ReadStruct<RpcString>();
 
-            buffer.ReadConformantStruct<RpcSid>(v => DomainId = v);
+            buffer.ReadConformantStruct<RpcSid>(v => this.DomainId = v);
 
-            Reserved1 = buffer.ReadFixedPrimitiveArray<int>(2).ToArray();
+            this.Reserved1 = buffer.ReadFixedPrimitiveArray<int>(2).ToArray();
 
-            UserAccountControl = (UserAccountControlFlags)buffer.ReadInt32LittleEndian();
-            SubAuthStatus = buffer.ReadInt32LittleEndian();
-            LastSuccessfulILogon = buffer.ReadStruct<RpcFileTime>();
-            LastFailedILogon = buffer.ReadStruct<RpcFileTime>();
-            FailedILogonCount = buffer.ReadInt32LittleEndian();
+            this.UserAccountControl = (UserAccountControlFlags)buffer.ReadInt32LittleEndian();
+            this.SubAuthStatus = buffer.ReadInt32LittleEndian();
+            this.LastSuccessfulILogon = buffer.ReadStruct<RpcFileTime>();
+            this.LastFailedILogon = buffer.ReadStruct<RpcFileTime>();
+            this.FailedILogonCount = buffer.ReadInt32LittleEndian();
 
-            Reserved3 = buffer.ReadInt32LittleEndian();
+            this.Reserved3 = buffer.ReadInt32LittleEndian();
 
             var extraSidsCount = buffer.ReadInt32LittleEndian();
-            buffer.ReadDeferredStructArray<RpcSidAttributes>(extraSidsCount, v => ExtraIds = v);
+            buffer.ReadDeferredStructArray<RpcSidAttributes>(extraSidsCount, v => this.ExtraIds = v);
 
-            buffer.ReadConformantStruct<RpcSid>(v => ResourceDomainId = v);
+            buffer.ReadConformantStruct<RpcSid>(v => this.ResourceDomainId = v);
 
             var resourceGroupCount = buffer.ReadInt32LittleEndian();
 
-            buffer.ReadDeferredStructArray<GroupMembership>(resourceGroupCount, v => ResourceGroupIds = v);
+            buffer.ReadDeferredStructArray<GroupMembership>(resourceGroupCount, v => this.ResourceGroupIds = v);
         }
 
         public RpcFileTime LogonTime { get; set; }
@@ -168,10 +183,9 @@ namespace Kerberos.NET.Entities.Pac
 
         public uint GroupId { get; set; }
 
-        public int GroupCount => GroupIds?.Count() ?? 0;
+        public int GroupCount => this.GroupIds?.Count() ?? 0;
 
-        //[SizeIs("GroupCount")]
-        [KerberosIgnore]
+        // [SizeIs("GroupCount")]
         public IEnumerable<GroupMembership> GroupIds { get; set; }
 
         public UserFlags UserFlags { get; set; }
@@ -182,10 +196,9 @@ namespace Kerberos.NET.Entities.Pac
 
         public RpcString DomainName { get; set; } = RpcString.Empty;
 
-        [KerberosIgnore]
         public RpcSid DomainId { get; set; }
 
-        //[FixedSize(2)]
+        // [FixedSize(2)]
         public ReadOnlyMemory<int> Reserved1 { get; set; }
 
         public UserAccountControlFlags UserAccountControl { get; set; }
@@ -200,50 +213,48 @@ namespace Kerberos.NET.Entities.Pac
 
         public int Reserved3 { get; set; }
 
-        public int ExtraSidCount => ExtraIds?.Count() ?? 0;
+        public int ExtraSidCount => this.ExtraIds?.Count() ?? 0;
 
-        //[SizeIs("ExtraSidCount")]
-        [KerberosIgnore]
+        // [SizeIs("ExtraSidCount")]
         public IEnumerable<RpcSidAttributes> ExtraIds { get; set; }
 
         public RpcSid ResourceDomainId { get; set; }
 
-        public int ResourceGroupCount => ResourceGroupIds?.Count() ?? 0;
+        public int ResourceGroupCount => this.ResourceGroupIds?.Count() ?? 0;
 
-        //[SizeIs("ResourceGroupCount")]
-        [KerberosIgnore]
+        // [SizeIs("ResourceGroupCount")]
         public IEnumerable<GroupMembership> ResourceGroupIds { get; set; }
 
         public SecurityIdentifier UserSid
         {
-            get => SecurityIdentifier.FromRpcSid(DomainId, UserId);
-            set => UserId = value.Id;
+            get => SecurityIdentifier.FromRpcSid(this.DomainId, this.UserId);
+            set => this.UserId = value?.Id ?? 0;
         }
 
         public SecurityIdentifier GroupSid
         {
-            get => SecurityIdentifier.FromRpcSid(DomainId, GroupId);
-            set => GroupId = value.Id;
+            get => SecurityIdentifier.FromRpcSid(this.DomainId, this.GroupId);
+            set => this.GroupId = value?.Id ?? 0;
         }
 
         private static readonly IEnumerable<SecurityIdentifier> EmptySid = Array.Empty<SecurityIdentifier>();
 
         public IEnumerable<SecurityIdentifier> GroupSids
-            => GroupIds?.Select(g => SecurityIdentifier.FromRpcSid(DomainId, g.RelativeId, g.Attributes)) ?? EmptySid;
+            => this.GroupIds?.Select(g => SecurityIdentifier.FromRpcSid(this.DomainId, g.RelativeId, g.Attributes)) ?? EmptySid;
 
         public IEnumerable<SecurityIdentifier> ExtraSids
-            => ExtraIds?.Select(g => g.Sid.ToSecurityIdentifier()) ?? EmptySid;
+            => this.ExtraIds?.Select(g => g.Sid.ToSecurityIdentifier()) ?? EmptySid;
 
         public SecurityIdentifier ResourceDomainSid
-            => ResourceDomainId?.ToSecurityIdentifier();
+            => this.ResourceDomainId?.ToSecurityIdentifier();
 
         public IEnumerable<SecurityIdentifier> ResourceGroups
-            => ResourceGroupIds?.Select(g => SecurityIdentifier.FromRpcSid(ResourceDomainId, g.RelativeId, g.Attributes)) ?? EmptySid;
+            => this.ResourceGroupIds?.Select(g => SecurityIdentifier.FromRpcSid(this.ResourceDomainId, g.RelativeId, g.Attributes)) ?? EmptySid;
 
         public SecurityIdentifier DomainSid
         {
-            get => DomainId.ToSecurityIdentifier();
-            set => DomainId = value.ToRpcSid();
+            get => this.DomainId.ToSecurityIdentifier();
+            set => this.DomainId = value?.ToRpcSid();
         }
     }
 }

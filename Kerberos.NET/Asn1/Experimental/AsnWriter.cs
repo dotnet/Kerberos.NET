@@ -1,10 +1,11 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 // Enable CHECK_ACCURATE_ENSURE to ensure that the AsnWriter is not ever
 // abusing the normal EnsureWriteCapacity + ArrayPool behaviors of rounding up.
-//#define CHECK_ACCURATE_ENSURE
+// #define CHECK_ACCURATE_ENSURE
 
 using System.Buffers;
 using System.Collections.Generic;
@@ -43,7 +44,7 @@ namespace System.Security.Cryptography.Asn1
                 throw new ArgumentOutOfRangeException(nameof(ruleSet));
             }
 
-            RuleSet = ruleSet;
+            this.RuleSet = ruleSet;
         }
 
         /// <summary>
@@ -51,19 +52,19 @@ namespace System.Security.Cryptography.Asn1
         /// </summary>
         public void Dispose()
         {
-            _nestingStack = null;
+            this._nestingStack = null;
 
-            if (_buffer != null)
+            if (this._buffer != null)
             {
-                Array.Clear(_buffer, 0, _offset);
+                Array.Clear(this._buffer, 0, this._offset);
 #if !CHECK_ACCURATE_ENSURE
                 // clearSize: 0 because it was already cleared.
-                CryptoPool.Return(_buffer, clearSize: 0);
+                CryptoPool.Return(this._buffer, clearSize: 0);
 #endif
-                _buffer = null;
+                this._buffer = null;
             }
 
-            _offset = -1;
+            this._offset = -1;
         }
 
         /// <summary>
@@ -72,15 +73,15 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public void Reset()
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
-            if (_offset > 0)
+            if (this._offset > 0)
             {
-                Debug.Assert(_buffer != null);
-                Array.Clear(_buffer, 0, _offset);
-                _offset = 0;
+                Debug.Assert(this._buffer != null);
+                Array.Clear(this._buffer, 0, this._offset);
+                this._offset = 0;
 
-                _nestingStack?.Clear();
+                this._nestingStack?.Clear();
             }
         }
 
@@ -94,14 +95,14 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public int GetEncodedLength()
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
-            if ((_nestingStack?.Count ?? 0) != 0)
+            if ((this._nestingStack?.Count ?? 0) != 0)
             {
                 return -1;
             }
 
-            return _offset;
+            return this._offset;
         }
 
         /// <summary>
@@ -122,27 +123,29 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public bool TryEncode(Span<byte> destination, out int bytesWritten)
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
-            if ((_nestingStack?.Count ?? 0) != 0)
+            if ((this._nestingStack?.Count ?? 0) != 0)
+            {
                 throw new InvalidOperationException(SR.Resource("Cryptography_AsnWriter_EncodeUnbalancedStack"));
+            }
 
             // If the stack is closed out then everything is a definite encoding (BER, DER) or a
             // required indefinite encoding (CER). So we're correctly sized up, and ready to copy.
-            if (destination.Length < _offset)
+            if (destination.Length < this._offset)
             {
                 bytesWritten = 0;
                 return false;
             }
 
-            if (_offset == 0)
+            if (this._offset == 0)
             {
                 bytesWritten = 0;
                 return true;
             }
 
-            bytesWritten = _offset;
-            _buffer.AsSpan(0, _offset).CopyTo(destination);
+            bytesWritten = this._offset;
+            this._buffer.AsSpan(0, this._offset).CopyTo(destination);
             return true;
         }
 
@@ -157,38 +160,38 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public byte[] Encode()
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
-            if ((_nestingStack?.Count ?? 0) != 0)
+            if ((this._nestingStack?.Count ?? 0) != 0)
             {
                 throw new InvalidOperationException(SR.Resource("Cryptography_AsnWriter_EncodeUnbalancedStack"));
             }
 
-            if (_offset == 0)
+            if (this._offset == 0)
             {
                 return Array.Empty<byte>();
             }
 
             // If the stack is closed out then everything is a definite encoding (BER, DER) or a
             // required indefinite encoding (CER). So we're correctly sized up, and ready to copy.
-            return _buffer.AsSpan(0, _offset).ToArray();
+            return this._buffer.AsSpan(0, this._offset).ToArray();
         }
 
         internal ReadOnlySpan<byte> EncodeAsSpan()
         {
-            return EncodeAsMemory().Span;
+            return this.EncodeAsMemory().Span;
         }
 
         internal ReadOnlyMemory<byte> EncodeAsMemory()
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
-            if ((_nestingStack?.Count ?? 0) != 0)
+            if ((this._nestingStack?.Count ?? 0) != 0)
             {
                 throw new InvalidOperationException(SR.Resource("Cryptography_AsnWriter_EncodeUnbalancedStack"));
             }
 
-            if (_offset == 0)
+            if (this._offset == 0)
             {
                 return ReadOnlyMemory<byte>.Empty;
             }
@@ -196,11 +199,11 @@ namespace System.Security.Cryptography.Asn1
             // If the stack is closed out then everything is a definite encoding (BER, DER) or a
             // required indefinite encoding (CER). So we're correctly sized up, and ready to copy.
 
-            var memory = new Memory<byte>(new byte[_buffer.Length]);
+            var memory = new Memory<byte>(new byte[this._buffer.Length]);
 
-            _buffer.CopyTo(memory);
+            this._buffer.CopyTo(memory);
 
-            return memory.Slice(0, _offset);
+            return memory.Slice(0, this._offset);
         }
 
         /// <summary>
@@ -218,12 +221,12 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public bool ValueEquals(ReadOnlySpan<byte> other)
         {
-            return EncodeAsSpan().SequenceEqual(other);
+            return this.EncodeAsSpan().SequenceEqual(other);
         }
 
         private void CheckDisposed()
         {
-            if (_offset < 0)
+            if (this._offset < 0)
             {
                 throw new ObjectDisposedException(nameof(AsnWriter));
             }
@@ -231,14 +234,14 @@ namespace System.Security.Cryptography.Asn1
 
         private void EnsureWriteCapacity(int pendingCount)
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
             if (pendingCount < 0)
             {
                 throw new OverflowException();
             }
 
-            if (_buffer == null || _buffer.Length - _offset < pendingCount)
+            if (this._buffer == null || this._buffer.Length - this._offset < pendingCount)
             {
 #if CHECK_ACCURATE_ENSURE
 // A debug paradigm to make sure that throughout the execution nothing ever writes
@@ -252,24 +255,25 @@ namespace System.Security.Cryptography.Asn1
                 }
 #else
                 const int BlockSize = 1024;
+
                 // While the ArrayPool may have similar logic, make sure we don't run into a lot of
                 // "grow a little" by asking in 1k steps.
-                int blocks = checked(_offset + pendingCount + (BlockSize - 1)) / BlockSize;
-                byte[] oldBytes = _buffer;
-                _buffer = CryptoPool.Rent(BlockSize * blocks);
+                int blocks = checked(this._offset + pendingCount + (BlockSize - 1)) / BlockSize;
+                byte[] oldBytes = this._buffer;
+                this._buffer = CryptoPool.Rent(BlockSize * blocks);
 
                 if (oldBytes != null)
                 {
-                    Buffer.BlockCopy(oldBytes, 0, _buffer, 0, _offset);
-                    CryptoPool.Return(oldBytes, _offset);
+                    Buffer.BlockCopy(oldBytes, 0, this._buffer, 0, this._offset);
+                    CryptoPool.Return(oldBytes, this._offset);
                 }
 #endif
 
 #if DEBUG
                 // Ensure no "implicit 0" is happening
-                for (int i = _offset; i < _buffer.Length; i++)
+                for (int i = this._offset; i < this._buffer.Length; i++)
                 {
-                    _buffer[i] ^= 0xFF;
+                    this._buffer[i] ^= 0xFF;
                 }
 #endif
             }
@@ -278,16 +282,16 @@ namespace System.Security.Cryptography.Asn1
         private void WriteTag(Asn1Tag tag)
         {
             int spaceRequired = tag.CalculateEncodedSize();
-            EnsureWriteCapacity(spaceRequired);
+            this.EnsureWriteCapacity(spaceRequired);
 
-            if (!tag.TryEncode(_buffer.AsSpan(_offset, spaceRequired), out int written) ||
+            if (!tag.TryEncode(this._buffer.AsSpan(this._offset, spaceRequired), out int written) ||
                 written != spaceRequired)
             {
                 Debug.Fail($"TryWrite failed or written was wrong value ({written} vs {spaceRequired})");
                 throw new CryptographicException();
             }
 
-            _offset += spaceRequired;
+            this._offset += spaceRequired;
         }
 
         // T-REC-X.690-201508 sec 8.1.3
@@ -300,9 +304,9 @@ namespace System.Security.Cryptography.Asn1
             // T-REC-X.690-201508 sec 8.1.3.6
             if (length == -1)
             {
-                EnsureWriteCapacity(1);
-                _buffer[_offset] = MultiByteMarker;
-                _offset++;
+                this.EnsureWriteCapacity(1);
+                this._buffer[this._offset] = MultiByteMarker;
+                this._offset++;
                 return;
             }
 
@@ -312,9 +316,9 @@ namespace System.Security.Cryptography.Asn1
             if (length < MultiByteMarker)
             {
                 // Pre-allocate the pending data since we know how much.
-                EnsureWriteCapacity(1 + length);
-                _buffer[_offset] = (byte)length;
-                _offset++;
+                this.EnsureWriteCapacity(1 + length);
+                this._buffer[this._offset] = (byte)length;
+                this._offset++;
                 return;
             }
 
@@ -322,38 +326,53 @@ namespace System.Security.Cryptography.Asn1
             int lengthLength = GetEncodedLengthSubsequentByteCount(length);
 
             // Pre-allocate the pending data since we know how much.
-            EnsureWriteCapacity(lengthLength + 1 + length);
-            _buffer[_offset] = (byte)(MultiByteMarker | lengthLength);
+            this.EnsureWriteCapacity(lengthLength + 1 + length);
+            this._buffer[this._offset] = (byte)(MultiByteMarker | lengthLength);
 
             // No minus one because offset didn't get incremented yet.
-            int idx = _offset + lengthLength;
+            int idx = this._offset + lengthLength;
 
             int remaining = length;
 
             do
             {
-                _buffer[idx] = (byte)remaining;
+                this._buffer[idx] = (byte)remaining;
                 remaining >>= 8;
                 idx--;
-            } while (remaining > 0);
+            }
+            while (remaining > 0);
 
-            Debug.Assert(idx == _offset);
-            _offset += lengthLength + 1;
+            Debug.Assert(idx == this._offset);
+            this._offset += lengthLength + 1;
         }
 
         // T-REC-X.690-201508 sec 8.1.3.5
         private static int GetEncodedLengthSubsequentByteCount(int length)
         {
             if (length < 0)
+            {
                 throw new OverflowException();
+            }
+
             if (length <= 0x7F)
+            {
                 return 0;
+            }
+
             if (length <= byte.MaxValue)
+            {
                 return 1;
+            }
+
             if (length <= ushort.MaxValue)
+            {
                 return 2;
+            }
+
             if (length <= 0x00FFFFFF)
+            {
                 return 3;
+            }
 
             return 4;
         }
@@ -374,20 +393,20 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public unsafe void WriteEncodedValue(ReadOnlySpan<byte> preEncodedValue)
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
             fixed (byte* ptr = &MemoryMarshal.GetReference(preEncodedValue))
             {
                 using (MemoryManager<byte> manager = new PointerMemoryManager<byte>(ptr, preEncodedValue.Length))
                 {
-                    WriteEncodedValue(manager.Memory);
+                    this.WriteEncodedValue(manager.Memory);
                 }
             }
         }
 
         private void WriteEncodedValue(ReadOnlyMemory<byte> preEncodedValue)
         {
-            AsnReader reader = new AsnReader(preEncodedValue, RuleSet);
+            AsnReader reader = new AsnReader(preEncodedValue, this.RuleSet);
 
             // Is it legal under the current rules?
             ReadOnlyMemory<byte> parsedBack = reader.ReadEncodedValue();
@@ -401,46 +420,47 @@ namespace System.Security.Cryptography.Asn1
 
             Debug.Assert(parsedBack.Length == preEncodedValue.Length);
 
-            EnsureWriteCapacity(preEncodedValue.Length);
-            preEncodedValue.Span.CopyTo(_buffer.AsSpan(_offset));
-            _offset += preEncodedValue.Length;
+            this.EnsureWriteCapacity(preEncodedValue.Length);
+            preEncodedValue.Span.CopyTo(this._buffer.AsSpan(this._offset));
+            this._offset += preEncodedValue.Length;
         }
 
         // T-REC-X.690-201508 sec 8.1.5
         private void WriteEndOfContents()
         {
-            EnsureWriteCapacity(2);
-            _buffer[_offset++] = 0;
-            _buffer[_offset++] = 0;
+            this.EnsureWriteCapacity(2);
+            this._buffer[this._offset++] = 0;
+            this._buffer[this._offset++] = 0;
         }
 
         private void PushTag(Asn1Tag tag, UniversalTagNumber tagType)
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
-            if (_nestingStack == null)
+            if (this._nestingStack == null)
             {
-                _nestingStack = new Stack<(Asn1Tag, int, UniversalTagNumber)>();
+                this._nestingStack = new Stack<(Asn1Tag, int, UniversalTagNumber)>();
             }
 
             Debug.Assert(tag.IsConstructed);
-            WriteTag(tag);
-            _nestingStack.Push((tag, _offset, tagType));
+            this.WriteTag(tag);
+            this._nestingStack.Push((tag, this._offset, tagType));
+
             // Indicate that the length is indefinite.
             // We'll come back and clean this up (as appropriate) in PopTag.
-            WriteLength(-1);
+            this.WriteLength(-1);
         }
 
         private void PopTag(Asn1Tag tag, UniversalTagNumber tagType, bool sortContents = false)
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
-            if (_nestingStack == null || _nestingStack.Count == 0)
+            if (this._nestingStack == null || this._nestingStack.Count == 0)
             {
                 throw new InvalidOperationException(SR.Resource("Cryptography_AsnWriter_PopWrongTag"));
             }
 
-            (Asn1Tag stackTag, int lenOffset, UniversalTagNumber stackTagType) = _nestingStack.Peek();
+            (Asn1Tag stackTag, int lenOffset, UniversalTagNumber stackTagType) = this._nestingStack.Peek();
 
             Debug.Assert(tag.IsConstructed);
             if (stackTag != tag || stackTagType != tagType)
@@ -448,11 +468,11 @@ namespace System.Security.Cryptography.Asn1
                 throw new InvalidOperationException(SR.Resource("Cryptography_AsnWriter_PopWrongTag"));
             }
 
-            _nestingStack.Pop();
+            this._nestingStack.Pop();
 
             if (sortContents)
             {
-                SortContents(_buffer, lenOffset + 1, _offset);
+                SortContents(this._buffer, lenOffset + 1, this._offset);
             }
 
             // BER could use the indefinite encoding that CER does.
@@ -464,13 +484,13 @@ namespace System.Security.Cryptography.Asn1
 
             // T-REC-X.690-201508 sec 9.1 (constructed CER => indefinite length)
             // T-REC-X.690-201508 sec 8.1.3.6
-            if (RuleSet == AsnEncodingRules.CER)
+            if (this.RuleSet == AsnEncodingRules.CER)
             {
-                WriteEndOfContents();
+                this.WriteEndOfContents();
                 return;
             }
 
-            int containedLength = _offset - 1 - lenOffset;
+            int containedLength = this._offset - 1 - lenOffset;
             Debug.Assert(containedLength >= 0);
 
             int shiftSize = GetEncodedLengthSubsequentByteCount(containedLength);
@@ -478,22 +498,22 @@ namespace System.Security.Cryptography.Asn1
             // Best case, length fits in the compact byte
             if (shiftSize == 0)
             {
-                _buffer[lenOffset] = (byte)containedLength;
+                this._buffer[lenOffset] = (byte)containedLength;
                 return;
             }
 
             // We're currently at the end, so ensure we have room for N more bytes.
-            EnsureWriteCapacity(shiftSize);
+            this.EnsureWriteCapacity(shiftSize);
 
             // Buffer.BlockCopy correctly does forward-overlapped, so use it.
             int start = lenOffset + 1;
-            Buffer.BlockCopy(_buffer, start, _buffer, start + shiftSize, containedLength);
+            Buffer.BlockCopy(this._buffer, start, this._buffer, start + shiftSize, containedLength);
 
-            int tmp = _offset;
-            _offset = lenOffset;
-            WriteLength(containedLength);
-            Debug.Assert(_offset - lenOffset - 1 == shiftSize);
-            _offset = tmp + shiftSize;
+            int tmp = this._offset;
+            this._offset = lenOffset;
+            this.WriteLength(containedLength);
+            Debug.Assert(this._offset - lenOffset - 1 == shiftSize);
+            this._offset = tmp + shiftSize;
         }
 
         private static void SortContents(byte[] buffer, int start, int end)
@@ -580,7 +600,7 @@ namespace System.Security.Cryptography.Asn1
 
             public ArrayIndexSetOfValueComparer(byte[] data)
             {
-                _data = data;
+                this._data = data;
             }
 
             public int Compare((int, int) x, (int, int) y)
@@ -590,8 +610,8 @@ namespace System.Security.Cryptography.Asn1
 
                 int value =
                     SetOfValueComparer.Instance.Compare(
-                        new ReadOnlyMemory<byte>(_data, xOffset, xLength),
-                        new ReadOnlyMemory<byte>(_data, yOffset, yLength));
+                        new ReadOnlyMemory<byte>(this._data, xOffset, xLength),
+                        new ReadOnlyMemory<byte>(this._data, yOffset, yLength));
 
                 if (value == 0)
                 {

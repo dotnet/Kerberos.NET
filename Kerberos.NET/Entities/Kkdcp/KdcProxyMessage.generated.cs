@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,10 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KdcProxyMessage
     {
-        public ReadOnlyMemory<byte> KerbMessage;
-        public string TargetDomain;
-        public DcLocatorHint? DcLocatorHint;
-      
+        public ReadOnlyMemory<byte> KerbMessage { get; set; }
+  
+        public string TargetDomain { get; set; }
+  
+        public DcLocatorHint? DcLocatorHint { get; set; }
+    
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -24,7 +31,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -44,7 +51,7 @@ namespace Kerberos.NET.Entities
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, TargetDomain);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             }
-
+  
 
             if (Asn1Extension.HasValue(DcLocatorHint))
             {
@@ -52,7 +59,6 @@ namespace Kerberos.NET.Entities
                 writer.WriteInteger((long)DcLocatorHint.Value);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             }
-
             writer.PopSequence(tag);
         }
         
@@ -109,7 +115,9 @@ namespace Kerberos.NET.Entities
           where T: KdcProxyMessage, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -118,13 +126,15 @@ namespace Kerberos.NET.Entities
           where T: KdcProxyMessage, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
             if (explicitReader.TryReadPrimitiveOctetStringBytes(out ReadOnlyMemory<byte> tmpKerbMessage))
@@ -138,18 +148,18 @@ namespace Kerberos.NET.Entities
 
             explicitReader.ThrowIfNotEmpty();
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));                
+            
                 decoded.TargetDomain = explicitReader.ReadCharacterString(UniversalTagNumber.GeneralString);
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 2)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));                
+            
 
                 if (explicitReader.TryReadInt32(out int tmpDcLocatorHint))
                 {
@@ -162,7 +172,6 @@ namespace Kerberos.NET.Entities
 
                 explicitReader.ThrowIfNotEmpty();
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

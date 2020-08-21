@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -28,7 +29,7 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public void WriteBitString(ReadOnlySpan<byte> bitString, int unusedBitCount = 0)
         {
-            WriteBitStringCore(Asn1Tag.PrimitiveBitString, bitString, unusedBitCount);
+            this.WriteBitStringCore(Asn1Tag.PrimitiveBitString, bitString, unusedBitCount);
         }
 
         /// <summary>
@@ -59,7 +60,7 @@ namespace System.Security.Cryptography.Asn1
             CheckUniversalTag(tag, UniversalTagNumber.BitString);
 
             // Primitive or constructed, doesn't matter.
-            WriteBitStringCore(tag, bitString, unusedBitCount);
+            this.WriteBitStringCore(tag, bitString, unusedBitCount);
         }
 
         // T-REC-X.690-201508 sec 8.6
@@ -74,7 +75,7 @@ namespace System.Security.Cryptography.Asn1
                     SR.Resource("Cryptography_Asn_UnusedBitCountRange"));
             }
 
-            CheckDisposed();
+            this.CheckDisposed();
 
             // T-REC-X.690-201508 sec 8.6.2.3
             if (bitString.Length == 0 && unusedBitCount != 0)
@@ -95,7 +96,7 @@ namespace System.Security.Cryptography.Asn1
                 throw new CryptographicException(SR.Resource("Cryptography_Der_Invalid_Encoding"));
             }
 
-            if (RuleSet == AsnEncodingRules.CER)
+            if (this.RuleSet == AsnEncodingRules.CER)
             {
                 // T-REC-X.690-201508 sec 9.2
                 //
@@ -103,19 +104,20 @@ namespace System.Security.Cryptography.Asn1
                 // (>= instead of > because of the unused bit count byte)
                 if (bitString.Length >= AsnReader.MaxCERSegmentSize)
                 {
-                    WriteConstructedCerBitString(tag, bitString, unusedBitCount);
+                    this.WriteConstructedCerBitString(tag, bitString, unusedBitCount);
                     return;
                 }
             }
 
             // Clear the constructed flag, if present.
-            WriteTag(tag.AsPrimitive());
+            this.WriteTag(tag.AsPrimitive());
+
             // The unused bits byte requires +1.
-            WriteLength(bitString.Length + 1);
-            _buffer[_offset] = (byte)unusedBitCount;
-            _offset++;
-            bitString.CopyTo(_buffer.AsSpan(_offset));
-            _offset += bitString.Length;
+            this.WriteLength(bitString.Length + 1);
+            this._buffer[this._offset] = (byte)unusedBitCount;
+            this._offset++;
+            bitString.CopyTo(this._buffer.AsSpan(this._offset));
+            this._offset += bitString.Length;
         }
 
 #if netcoreapp || uap || NETCOREAPP || netstandard21
@@ -297,6 +299,7 @@ namespace System.Security.Cryptography.Asn1
         private static int DetermineCerBitStringTotalLength(Asn1Tag tag, int contentLength)
         {
             const int MaxCERSegmentSize = AsnReader.MaxCERSegmentSize;
+
             // Every segment has an "unused bit count" byte.
             const int MaxCERContentSize = MaxCERSegmentSize - 1;
             Debug.Assert(contentLength > MaxCERContentSize);
@@ -308,7 +311,7 @@ namespace System.Security.Cryptography.Asn1
             // And 1000 content octets (by T-REC-X.690-201508 sec 9.2)
             const int FullSegmentEncodedSize = 1004;
             Debug.Assert(
-                FullSegmentEncodedSize == 1 + 1 + MaxCERSegmentSize + GetEncodedLengthSubsequentByteCount(MaxCERSegmentSize));
+                1 + 1 + MaxCERSegmentSize + GetEncodedLengthSubsequentByteCount(MaxCERSegmentSize) == FullSegmentEncodedSize);
 
             int remainingEncodedSize;
 
@@ -326,27 +329,29 @@ namespace System.Security.Cryptography.Asn1
             // +2 for End-Of-Contents
             // +1 for 0x80 indefinite length
             // +tag length
-            return fullSegments * FullSegmentEncodedSize + remainingEncodedSize + 3 + tag.CalculateEncodedSize();
+            return (fullSegments * FullSegmentEncodedSize) + remainingEncodedSize + 3 + tag.CalculateEncodedSize();
         }
 
         // T-REC-X.690-201508 sec 9.2, 8.6
         private void WriteConstructedCerBitString(Asn1Tag tag, ReadOnlySpan<byte> payload, int unusedBitCount)
         {
             const int MaxCERSegmentSize = AsnReader.MaxCERSegmentSize;
+
             // Every segment has an "unused bit count" byte.
             const int MaxCERContentSize = MaxCERSegmentSize - 1;
             Debug.Assert(payload.Length > MaxCERContentSize);
 
             int expectedSize = DetermineCerBitStringTotalLength(tag, payload.Length);
-            EnsureWriteCapacity(expectedSize);
-            int savedOffset = _offset;
+            this.EnsureWriteCapacity(expectedSize);
+            int savedOffset = this._offset;
 
-            WriteTag(tag.AsConstructed());
+            this.WriteTag(tag.AsConstructed());
+
             // T-REC-X.690-201508 sec 9.1
             // Constructed CER uses the indefinite form.
-            WriteLength(-1);
+            this.WriteLength(-1);
 
-            byte[] ensureNoExtraCopy = _buffer;
+            byte[] ensureNoExtraCopy = this._buffer;
 
             ReadOnlySpan<byte> remainingData = payload;
             Span<byte> dest;
@@ -355,33 +360,34 @@ namespace System.Security.Cryptography.Asn1
             while (remainingData.Length > MaxCERContentSize)
             {
                 // T-REC-X.690-201508 sec 8.6.4.1
-                WriteTag(primitiveBitString);
-                WriteLength(MaxCERSegmentSize);
-                // 0 unused bits in this segment.
-                _buffer[_offset] = 0;
-                _offset++;
+                this.WriteTag(primitiveBitString);
+                this.WriteLength(MaxCERSegmentSize);
 
-                dest = _buffer.AsSpan(_offset);
+                // 0 unused bits in this segment.
+                this._buffer[this._offset] = 0;
+                this._offset++;
+
+                dest = this._buffer.AsSpan(this._offset);
                 remainingData.Slice(0, MaxCERContentSize).CopyTo(dest);
 
                 remainingData = remainingData.Slice(MaxCERContentSize);
-                _offset += MaxCERContentSize;
+                this._offset += MaxCERContentSize;
             }
 
-            WriteTag(primitiveBitString);
-            WriteLength(remainingData.Length + 1);
+            this.WriteTag(primitiveBitString);
+            this.WriteLength(remainingData.Length + 1);
 
-            _buffer[_offset] = (byte)unusedBitCount;
-            _offset++;
+            this._buffer[this._offset] = (byte)unusedBitCount;
+            this._offset++;
 
-            dest = _buffer.AsSpan(_offset);
+            dest = this._buffer.AsSpan(this._offset);
             remainingData.CopyTo(dest);
-            _offset += remainingData.Length;
+            this._offset += remainingData.Length;
 
-            WriteEndOfContents();
+            this.WriteEndOfContents();
 
-            Debug.Assert(_offset - savedOffset == expectedSize, $"expected size was {expectedSize}, actual was {_offset - savedOffset}");
-            Debug.Assert(_buffer == ensureNoExtraCopy, $"_buffer was replaced during {nameof(WriteConstructedCerBitString)}");
+            Debug.Assert(this._offset - savedOffset == expectedSize, $"expected size was {expectedSize}, actual was {this._offset - savedOffset}");
+            Debug.Assert(this._buffer == ensureNoExtraCopy, $"_buffer was replaced during {nameof(this.WriteConstructedCerBitString)}");
         }
     }
 }

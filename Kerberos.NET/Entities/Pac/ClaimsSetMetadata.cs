@@ -1,6 +1,11 @@
-﻿using Kerberos.NET.Entities.Pac;
-using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities
 {
@@ -8,62 +13,77 @@ namespace Kerberos.NET.Entities
     {
         public override void Marshal(NdrBuffer buffer)
         {
-            var claimsSet = Compress(ClaimsSet, CompressionFormat, out int originalSize);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            var claimsSet = Compress(this.ClaimsSet, this.CompressionFormat, out int originalSize);
 
             buffer.WriteInt32LittleEndian(claimsSet.Length);
 
             buffer.WriteDeferredConformantArray(claimsSet);
 
-            buffer.WriteInt32LittleEndian((int)CompressionFormat);
+            buffer.WriteInt32LittleEndian((int)this.CompressionFormat);
             buffer.WriteInt32LittleEndian(originalSize);
 
-            buffer.WriteInt16LittleEndian(ReservedType);
-            buffer.WriteInt32LittleEndian(ReservedFieldSize);
+            buffer.WriteInt16LittleEndian(this.ReservedType);
+            buffer.WriteInt32LittleEndian(this.ReservedFieldSize);
 
-            buffer.WriteDeferredConformantArray<byte>(ReservedField);
+            buffer.WriteDeferredConformantArray<byte>(this.ReservedField.Span);
         }
 
         private static ReadOnlySpan<byte> Compress(ClaimsSet claimsSet, CompressionFormat compressionFormat, out int originalSize)
         {
-            var buffer = new NdrBuffer();
-
-            buffer.MarshalObject(claimsSet);
-
-            ReadOnlySpan<byte> encoded = buffer.ToSpan(alignment: 8);
-
-            originalSize = encoded.Length;
-
-            if (compressionFormat != CompressionFormat.COMPRESSION_FORMAT_NONE)
+            using (var buffer = new NdrBuffer())
             {
-                encoded = Compressions.Compress(encoded, compressionFormat);
-            }
+                buffer.MarshalObject(claimsSet);
 
-            return encoded;
+                ReadOnlySpan<byte> encoded = buffer.ToSpan(alignment: 8);
+
+                originalSize = encoded.Length;
+
+                if (compressionFormat != CompressionFormat.COMPRESSION_FORMAT_NONE)
+                {
+                    encoded = Compressions.Compress(encoded, compressionFormat);
+                }
+
+                return encoded;
+            }
         }
 
         public override void Unmarshal(NdrBuffer buffer)
         {
-            ClaimSetSize = buffer.ReadInt32LittleEndian();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            buffer.ReadDeferredConformantArray<byte>(ClaimSetSize, v => ClaimsSet = UnmarshalClaimsSet(v));
+            this.ClaimSetSize = buffer.ReadInt32LittleEndian();
 
-            CompressionFormat = (CompressionFormat)buffer.ReadInt32LittleEndian();
-            UncompressedClaimSetSize = buffer.ReadInt32LittleEndian();
-            ReservedType = buffer.ReadInt16LittleEndian();
-            ReservedFieldSize = buffer.ReadInt32LittleEndian();
+            buffer.ReadDeferredConformantArray<byte>(this.ClaimSetSize, v => this.ClaimsSet = this.UnmarshalClaimsSet(v));
 
-            buffer.ReadDeferredConformantArray<byte>(ReservedFieldSize, v => ReservedField = v.ToArray());
+            this.CompressionFormat = (CompressionFormat)buffer.ReadInt32LittleEndian();
+            this.UncompressedClaimSetSize = buffer.ReadInt32LittleEndian();
+            this.ReservedType = buffer.ReadInt16LittleEndian();
+            this.ReservedFieldSize = buffer.ReadInt32LittleEndian();
+
+            buffer.ReadDeferredConformantArray<byte>(this.ReservedFieldSize, v => this.ReservedField = v.ToArray());
         }
 
         private ClaimsSet UnmarshalClaimsSet(ReadOnlyMemory<byte> claimSet)
         {
-            if (CompressionFormat != CompressionFormat.COMPRESSION_FORMAT_NONE)
+            if (this.CompressionFormat != CompressionFormat.COMPRESSION_FORMAT_NONE)
             {
-                claimSet = Compressions.Decompress(claimSet.Span, UncompressedClaimSetSize, CompressionFormat);
+                claimSet = Compressions.Decompress(claimSet.Span, this.UncompressedClaimSetSize, this.CompressionFormat);
             }
 
             var claimsSet = new ClaimsSet();
-            new NdrBuffer(claimSet).UnmarshalObject(claimsSet);
+
+            using (var buffer = new NdrBuffer(claimSet))
+            {
+                buffer.UnmarshalObject(claimsSet);
+            }
 
             return claimsSet;
         }
@@ -83,7 +103,7 @@ namespace Kerberos.NET.Entities
         [KerberosIgnore]
         public int ReservedFieldSize { get; set; }
 
-        public byte[] ReservedField { get; set; }
+        public ReadOnlyMemory<byte> ReservedField { get; set; }
 
         public override PacType PacType => PacType.CLIENT_CLAIMS;
     }

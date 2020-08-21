@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,11 +16,15 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbTicket
     {
-        public int TicketNumber;
-        public string Realm;
-        public KrbPrincipalName SName;
-        public KrbEncryptedData EncryptedPart;
-      
+        public int TicketNumber { get; set; }
+  
+        public string Realm { get; set; }
+  
+        public KrbPrincipalName SName { get; set; }
+  
+        public KrbEncryptedData EncryptedPart { get; set; }
+  
+        // Encoding methods
         internal void Encode(AsnWriter writer)
         {
             EncodeApplication(writer, ApplicationTag);
@@ -117,7 +125,9 @@ namespace Kerberos.NET.Entities
           where T: KrbTicket, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             DecodeApplication(reader, out decoded);
         }
@@ -126,37 +136,42 @@ namespace Kerberos.NET.Entities
           where T: KrbTicket, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (!explicitReader.TryReadInt32(out decoded.TicketNumber))
+            if (!explicitReader.TryReadInt32(out int tmpTicketNumber))
             {
                 explicitReader.ThrowIfNotEmpty();
             }
+            
+            decoded.TicketNumber = tmpTicketNumber;
 
             explicitReader.ThrowIfNotEmpty();
-
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             decoded.Realm = explicitReader.ReadCharacterString(UniversalTagNumber.GeneralString);
-            explicitReader.ThrowIfNotEmpty();
 
+            explicitReader.ThrowIfNotEmpty();
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
-            KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out decoded.SName);
-            explicitReader.ThrowIfNotEmpty();
+            KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out KrbPrincipalName tmpSName);
+            decoded.SName = tmpSName;
 
+            explicitReader.ThrowIfNotEmpty();
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
-            KrbEncryptedData.Decode<KrbEncryptedData>(explicitReader, out decoded.EncryptedPart);
-            explicitReader.ThrowIfNotEmpty();
+            KrbEncryptedData.Decode<KrbEncryptedData>(explicitReader, out KrbEncryptedData tmpEncryptedPart);
+            decoded.EncryptedPart = tmpEncryptedPart;
 
+            explicitReader.ThrowIfNotEmpty();
 
             sequenceReader.ThrowIfNotEmpty();
         }

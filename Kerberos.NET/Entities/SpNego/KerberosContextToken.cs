@@ -1,5 +1,10 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
@@ -9,23 +14,16 @@ namespace Kerberos.NET.Entities
         {
             var kerb = data ?? gssToken?.Token;
 
-            if (KrbApReq.CanDecode(kerb.Value))
-            {
-                KrbApReq = KrbApReq.DecodeApplication(kerb.Value);
-            }
-            else if (KrbApRep.CanDecode(kerb.Value))
-            {
-                KrbApRep = KrbApRep.DecodeApplication(kerb.Value);
-            }
+            this.KrbApReq = KrbApReq.DecodeApplication(kerb.Value);
         }
 
-        public KrbApReq KrbApReq;
+        public KrbApReq KrbApReq { get; set; }
 
-        public KrbApRep KrbApRep;
+        public KrbApRep KrbApRep { get; set; }
 
         public override DecryptedKrbApReq DecryptApReq(KeyTable keys)
         {
-            return DecryptApReq(KrbApReq, keys);
+            return DecryptApReq(this.KrbApReq, keys);
         }
     }
 }

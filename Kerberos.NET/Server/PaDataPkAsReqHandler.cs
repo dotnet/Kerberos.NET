@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -28,7 +33,7 @@ namespace Kerberos.NET.Server
 
         public X509IncludeOption IncludeOption { get; set; } = X509IncludeOption.ExcludeRoot;
 
-        public ICollection<KeyAgreementAlgorithm> SupportedKeyAgreementAlgorithms { get; set; }
+        public ICollection<KeyAgreementAlgorithm> SupportedKeyAgreementAlgorithms { get; }
             = new List<KeyAgreementAlgorithm>(DefaultSupportedAlgorithms.ToArray());
 
         public PaDataPkAsReqHandler(IRealmService service)
@@ -38,6 +43,11 @@ namespace Kerberos.NET.Server
 
         public override void PreValidate(PreAuthenticationContext preauth)
         {
+            if (preauth == null)
+            {
+                throw new ArgumentNullException(nameof(preauth));
+            }
+
             var asReq = (KrbKdcReq)preauth.Message;
 
             var paPk = asReq.PaData.FirstOrDefault(p => p.Type == PaDataType.PA_PK_AS_REQ);
@@ -55,16 +65,27 @@ namespace Kerberos.NET.Server
             var state = new PkInitState
             {
                 PkInitRequest = pkreq,
-                Cms = signedCms,
-                ClientCertificate = signedCms.Certificates
+                Cms = signedCms
             };
+
+            state.ClientCertificate.AddRange(signedCms.Certificates);
 
             preauth.PreAuthenticationState[PaDataType.PA_PK_AS_REQ] = state;
         }
 
         public override KrbPaData Validate(KrbKdcReq asReq, PreAuthenticationContext preauth)
         {
-            if (!preauth.PreAuthenticationState.TryGetValue(PaDataType.PA_PK_AS_REQ, out PaDataState paState) || 
+            if (asReq == null)
+            {
+                throw new ArgumentNullException(nameof(asReq));
+            }
+
+            if (preauth == null)
+            {
+                throw new ArgumentNullException(nameof(preauth));
+            }
+
+            if (!preauth.PreAuthenticationState.TryGetValue(PaDataType.PA_PK_AS_REQ, out PaDataState paState) ||
                 !(paState is PkInitState state))
             {
                 return null;
@@ -72,7 +93,7 @@ namespace Kerberos.NET.Server
 
             var authPack = ValidateAuthPack(preauth, state);
 
-            ValidateAuthenticator(authPack.PKAuthenticator, asReq.Body);
+            this.ValidateAuthenticator(authPack.PKAuthenticator, asReq.Body);
 
             var requestAlg = authPack.ClientPublicValue?.Algorithm?.Algorithm;
 
@@ -80,11 +101,11 @@ namespace Kerberos.NET.Server
 
             if (requestAlg?.Value == EllipticCurveDiffieHellman.Value)
             {
-                agreement = FromEllipticCurveDomainParameters(authPack.ClientPublicValue);
+                agreement = this.FromEllipticCurveDomainParameters(authPack.ClientPublicValue);
             }
             else if (requestAlg?.Value == DiffieHellman.Value)
             {
-                agreement = FromDiffieHellmanDomainParameters(authPack.ClientPublicValue);
+                agreement = this.FromDiffieHellmanDomainParameters(authPack.ClientPublicValue);
             }
             else
             {
@@ -93,7 +114,14 @@ namespace Kerberos.NET.Server
 
             var derivedKey = agreement.GenerateAgreement();
 
-            var etype = asReq.Body.EType.First();
+            var preferredEType = KerberosConstants.GetPreferredEType(asReq.Body.EType);
+
+            if (preferredEType is null)
+            {
+                throw new InvalidOperationException("Cannot find a common EType");
+            }
+
+            var etype = preferredEType.Value;
 
             var transform = CryptoService.CreateTransform(etype);
 
@@ -104,7 +132,7 @@ namespace Kerberos.NET.Server
             {
                 serverDHNonce = transform.GenerateRandomBytes(agreement.PublicKey.KeyLength);
 
-                Service.Principals.CacheKey(agreement.PrivateKey);
+                this.Service.Principals.CacheKey(agreement.PrivateKey);
             }
 
             var keyInfo = new KrbKdcDHKeyInfo { SubjectPublicKey = agreement.PublicKey.EncodePublicKey() };
@@ -126,7 +154,7 @@ namespace Kerberos.NET.Server
             {
                 DHInfo = new KrbDHReplyInfo
                 {
-                    DHSignedData = SignDHResponse(keyInfo),
+                    DHSignedData = this.SignDHResponse(keyInfo),
                     ServerDHNonce = serverDHNonce
                 }
             };
@@ -155,9 +183,9 @@ namespace Kerberos.NET.Server
                 )
             );
 
-            var certificate = Service.Principals.RetrieveKdcCertificate();
+            var certificate = this.Service.Principals.RetrieveKdcCertificate();
 
-            var signer = new CmsSigner(certificate) { IncludeOption = IncludeOption };
+            var signer = new CmsSigner(certificate) { IncludeOption = this.IncludeOption };
 
             signed.ComputeSignature(signer);
 
@@ -172,15 +200,15 @@ namespace Kerberos.NET.Server
 
             IKeyAgreement agreement;
 
-            if (IsSupportedAlgorithm(KeyAgreementAlgorithm.DiffieHellmanModp14, Oakley.Group14.Prime, parameters.P))
+            if (this.IsSupportedAlgorithm(KeyAgreementAlgorithm.DiffieHellmanModp14, Oakley.Group14.Prime, parameters.P))
             {
-                var cachedKey = Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp14);
+                var cachedKey = this.Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp14);
 
                 agreement = CryptoPal.Platform.DiffieHellmanModp14(cachedKey);
             }
-            else if (IsSupportedAlgorithm(KeyAgreementAlgorithm.DiffieHellmanModp2, Oakley.Group2.Prime, parameters.P))
+            else if (this.IsSupportedAlgorithm(KeyAgreementAlgorithm.DiffieHellmanModp2, Oakley.Group2.Prime, parameters.P))
             {
-                var cachedKey = Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp2);
+                var cachedKey = this.Service.Principals.RetrieveKeyCache(KeyAgreementAlgorithm.DiffieHellmanModp2);
 
                 agreement = CryptoPal.Platform.DiffieHellmanModp2(cachedKey);
             }
@@ -200,7 +228,7 @@ namespace Kerberos.NET.Server
 
         private bool IsSupportedAlgorithm(KeyAgreementAlgorithm algorithm, ReadOnlyMemory<byte> expectedPVal, ReadOnlyMemory<byte> actualPVal)
         {
-            if (!SupportedKeyAgreementAlgorithms.Contains(algorithm))
+            if (!this.SupportedKeyAgreementAlgorithms.Contains(algorithm))
             {
                 return false;
             }
@@ -227,12 +255,12 @@ namespace Kerberos.NET.Server
                 }
             }
 
-            if (!KerberosConstants.WithinSkew(Service.Now(), authenticator.CTime, authenticator.CuSec, Service.Settings.MaximumSkew))
+            if (!KerberosConstants.WithinSkew(this.Service.Now(), authenticator.CTime, authenticator.CuSec, this.Service.Settings.MaximumSkew))
             {
                 throw new KerberosValidationException($"PKAuthenticator time skew too great");
             }
 
-            ValidateNonce(authenticator.Nonce);
+            this.ValidateNonce(authenticator.Nonce);
         }
 
         protected virtual void ValidateNonce(int nonce)

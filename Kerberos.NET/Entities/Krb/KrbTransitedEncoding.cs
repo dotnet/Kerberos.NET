@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,15 +14,15 @@ namespace Kerberos.NET.Entities
     {
         public void EncodeTransit(IEnumerable<string> realms)
         {
-            if (Type == 0)
+            if (this.Type == 0)
             {
-                Type = TransitedEncodingType.DomainX500Compress;
+                this.Type = TransitedEncodingType.DomainX500Compress;
             }
 
-            switch (Type)
+            switch (this.Type)
             {
                 case TransitedEncodingType.DomainX500Compress:
-                    Contents = EncodeX500Compress(realms);
+                    this.Contents = EncodeX500Compress(realms);
                     break;
             }
         }
@@ -26,15 +31,15 @@ namespace Kerberos.NET.Entities
 
         public IEnumerable<string> DecodeTransit()
         {
-            if (Contents.Length <= 0)
+            if (this.Contents.Length <= 0)
             {
                 return EmptyTransit;
             }
 
-            switch (Type)
+            switch (this.Type)
             {
                 case TransitedEncodingType.DomainX500Compress:
-                    return DecodeX500Compress();
+                    return this.DecodeX500Compress();
             }
 
             return EmptyTransit;
@@ -43,7 +48,7 @@ namespace Kerberos.NET.Entities
         private IEnumerable<string> DecodeX500Compress()
         {
             var realms = new List<string>();
-            var encoded = Encoding.UTF8.GetString(Contents.Span.ToArray());
+            var encoded = Encoding.UTF8.GetString(this.Contents.Span.ToArray());
             if (encoded.Contains('/'))
             {
                 throw new InvalidOperationException($"X500 domain names are not supported: {encoded}");
@@ -55,11 +60,11 @@ namespace Kerberos.NET.Entities
 
             foreach (var quotedSection in sections)
             {
-                var section = quotedSection.Replace("\"", "").Replace("..", ".");
+                var section = quotedSection.Replace("\"", string.Empty).Replace("..", ".");
 
                 var sb = new StringBuilder();
 
-                if (section.EndsWith("."))
+                if (section.EndsWith(".", StringComparison.InvariantCultureIgnoreCase))
                 {
                     sb.Append(section);
 
@@ -93,7 +98,7 @@ namespace Kerberos.NET.Entities
             // "\", trailing "."s, and leading spaces (" ") are special characters,
             // and if they are part of a realm name, they MUST be quoted in the
             // transited field by preceding them with a "\".
-            // 
+            //
             // A realm name ending with a "." is interpreted as being prepended to
             // the previous realm.
 
@@ -114,7 +119,7 @@ namespace Kerberos.NET.Entities
 
                 if (!string.IsNullOrWhiteSpace(lastRealm))
                 {
-                    var indexOfLastRealm = realm.IndexOf(lastRealm);
+                    var indexOfLastRealm = realm.IndexOf(lastRealm, StringComparison.OrdinalIgnoreCase);
 
                     if (indexOfLastRealm > 0)
                     {

@@ -1,6 +1,11 @@
-﻿using Kerberos.NET.Asn1;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Security.Cryptography.Asn1;
+using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Crypto
 {
@@ -20,15 +25,15 @@ namespace Kerberos.NET.Crypto
 
         public ReadOnlyMemory<byte> Factor { get; set; }
 
-        public ReadOnlyMemory<byte> Public { get; set; }
+        public ReadOnlyMemory<byte> PublicComponent { get; set; }
 
-        public ReadOnlyMemory<byte> Private { get; set; }
+        public ReadOnlyMemory<byte> PrivateComponent { get; set; }
 
         public ReadOnlyMemory<byte> EncodePublicKey()
         {
             using (var writer = new AsnWriter(AsnEncodingRules.DER))
             {
-                writer.WriteKeyParameterInteger(Public.Span);
+                writer.WriteKeyParameterInteger(this.PublicComponent.Span);
 
                 return writer.EncodeAsMemory();
             }
@@ -40,7 +45,7 @@ namespace Kerberos.NET.Crypto
 
             var bytes = reader.ReadIntegerBytes();
 
-            return new DiffieHellmanKey { Public = bytes.DepadLeft().PadRight(keyLength) };
+            return new DiffieHellmanKey { PublicComponent = bytes.DepadLeft().PadRight(keyLength) };
         }
     }
 }

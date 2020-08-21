@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 namespace System.Security.Cryptography.Asn1
 {
@@ -14,7 +15,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="PopSequence()"/>
         public void PushSequence()
         {
-            PushSequenceCore(Asn1Tag.Sequence);
+            this.PushSequenceCore(Asn1Tag.Sequence);
         }
 
         /// <summary>
@@ -34,7 +35,7 @@ namespace System.Security.Cryptography.Asn1
             CheckUniversalTag(tag, UniversalTagNumber.Sequence);
 
             // Assert the constructed flag, in case it wasn't.
-            PushSequenceCore(tag.AsConstructed());
+            this.PushSequenceCore(tag.AsConstructed());
         }
 
         /// <summary>
@@ -49,7 +50,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="PushSequence()"/>
         public void PopSequence()
         {
-            PopSequenceCore(Asn1Tag.Sequence);
+            this.PopSequenceCore(Asn1Tag.Sequence);
         }
 
         /// <summary>
@@ -75,19 +76,19 @@ namespace System.Security.Cryptography.Asn1
             CheckUniversalTag(tag, UniversalTagNumber.Sequence);
 
             // Assert the constructed flag, in case it wasn't.
-            PopSequenceCore(tag.AsConstructed());
+            this.PopSequenceCore(tag.AsConstructed());
         }
 
         // T-REC-X.690-201508 sec 8.9, 8.10
         private void PushSequenceCore(Asn1Tag tag)
         {
-            PushTag(tag.AsConstructed(), UniversalTagNumber.Sequence);
+            this.PushTag(tag.AsConstructed(), UniversalTagNumber.Sequence);
         }
 
         // T-REC-X.690-201508 sec 8.9, 8.10
         private void PopSequenceCore(Asn1Tag tag)
         {
-            PopTag(tag, UniversalTagNumber.Sequence);
+            this.PopTag(tag, UniversalTagNumber.Sequence);
         }
     }
 }

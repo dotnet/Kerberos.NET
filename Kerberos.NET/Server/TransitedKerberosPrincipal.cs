@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -17,7 +22,7 @@ namespace Kerberos.NET
             this.clientTicket = clientTicket;
         }
 
-        public string PrincipalName => clientTicket.Ticket.CName.FullyQualifiedName;
+        public string PrincipalName => this.clientTicket.Ticket.CName.FullyQualifiedName;
 
         public IEnumerable<PaDataType> SupportedPreAuthenticationTypes => Enumerable.Empty<PaDataType>();
 

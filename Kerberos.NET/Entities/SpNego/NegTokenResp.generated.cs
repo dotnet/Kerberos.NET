@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,11 +16,15 @@ namespace Kerberos.NET.Entities
 {
     public partial class NegTokenResp
     {
-        public NegotiateState State;
-        public Oid SupportedMech;
-        public ReadOnlyMemory<byte>? ResponseToken;
-        public ReadOnlyMemory<byte>? MechListMic;
-      
+        public NegotiateState State { get; set; }
+  
+        public Oid SupportedMech { get; set; }
+  
+        public ReadOnlyMemory<byte>? ResponseToken { get; set; }
+  
+        public ReadOnlyMemory<byte>? MechListMic { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -25,7 +33,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -43,14 +51,13 @@ namespace Kerberos.NET.Entities
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             }
 
-
             if (Asn1Extension.HasValue(SupportedMech))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 writer.WriteObjectIdentifier(SupportedMech);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             }
-
+  
 
             if (Asn1Extension.HasValue(ResponseToken))
             {
@@ -59,14 +66,12 @@ namespace Kerberos.NET.Entities
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             }
 
-
             if (Asn1Extension.HasValue(MechListMic))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
                 writer.WriteOctetString(MechListMic.Value.Span);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             }
-
             writer.PopSequence(tag);
         }
         
@@ -123,7 +128,9 @@ namespace Kerberos.NET.Entities
           where T: NegTokenResp, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -132,32 +139,35 @@ namespace Kerberos.NET.Entities
           where T: NegTokenResp, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 0)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));                
+            
                 decoded.State = explicitReader.ReadEnumeratedValue<NegotiateState>();
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));                
+            
                 decoded.SupportedMech = explicitReader.ReadObjectIdentifier();
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 2)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));                
+            
 
                 if (explicitReader.TryReadPrimitiveOctetStringBytes(out ReadOnlyMemory<byte> tmpResponseToken))
                 {
@@ -167,14 +177,13 @@ namespace Kerberos.NET.Entities
                 {
                     decoded.ResponseToken = explicitReader.ReadOctetString();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 3)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));                
+            
 
                 if (explicitReader.TryReadPrimitiveOctetStringBytes(out ReadOnlyMemory<byte> tmpMechListMic))
                 {
@@ -184,10 +193,8 @@ namespace Kerberos.NET.Entities
                 {
                     decoded.MechListMic = explicitReader.ReadOctetString();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

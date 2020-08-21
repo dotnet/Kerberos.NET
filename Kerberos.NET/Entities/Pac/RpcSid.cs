@@ -1,48 +1,73 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
     public class RpcSid : INdrConformantStruct
     {
-        public byte Revision;
+        public byte Revision { get; set; }
 
-        public byte SubAuthorityCount;
+        public byte SubAuthorityCount { get; set; }
 
-        public RpcSidIdentifierAuthority IdentifierAuthority;
+        public RpcSidIdentifierAuthority IdentifierAuthority { get; set; }
 
-        public ReadOnlyMemory<uint> SubAuthority;
+        public ReadOnlyMemory<uint> SubAuthority { get; set; }
 
         public void MarshalConformance(NdrBuffer buffer)
         {
-            buffer.WriteInt32LittleEndian(SubAuthorityCount);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            buffer.WriteInt32LittleEndian(this.SubAuthorityCount);
         }
 
         public void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteByte(Revision);
-            buffer.WriteByte(SubAuthorityCount);
-            buffer.WriteStruct(IdentifierAuthority);
-            buffer.WriteFixedPrimitiveArray(SubAuthority.Span);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            buffer.WriteByte(this.Revision);
+            buffer.WriteByte(this.SubAuthorityCount);
+            buffer.WriteStruct(this.IdentifierAuthority);
+            buffer.WriteFixedPrimitiveArray(this.SubAuthority.Span);
         }
 
         private int conformance;
 
         public void UnmarshalConformance(NdrBuffer buffer)
         {
-            conformance = buffer.ReadInt32LittleEndian();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            this.conformance = buffer.ReadInt32LittleEndian();
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            Revision = buffer.ReadByteLittleEndian();
-            SubAuthorityCount = buffer.ReadByteLittleEndian();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            Debug.Assert(conformance == SubAuthorityCount);
+            this.Revision = buffer.ReadByteLittleEndian();
+            this.SubAuthorityCount = buffer.ReadByteLittleEndian();
 
-            IdentifierAuthority = buffer.ReadStruct<RpcSidIdentifierAuthority>();
-            SubAuthority = buffer.ReadFixedPrimitiveArray<uint>(SubAuthorityCount).AsMemory();
+            Debug.Assert(this.conformance == this.SubAuthorityCount);
+
+            this.IdentifierAuthority = buffer.ReadStruct<RpcSidIdentifierAuthority>();
+            this.SubAuthority = buffer.ReadFixedPrimitiveArray<uint>(this.SubAuthorityCount).AsMemory();
         }
 
         public SecurityIdentifier ToSecurityIdentifier()
@@ -52,7 +77,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public override string ToString()
         {
-            return ToSecurityIdentifier().ToString();
+            return this.ToSecurityIdentifier().ToString();
         }
     }
 }

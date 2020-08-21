@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,10 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbETypeInfo2Entry
     {
-        public EncryptionType EType;
-        public string Salt;
-        public ReadOnlyMemory<byte>? S2kParams;
-      
+        public EncryptionType EType { get; set; }
+    
+        public string Salt { get; set; }
+  
+        public ReadOnlyMemory<byte>? S2kParams { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -24,7 +31,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -44,7 +51,7 @@ namespace Kerberos.NET.Entities
                 writer.WriteCharacterString(UniversalTagNumber.GeneralString, Salt);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             }
-
+  
 
             if (Asn1Extension.HasValue(S2kParams))
             {
@@ -52,7 +59,6 @@ namespace Kerberos.NET.Entities
                 writer.WriteOctetString(S2kParams.Value.Span);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             }
-
             writer.PopSequence(tag);
         }
         
@@ -109,7 +115,9 @@ namespace Kerberos.NET.Entities
           where T: KrbETypeInfo2Entry, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -118,34 +126,38 @@ namespace Kerberos.NET.Entities
           where T: KrbETypeInfo2Entry, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (!explicitReader.TryReadInt32(out decoded.EType))
+            if (!explicitReader.TryReadInt32(out EncryptionType tmpEType))
             {
                 explicitReader.ThrowIfNotEmpty();
             }
+            
+            decoded.EType = tmpEType;
 
             explicitReader.ThrowIfNotEmpty();
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));                
+            
                 decoded.Salt = explicitReader.ReadCharacterString(UniversalTagNumber.GeneralString);
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 2)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));                
+            
 
                 if (explicitReader.TryReadPrimitiveOctetStringBytes(out ReadOnlyMemory<byte> tmpS2kParams))
                 {
@@ -155,10 +167,8 @@ namespace Kerberos.NET.Entities
                 {
                     decoded.S2kParams = explicitReader.ReadOctetString();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

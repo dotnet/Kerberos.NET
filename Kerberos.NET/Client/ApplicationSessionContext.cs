@@ -1,6 +1,11 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Client
 {
@@ -20,13 +25,13 @@ namespace Kerberos.NET.Client
         {
             var apRep = KrbApRep.DecodeApplication(Convert.FromBase64String(asRepEncoded));
 
-            var decrypted = new DecryptedKrbApRep(apRep) { CTime = CTime, CuSec = CuSec, SequenceNumber = SequenceNumber };
+            var decrypted = new DecryptedKrbApRep(apRep) { CTime = this.CTime, CuSec = this.CuSec, SequenceNumber = this.SequenceNumber };
 
-            decrypted.Decrypt(SessionKey.AsKey());
+            decrypted.Decrypt(this.SessionKey.AsKey());
 
             decrypted.Validate(ValidationActions.TokenWindow);
 
-            return decrypted.Response.SubSessionKey ?? SessionKey;
+            return decrypted.Response.SubSessionKey ?? this.SessionKey;
         }
     }
 }

@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,13 +16,17 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbApReq
     {
-        public int ProtocolVersionNumber;
-        public MessageType MessageType;
-        public ApOptions ApOptions;
+        public int ProtocolVersionNumber { get; set; }
+  
+        public MessageType MessageType { get; set; }
     
-        public KrbTicket Ticket;
-        public KrbEncryptedData Authenticator;
-      
+        public ApOptions ApOptions { get; set; }
+    
+        public KrbTicket Ticket { get; set; }
+  
+        public KrbEncryptedData Authenticator { get; set; }
+  
+        // Encoding methods
         internal void Encode(AsnWriter writer)
         {
             EncodeApplication(writer, ApplicationTag);
@@ -122,7 +130,9 @@ namespace Kerberos.NET.Entities
           where T: KrbApReq, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             DecodeApplication(reader, out decoded);
         }
@@ -131,32 +141,36 @@ namespace Kerberos.NET.Entities
           where T: KrbApReq, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
-            if (!explicitReader.TryReadInt32(out decoded.ProtocolVersionNumber))
+            if (!explicitReader.TryReadInt32(out int tmpProtocolVersionNumber))
             {
                 explicitReader.ThrowIfNotEmpty();
             }
+            
+            decoded.ProtocolVersionNumber = tmpProtocolVersionNumber;
 
             explicitReader.ThrowIfNotEmpty();
-
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
 
-            if (!explicitReader.TryReadInt32(out decoded.MessageType))
+            if (!explicitReader.TryReadInt32(out MessageType tmpMessageType))
             {
                 explicitReader.ThrowIfNotEmpty();
             }
+            
+            decoded.MessageType = tmpMessageType;
 
             explicitReader.ThrowIfNotEmpty();
-
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
 
@@ -169,18 +183,20 @@ namespace Kerberos.NET.Entities
                 decoded.ApOptions = (ApOptions)explicitReader.ReadBitString(out _).AsLong();
             }
 
-            explicitReader.ThrowIfNotEmpty();
 
+            explicitReader.ThrowIfNotEmpty();
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
-            KrbTicket.Decode<KrbTicket>(explicitReader, out decoded.Ticket);
-            explicitReader.ThrowIfNotEmpty();
+            KrbTicket.Decode<KrbTicket>(explicitReader, out KrbTicket tmpTicket);
+            decoded.Ticket = tmpTicket;
 
+            explicitReader.ThrowIfNotEmpty();
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
-            KrbEncryptedData.Decode<KrbEncryptedData>(explicitReader, out decoded.Authenticator);
-            explicitReader.ThrowIfNotEmpty();
+            KrbEncryptedData.Decode<KrbEncryptedData>(explicitReader, out KrbEncryptedData tmpAuthenticator);
+            decoded.Authenticator = tmpAuthenticator;
 
+            explicitReader.ThrowIfNotEmpty();
 
             sequenceReader.ThrowIfNotEmpty();
         }

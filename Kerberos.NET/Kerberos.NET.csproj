@@ -1,18 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <Product>Kerberos.NET library</Product>
     <Description>A cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
     <PackageTags>security kerberos</PackageTags>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <DefineConstants>WEAKCRYPTO</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>$(EnlistmentRoot)\src\Product\Kerberos.NET\CodeAnalysisRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
   <ItemGroup>
+    <AdditionalFiles Include="$(EnlistmentRoot)\src\Product\Kerberos.NET\stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BuildingInsideVisualStudio)' == 'true'">
     <AsnXml Include="Entities\Kkdcp\KdcProxyMessage.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
     <AsnXml Include="Entities\Krb\KrbApReq.xml" />
@@ -47,7 +55,6 @@
     <AsnXml Include="Entities\Krb\KrbPaForUser.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacOptions.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacRequest.xml" />
-    <AsnXml Include="Entities\Krb\KrbPaSvrReferralData.xml" />
     <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsReq.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
@@ -67,13 +74,14 @@
     <AsnXml Include="Entities\SpNego\NegotiationToken.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenInit.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenResp.xml" />
-
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
-    <PackageReference Include="System.IO.Pipelines" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
+    <PackageReference Include="System.Buffers" Version="4.5.0" />
+    <PackageReference Include="System.Memory" Version="4.5.3" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -91,6 +99,6 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <Import Project="Asn1\AsnXml.targets" />
+  <Import Project="Asn1\AsnXml.targets" Condition="'$(BuildingInsideVisualStudio)' == 'true'" />
 
 </Project>

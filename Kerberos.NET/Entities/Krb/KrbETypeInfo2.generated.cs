@@ -1,6 +1,11 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -13,8 +18,8 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbETypeInfo2
     {
-        public KrbETypeInfo2Entry[] ETypeInfo;
-
+        public KrbETypeInfo2Entry[] ETypeInfo { get; set; }
+  
 #if DEBUG
         static KrbETypeInfo2()
         {
@@ -32,6 +37,7 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(Asn1Tag.Sequence, "ETypeInfo");
         }
 #endif
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -48,14 +54,17 @@ namespace Kerberos.NET.Entities
             if (ETypeInfo != null)
             {
                 if (wroteValue)
+                {
                     throw new CryptographicException();
+                }
                 
-
                 writer.PushSequence();
+            
                 for (int i = 0; i < ETypeInfo.Length; i++)
                 {
                     ETypeInfo[i]?.Encode(writer); 
                 }
+
                 writer.PopSequence();
 
                 wroteValue = true;
@@ -99,15 +108,17 @@ namespace Kerberos.NET.Entities
           where T: KrbETypeInfo2, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             Asn1Tag tag = reader.PeekTag();
             AsnReader collectionReader;
             
             if (tag.HasSameClassAndValue(Asn1Tag.Sequence))
             {
-
                 // Decode SEQUENCE OF for ETypeInfo
                 {
                     collectionReader = reader.ReadSequence();
@@ -116,13 +127,13 @@ namespace Kerberos.NET.Entities
 
                     while (collectionReader.HasData)
                     {
-                        KrbETypeInfo2Entry.Decode<KrbETypeInfo2Entry>(collectionReader, out tmpItem); 
+                        KrbETypeInfo2Entry.Decode<KrbETypeInfo2Entry>(collectionReader, out KrbETypeInfo2Entry tmp);
+                        tmpItem = tmp; 
                         tmpList.Add(tmpItem);
                     }
 
                     decoded.ETypeInfo = tmpList.ToArray();
                 }
-
             }
             else
             {

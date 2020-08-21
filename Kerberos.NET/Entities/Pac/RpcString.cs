@@ -1,6 +1,11 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -13,9 +18,9 @@ namespace Kerberos.NET.Entities.Pac
 
         public short MaxLength { get; private set; }
 
-        public ReadOnlyMemory<char> Buffer;
+        public ReadOnlyMemory<char> Buffer { get; set; }
 
-        public bool IsNullTerminating => IsNullTerminated(Buffer);
+        public bool IsNullTerminating => IsNullTerminated(this.Buffer);
 
         private static bool IsNullTerminated(ReadOnlyMemory<char> buffer)
         {
@@ -29,31 +34,41 @@ namespace Kerberos.NET.Entities.Pac
 
         public void Marshal(NdrBuffer buffer)
         {
-            Length = (short)(Buffer.Length * sizeof(char));
-            MaxLength = (short)(Buffer.Length * sizeof(char));
-
-            if (IsNullTerminating)
+            if (buffer == null)
             {
-                Length -= sizeof(char);
+                throw new ArgumentNullException(nameof(buffer));
             }
 
-            buffer.WriteInt16LittleEndian(Length);
-            buffer.WriteInt16LittleEndian(MaxLength);
+            this.Length = (short)(this.Buffer.Length * sizeof(char));
+            this.MaxLength = (short)(this.Buffer.Length * sizeof(char));
 
-            buffer.WriteDeferredConformantVaryingArray(Buffer);
+            if (this.IsNullTerminating)
+            {
+                this.Length -= sizeof(char);
+            }
+
+            buffer.WriteInt16LittleEndian(this.Length);
+            buffer.WriteInt16LittleEndian(this.MaxLength);
+
+            buffer.WriteDeferredConformantVaryingArray(this.Buffer);
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            Length = buffer.ReadInt16LittleEndian();
-            MaxLength = buffer.ReadInt16LittleEndian();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            buffer.ReadDeferredConformantVaryingArray<char>(v => Buffer = v);
+            this.Length = buffer.ReadInt16LittleEndian();
+            this.MaxLength = buffer.ReadInt16LittleEndian();
+
+            buffer.ReadDeferredConformantVaryingArray<char>(v => this.Buffer = v);
         }
 
         public override string ToString()
         {
-            return Buffer.Span.ToString();
+            return this.Buffer.Span.ToString();
         }
 
         public static implicit operator string(RpcString str)
@@ -82,12 +97,12 @@ namespace Kerberos.NET.Entities.Pac
         {
             if (obj is RpcString rpcStr)
             {
-                return string.Equals(rpcStr.ToString(), ToString(), StringComparison.Ordinal);
+                return string.Equals(rpcStr.ToString(), this.ToString(), StringComparison.Ordinal);
             }
 
             if (obj is string str)
             {
-                return string.Equals(str.ToString(), ToString(), StringComparison.Ordinal);
+                return string.Equals(str.ToString(), this.ToString(), StringComparison.Ordinal);
             }
 
             return base.Equals(obj);
@@ -95,17 +110,17 @@ namespace Kerberos.NET.Entities.Pac
 
         public override int GetHashCode()
         {
-            return ToString().GetHashCode();
+            return this.ToString().GetHashCode();
         }
 
         public string ExcludeTermination()
         {
-            if (IsNullTerminating)
+            if (this.IsNullTerminating)
             {
-                return Buffer.Span.Slice(0, Buffer.Span.IndexOf('\0')).ToString();
+                return this.Buffer.Span.Slice(0, this.Buffer.Span.IndexOf('\0')).ToString();
             }
 
-            return ToString();
+            return this.ToString();
         }
     }
 }

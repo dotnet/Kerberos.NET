@@ -1,11 +1,19 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.IO;
 
 namespace Kerberos.NET.Entities
 {
     [Flags]
-    public enum ChecksumFlag
+#pragma warning disable CA1714 // Flags enums should have plural names
+    public enum GssContextEstablishmentFlag
     {
+        GSS_C_NONE = -1,
+
         GSS_C_DELEG_FLAG = 1 << 0,
         GSS_C_MUTUAL_FLAG = 1 << 1,
         GSS_C_REPLAY_FLAG = 1 << 2,
@@ -27,39 +35,40 @@ namespace Kerberos.NET.Entities
 
         public const int ChannelBindingLength = 0x10;
 
-        private const ChecksumFlag DefaultFlags =
-                        ChecksumFlag.GSS_C_MUTUAL_FLAG |
-                        ChecksumFlag.GSS_C_REPLAY_FLAG |
-                        ChecksumFlag.GSS_C_SEQUENCE_FLAG |
-                        ChecksumFlag.GSS_C_CONF_FLAG |
-                        ChecksumFlag.GSS_C_INTEG_FLAG |
-                        ChecksumFlag.GSS_C_EXTENDED_ERROR_FLAG;
+        public DelegationInfo()
+        {
+        }
+
+        public DelegationInfo(RequestServiceTicket rst)
+        {
+            this.Flags = rst.GssContextFlags;
+        }
 
         public ReadOnlyMemory<byte> Encode()
         {
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
-                if (ChannelBinding == null)
+                if (this.ChannelBinding.Length == 0)
                 {
-                    ChannelBinding = new byte[ChannelBindingLength];
+                    this.ChannelBinding = new byte[ChannelBindingLength];
                 }
 
-                writer.Write(ChannelBinding?.Length ?? 0);
-                writer.Write(ChannelBinding);
+                writer.Write(this.ChannelBinding.Length);
+                writer.Write(this.ChannelBinding.ToArray());
 
-                if (DelegationTicket != null)
+                if (this.DelegationTicket != null)
                 {
-                    Flags |= ChecksumFlag.GSS_C_DELEG_FLAG;
+                    this.Flags |= GssContextEstablishmentFlag.GSS_C_DELEG_FLAG;
                 }
 
-                writer.Write((int)Flags);
+                writer.Write((int)this.Flags);
 
-                if (DelegationTicket != null)
+                if (this.DelegationTicket != null)
                 {
-                    writer.Write((short)DelegationOption);
+                    writer.Write((short)this.DelegationOption);
 
-                    var deleg = DelegationTicket.EncodeApplication();
+                    var deleg = this.DelegationTicket.EncodeApplication();
 
                     writer.Write((short)deleg.Length);
 
@@ -74,15 +83,15 @@ namespace Kerberos.NET.Entities
         {
             using (var reader = new BinaryReader(new MemoryStream(value.ToArray())))
             {
-                Length = reader.ReadInt32();
+                this.Length = reader.ReadInt32();
 
-                ChannelBinding = reader.ReadBytes(Length);
+                this.ChannelBinding = reader.ReadBytes(this.Length);
 
-                Flags = (ChecksumFlag)reader.ReadBytes(4).AsLong(littleEndian: true);
+                this.Flags = (GssContextEstablishmentFlag)reader.ReadBytes(4).AsLong(littleEndian: true);
 
                 if (reader.BytesAvailable() > 0)
                 {
-                    DelegationOption = reader.ReadInt16();
+                    this.DelegationOption = reader.ReadInt16();
                 }
 
                 int delegationLength = 0;
@@ -101,12 +110,12 @@ namespace Kerberos.NET.Entities
 
                 if (delegationTicket != null && delegationTicket.Length > 0)
                 {
-                    DelegationTicket = KrbCred.DecodeApplication(delegationTicket);
+                    this.DelegationTicket = KrbCred.DecodeApplication(delegationTicket);
                 }
 
                 if (reader.BytesAvailable() > 0)
                 {
-                    Extensions = reader.ReadBytes((int)reader.BytesAvailable());
+                    this.Extensions = reader.ReadBytes((int)reader.BytesAvailable());
                 }
             }
 
@@ -115,14 +124,14 @@ namespace Kerberos.NET.Entities
 
         public int Length { get; set; }
 
-        public byte[] ChannelBinding { get; set; }
+        public ReadOnlyMemory<byte> ChannelBinding { get; set; }
 
-        public ChecksumFlag Flags { get; set; } = DefaultFlags;
+        public GssContextEstablishmentFlag Flags { get; set; }
 
         public int DelegationOption { get; set; }
 
         public KrbCred DelegationTicket { get; set; }
 
-        public byte[] Extensions { get; set; }
+        public ReadOnlyMemory<byte> Extensions { get; set; }
     }
 }

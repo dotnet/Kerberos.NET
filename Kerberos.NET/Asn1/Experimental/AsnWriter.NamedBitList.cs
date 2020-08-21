@@ -1,6 +1,9 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
+
+using System.Globalization;
 
 namespace System.Security.Cryptography.Asn1
 {
@@ -24,9 +27,11 @@ namespace System.Security.Cryptography.Asn1
         public void WriteNamedBitList(object enumValue)
         {
             if (enumValue == null)
+            {
                 throw new ArgumentNullException(nameof(enumValue));
+            }
 
-            WriteNamedBitList(Asn1Tag.PrimitiveBitString, enumValue);
+            this.WriteNamedBitList(Asn1Tag.PrimitiveBitString, enumValue);
         }
 
         /// <summary>
@@ -40,9 +45,10 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         /// <seealso cref="WriteNamedBitList{T}(Asn1Tag,T)"/>
-        public void WriteNamedBitList<TEnum>(TEnum enumValue) where TEnum : struct
+        public void WriteNamedBitList<TEnum>(TEnum enumValue)
+            where TEnum : struct
         {
-            WriteNamedBitList(Asn1Tag.PrimitiveBitString, enumValue);
+            this.WriteNamedBitList(Asn1Tag.PrimitiveBitString, enumValue);
         }
 
         /// <summary>
@@ -66,11 +72,13 @@ namespace System.Security.Cryptography.Asn1
         public void WriteNamedBitList(Asn1Tag tag, object enumValue)
         {
             if (enumValue == null)
+            {
                 throw new ArgumentNullException(nameof(enumValue));
+            }
 
             CheckUniversalTag(tag, UniversalTagNumber.BitString);
 
-            WriteNamedBitList(tag, enumValue.GetType(), enumValue);
+            this.WriteNamedBitList(tag, enumValue.GetType(), enumValue);
         }
 
         /// <summary>
@@ -88,11 +96,12 @@ namespace System.Security.Cryptography.Asn1
         ///   <typeparamref name="TEnum"/> is not declared [<see cref="FlagsAttribute"/>]
         /// </exception>
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
-        public void WriteNamedBitList<TEnum>(Asn1Tag tag, TEnum enumValue) where TEnum : struct
+        public void WriteNamedBitList<TEnum>(Asn1Tag tag, TEnum enumValue)
+            where TEnum : struct
         {
             CheckUniversalTag(tag, UniversalTagNumber.BitString);
 
-            WriteNamedBitList(tag, typeof(TEnum), enumValue);
+            this.WriteNamedBitList(tag, typeof(TEnum), enumValue);
         }
 
         private void WriteNamedBitList(Asn1Tag tag, Type tEnum, object enumValue)
@@ -110,16 +119,16 @@ namespace System.Security.Cryptography.Asn1
 
             if (backingType == typeof(ulong))
             {
-                integralValue = Convert.ToUInt64(enumValue);
+                integralValue = Convert.ToUInt64(enumValue, CultureInfo.InvariantCulture);
             }
             else
             {
                 // All other types fit in a (signed) long.
-                long numericValue = Convert.ToInt64(enumValue);
+                long numericValue = Convert.ToInt64(enumValue, CultureInfo.InvariantCulture);
                 integralValue = unchecked((ulong)numericValue);
             }
 
-            WriteNamedBitList(tag, integralValue);
+            this.WriteNamedBitList(tag, integralValue);
         }
 
         // T-REC-X.680-201508 sec 22
@@ -127,6 +136,7 @@ namespace System.Security.Cryptography.Asn1
         private void WriteNamedBitList(Asn1Tag tag, ulong integralValue)
         {
             Span<byte> temp = stackalloc byte[sizeof(ulong)];
+
             // Reset to all zeros, since we're just going to or-in bits we need.
             temp.Clear();
 
@@ -145,7 +155,7 @@ namespace System.Security.Cryptography.Asn1
             {
                 // No bits were set; this is an empty bit string.
                 // T-REC-X.690-201508 sec 11.2.2-note2
-                WriteBitString(tag, ReadOnlySpan<byte>.Empty);
+                this.WriteBitString(tag, ReadOnlySpan<byte>.Empty);
             }
             else
             {
@@ -158,7 +168,7 @@ namespace System.Security.Cryptography.Asn1
                 int byteLen = (indexOfHighestSetBit / 8) + 1;
                 int unusedBitCount = 7 - (indexOfHighestSetBit % 8);
 
-                WriteBitString(
+                this.WriteBitString(
                     tag,
                     temp.Slice(0, byteLen),
                     unusedBitCount);

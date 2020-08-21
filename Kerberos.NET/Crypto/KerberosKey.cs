@@ -1,17 +1,25 @@
-﻿using Kerberos.NET.Crypto.AES;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
+using Kerberos.NET.Crypto.AES;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto
 {
+    [DebuggerDisplay("{EncryptionType} {SaltFormat} {Version} ({Salt})")]
     public class KerberosKey
     {
         public KerberosKey(KrbEncryptionKey key)
-            : this(key: key.KeyValue.ToArray(), etype: key.EType)
-        { }
+            : this(key: key?.KeyValue.ToArray(), etype: key.EType)
+        {
+        }
 
         public KerberosKey(
             string password,
@@ -22,8 +30,13 @@ namespace Kerberos.NET.Crypto
             SaltType saltType = SaltType.ActiveDirectoryService,
             byte[] iterationParams = null,
             int? kvno = null
-        ) : this(null, password, null, principalName, host, salt, etype, saltType, iterationParams, kvno)
+        )
+            : this(null, password, null, principalName, host, salt, etype, saltType, iterationParams, kvno)
         {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                throw new ArgumentNullException(nameof(password));
+            }
         }
 
         public KerberosKey(
@@ -36,8 +49,13 @@ namespace Kerberos.NET.Crypto
             SaltType saltType = SaltType.ActiveDirectoryService,
             byte[] iterationParams = null,
             int? kvno = null
-            ) : this(key, null, password, principal, host, salt, etype, saltType, iterationParams, kvno)
+        )
+            : this(key, null, password, principal, host, salt, etype, saltType, iterationParams, kvno)
         {
+            if (key == null && password == null)
+            {
+                throw new ArgumentException("Either a key or password must be provided");
+            }
         }
 
         private KerberosKey(
@@ -61,11 +79,11 @@ namespace Kerberos.NET.Crypto
             this.salt = salt;
             this.EncryptionType = etype;
             this.SaltFormat = saltFormat;
-            IterationParameter = iterationParams;
+            this.IterationParameter = iterationParams;
             this.Version = kvno;
         }
 
-        private readonly ConcurrentDictionary<string, ReadOnlyMemory<byte>> DerivedKeyCache
+        private readonly ConcurrentDictionary<string, ReadOnlyMemory<byte>> derivedKeyCache
             = new ConcurrentDictionary<string, ReadOnlyMemory<byte>>();
 
         public KeyUsage? Usage { get; set; }
@@ -83,7 +101,7 @@ namespace Kerberos.NET.Crypto
                 password: password,
                 etype: etype,
                 salt: salt,
-                principalName: name.ToKeyPrincipal()
+                principalName: name?.ToKeyPrincipal()
             );
 
             return kerbKey;
@@ -123,7 +141,7 @@ namespace Kerberos.NET.Crypto
             Func<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>> dk
         )
         {
-            var derived = DerivedKeyCache.GetOrAdd(cacheKey, str => dk(GetKey(transformer)));
+            var derived = this.derivedKeyCache.GetOrAdd(cacheKey, str => dk(this.GetKey(transformer)));
 
             return derived;
         }
@@ -142,20 +160,20 @@ namespace Kerberos.NET.Crypto
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(salt))
+                if (string.IsNullOrWhiteSpace(this.salt))
                 {
-                    if (EncryptionType == EncryptionType.AES128_CTS_HMAC_SHA1_96 ||
-                        EncryptionType == EncryptionType.AES256_CTS_HMAC_SHA1_96)
+                    if (this.EncryptionType == EncryptionType.AES128_CTS_HMAC_SHA1_96 ||
+                        this.EncryptionType == EncryptionType.AES256_CTS_HMAC_SHA1_96)
                     {
                         var sb = new StringBuilder();
 
                         AesSalts.GenerateSalt(this, sb);
 
-                        salt = sb.ToString();
+                        this.salt = sb.ToString();
                     }
                 }
 
-                return salt;
+                return this.salt;
             }
         }
 
@@ -163,24 +181,26 @@ namespace Kerberos.NET.Crypto
 
         public string Password { get; }
 
-        public byte[] IterationParameter { get; }
+        public ReadOnlyMemory<byte> IterationParameter { get; }
 
         private byte[] passwordBytes;
 
-        public byte[] PasswordBytes
+        public ReadOnlyMemory<byte> PasswordBytes
         {
             get
             {
-                if (!string.IsNullOrWhiteSpace(Password))
+                if (!string.IsNullOrWhiteSpace(this.Password))
                 {
-                    passwordBytes = Encoding.Unicode.GetBytes(Password);
+                    this.passwordBytes = Encoding.Unicode.GetBytes(this.Password);
                 }
 
-                return passwordBytes;
+                return this.passwordBytes;
             }
         }
 
         public SaltType SaltFormat { get; }
+
+        public bool RequiresDerivation => this.key == null || this.key.Length <= 0;
 
         private readonly object _keyLock = new object();
 
@@ -188,14 +208,14 @@ namespace Kerberos.NET.Crypto
 
         public ReadOnlyMemory<byte> GetKey(KerberosCryptoTransformer transformer = null)
         {
-            if (key != null && key.Length > 0)
+            if (!this.RequiresDerivation)
             {
-                return key;
+                return this.key;
             }
 
             if (transformer == null)
             {
-                transformer = CryptoService.CreateTransform(EncryptionType);
+                transformer = CryptoService.CreateTransform(this.EncryptionType);
             }
 
             if (transformer == null)
@@ -203,18 +223,18 @@ namespace Kerberos.NET.Crypto
                 throw new NotSupportedException();
             }
 
-            if (keyCache.Length <= 0)
+            if (this.keyCache.Length <= 0)
             {
-                lock (_keyLock)
+                lock (this._keyLock)
                 {
-                    if (keyCache.Length <= 0)
+                    if (this.keyCache.Length <= 0)
                     {
-                        keyCache = transformer.String2Key(this);
+                        this.keyCache = transformer.String2Key(this);
                     }
                 }
             }
 
-            return keyCache;
+            return this.keyCache;
         }
 
         public override bool Equals(object obj)
@@ -233,11 +253,11 @@ namespace Kerberos.NET.Crypto
         public override int GetHashCode()
         {
             return EntityHashCode.GetHashCode(
-                Version ?? 0, 
-                key ?? Array.Empty<byte>(), 
-                PasswordBytes, 
-                Host ?? "", 
-                PrincipalName ?? new PrincipalName()
+                this.Version ?? 0,
+                this.key ?? Array.Empty<byte>(),
+                this.PasswordBytes,
+                this.Host ?? string.Empty,
+                this.PrincipalName ?? new PrincipalName()
             );
         }
     }

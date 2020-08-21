@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Numerics;
@@ -22,7 +23,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public ReadOnlyMemory<byte> ReadIntegerBytes() =>
-            ReadIntegerBytes(Asn1Tag.Integer);
+            this.ReadIntegerBytes(Asn1Tag.Integer);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, returning the contents
@@ -46,9 +47,9 @@ namespace System.Security.Cryptography.Asn1
         public ReadOnlyMemory<byte> ReadIntegerBytes(Asn1Tag expectedTag)
         {
             ReadOnlyMemory<byte> contents =
-                GetIntegerContents(expectedTag, UniversalTagNumber.Integer, out int headerLength);
+                this.GetIntegerContents(expectedTag, UniversalTagNumber.Integer, out int headerLength);
 
-            _data = _data.Slice(headerLength + contents.Length);
+            this._data = this._data.Slice(headerLength + contents.Length);
             return contents;
         }
 
@@ -64,7 +65,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the length encoding is not valid under the current encoding rules --OR--
         ///   the contents are not valid under the current encoding rules
         /// </exception>
-        public BigInteger ReadInteger() => ReadInteger(Asn1Tag.Integer);
+        public BigInteger ReadInteger() => this.ReadInteger(Asn1Tag.Integer);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, returning the contents
@@ -88,7 +89,7 @@ namespace System.Security.Cryptography.Asn1
         public BigInteger ReadInteger(Asn1Tag expectedTag)
         {
             ReadOnlyMemory<byte> contents =
-                GetIntegerContents(expectedTag, UniversalTagNumber.Integer, out int headerLength);
+                this.GetIntegerContents(expectedTag, UniversalTagNumber.Integer, out int headerLength);
 
             // TODO: Split this for netcoreapp/netstandard to use the Big-Endian BigInteger parsing
             byte[] tmp = CryptoPool.Rent(contents.Length);
@@ -97,9 +98,11 @@ namespace System.Security.Cryptography.Asn1
             try
             {
                 byte fill = (contents.Span[0] & 0x80) == 0 ? (byte)0 : (byte)0xFF;
+
                 // Fill the unused portions of tmp with positive or negative padding.
                 new Span<byte>(tmp, contents.Length, tmp.Length - contents.Length).Fill(fill);
                 contents.CopyTo(tmp);
+
                 // Convert to Little-Endian.
                 AsnWriter.Reverse(new Span<byte>(tmp, 0, contents.Length));
                 value = new BigInteger(tmp);
@@ -111,7 +114,7 @@ namespace System.Security.Cryptography.Asn1
                 CryptoPool.Return(tmp);
             }
 
-            _data = _data.Slice(headerLength + contents.Length);
+            this._data = this._data.Slice(headerLength + contents.Length);
             return value;
         }
 
@@ -133,10 +136,10 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public bool TryReadInt32(out int value) =>
-            TryReadInt32(Asn1Tag.Integer, out value);
+            this.TryReadInt32(Asn1Tag.Integer, out value);
 
-        public bool TryReadInt32<T>(out T value) where T : struct =>
-            TryReadInt32<T>(Asn1Tag.Integer, out value);
+        public bool TryReadInt32<T>(out T value)
+            where T : struct => this.TryReadInt32<T>(Asn1Tag.Integer, out value);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, interpreting the contents
@@ -164,7 +167,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public bool TryReadInt32(Asn1Tag expectedTag, out int value)
         {
-            if (TryReadSignedInteger(sizeof(int), expectedTag, UniversalTagNumber.Integer, out long longValue))
+            if (this.TryReadSignedInteger(sizeof(int), expectedTag, UniversalTagNumber.Integer, out long longValue))
             {
                 value = (int)longValue;
                 return true;
@@ -203,7 +206,7 @@ namespace System.Security.Cryptography.Asn1
         {
             var obj = (object)0;
 
-            if (TryReadSignedInteger(sizeof(int), expectedTag, UniversalTagNumber.Integer, out long longValue))
+            if (this.TryReadSignedInteger(sizeof(int), expectedTag, UniversalTagNumber.Integer, out long longValue))
             {
                 obj = (int)longValue;
                 value = (T)obj;
@@ -232,7 +235,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public bool TryReadUInt32(out uint value) =>
-            TryReadUInt32(Asn1Tag.Integer, out value);
+            this.TryReadUInt32(Asn1Tag.Integer, out value);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, interpreting the contents
@@ -260,7 +263,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public bool TryReadUInt32(Asn1Tag expectedTag, out uint value)
         {
-            if (TryReadUnsignedInteger(sizeof(uint), expectedTag, UniversalTagNumber.Integer, out ulong ulongValue))
+            if (this.TryReadUnsignedInteger(sizeof(uint), expectedTag, UniversalTagNumber.Integer, out ulong ulongValue))
             {
                 value = (uint)ulongValue;
                 return true;
@@ -288,7 +291,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public bool TryReadInt64(out long value) =>
-            TryReadInt64(Asn1Tag.Integer, out value);
+            this.TryReadInt64(Asn1Tag.Integer, out value);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, interpreting the contents
@@ -316,7 +319,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public bool TryReadInt64(Asn1Tag expectedTag, out long value)
         {
-            return TryReadSignedInteger(sizeof(long), expectedTag, UniversalTagNumber.Integer, out value);
+            return this.TryReadSignedInteger(sizeof(long), expectedTag, UniversalTagNumber.Integer, out value);
         }
 
         /// <summary>
@@ -337,7 +340,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public bool TryReadUInt64(out ulong value) =>
-            TryReadUInt64(Asn1Tag.Integer, out value);
+            this.TryReadUInt64(Asn1Tag.Integer, out value);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, interpreting the contents
@@ -365,7 +368,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public bool TryReadUInt64(Asn1Tag expectedTag, out ulong value)
         {
-            return TryReadUnsignedInteger(sizeof(ulong), expectedTag, UniversalTagNumber.Integer, out value);
+            return this.TryReadUnsignedInteger(sizeof(ulong), expectedTag, UniversalTagNumber.Integer, out value);
         }
 
         /// <summary>
@@ -386,7 +389,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public bool TryReadInt16(out short value) =>
-            TryReadInt16(Asn1Tag.Integer, out value);
+            this.TryReadInt16(Asn1Tag.Integer, out value);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, interpreting the contents
@@ -414,7 +417,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public bool TryReadInt16(Asn1Tag expectedTag, out short value)
         {
-            if (TryReadSignedInteger(sizeof(short), expectedTag, UniversalTagNumber.Integer, out long longValue))
+            if (this.TryReadSignedInteger(sizeof(short), expectedTag, UniversalTagNumber.Integer, out long longValue))
             {
                 value = (short)longValue;
                 return true;
@@ -442,7 +445,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public bool TryReadUInt16(out ushort value) =>
-            TryReadUInt16(Asn1Tag.Integer, out value);
+            this.TryReadUInt16(Asn1Tag.Integer, out value);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, interpreting the contents
@@ -470,7 +473,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public bool TryReadUInt16(Asn1Tag expectedTag, out ushort value)
         {
-            if (TryReadUnsignedInteger(sizeof(ushort), expectedTag, UniversalTagNumber.Integer, out ulong ulongValue))
+            if (this.TryReadUnsignedInteger(sizeof(ushort), expectedTag, UniversalTagNumber.Integer, out ulong ulongValue))
             {
                 value = (ushort)ulongValue;
                 return true;
@@ -498,7 +501,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public bool TryReadInt8(out sbyte value) =>
-            TryReadInt8(Asn1Tag.Integer, out value);
+            this.TryReadInt8(Asn1Tag.Integer, out value);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, interpreting the contents
@@ -526,7 +529,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public bool TryReadInt8(Asn1Tag expectedTag, out sbyte value)
         {
-            if (TryReadSignedInteger(sizeof(sbyte), expectedTag, UniversalTagNumber.Integer, out long longValue))
+            if (this.TryReadSignedInteger(sizeof(sbyte), expectedTag, UniversalTagNumber.Integer, out long longValue))
             {
                 value = (sbyte)longValue;
                 return true;
@@ -554,7 +557,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public bool TryReadUInt8(out byte value) =>
-            TryReadUInt8(Asn1Tag.Integer, out value);
+            this.TryReadUInt8(Asn1Tag.Integer, out value);
 
         /// <summary>
         ///   Reads the next value as a Integer with a specified tag, interpreting the contents
@@ -582,7 +585,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public bool TryReadUInt8(Asn1Tag expectedTag, out byte value)
         {
-            if (TryReadUnsignedInteger(sizeof(byte), expectedTag, UniversalTagNumber.Integer, out ulong ulongValue))
+            if (this.TryReadUnsignedInteger(sizeof(byte), expectedTag, UniversalTagNumber.Integer, out ulong ulongValue))
             {
                 value = (byte)ulongValue;
                 return true;
@@ -597,7 +600,7 @@ namespace System.Security.Cryptography.Asn1
             UniversalTagNumber tagNumber,
             out int headerLength)
         {
-            Asn1Tag tag = ReadTagAndLength(out int? length, out headerLength);
+            Asn1Tag tag = this.ReadTagAndLength(out int? length, out headerLength);
             CheckExpectedTag(tag, expectedTag, tagNumber);
 
             // T-REC-X.690-201508 sec 8.3.1
@@ -607,7 +610,7 @@ namespace System.Security.Cryptography.Asn1
             }
 
             // Slice first so that an out of bounds value triggers a CryptographicException.
-            ReadOnlyMemory<byte> contents = Slice(_data, headerLength, length.Value);
+            ReadOnlyMemory<byte> contents = Slice(this._data, headerLength, length.Value);
             ReadOnlySpan<byte> contentSpan = contents.Span;
 
             // T-REC-X.690-201508 sec 8.3.2
@@ -635,7 +638,7 @@ namespace System.Security.Cryptography.Asn1
         {
             Debug.Assert(sizeLimit <= sizeof(long));
 
-            ReadOnlyMemory<byte> contents = GetIntegerContents(expectedTag, tagNumber, out int headerLength);
+            ReadOnlyMemory<byte> contents = this.GetIntegerContents(expectedTag, tagNumber, out int headerLength);
 
             if (contents.Length > sizeLimit)
             {
@@ -654,7 +657,7 @@ namespace System.Security.Cryptography.Asn1
                 accum |= contentSpan[i];
             }
 
-            _data = _data.Slice(headerLength + contents.Length);
+            this._data = this._data.Slice(headerLength + contents.Length);
             value = accum;
             return true;
         }
@@ -667,7 +670,7 @@ namespace System.Security.Cryptography.Asn1
         {
             Debug.Assert(sizeLimit <= sizeof(ulong));
 
-            ReadOnlyMemory<byte> contents = GetIntegerContents(expectedTag, tagNumber, out int headerLength);
+            ReadOnlyMemory<byte> contents = this.GetIntegerContents(expectedTag, tagNumber, out int headerLength);
             ReadOnlySpan<byte> contentSpan = contents.Span;
             int contentLength = contents.Length;
 
@@ -699,7 +702,7 @@ namespace System.Security.Cryptography.Asn1
                 accum |= contentSpan[i];
             }
 
-            _data = _data.Slice(headerLength + contentLength);
+            this._data = this._data.Slice(headerLength + contentLength);
             value = accum;
             return true;
         }

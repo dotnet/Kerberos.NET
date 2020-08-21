@@ -1,4 +1,10 @@
-﻿using System.Buffers.Binary;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using System.Buffers.Binary;
 using System.Diagnostics;
 
 namespace Kerberos.NET.Ndr
@@ -18,7 +24,9 @@ namespace Kerberos.NET.Ndr
         private const int ExpectedFiller = unchecked((int)0xcccccccc);
         private const int ObjectLengthPlaceholder = unchecked((int)0xFFFFFFFF);
 
-        private RpcHeader() { }
+        private RpcHeader()
+        {
+        }
 
         public byte Version { get; private set; } = 1;
 
@@ -34,6 +42,11 @@ namespace Kerberos.NET.Ndr
 
         public static void WriteHeader(NdrBuffer buffer)
         {
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
             buffer.WriteByte(PROTOCOL_VERSION);
             buffer.WriteByte((byte)EndianType.Little);
             buffer.WriteInt16LittleEndian(COMMON_HEADER_BYTES);
@@ -44,6 +57,11 @@ namespace Kerberos.NET.Ndr
 
         public static bool TryReadHeader(NdrBuffer original, out RpcHeader header)
         {
+            if (original == null)
+            {
+                throw new ArgumentNullException(nameof(original));
+            }
+
             header = new RpcHeader();
 
             if (original.BytesAvailable < HeaderLength)

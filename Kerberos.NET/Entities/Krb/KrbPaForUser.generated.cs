@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,11 +16,15 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaForUser
     {
-        public KrbPrincipalName UserName;
-        public string UserRealm;
-        public KrbChecksum Checksum;
-        public string AuthPackage;
-      
+        public KrbPrincipalName UserName { get; set; }
+  
+        public string UserRealm { get; set; }
+  
+        public KrbChecksum Checksum { get; set; }
+  
+        public string AuthPackage { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -25,7 +33,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -103,7 +111,9 @@ namespace Kerberos.NET.Entities
           where T: KrbPaForUser, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -112,32 +122,36 @@ namespace Kerberos.NET.Entities
           where T: KrbPaForUser, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
-            KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out decoded.UserName);
-            explicitReader.ThrowIfNotEmpty();
+            KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out KrbPrincipalName tmpUserName);
+            decoded.UserName = tmpUserName;
 
+            explicitReader.ThrowIfNotEmpty();
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             decoded.UserRealm = explicitReader.ReadCharacterString(UniversalTagNumber.GeneralString);
-            explicitReader.ThrowIfNotEmpty();
 
+            explicitReader.ThrowIfNotEmpty();
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
-            KrbChecksum.Decode<KrbChecksum>(explicitReader, out decoded.Checksum);
-            explicitReader.ThrowIfNotEmpty();
+            KrbChecksum.Decode<KrbChecksum>(explicitReader, out KrbChecksum tmpChecksum);
+            decoded.Checksum = tmpChecksum;
 
+            explicitReader.ThrowIfNotEmpty();
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             decoded.AuthPackage = explicitReader.ReadCharacterString(UniversalTagNumber.GeneralString);
-            explicitReader.ThrowIfNotEmpty();
 
+            explicitReader.ThrowIfNotEmpty();
 
             sequenceReader.ThrowIfNotEmpty();
         }

@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -7,24 +12,26 @@ namespace Kerberos.NET.Entities
     [DebuggerDisplay("{NameType} {FullyQualifiedName}@{Realm}")]
     public class PrincipalName
     {
-        public PrincipalName() { }
+        public PrincipalName()
+        {
+        }
 
         public PrincipalName(PrincipalNameType nameType, string realm, IEnumerable<string> names)
         {
-            NameType = nameType;
-            Realm = realm;
+            this.NameType = nameType;
+            this.Realm = realm;
             this.names = new List<string>(names);
         }
 
-        public string Realm;
+        public string Realm { get; set; }
 
         private List<string> names;
 
-        public List<string> Names { get { return names ?? (names = new List<string>()); } }
+        public List<string> Names => this.names ?? (this.names = new List<string>());
 
-        public PrincipalNameType NameType;
+        public PrincipalNameType NameType { get; set; }
 
-        public string FullyQualifiedName => string.Join("/", Names);
+        public string FullyQualifiedName => string.Join("/", this.Names);
 
         public override bool Equals(object obj)
         {
@@ -35,16 +42,16 @@ namespace Kerberos.NET.Entities
 
             // NT_PRINCIPAL will not match NT_SRV_INST for example
 
-            if (other.NameType != NameType)
+            if (other.NameType != this.NameType)
             {
                 return false;
             }
 
-            var namesIntersected = other.Names.Intersect(Names);
+            var namesIntersected = other.Names.Intersect(this.Names);
 
             // Names list for principal must be exact; additional entries in keytab will fail
 
-            if (namesIntersected.Count() != other.Names.Count || namesIntersected.Count() != Names.Count)
+            if (namesIntersected.Count() != other.Names.Count || namesIntersected.Count() != this.Names.Count)
             {
                 return false;
             }
@@ -54,7 +61,7 @@ namespace Kerberos.NET.Entities
 
         public override int GetHashCode()
         {
-            return EntityHashCode.GetHashCode(Names, NameType);
+            return EntityHashCode.GetHashCode(this.Names, this.NameType);
         }
     }
 }

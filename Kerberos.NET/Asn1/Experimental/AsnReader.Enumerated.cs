@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -23,7 +24,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         /// <seealso cref="ReadEnumeratedValue{TEnum}()"/>
         public ReadOnlyMemory<byte> ReadEnumeratedBytes() =>
-            ReadEnumeratedBytes(Asn1Tag.Enumerated);
+            this.ReadEnumeratedBytes(Asn1Tag.Enumerated);
 
         /// <summary>
         ///   Reads the next value as a Enumerated with a specified tag, returning the contents
@@ -49,9 +50,9 @@ namespace System.Security.Cryptography.Asn1
         {
             // T-REC-X.690-201508 sec 8.4 says the contents are the same as for integers.
             ReadOnlyMemory<byte> contents =
-                GetIntegerContents(expectedTag, UniversalTagNumber.Enumerated, out int headerLength);
+                this.GetIntegerContents(expectedTag, UniversalTagNumber.Enumerated, out int headerLength);
 
-            _data = _data.Slice(headerLength + contents.Length);
+            this._data = this._data.Slice(headerLength + contents.Length);
             return contents;
         }
 
@@ -78,11 +79,12 @@ namespace System.Security.Cryptography.Asn1
         ///   <typeparamref name="TEnum"/> was declared with <see cref="FlagsAttribute"/>
         /// </exception>
         /// <seealso cref="ReadEnumeratedValue{TEnum}(Asn1Tag)"/>
-        public TEnum ReadEnumeratedValue<TEnum>() where TEnum : struct
+        public TEnum ReadEnumeratedValue<TEnum>()
+            where TEnum : struct
         {
             Type tEnum = typeof(TEnum);
 
-            return (TEnum)Enum.ToObject(tEnum, ReadEnumeratedValue(tEnum));
+            return (TEnum)Enum.ToObject(tEnum, this.ReadEnumeratedValue(tEnum));
         }
 
         /// <summary>
@@ -113,11 +115,12 @@ namespace System.Security.Cryptography.Asn1
         ///   <paramref name="expectedTag"/>.<see cref="Asn1Tag.TagValue"/> is not correct for
         ///   the method
         /// </exception>
-        public TEnum ReadEnumeratedValue<TEnum>(Asn1Tag expectedTag) where TEnum : struct
+        public TEnum ReadEnumeratedValue<TEnum>(Asn1Tag expectedTag)
+            where TEnum : struct
         {
             Type tEnum = typeof(TEnum);
 
-            return (TEnum)Enum.ToObject(tEnum, ReadEnumeratedValue(expectedTag, tEnum));
+            return (TEnum)Enum.ToObject(tEnum, this.ReadEnumeratedValue(expectedTag, tEnum));
         }
 
         /// <summary>
@@ -144,7 +147,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         /// <seealso cref="ReadEnumeratedValue(Asn1Tag, Type)"/>
         public Enum ReadEnumeratedValue(Type tEnum) =>
-            ReadEnumeratedValue(Asn1Tag.Enumerated, tEnum);
+            this.ReadEnumeratedValue(Asn1Tag.Enumerated, tEnum);
 
         /// <summary>
         ///   Reads the next value as an Enumerated with tag UNIVERSAL 10, converting it to the
@@ -185,8 +188,11 @@ namespace System.Security.Cryptography.Asn1
             if (tEnum.IsDefined(typeof(FlagsAttribute), false))
             {
                 throw new ArgumentException(
-                    SR.Resource("Cryptography_Asn_EnumeratedValueRequiresNonFlagsEnum",
-                    nameof(tEnum)));
+                    SR.Resource(
+                        "Cryptography_Asn_EnumeratedValueRequiresNonFlagsEnum",
+                        nameof(tEnum)
+                    )
+                );
             }
 
             // T-REC-X.690-201508 sec 8.4 says the contents are the same as for integers.
@@ -197,7 +203,7 @@ namespace System.Security.Cryptography.Asn1
                 backingType == typeof(short) ||
                 backingType == typeof(sbyte))
             {
-                if (!TryReadSignedInteger(sizeLimit, expectedTag, tagNumber, out long value))
+                if (!this.TryReadSignedInteger(sizeLimit, expectedTag, tagNumber, out long value))
                 {
                     throw new CryptographicException(SR.Resource("Cryptography_Der_Invalid_Encoding"));
                 }
@@ -210,7 +216,7 @@ namespace System.Security.Cryptography.Asn1
                 backingType == typeof(ushort) ||
                 backingType == typeof(byte))
             {
-                if (!TryReadUnsignedInteger(sizeLimit, expectedTag, tagNumber, out ulong value))
+                if (!this.TryReadUnsignedInteger(sizeLimit, expectedTag, tagNumber, out ulong value))
                 {
                     throw new CryptographicException(SR.Resource("Cryptography_Der_Invalid_Encoding"));
                 }

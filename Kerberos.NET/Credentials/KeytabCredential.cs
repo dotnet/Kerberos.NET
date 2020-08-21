@@ -1,7 +1,12 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Credentials
 {
@@ -13,32 +18,32 @@ namespace Kerberos.NET.Credentials
         {
             TrySplitUserNameDomain(username, out username, ref domain);
 
-            UserName = username;
+            this.UserName = username;
 
             this.keytab = keytab ?? throw new ArgumentNullException(nameof(keytab));
 
             if (!string.IsNullOrWhiteSpace(domain))
             {
-                Domain = domain.ToUpperInvariant();
+                this.Domain = domain.ToUpperInvariant();
             }
         }
 
-        public override bool SupportsOptimisticPreAuthentication => keytab != null;
+        public override bool SupportsOptimisticPreAuthentication => this.keytab != null;
 
         public override KerberosKey CreateKey()
         {
-            Validate();
+            this.Validate();
 
-            var principalName = KrbPrincipalName.FromString(UserName);
+            var principalName = KrbPrincipalName.FromString(this.UserName);
 
-            if (Salts == null || !Salts.Any())
+            if (this.Salts == null || !this.Salts.Any())
             {
-                return keytab.GetKey(EncryptionType.RC4_HMAC_NT, principalName);
+                return this.keytab.GetKey(EncryptionType.RC4_HMAC_NT, principalName);
             }
 
-            foreach (var salt in Salts)
+            foreach (var salt in this.Salts)
             {
-                var key = keytab.GetKey(salt.Key, principalName);
+                var key = this.keytab.GetKey(salt.Key, principalName);
 
                 if (key != null)
                 {

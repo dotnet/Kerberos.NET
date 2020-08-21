@@ -1,5 +1,10 @@
-﻿using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto
 {
@@ -14,11 +19,11 @@ namespace Kerberos.NET.Crypto
             this.incomingMessageType = incomingMessageType;
         }
 
-        public ApOptions Options { get => token.ApOptions; }
+        public ApOptions Options { get => this.token.ApOptions; }
 
-        public EncryptionType EType => token.Ticket.EncryptedPart.EType;
+        public EncryptionType EType => this.token.Ticket.EncryptedPart.EType;
 
-        public KrbPrincipalName SName => token.Ticket.SName;
+        public KrbPrincipalName SName => this.token.Ticket.SName;
 
         public KrbAuthenticator Authenticator { get; private set; }
 
@@ -34,16 +39,16 @@ namespace Kerberos.NET.Crypto
         {
             var apRepPart = new KrbEncApRepPart
             {
-                CTime = Authenticator.CTime,
-                CuSec = Authenticator.CuSec,
-                SequenceNumber = Authenticator.SequenceNumber
+                CTime = this.Authenticator.CTime,
+                CuSec = this.Authenticator.CuSec,
+                SequenceNumber = this.Authenticator.SequenceNumber
             };
 
             var apRep = new KrbApRep
             {
                 EncryptedPart = KrbEncryptedData.Encrypt(
                     apRepPart.EncodeApplication(),
-                    SessionKey,
+                    this.SessionKey,
                     KeyUsage.EncApRepPart
                 )
             };
@@ -53,14 +58,19 @@ namespace Kerberos.NET.Crypto
 
         public override void Decrypt(KeyTable keytab)
         {
-            var key = keytab.GetKey(EType, SName);
+            if (keytab == null)
+            {
+                throw new ArgumentNullException(nameof(keytab));
+            }
 
-            Decrypt(key);
+            var key = keytab.GetKey(this.EType, this.SName);
+
+            this.Decrypt(key);
         }
 
         public override void Decrypt(KerberosKey ticketEncryptingKey)
         {
-            Ticket = token.Ticket.EncryptedPart.Decrypt(
+            this.Ticket = this.token.Ticket.EncryptedPart.Decrypt(
                 ticketEncryptingKey,
                 KeyUsage.Ticket,
                 b => KrbEncTicketPart.DecodeApplication(b)
@@ -68,27 +78,27 @@ namespace Kerberos.NET.Crypto
 
             var keyUsage = KeyUsage.ApReqAuthenticator;
 
-            if (incomingMessageType == MessageType.KRB_TGS_REQ)
+            if (this.incomingMessageType == MessageType.KRB_TGS_REQ)
             {
                 keyUsage = KeyUsage.PaTgsReqAuthenticator;
             }
 
-            Authenticator = token.Authenticator.Decrypt(
-                Ticket.Key.AsKey(),
+            this.Authenticator = this.token.Authenticator.Decrypt(
+                this.Ticket.Key.AsKey(),
                 keyUsage,
                 b => KrbAuthenticator.DecodeApplication(b)
             );
 
             KeyUsage? projectedUsage = null;
 
-            if (Authenticator.Subkey != null)
+            if (this.Authenticator.Subkey != null)
             {
                 if (keyUsage == KeyUsage.PaTgsReqAuthenticator)
                 {
                     projectedUsage = KeyUsage.EncTgsRepPartSubSessionKey;
                 }
 
-                SessionKey = Authenticator.Subkey.AsKey(projectedUsage);
+                this.SessionKey = this.Authenticator.Subkey.AsKey(projectedUsage);
             }
             else
             {
@@ -97,14 +107,14 @@ namespace Kerberos.NET.Crypto
                     projectedUsage = KeyUsage.EncTgsRepPartSessionKey;
                 }
 
-                SessionKey = Ticket.Key.AsKey(projectedUsage);
+                this.SessionKey = this.Ticket.Key.AsKey(projectedUsage);
             }
 
-            var checksum = Authenticator.Checksum;
+            var checksum = this.Authenticator.Checksum;
 
             if (checksum != null)
             {
-                DelegationTicket = TryExtractDelegationTicket(checksum);
+                this.DelegationTicket = this.TryExtractDelegationTicket(checksum);
             }
         }
 
@@ -125,7 +135,7 @@ namespace Kerberos.NET.Crypto
             }
 
             return delegation.EncryptedPart.Decrypt(
-                Ticket.Key.AsKey(),
+                this.Ticket.Key.AsKey(),
                 KeyUsage.EncKrbCredPart,
                 b => KrbEncKrbCredPart.DecodeApplication(b)
             );
@@ -137,42 +147,42 @@ namespace Kerberos.NET.Crypto
 
             if (validation.HasFlag(ValidationActions.ClientPrincipalIdentifier))
             {
-                ValidateClientPrincipalIdentifier(Authenticator.CName, Ticket.CName);
+                this.ValidateClientPrincipalIdentifier(this.Authenticator.CName, this.Ticket.CName);
             }
 
             if (validation.HasFlag(ValidationActions.Realm))
             {
-                ValidateRealm(token.Ticket.Realm, Authenticator.Realm);
+                this.ValidateRealm(this.token.Ticket.Realm, this.Authenticator.Realm);
             }
 
-            var now = Now();
+            var now = this.Now();
 
-            var ctime = Authenticator.CTime.AddTicks(Authenticator.CuSec / 10);
+            var ctime = this.Authenticator.CTime.AddTicks(this.Authenticator.CuSec / 10);
 
             if (validation.HasFlag(ValidationActions.TokenWindow))
             {
-                ValidateTicketSkew(now, Skew, ctime);
+                this.ValidateTicketSkew(now, this.Skew, ctime);
             }
 
             if (validation.HasFlag(ValidationActions.StartTime))
             {
-                ValidateTicketStart(Ticket.StartTime ?? now, now, Skew);
+                this.ValidateTicketStart(this.Ticket.StartTime ?? now, now, this.Skew);
             }
 
             if (validation.HasFlag(ValidationActions.EndTime))
             {
-                ValidateTicketEnd(Ticket.EndTime, now, Skew);
+                this.ValidateTicketEnd(this.Ticket.EndTime, now, this.Skew);
             }
 
-            if (validation.HasFlag(ValidationActions.RenewTill) && Ticket.Flags.HasFlag(TicketFlags.Renewable))
+            if (validation.HasFlag(ValidationActions.RenewTill) && this.Ticket.Flags.HasFlag(TicketFlags.Renewable))
             {
-                ValidateTicketRenewal(Ticket.RenewTill, now, Skew);
+                this.ValidateTicketRenewal(this.Ticket.RenewTill, now, this.Skew);
             }
         }
 
         public override string ToString()
         {
-            return $"{Ticket} | {Authenticator}";
+            return $"{this.Ticket} | {this.Authenticator}";
         }
     }
 }

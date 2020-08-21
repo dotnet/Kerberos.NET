@@ -1,25 +1,41 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Diagnostics;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
     [DebuggerDisplay("{RelativeId} {Attributes}")]
     public class GroupMembership : INdrStruct
     {
-        public uint RelativeId;
+        public uint RelativeId { get; set; }
 
-        public SidAttributes Attributes;
+        public SidAttributes Attributes { get; set; }
 
         public void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteUInt32LittleEndian(RelativeId);
-            buffer.WriteInt32LittleEndian((int)Attributes);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            buffer.WriteUInt32LittleEndian(this.RelativeId);
+            buffer.WriteInt32LittleEndian((int)this.Attributes);
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            RelativeId = buffer.ReadUInt32LittleEndian();
-            Attributes = (SidAttributes)buffer.ReadInt32LittleEndian();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            this.RelativeId = buffer.ReadUInt32LittleEndian();
+            this.Attributes = (SidAttributes)buffer.ReadInt32LittleEndian();
         }
     }
 }

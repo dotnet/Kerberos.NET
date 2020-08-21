@@ -1,6 +1,11 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET
 {

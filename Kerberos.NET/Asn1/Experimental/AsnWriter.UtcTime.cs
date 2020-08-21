@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Buffers;
 using System.Buffers.Text;
@@ -20,7 +21,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="WriteUtcTime(DateTimeOffset,int)"/>
         public void WriteUtcTime(DateTimeOffset value)
         {
-            WriteUtcTimeCore(Asn1Tag.UtcTime, value);
+            this.WriteUtcTimeCore(Asn1Tag.UtcTime, value);
         }
 
         /// <summary>
@@ -43,7 +44,7 @@ namespace System.Security.Cryptography.Asn1
             CheckUniversalTag(tag, UniversalTagNumber.UtcTime);
 
             // Clear the constructed flag, if present.
-            WriteUtcTimeCore(tag.AsPrimitive(), value);
+            this.WriteUtcTimeCore(tag.AsPrimitive(), value);
         }
 
         /// <summary>
@@ -66,7 +67,7 @@ namespace System.Security.Cryptography.Asn1
         public void WriteUtcTime(DateTimeOffset value, int twoDigitYearMax)
         {
             // Defer to the longer override for twoDigitYearMax validity.
-            WriteUtcTime(Asn1Tag.UtcTime, value, twoDigitYearMax);
+            this.WriteUtcTime(Asn1Tag.UtcTime, value, twoDigitYearMax);
         }
 
         /// <summary>
@@ -104,7 +105,7 @@ namespace System.Security.Cryptography.Asn1
                 throw new ArgumentOutOfRangeException(nameof(value));
             }
 
-            WriteUtcTimeCore(tag.AsPrimitive(), value);
+            this.WriteUtcTimeCore(tag.AsPrimitive(), value);
         }
 
         // T-REC-X.680-201508 sec 47
@@ -117,13 +118,13 @@ namespace System.Security.Cryptography.Asn1
             // CER says character strings <= 1000 encoded bytes must be primitive.
             // So we'll just make BER be primitive, too.
             Debug.Assert(!tag.IsConstructed);
-            WriteTag(tag);
+            this.WriteTag(tag);
 
             // BER allows for omitting the seconds, but that's not an option we need to expose.
             // BER allows for non-UTC values, but that's also not an option we need to expose.
             // So the format is always yyMMddHHmmssZ (13)
             const int UtcTimeValueLength = 13;
-            WriteLength(UtcTimeValueLength);
+            this.WriteLength(UtcTimeValueLength);
 
             DateTimeOffset normalized = value.ToUniversalTime();
 
@@ -134,7 +135,7 @@ namespace System.Security.Cryptography.Asn1
             int minute = normalized.Minute;
             int second = normalized.Second;
 
-            Span<byte> baseSpan = _buffer.AsSpan(_offset);
+            Span<byte> baseSpan = this._buffer.AsSpan(this._offset);
             StandardFormat format = new StandardFormat('D', 2);
 
             if (!Utf8Formatter.TryFormat(year % 100, baseSpan.Slice(0, 2), out _, format) ||
@@ -148,9 +149,9 @@ namespace System.Security.Cryptography.Asn1
                 throw new CryptographicException();
             }
 
-            _buffer[_offset + 12] = (byte)'Z';
+            this._buffer[this._offset + 12] = (byte)'Z';
 
-            _offset += UtcTimeValueLength;
+            this._offset += UtcTimeValueLength;
         }
     }
 }

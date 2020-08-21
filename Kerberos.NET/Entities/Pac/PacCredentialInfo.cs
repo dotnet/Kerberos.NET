@@ -1,7 +1,12 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities.Pac;
 using Kerberos.NET.Ndr;
-using System;
 
 namespace Kerberos.NET.Entities
 {
@@ -17,24 +22,26 @@ namespace Kerberos.NET.Entities
 
         public override ReadOnlySpan<byte> Marshal()
         {
-            var buffer = new NdrBuffer();
+            using (var buffer = new NdrBuffer())
+            {
+                buffer.WriteInt32LittleEndian(this.Version);
+                buffer.WriteInt32LittleEndian((int)this.EncryptionType);
+                buffer.WriteSpan(this.SerializedData.Span);
 
-            buffer.WriteInt32LittleEndian(Version);
-            buffer.WriteInt32LittleEndian((int)EncryptionType);
-            buffer.WriteSpan(SerializedData.Span);
-
-            return buffer.ToSpan(alignment: 8);
+                return buffer.ToSpan(alignment: 8);
+            }
         }
 
         public override void Unmarshal(ReadOnlyMemory<byte> bytes)
         {
-            var stream = new NdrBuffer(bytes);
+            using (var stream = new NdrBuffer(bytes))
+            {
+                this.Version = stream.ReadInt32LittleEndian();
 
-            Version = stream.ReadInt32LittleEndian();
+                this.EncryptionType = (EncryptionType)stream.ReadInt32LittleEndian();
 
-            EncryptionType = (EncryptionType)stream.ReadInt32LittleEndian();
-
-            SerializedData = stream.ReadMemory(stream.BytesAvailable);
+                this.SerializedData = stream.ReadMemory(stream.BytesAvailable);
+            }
         }
     }
 }

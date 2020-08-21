@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Buffers;
 using System.Buffers.Text;
@@ -16,7 +17,7 @@ namespace System.Security.Cryptography.Asn1
             @omitFractionalSeconds is false in the corefx implementation.
 
             https://github.com/dotnet/corefx/blob/2ba68b96b53391a04f1b5362fa65bf48c7d8e44e/src/Common/src/System/Security/Cryptography/Asn1/asn.xsd
-             
+
         */
 
         /// <summary>
@@ -32,7 +33,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="WriteGeneralizedTime(Asn1Tag,DateTimeOffset,bool)"/>
         public void WriteGeneralizedTime(DateTimeOffset value, bool omitFractionalSeconds = true)
         {
-            WriteGeneralizedTimeCore(Asn1Tag.GeneralizedTime, value, omitFractionalSeconds);
+            this.WriteGeneralizedTimeCore(Asn1Tag.GeneralizedTime, value, omitFractionalSeconds);
         }
 
         /// <summary>
@@ -58,7 +59,7 @@ namespace System.Security.Cryptography.Asn1
             CheckUniversalTag(tag, UniversalTagNumber.GeneralizedTime);
 
             // Clear the constructed flag, if present.
-            WriteGeneralizedTimeCore(tag.AsPrimitive(), value, omitFractionalSeconds);
+            this.WriteGeneralizedTimeCore(tag.AsPrimitive(), value, omitFractionalSeconds);
         }
 
         // T-REC-X.680-201508 sec 46
@@ -123,6 +124,7 @@ namespace System.Security.Cryptography.Asn1
 
             // yyyy, MM, dd, hh, mm, ss
             const int IntegerPortionLength = 4 + 2 + 2 + 2 + 2 + 2;
+
             // Z, and the optional fraction.
             int totalLength = IntegerPortionLength + 1 + fraction.Length;
 
@@ -132,8 +134,8 @@ namespace System.Security.Cryptography.Asn1
             // CER says character strings <= 1000 encoded bytes must be primitive.
             // So we'll just make BER be primitive, too.
             Debug.Assert(!tag.IsConstructed);
-            WriteTag(tag);
-            WriteLength(totalLength);
+            this.WriteTag(tag);
+            this.WriteLength(totalLength);
 
             int year = normalized.Year;
             int month = normalized.Month;
@@ -142,7 +144,7 @@ namespace System.Security.Cryptography.Asn1
             int minute = normalized.Minute;
             int second = normalized.Second;
 
-            Span<byte> baseSpan = _buffer.AsSpan(_offset);
+            Span<byte> baseSpan = this._buffer.AsSpan(this._offset);
             StandardFormat d4 = new StandardFormat('D', 4);
             StandardFormat d2 = new StandardFormat('D', 2);
 
@@ -157,12 +159,12 @@ namespace System.Security.Cryptography.Asn1
                 throw new CryptographicException();
             }
 
-            _offset += IntegerPortionLength;
+            this._offset += IntegerPortionLength;
             fraction.CopyTo(baseSpan.Slice(IntegerPortionLength));
-            _offset += fraction.Length;
+            this._offset += fraction.Length;
 
-            _buffer[_offset] = (byte)'Z';
-            _offset++;
+            this._buffer[this._offset] = (byte)'Z';
+            this._offset++;
         }
     }
 }

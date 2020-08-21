@@ -1,41 +1,48 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Microsoft.Extensions.Logging.Abstractions;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Extensions.Logging
 {
     internal static class LoggerExtensions
     {
-        private static readonly Func<ILogger, Guid, IDisposable> beginRequestScope;
-        private static readonly Action<ILogger, KerberosProtocolException> logProtocolException;
-        private static readonly Action<ILogger, string, Exception> logBinaryTraceData;
+        private static readonly Func<ILogger, Guid, IDisposable> BeginRequestScopeValue;
+        private static readonly Action<ILogger, KerberosProtocolException> LogProtocolException;
+        private static readonly Action<ILogger, string, Exception> LogBinaryTraceData;
 
+#pragma warning disable CA1810 // Initialize reference type static fields inline
         static LoggerExtensions()
+#pragma warning restore CA1810 // Initialize reference type static fields inline
         {
-            beginRequestScope = LoggerMessage.DefineScope<Guid>("Request => {RequestScope}");
-            logProtocolException = LoggerMessage.Define(LogLevel.Warning, new EventId(), "Protocol failure");
-            logBinaryTraceData = LoggerMessage.Define<string>(LogLevel.Trace, new EventId(), "Traced binary data {Data}");
+            BeginRequestScopeValue = LoggerMessage.DefineScope<Guid>("Request => {RequestScope}");
+            LogProtocolException = LoggerMessage.Define(LogLevel.Warning, default, "Protocol failure");
+            LogBinaryTraceData = LoggerMessage.Define<string>(LogLevel.Trace, default, "Traced binary data {Data}");
         }
 
         public static IDisposable BeginRequestScope(this ILogger logger, Guid scopeId)
         {
             Trace.CorrelationManager.ActivityId = scopeId;
 
-            return beginRequestScope(logger, Trace.CorrelationManager.ActivityId);
+            return BeginRequestScopeValue(logger, Trace.CorrelationManager.ActivityId);
         }
 
         public static void LogKerberosProtocolException(this ILogger logger, KerberosProtocolException pex)
         {
-            logProtocolException(logger, pex);
+            LogProtocolException(logger, pex);
         }
 
         public static void TraceBinary(this ILogger logger, ReadOnlyMemory<byte> data)
         {
             if (logger.IsEnabled(LogLevel.Trace))
             {
-                logBinaryTraceData(logger, Environment.NewLine + data.ToArray().HexDump(), null);
+                LogBinaryTraceData(logger, Environment.NewLine + data.ToArray().HexDump(), null);
             }
         }
 

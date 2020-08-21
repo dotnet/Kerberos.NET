@@ -1,6 +1,11 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
+
 using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -12,9 +17,10 @@ namespace Kerberos.NET.Entities
 {
     public partial class NegotiationToken
     {
-        public NegTokenInit InitialToken;
-        public NegTokenResp ResponseToken;
-
+        public NegTokenInit InitialToken { get; set; }
+  
+        public NegTokenResp ResponseToken { get; set; }
+  
 #if DEBUG
         static NegotiationToken()
         {
@@ -33,6 +39,7 @@ namespace Kerberos.NET.Entities
             ensureUniqueTag(new Asn1Tag(TagClass.ContextSpecific, 1), "ResponseToken");
         }
 #endif
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -49,25 +56,27 @@ namespace Kerberos.NET.Entities
             if (Asn1Extension.HasValue(InitialToken))
             {
                 if (wroteValue)
+                {
                     throw new CryptographicException();
+                }
                 
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
                 InitialToken?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
                 wroteValue = true;
             }
-
             if (Asn1Extension.HasValue(ResponseToken))
             {
                 if (wroteValue)
+                {
                     throw new CryptographicException();
+                }
                 
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 ResponseToken?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
                 wroteValue = true;
             }
-
             if (!wroteValue)
             {
                 throw new CryptographicException();
@@ -106,28 +115,27 @@ namespace Kerberos.NET.Entities
           where T: NegotiationToken, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             Asn1Tag tag = reader.PeekTag();
             AsnReader explicitReader;
             
             if (tag.HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 0)))
             {
                 explicitReader = reader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
-                NegTokenInit tmpInitialToken;
-                NegTokenInit.Decode<NegTokenInit>(explicitReader, out tmpInitialToken);
+                NegTokenInit.Decode<NegTokenInit>(explicitReader, out NegTokenInit tmpInitialToken);
                 decoded.InitialToken = tmpInitialToken;
-
                 explicitReader.ThrowIfNotEmpty();
             }
             else if (tag.HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
             {
                 explicitReader = reader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-                NegTokenResp tmpResponseToken;
-                NegTokenResp.Decode<NegTokenResp>(explicitReader, out tmpResponseToken);
+                NegTokenResp.Decode<NegTokenResp>(explicitReader, out NegTokenResp tmpResponseToken);
                 decoded.ResponseToken = tmpResponseToken;
-
                 explicitReader.ThrowIfNotEmpty();
             }
             else

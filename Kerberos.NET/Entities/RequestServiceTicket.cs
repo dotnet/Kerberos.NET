@@ -1,11 +1,17 @@
-﻿using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET
 {
     /// <summary>
     /// The parameters used during a TGS-REQ
     /// </summary>
-    public struct RequestServiceTicket
+    public struct RequestServiceTicket : IEquatable<RequestServiceTicket>
     {
         /// <summary>
         /// The SPN of the service a ticket is requested
@@ -49,5 +55,95 @@ namespace Kerberos.NET
         /// The realm of the authenticated user
         /// </summary>
         public string Realm { get; set; }
+
+        /// <summary>
+        /// Indicates which flags should be sent to the target within the GSS Delegation Info structure
+        /// </summary>
+        public GssContextEstablishmentFlag GssContextFlags { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is RequestServiceTicket rst)
+            {
+                return this.Equals(rst);
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return EntityHashCode.GetHashCode(
+                this.ApOptions,
+                this.CNameHint,
+                this.GssContextFlags,
+                this.KdcOptions,
+                this.Realm,
+                this.S4uTarget,
+                this.S4uTicket,
+                this.ServicePrincipalName,
+                this.UserToUserTicket
+            );
+        }
+
+        public static bool operator ==(RequestServiceTicket left, RequestServiceTicket right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(RequestServiceTicket left, RequestServiceTicket right)
+        {
+            return !(left == right);
+        }
+
+        public bool Equals(RequestServiceTicket other)
+        {
+            if (other.ApOptions != this.ApOptions)
+            {
+                return false;
+            }
+
+            if (other.CNameHint != this.CNameHint)
+            {
+                return false;
+            }
+
+            if (other.GssContextFlags != this.GssContextFlags)
+            {
+                return false;
+            }
+
+            if (other.KdcOptions != this.KdcOptions)
+            {
+                return false;
+            }
+
+            if (other.Realm != this.Realm)
+            {
+                return false;
+            }
+
+            if (other.S4uTarget != this.S4uTarget)
+            {
+                return false;
+            }
+
+            if (other.S4uTicket != this.S4uTicket)
+            {
+                return false;
+            }
+
+            if (other.ServicePrincipalName != this.ServicePrincipalName)
+            {
+                return false;
+            }
+
+            if (other.UserToUserTicket != this.UserToUserTicket)
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 }

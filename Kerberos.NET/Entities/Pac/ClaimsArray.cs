@@ -1,5 +1,11 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -13,19 +19,29 @@ namespace Kerberos.NET.Entities.Pac
     {
         public void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteInt32LittleEndian((int)ClaimSource);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            buffer.WriteInt32LittleEndian(Count);
+            buffer.WriteInt32LittleEndian((int)this.ClaimSource);
 
-            buffer.WriteDeferredStructArray(ClaimEntries);
+            buffer.WriteInt32LittleEndian(this.Count);
+
+            buffer.WriteDeferredStructArray(this.ClaimEntries);
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            ClaimSource = (ClaimSourceType)buffer.ReadInt32LittleEndian();
-            Count = buffer.ReadInt32LittleEndian();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            buffer.ReadDeferredStructArray<ClaimEntry>(Count, v => ClaimEntries = v);
+            this.ClaimSource = (ClaimSourceType)buffer.ReadInt32LittleEndian();
+            this.Count = buffer.ReadInt32LittleEndian();
+
+            buffer.ReadDeferredStructArray<ClaimEntry>(this.Count, v => this.ClaimEntries = v);
         }
 
         public ClaimSourceType ClaimSource { get; set; }

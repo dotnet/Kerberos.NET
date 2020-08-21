@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,10 +16,12 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbSubjectPublicKeyInfo
     {
-        public KrbAlgorithmIdentifier Algorithm;
+        public KrbAlgorithmIdentifier Algorithm { get; set; }
+  
     
-    public ReadOnlyMemory<byte> SubjectPublicKey;
-      
+    public ReadOnlyMemory<byte> SubjectPublicKey { get; set; }
+    
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -24,7 +30,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -92,7 +98,9 @@ namespace Kerberos.NET.Entities
           where T: KrbSubjectPublicKeyInfo, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -101,12 +109,16 @@ namespace Kerberos.NET.Entities
           where T: KrbSubjectPublicKeyInfo, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             
-            KrbAlgorithmIdentifier.Decode<KrbAlgorithmIdentifier>(sequenceReader, out decoded.Algorithm);
+            KrbAlgorithmIdentifier.Decode<KrbAlgorithmIdentifier>(sequenceReader, out KrbAlgorithmIdentifier tmpAlgorithm);
+            decoded.Algorithm = tmpAlgorithm;
 
             if (sequenceReader.TryReadPrimitiveBitStringValue(out _, out ReadOnlyMemory<byte> tmpSubjectPublicKey))
             {
@@ -116,7 +128,6 @@ namespace Kerberos.NET.Entities
             {
                 decoded.SubjectPublicKey = sequenceReader.ReadBitString(out _);
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

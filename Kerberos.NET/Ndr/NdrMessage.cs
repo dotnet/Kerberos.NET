@@ -1,5 +1,10 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -9,45 +14,22 @@ namespace Kerberos.NET.Entities.Pac
 
         public override ReadOnlySpan<byte> Marshal()
         {
-            var buffer = new NdrBuffer();
+            using (var buffer = new NdrBuffer())
+            {
+                buffer.MarshalObject(this);
 
-            buffer.MarshalObject(this);
-
-            return buffer.ToSpan(alignment: 8);
+                return buffer.ToSpan(alignment: 8);
+            }
         }
 
         public abstract void Unmarshal(NdrBuffer buffer);
 
         public override void Unmarshal(ReadOnlyMemory<byte> bytes)
         {
-            var buffer = new NdrBuffer(bytes);
-
-            buffer.UnmarshalObject(this);
-        }
-    }
-
-    public abstract class PacObject // not NDR thing
-    {
-        public abstract PacType PacType { get; }
-
-        public abstract ReadOnlySpan<byte> Marshal();
-
-        public abstract void Unmarshal(ReadOnlyMemory<byte> bytes);
-
-        internal bool IsDirty { get; set; }
-
-        private ReadOnlyMemory<byte> cachedEncodedValue;
-
-        public virtual ReadOnlyMemory<byte> Encode()
-        {
-            if (cachedEncodedValue.Length <= 0 || IsDirty)
+            using (var buffer = new NdrBuffer(bytes))
             {
-                cachedEncodedValue = Marshal().ToArray();
-
-                IsDirty = false;
+                buffer.UnmarshalObject(this);
             }
-
-            return cachedEncodedValue;
         }
     }
 }

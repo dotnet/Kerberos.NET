@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,12 +16,17 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbDiffieHellmanDomainParameters
     {
-        public ReadOnlyMemory<byte> P;
-        public ReadOnlyMemory<byte> G;
-        public ReadOnlyMemory<byte> Q;
-        public ReadOnlyMemory<byte>? J;
-        public KrbDiffieHellmanValidationParameters ValidationParameters;
-      
+        public ReadOnlyMemory<byte> P { get; set; }
+  
+        public ReadOnlyMemory<byte> G { get; set; }
+  
+        public ReadOnlyMemory<byte> Q { get; set; }
+  
+        public ReadOnlyMemory<byte>? J { get; set; }
+  
+        public KrbDiffieHellmanValidationParameters ValidationParameters { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -26,7 +35,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -45,12 +54,10 @@ namespace Kerberos.NET.Entities
                 writer.WriteEncodedValue(J.Value.Span);
             }
 
-
             if (Asn1Extension.HasValue(ValidationParameters))
             {
                 ValidationParameters?.Encode(writer);
             }
-
             writer.PopSequence(tag);
         }
         
@@ -107,7 +114,9 @@ namespace Kerberos.NET.Entities
           where T: KrbDiffieHellmanDomainParameters, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -116,9 +125,12 @@ namespace Kerberos.NET.Entities
           where T: KrbDiffieHellmanDomainParameters, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             
             decoded.P = sequenceReader.ReadEncodedValue();
@@ -133,12 +145,9 @@ namespace Kerberos.NET.Entities
 
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(Asn1Tag.Sequence))
             {
-                KrbDiffieHellmanValidationParameters tmpValidationParameters;
-                KrbDiffieHellmanValidationParameters.Decode<KrbDiffieHellmanValidationParameters>(sequenceReader, out tmpValidationParameters);
+                KrbDiffieHellmanValidationParameters.Decode<KrbDiffieHellmanValidationParameters>(sequenceReader, out KrbDiffieHellmanValidationParameters tmpValidationParameters);
                 decoded.ValidationParameters = tmpValidationParameters;
-
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }
