@@ -5,7 +5,6 @@
     <Description>A cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
     <PackageTags>security kerberos</PackageTags>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -78,10 +77,8 @@
 
   <ItemGroup>
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
-    <PackageReference Include="System.Buffers" Version="4.5.0" />
-    <PackageReference Include="System.Memory" Version="4.5.3" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
+    <PackageReference Include="System.IO.Pipelines" Version="4.7.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -99,6 +96,6 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <Import Project="Asn1\AsnXml.targets" Condition="'$(BuildingInsideVisualStudio)' == 'true'" />
+  <Import Project="Asn1\AsnXml.targets" />
 
 </Project>
