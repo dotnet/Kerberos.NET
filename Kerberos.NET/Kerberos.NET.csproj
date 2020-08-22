@@ -19,7 +19,7 @@
     <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(BuildingInsideVisualStudio)' == 'true'">
+  <ItemGroup>
     <AsnXml Include="Entities\Kkdcp\KdcProxyMessage.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
     <AsnXml Include="Entities\Krb\KrbApReq.xml" />
