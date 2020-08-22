@@ -29,11 +29,9 @@ There are two ways you can go about using this library. The first is to download
 PM> Install-Package Kerberos.NET
 ```
 
-Note that the current Nuget package does not include the v3 build yet. This is to limit the impact to callers while it's in an Alpha state. There are also a handful of minor but breaking changes as it gets converted to .NET Standard 2.1 and removing the Framework build.
-
 ## On Updates to the Nuget Packages
 
-The nuget packages will generally be kept up to date with any changes to the core library. Check the package release notes for specific changes. However as noted above the library has undergone a substantial overhaul and is in an alpha state.
+The nuget packages will generally be kept up to date with any changes to the core library.
 
 # Using the Library
 
@@ -41,7 +39,7 @@ There are three ways you can use this library.
 
 ## Using The Kerberos Client
 
-The client is intentionally simple and does not have all the features of a comprehensive client found in other platforms. This client is useful for lightweight testing and extending to meet your needs.
+The client is intentionally simple as compared to clients found in other platforms. It's fully-featured and supports generating SPNego messages.
 
 ```C#
 var client = new KerberosClient();
@@ -51,6 +49,8 @@ var kerbCred = new KerberosPasswordCredential("user@domain.com", "userP@ssw0rd!"
 await client.Authenticate(kerbCred);
 
 var ticket = await client.GetServiceTicket("host/appservice.corp.identityintervention.com");
+
+var header = "Negotiate " + Convert.ToBase64String(ticket.EncodeGssApi().ToArray());
 ```
 ## Using the KDC Server
 
@@ -75,7 +75,7 @@ The listener will wait until `listener.Stop()` is called (or disposed).
 
 ## Using the Authenticator
 
-Ticket authentication occurs in two stages. The first stage validates the ticket for correctness via an `IKerberosValidator` with a default implementation of `KerberosValidator`. The second stage involves converting the ticket in to a usable `ClaimsIdentity`, which occurs in the `KerberosAuthenticator`. 
+Ticket authentication occurs in two stages. The first stage validates the ticket for correctness via an `IKerberosValidator` with a default implementation of `KerberosValidator`. The second stage involves converting the ticket in to a usable `ClaimsIdentity` (a `KerberosIdentity : ClaimsIdentity` specifically), which occurs in the `KerberosAuthenticator`. 
 
 The easiest way to get started is to create a new `KerberosAuthenticator` and calling `Authenticate`. If you need to tweak the behavior of the conversion, you can do so by overriding the `ConvertTicket(DecryptedData data)` method. 
 
