@@ -1,8 +1,13 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -17,10 +22,11 @@ namespace Tests.Kerberos.NET
 
         private const string U2UStart = "YFcGCiqGSIb3EgECAgMEADBHoAMCAQWhAwIBEKIaMBigAwIBAaERMA8bDWFkbWluaXN0cmF0b3KjHxsdY29ycC5pZGVudGl0eWludGVydmVudGlvbi5jb20=";
 
-        [TestMethod, ExpectedException(typeof(NotSupportedException))]
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
         public async Task NegoExFirstClassUnsupported()
         {
-            var validator = new KerberosValidator(new KerberosKey())
+            var validator = new KerberosValidator(new KerberosKey(key: new byte[16]))
             {
                 ValidateAfterDecrypt = DefaultActions
             };
@@ -28,10 +34,11 @@ namespace Tests.Kerberos.NET
             await validator.Validate(Convert.FromBase64String(NegoExStart));
         }
 
-        [TestMethod, ExpectedException(typeof(NotSupportedException))]
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
         public async Task User2UserFirstClassUnsupported()
         {
-            var validator = new KerberosValidator(new KerberosKey())
+            var validator = new KerberosValidator(new KerberosKey(key: new byte[16]))
             {
                 ValidateAfterDecrypt = DefaultActions
             };

@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 namespace System.Security.Cryptography.Asn1
 {
@@ -15,7 +16,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the length encoding is not valid under the current encoding rules --OR--
         ///   the contents are not valid under the current encoding rules
         /// </exception>
-        public bool ReadBoolean() => ReadBoolean(Asn1Tag.Boolean);
+        public bool ReadBoolean() => this.ReadBoolean(Asn1Tag.Boolean);
 
         /// <summary>
         ///   Reads the next value as a Boolean with a specified tag.
@@ -35,7 +36,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public bool ReadBoolean(Asn1Tag expectedTag)
         {
-            Asn1Tag tag = ReadTagAndLength(out int? length, out int headerLength);
+            Asn1Tag tag = this.ReadTagAndLength(out int? length, out int headerLength);
             CheckExpectedTag(tag, expectedTag, UniversalTagNumber.Boolean);
 
             // T-REC-X.690-201508 sec 8.2.1
@@ -45,10 +46,10 @@ namespace System.Security.Cryptography.Asn1
             }
 
             bool value = ReadBooleanValue(
-                Slice(_data, headerLength, length.Value).Span,
-                RuleSet);
+                Slice(this._data, headerLength, length.Value).Span,
+                this.RuleSet);
 
-            _data = _data.Slice(headerLength + length.Value);
+            this._data = this._data.Slice(headerLength + length.Value);
             return value;
         }
 

@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -14,6 +19,8 @@ namespace Kerberos.NET.Crypto
     public class BCryptDiffieHellman : IKeyAgreement
     {
         private const int STATUS_SUCCESS = 0;
+
+        private const string BCRYPT = "bcrypt.dll";
 
         private const string BCRYPT_DH_ALGORITHM = "DH";
         private const string BCRYPT_DH_PARAMETERS = "DHParameters";
@@ -39,45 +46,45 @@ namespace Kerberos.NET.Crypto
 
         protected BCryptDiffieHellman(DiffieHellmanKey importKey = null)
         {
-            var status = BCryptOpenAlgorithmProvider(ref hAlgorithm, BCRYPT_DH_ALGORITHM, null, 0);
+            var status = BCryptOpenAlgorithmProvider(ref this.hAlgorithm, BCRYPT_DH_ALGORITHM, null, 0);
             ThrowIfNotNtSuccess(status);
 
             if (importKey != null)
             {
-                ImportKey(importKey, ref hPrivateKey);
+                this.ImportKey(importKey, ref this.hPrivateKey);
             }
             else
             {
-                GenerateKey(Modulus, Generator, ref hPrivateKey);
+                this.GenerateKey(this.Modulus, this.Generator, ref this.hPrivateKey);
             }
 
-            PublicKey = ExportKey(BCRYPT_DH_PUBLIC_BLOB, importKey?.CacheExpiry);
-            PrivateKey = ExportKey(BCRYPT_DH_PRIVATE_BLOB, importKey?.CacheExpiry);
+            this.PublicKey = this.ExportKey(BCRYPT_DH_PUBLIC_BLOB, importKey?.CacheExpiry);
+            this.PrivateKey = this.ExportKey(BCRYPT_DH_PRIVATE_BLOB, importKey?.CacheExpiry);
         }
 
         private unsafe void GenerateKey(ReadOnlyMemory<byte> modulus, ReadOnlyMemory<byte> generator, ref IntPtr hPrivateKey)
         {
-            var status = BCryptGenerateKeyPair(hAlgorithm, ref hPrivateKey, ModulusSize, 0);
+            var status = BCryptGenerateKeyPair(this.hAlgorithm, ref hPrivateKey, this.ModulusSize, 0);
             ThrowIfNotNtSuccess(status);
 
             var structSize = sizeof(BCRYPT_DH_PARAMETER_HEADER) + modulus.Length + generator.Length;
 
             using (var rented = CryptoPool.Rent<byte>(structSize))
             {
-                rented.Memory.Span.Clear();
+                rented.Memory.Span.Fill(0);
 
                 fixed (byte* pParam = &MemoryMarshal.GetReference(rented.Memory.Span))
                 {
                     BCRYPT_DH_PARAMETER* param = (BCRYPT_DH_PARAMETER*)pParam;
 
-                    param->header.cbLength = structSize;
-                    param->header.cbKeyLength = modulus.Length;
-                    param->header.dwMagic = BCRYPT_DH_PARAMETERS_MAGIC;
+                    param->Header.CbLength = structSize;
+                    param->Header.CbKeyLength = modulus.Length;
+                    param->Header.DwMagic = BCRYPT_DH_PARAMETERS_MAGIC;
 
                     modulus.CopyTo(rented.Memory.Slice(sizeof(BCRYPT_DH_PARAMETER_HEADER)));
                     generator.CopyTo(rented.Memory.Slice(sizeof(BCRYPT_DH_PARAMETER_HEADER) + modulus.Length));
 
-                    status = BCryptSetProperty(hPrivateKey, BCRYPT_DH_PARAMETERS, pParam, param->header.cbLength, 0);
+                    status = BCryptSetProperty(hPrivateKey, BCRYPT_DH_PARAMETERS, pParam, param->Header.CbLength, 0);
                     ThrowIfNotNtSuccess(status);
                 }
             }
@@ -86,7 +93,7 @@ namespace Kerberos.NET.Crypto
             ThrowIfNotNtSuccess(status);
         }
 
-        public int ModulusSize => Modulus.Length * 8;
+        public int ModulusSize => this.Modulus.Length * 8;
 
         protected virtual ReadOnlyMemory<byte> Modulus { get; }
 
@@ -100,33 +107,43 @@ namespace Kerberos.NET.Crypto
 
         public unsafe void Dispose()
         {
-            int status;
-
-            if (hAlgorithm != IntPtr.Zero)
-            {
-                status = BCryptCloseAlgorithmProvider(hAlgorithm, 0);
-                ThrowIfNotNtSuccess(status);
-            }
-
-            if (hPrivateKey != IntPtr.Zero)
-            {
-                status = BCryptDestroyKey(hPrivateKey);
-                ThrowIfNotNtSuccess(status);
-            }
-
-            if (hPublicKey != IntPtr.Zero)
-            {
-                status = BCryptDestroyKey(hPublicKey);
-                ThrowIfNotNtSuccess(status);
-            }
-
-            if (phAgreedSecret != IntPtr.Zero)
-            {
-                status = BCryptDestroySecret(phAgreedSecret);
-                ThrowIfNotNtSuccess(status);
-            }
+            this.Dispose(true);
 
             GC.SuppressFinalize(this);
+        }
+
+        protected virtual unsafe void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                // managed
+            }
+
+            int status;
+
+            if (this.hAlgorithm != IntPtr.Zero)
+            {
+                status = BCryptCloseAlgorithmProvider(this.hAlgorithm, 0);
+                ThrowIfNotNtSuccess(status);
+            }
+
+            if (this.hPrivateKey != IntPtr.Zero)
+            {
+                status = BCryptDestroyKey(this.hPrivateKey);
+                ThrowIfNotNtSuccess(status);
+            }
+
+            if (this.hPublicKey != IntPtr.Zero)
+            {
+                status = BCryptDestroyKey(this.hPublicKey);
+                ThrowIfNotNtSuccess(status);
+            }
+
+            if (this.phAgreedSecret != IntPtr.Zero)
+            {
+                status = BCryptDestroySecret(this.phAgreedSecret);
+                ThrowIfNotNtSuccess(status);
+            }
         }
 
         private static void ThrowIfNotNtSuccess(int status)
@@ -141,7 +158,7 @@ namespace Kerberos.NET.Crypto
         {
             int status = 0;
 
-            status = BCryptExportKey(hPrivateKey, IntPtr.Zero, keyType, null, 0, out int pcbResult, 0);
+            status = BCryptExportKey(this.hPrivateKey, IntPtr.Zero, keyType, null, 0, out int pcbResult, 0);
 
             ThrowIfNotNtSuccess(status);
 
@@ -153,7 +170,7 @@ namespace Kerberos.NET.Crypto
 
                 fixed (byte* pbOutput = &MemoryMarshal.GetReference(output.Span))
                 {
-                    status = BCryptExportKey(hPrivateKey, IntPtr.Zero, keyType, pbOutput, pcbResult, out pcbResult, 0);
+                    status = BCryptExportKey(this.hPrivateKey, IntPtr.Zero, keyType, pbOutput, pcbResult, out pcbResult, 0);
 
                     ThrowIfNotNtSuccess(status);
 
@@ -161,9 +178,9 @@ namespace Kerberos.NET.Crypto
 
                     key = new DiffieHellmanKey()
                     {
-                        KeyLength = param->header.cbKey,
-                        Algorithm = param->header.cbKey < 256 ? KeyAgreementAlgorithm.DiffieHellmanModp2 : KeyAgreementAlgorithm.DiffieHellmanModp14,
-                        Type = param->header.dwMagic == BCRYPT_DH_PRIVATE_MAGIC ? AsymmetricKeyType.Private : AsymmetricKeyType.Public,
+                        KeyLength = param->Header.CbKey,
+                        Algorithm = param->Header.CbKey < 256 ? KeyAgreementAlgorithm.DiffieHellmanModp2 : KeyAgreementAlgorithm.DiffieHellmanModp14,
+                        Type = param->Header.DwMagic == BCRYPT_DH_PRIVATE_MAGIC ? AsymmetricKeyType.Private : AsymmetricKeyType.Public,
                         CacheExpiry = expiry
                     };
                 }
@@ -172,14 +189,14 @@ namespace Kerberos.NET.Crypto
 
                 key.Modulus = Copy(export.Slice(0, key.KeyLength));
                 key.Generator = Copy(export.Slice(key.KeyLength, key.KeyLength));
-                key.Public = Copy(export.Slice(key.KeyLength + key.KeyLength, key.KeyLength));
+                key.PublicComponent = Copy(export.Slice(key.KeyLength + key.KeyLength, key.KeyLength));
 
                 if (key.Type == AsymmetricKeyType.Private)
                 {
-                    key.Private = Copy(export.Slice(key.KeyLength + key.KeyLength + key.KeyLength, key.KeyLength));
+                    key.PrivateComponent = Copy(export.Slice(key.KeyLength + key.KeyLength + key.KeyLength, key.KeyLength));
                 }
 
-                key.Factor = Copy(Factor.Span);
+                key.Factor = Copy(this.Factor.Span);
             }
 
             return key;
@@ -212,25 +229,25 @@ namespace Kerberos.NET.Crypto
             }
             else
             {
-                key = (DiffieHellmanKey)PublicKey;
+                key = (DiffieHellmanKey)this.PublicKey;
 
                 keyType = BCRYPT_DH_PUBLIC_BLOB;
                 dwMagic = BCRYPT_DH_PUBLIC_MAGIC;
                 structSize = sizeof(BCRYPT_DH_KEY_BLOB_HEADER) + (key.KeyLength * 3);
             }
 
-            Factor = incoming.Factor.ToArray();
+            this.Factor = incoming.Factor.ToArray();
 
             using (var rented = CryptoPool.Rent<byte>(structSize))
             {
-                rented.Memory.Span.Clear();
+                rented.Memory.Span.Fill(0);
 
                 fixed (byte* pbInput = &MemoryMarshal.GetReference(rented.Memory.Span))
                 {
                     BCRYPT_DH_KEY_BLOB* param = (BCRYPT_DH_KEY_BLOB*)pbInput;
 
-                    param->header.dwMagic = dwMagic;
-                    param->header.cbKey = key.KeyLength;
+                    param->Header.DwMagic = dwMagic;
+                    param->Header.CbKey = key.KeyLength;
 
                     key.Modulus.CopyTo(
                         rented.Memory.Slice(sizeof(BCRYPT_DH_KEY_BLOB_HEADER))
@@ -240,19 +257,19 @@ namespace Kerberos.NET.Crypto
                         rented.Memory.Slice(sizeof(BCRYPT_DH_KEY_BLOB_HEADER) + key.Modulus.Length)
                     );
 
-                    incoming.Public.CopyTo(
+                    incoming.PublicComponent.CopyTo(
                         rented.Memory.Slice(sizeof(BCRYPT_DH_KEY_BLOB_HEADER) + key.Modulus.Length + key.Generator.Length)
                     );
 
-                    if (incoming.Type == AsymmetricKeyType.Private && incoming.Private.Length > 0)
+                    if (incoming.Type == AsymmetricKeyType.Private && incoming.PrivateComponent.Length > 0)
                     {
-                        incoming.Private.CopyTo(
-                            rented.Memory.Slice(sizeof(BCRYPT_DH_KEY_BLOB_HEADER) + key.Modulus.Length + key.Generator.Length + key.Public.Length)
+                        incoming.PrivateComponent.CopyTo(
+                            rented.Memory.Slice(sizeof(BCRYPT_DH_KEY_BLOB_HEADER) + key.Modulus.Length + key.Generator.Length + key.PublicComponent.Length)
                         );
                     }
 
                     var status = BCryptImportKeyPair(
-                        hAlgorithm,
+                        this.hAlgorithm,
                         IntPtr.Zero,
                         keyType,
                         ref hKey,
@@ -268,33 +285,38 @@ namespace Kerberos.NET.Crypto
 
         public void ImportPartnerKey(IExchangeKey incoming)
         {
-            ImportKey(incoming as DiffieHellmanKey, ref hPublicKey);
+            if (!(incoming is DiffieHellmanKey key) || key is null)
+            {
+                throw new ArgumentNullException(nameof(incoming));
+            }
+
+            this.ImportKey(key, ref this.hPublicKey);
         }
 
         public unsafe ReadOnlyMemory<byte> GenerateAgreement()
         {
-            if (hPublicKey == IntPtr.Zero)
+            if (this.hPublicKey == IntPtr.Zero)
             {
                 throw new NotSupportedException("A partner key must be imported first");
             }
 
             int status;
 
-            if (phAgreedSecret != IntPtr.Zero)
+            if (this.phAgreedSecret != IntPtr.Zero)
             {
-                status = BCryptDestroySecret(phAgreedSecret);
+                status = BCryptDestroySecret(this.phAgreedSecret);
                 ThrowIfNotNtSuccess(status);
             }
 
-            phAgreedSecret = IntPtr.Zero;
+            this.phAgreedSecret = IntPtr.Zero;
 
-            status = BCryptSecretAgreement(hPrivateKey, hPublicKey, ref phAgreedSecret, 0);
+            status = BCryptSecretAgreement(this.hPrivateKey, this.hPublicKey, ref this.phAgreedSecret, 0);
 
             ThrowIfNotNtSuccess(status);
 
             int pcbResult = 0;
 
-            status = BCryptDeriveKey(phAgreedSecret, BCRYPT_KDF_RAW_SECRET, null, null, 0, ref pcbResult, 0);
+            status = BCryptDeriveKey(this.phAgreedSecret, BCRYPT_KDF_RAW_SECRET, null, null, 0, ref pcbResult, 0);
 
             ThrowIfNotNtSuccess(status);
 
@@ -302,7 +324,7 @@ namespace Kerberos.NET.Crypto
 
             fixed (byte* pDerivedKey = &MemoryMarshal.GetReference(pbDerivedKey.Span))
             {
-                status = BCryptDeriveKey(phAgreedSecret, BCRYPT_KDF_RAW_SECRET, null, pDerivedKey, pbDerivedKey.Length, ref pcbResult, 0);
+                status = BCryptDeriveKey(this.phAgreedSecret, BCRYPT_KDF_RAW_SECRET, null, pDerivedKey, pbDerivedKey.Length, ref pcbResult, 0);
 
                 ThrowIfNotNtSuccess(status);
             }
@@ -315,47 +337,29 @@ namespace Kerberos.NET.Crypto
         [StructLayout(LayoutKind.Sequential)]
         private struct BCRYPT_DH_PARAMETER
         {
-            public BCRYPT_DH_PARAMETER_HEADER header;
+            public BCRYPT_DH_PARAMETER_HEADER Header;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct BCRYPT_DH_PARAMETER_HEADER
         {
-            public int cbLength;
-            public int dwMagic;
-            public int cbKeyLength;
+            public int CbLength;
+            public int DwMagic;
+            public int CbKeyLength;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct BCRYPT_DH_KEY_BLOB
         {
-            public BCRYPT_DH_KEY_BLOB_HEADER header;
+            public BCRYPT_DH_KEY_BLOB_HEADER Header;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct BCRYPT_DH_KEY_BLOB_HEADER
         {
-            public int dwMagic;
-            public int cbKey;
+            public int DwMagic;
+            public int CbKey;
         }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct BCryptBuffer
-        {
-            public int cbBuffer;
-            public int BufferType;
-            public IntPtr pvBuffer;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct BCryptBufferDesc
-        {
-            public int ulVersion;
-            public int cBuffers;
-            public IntPtr pBuffers;
-        }
-
-        private const string BCRYPT = "bcrypt.dll";
 
         [DllImport(BCRYPT, CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern int BCryptOpenAlgorithmProvider(
@@ -380,7 +384,7 @@ namespace Kerberos.NET.Crypto
         );
 
         [DllImport(BCRYPT, CharSet = CharSet.Unicode, SetLastError = true)]
-        private unsafe static extern int BCryptSetProperty(
+        private static unsafe extern int BCryptSetProperty(
             IntPtr hKey,
             string pszProperty,
             byte* pbInput,
@@ -395,7 +399,7 @@ namespace Kerberos.NET.Crypto
         );
 
         [DllImport(BCRYPT, CharSet = CharSet.Unicode, SetLastError = true)]
-        private unsafe static extern int BCryptExportKey(
+        private static unsafe extern int BCryptExportKey(
            IntPtr hKey,
            IntPtr hExportKey,
            string pszBlobType,
@@ -406,7 +410,7 @@ namespace Kerberos.NET.Crypto
         );
 
         [DllImport(BCRYPT, CharSet = CharSet.Unicode, SetLastError = true)]
-        private unsafe static extern int BCryptImportKeyPair(
+        private static unsafe extern int BCryptImportKeyPair(
            IntPtr hAlgorithm,
            IntPtr hImportKey,
            string pszBlobType,
@@ -425,10 +429,10 @@ namespace Kerberos.NET.Crypto
         );
 
         [DllImport(BCRYPT, CharSet = CharSet.Unicode, SetLastError = true)]
-        private unsafe static extern int BCryptDeriveKey(
+        private static unsafe extern int BCryptDeriveKey(
             IntPtr hSharedSecret,
             string pwszKDF,
-            BCryptBufferDesc* pParameterList,
+            void* pParameterList,
             byte* pbDerivedKey,
             int cbDerivedKey,
             ref int pcbResult,

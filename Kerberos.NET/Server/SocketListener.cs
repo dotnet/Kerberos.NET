@@ -1,8 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Server
 {
@@ -10,22 +15,22 @@ namespace Kerberos.NET.Server
     {
         private readonly ILogger<SocketListener> logger;
         private readonly Socket listeningSocket;
-        private readonly Func<Socket, ListenerOptions, SocketWorkerBase> workerFunc;
+        private readonly Func<Socket, KdcServerOptions, SocketWorkerBase> workerFunc;
 
-        public SocketListener(ListenerOptions options, Func<Socket, ListenerOptions, SocketWorkerBase> workerFunc)
+        public SocketListener(KdcServerOptions options, Func<Socket, KdcServerOptions, SocketWorkerBase> workerFunc)
             : base(options)
         {
-            logger = options.Log.CreateLoggerSafe<SocketListener>();
+            this.logger = options.Log.CreateLoggerSafe<SocketListener>();
 
-            listeningSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            this.listeningSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
-            listeningSocket.Bind(Options.ListeningOn);
-            listeningSocket.Listen(Options.QueueLength);
+            this.listeningSocket.Bind(this.Options.ListeningOn);
+            this.listeningSocket.Listen(this.Options.QueueLength);
 
-            logger.LogInformation(
+            this.logger.LogInformation(
                 "Listener has started. Endpoint = {Port}; Protocol = {Protocol}",
-                listeningSocket.LocalEndPoint,
-                listeningSocket.ProtocolType
+                this.listeningSocket.LocalEndPoint,
+                this.listeningSocket.ProtocolType
             );
 
             options.Cancellation = new CancellationTokenSource();
@@ -37,41 +42,46 @@ namespace Kerberos.NET.Server
         {
             while (true)
             {
-                if (Options.Cancellation.IsCancellationRequested)
+                if (this.Options.Cancellation.IsCancellationRequested)
                 {
                     return null;
                 }
 
                 try
                 {
-                    var socket = await listeningSocket.AcceptAsync();
+                    var socket = await this.listeningSocket.AcceptAsync().ConfigureAwait(true);
 
-                    return workerFunc(socket, Options);
+                    return this.workerFunc(socket, this.Options);
                 }
                 catch (SocketException sx)
                     when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
                 {
-                    logger.LogTrace(sx, "Accept exception raised by socket with code {Error}", sx.SocketErrorCode);
+                    this.logger.LogTrace(sx, "Accept exception raised by socket with code {Error}", sx.SocketErrorCode);
                     throw;
                 }
                 catch (ObjectDisposedException ex)
                 {
-                    logger.LogTrace(ex, "Accept exception raised because object was used after dispose");
+                    this.logger.LogTrace(ex, "Accept exception raised because object was used after dispose");
                     throw;
                 }
                 catch (Exception ex)
                 {
-                    logger.LogTrace(ex, "Accept exception raised");
+                    this.logger.LogTrace(ex, "Accept exception raised");
                     throw;
                 }
             }
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Options.Cancellation.Cancel();
+            base.Dispose(disposing);
 
-            listeningSocket.Dispose();
+            if (disposing)
+            {
+                this.Options.Cancellation.Cancel();
+
+                this.listeningSocket.Dispose();
+            }
         }
     }
 }

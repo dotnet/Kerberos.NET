@@ -1,12 +1,18 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Dns;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Asn1;
+using Kerberos.NET.Dns;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Transport
 {
@@ -16,7 +22,7 @@ namespace Kerberos.NET.Transport
 
         private readonly string kdc;
 
-        private static readonly Random random = new Random();
+        private static readonly Random Random = new Random();
 
         private readonly ConcurrentDictionary<string, DnsRecord> negativeCache
             = new ConcurrentDictionary<string, DnsRecord>();
@@ -28,6 +34,8 @@ namespace Kerberos.NET.Transport
 
         private static readonly ConcurrentDictionary<string, DnsRecord> DomainCache
             = new ConcurrentDictionary<string, DnsRecord>();
+
+        private bool disposedValue;
 
         public virtual bool TransportFailed { get; set; }
 
@@ -65,31 +73,38 @@ namespace Kerberos.NET.Transport
             string domain,
             IAsn1ApplicationEncoder<TRequest> req,
             CancellationToken cancellation = default
-        ) where TResponse : IAsn1ApplicationEncoder<TResponse>, new()
+        )
+            where TResponse : IAsn1ApplicationEncoder<TResponse>, new()
         {
-            return SendMessage<TResponse>(domain, req.EncodeApplication());
+            if (req == null)
+            {
+                throw new ArgumentNullException(nameof(req));
+            }
+
+            return this.SendMessage<TResponse>(domain, req.EncodeApplication());
         }
 
         public abstract Task<T> SendMessage<T>(
             string domain,
             ReadOnlyMemory<byte> req,
             CancellationToken cancellation = default
-        ) where T : IAsn1ApplicationEncoder<T>, new();
+        )
+            where T : IAsn1ApplicationEncoder<T>, new();
 
         protected virtual DnsRecord QueryDomain(string lookup)
         {
             return DomainCache.AddOrUpdate(
                 lookup, // find SRV by domain name in cache
-                dn => QueryDns(dn, null), // if it doesn't exist in cache just query and add
-                (dn, existing) => existing.Purge ? QueryDns(dn, existing) : existing // if it already exists check if its ignored and replace
+                dn => this.QueryDns(dn, null), // if it doesn't exist in cache just query and add
+                (dn, existing) => existing.Purge ? this.QueryDns(dn, existing) : existing // if it already exists check if its ignored and replace
             );
         }
 
         private DnsRecord QueryDns(string lookup, DnsRecord ignored)
         {
-            if (!string.IsNullOrWhiteSpace(kdc))
+            if (!string.IsNullOrWhiteSpace(this.kdc))
             {
-                var split = kdc.Split(':');
+                var split = this.kdc.Split(':');
 
                 var record = new DnsRecord
                 {
@@ -98,7 +113,7 @@ namespace Kerberos.NET.Transport
 
                 if (split.Length > 1)
                 {
-                    record.Port = int.Parse(split[1]);
+                    record.Port = int.Parse(split[1], CultureInfo.InvariantCulture);
                 }
                 else
                 {
@@ -108,21 +123,21 @@ namespace Kerberos.NET.Transport
                 return record;
             }
 
-            var results = Query(lookup).Where(r => r.Type == DnsRecordType.SRV);
+            var results = this.Query(lookup).Where(r => r.Type == DnsRecordType.SRV);
 
             if (ignored != null && ignored.Ignore)
             {
                 // can get here through expiration, and we don't actually want to negative cache
                 // something that has just expired because it could still genuinely be good
 
-                negativeCache[ignored.Target] = ignored;
+                this.negativeCache[ignored.Target] = ignored;
             }
 
-            results = results.Where(s => !negativeCache.TryGetValue(s.Target, out DnsRecord record) || record.Expired);
+            results = results.Where(s => !this.negativeCache.TryGetValue(s.Target, out DnsRecord record) || record.Expired);
 
             var weighted = results.GroupBy(r => r.Weight).OrderBy(r => r.Key).OrderByDescending(r => r.Sum(a => a.Canonical.Count())).FirstOrDefault();
 
-            var rand = random.Next(0, weighted?.Count() ?? 0);
+            var rand = Random.Next(0, weighted?.Count() ?? 0);
 
             var srv = weighted?.ElementAtOrDefault(rand);
 
@@ -144,6 +159,19 @@ namespace Kerberos.NET.Transport
             return DnsQuery.QuerySrv(lookup);
         }
 
-        public virtual void Dispose() { }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this.disposedValue)
+            {
+                this.disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(disposing: true);
+
+            GC.SuppressFinalize(this);
+        }
     }
 }

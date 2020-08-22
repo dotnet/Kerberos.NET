@@ -1,9 +1,14 @@
-﻿using Kerberos.NET.Logging;
-using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Kerberos.NET.Logging;
+using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using LogFunc = System.Action<
     System.Diagnostics.TraceLevel,
     string,
@@ -21,12 +26,13 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void DelegateLogging()
         {
-            KerberosDelegateLogger log = MakeLogger(new List<string>());
-
-            Assert.IsNotNull(log);
+            using (KerberosDelegateLogger log = MakeLogger(new List<string>()))
+            {
+                Assert.IsNotNull(log);
+            }
         }
 
-        private KerberosDelegateLogger MakeLogger(List<string> logLines)
+        private static KerberosDelegateLogger MakeLogger(List<string> logLines)
         {
             LogFunc logger = (level, cateogry, id, scopeState, logState, exception, log) => LogImpl(level, cateogry, id, scopeState, logState, exception, log, logLines);
 
@@ -78,7 +84,7 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(list[9], "[Info] [MyCategory] 0  info again  info again");
         }
 
-        private void LogImpl(
+        private static void LogImpl(
             TraceLevel level,
             string categoryName,
             int eventId,

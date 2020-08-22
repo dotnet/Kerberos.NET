@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -14,15 +19,15 @@ namespace Kerberos.NET.Ndr
             this.deferrals = deferrals ?? new Stack<Queue<Action>>();
         }
 
-        public IDisposable Push() => Push(deferrals.Count == 0);
+        public IDisposable Push() => this.Push(this.deferrals.Count == 0);
 
         private IDisposable Push(bool allocate)
         {
             if (allocate)
             {
-                deferrals.Push(new Queue<Action>());
+                this.deferrals.Push(new Queue<Action>());
 
-                return new DeferralStack(deferrals);
+                return new DeferralStack(this.deferrals);
             }
 
             return null;
@@ -30,20 +35,25 @@ namespace Kerberos.NET.Ndr
 
         public void Defer(Action action)
         {
-            deferrals.Peek().Enqueue(() =>
+            this.deferrals.Peek().Enqueue(() =>
             {
-                using (Push(true))
+                using (this.Push(true))
                 {
                     action();
                 }
             });
         }
 
-        public void Dispose() => Pop();
+        public void Dispose() => this.Pop();
 
         private void Pop()
         {
-            var actions = deferrals.Pop();
+            if (this.deferrals.Count <= 0)
+            {
+                return;
+            }
+
+            var actions = this.deferrals.Pop();
 
             while (actions.Count > 0)
             {

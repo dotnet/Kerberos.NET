@@ -1,45 +1,45 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Ndr;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Runtime.InteropServices;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
     public class PacSignature : PacObject
     {
-        public PacSignature() { }
+        public PacSignature()
+        {
+        }
 
         public PacSignature(PacType ptype, EncryptionType etype)
         {
-            PacType = ptype;
-            Type = CryptoService.ConvertType(etype);
+            this.PacType = ptype;
+            this.Type = CryptoService.ConvertType(etype);
 
-            Signature = SetSignatureValue(Type, size => new byte[size]);
+            this.Signature = SetSignatureValue(this.Type, size => new byte[size]);
         }
 
         private static byte[] SetSignatureValue(ChecksumType type, Func<int, byte[]> setterFunc)
         {
-            byte[] signatureValue = null;
+            var checksum = CryptoService.CreateChecksum(type);
 
-            switch (type)
+            if (checksum == null)
             {
-                case ChecksumType.KERB_CHECKSUM_HMAC_MD5:
-                    signatureValue = setterFunc(16);
-                    break;
-                case ChecksumType.HMAC_SHA1_96_AES128:
-                case ChecksumType.HMAC_SHA1_96_AES256:
-                    signatureValue = setterFunc(12);
-                    break;
-                default:
-                    throw new InvalidOperationException($"Unknown checksum type {type}");
+                throw new InvalidOperationException($"Unknown checksum type {type}");
             }
 
-            return signatureValue;
+            return setterFunc(checksum.ChecksumSize);
         }
 
         [KerberosIgnore]
         public ReadOnlyMemory<byte> SignatureData { get; set; }
 
+        [KerberosIgnore]
         public KerberosChecksum Validator { get; set; }
 
         public ChecksumType Type { get; set; }
@@ -52,58 +52,81 @@ namespace Kerberos.NET.Entities.Pac
 
         public override PacType PacType { get; }
 
+        [KerberosIgnore]
         public bool Validated { get; private set; }
+
+        [KerberosIgnore]
+        public bool Ignored { get; internal set; }
 
         public override ReadOnlySpan<byte> Marshal()
         {
-            var buffer = new NdrBuffer();
-
-            buffer.WriteInt32LittleEndian((int)Type);
-            buffer.WriteSpan(Signature.Span);
-
-            if (RODCIdentifier > 0)
+            using (var buffer = new NdrBuffer())
             {
-                buffer.WriteInt16LittleEndian(RODCIdentifier);
-            }
+                buffer.WriteInt32LittleEndian((int)this.Type);
+                buffer.WriteSpan(this.Signature.Span);
 
-            return buffer.ToSpan();
+                if (this.RODCIdentifier > 0)
+                {
+                    buffer.WriteInt16LittleEndian(this.RODCIdentifier);
+                }
+
+                return buffer.ToSpan();
+            }
         }
 
         public override void Unmarshal(ReadOnlyMemory<byte> bytes)
         {
             var stream = new NdrBuffer(bytes);
 
-            Type = (ChecksumType)stream.ReadInt32LittleEndian();
+            this.Type = (ChecksumType)stream.ReadInt32LittleEndian();
 
-            SignaturePosition = stream.Offset;
-            Signature = SetSignatureValue(Type, size => stream.ReadFixedPrimitiveArray<byte>(size).ToArray());
+            this.SignaturePosition = stream.Offset;
 
-            Validator = CryptoService.CreateChecksum(Type, Signature, SignatureData);
-
-            if (stream.BytesAvailable > 0)
+            if (!this.Ignored)
             {
-                RODCIdentifier = stream.ReadInt16LittleEndian();
+                this.Signature = SetSignatureValue(this.Type, size => stream.ReadFixedPrimitiveArray<byte>(size).ToArray());
+
+                this.Validator = CryptoService.CreateChecksum(this.Type, this.Signature, this.SignatureData);
+
+                if (stream.BytesAvailable > 0)
+                {
+                    this.RODCIdentifier = stream.ReadInt16LittleEndian();
+                }
             }
+            else
+            {
+                this.Signature = stream.ReadMemory(stream.BytesAvailable).ToArray();
+            }
+        }
+
+        public void Validate(KerberosKey key)
+        {
+            if (this.Validator == null)
+            {
+                throw new InvalidOperationException($"Validator not set for checksum type {this.Type}");
+            }
+
+            this.Validator.Validate(key);
+
+            this.Validated = true;
         }
 
         internal void Validate(KeyTable keytab, KrbPrincipalName sname)
         {
-            var key = keytab.GetKey(Type, sname);
+            var key = keytab.GetKey(this.Type, sname);
 
-            Validator.Validate(key);
-
-            Validated = true;
+            this.Validate(key);
         }
 
         internal void Sign(Memory<byte> pacUnsigned, KerberosKey key)
         {
-            Validator = CryptoService.CreateChecksum(Type, Signature, pacUnsigned);
+            this.Validator = CryptoService.CreateChecksum(this.Type, this.Signature, pacUnsigned);
 
-            Validator.Sign(key);
+            this.Validator.Sign(key);
 
-            Signature = MemoryMarshal.AsMemory(Validator.Signature);
+            this.Signature = MemoryMarshal.AsMemory(this.Validator.Signature);
 
-            IsDirty = true;
+            this.IsDirty = true;
         }
     }
 }

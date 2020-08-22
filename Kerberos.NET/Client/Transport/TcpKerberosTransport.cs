@@ -1,4 +1,10 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using System.Globalization;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +18,7 @@ namespace Kerberos.NET.Transport
     {
         private const string TcpServiceTemplate = "_kerberos._tcp.{0}";
 
-        private static readonly ISocketPool pool = CreateSocketPool();
+        private static readonly ISocketPool Pool = CreateSocketPool();
 
         private readonly ILogger<TcpKerberosTransport> logger;
 
@@ -21,19 +27,19 @@ namespace Kerberos.NET.Transport
         {
             this.logger = logger.CreateLoggerSafe<TcpKerberosTransport>();
 
-            Enabled = true;
+            this.Enabled = true;
         }
 
         public static int MaxPoolSize
         {
-            get => pool.MaxPoolSize;
-            set => pool.MaxPoolSize = value;
+            get => Pool.MaxPoolSize;
+            set => Pool.MaxPoolSize = value;
         }
 
         public static TimeSpan ScavengeWindow
         {
-            get => pool.ScavengeWindow;
-            set => pool.ScavengeWindow = value;
+            get => Pool.ScavengeWindow;
+            set => Pool.ScavengeWindow = value;
         }
 
         public static ISocketPool CreateSocketPool() => new SocketPool();
@@ -46,18 +52,18 @@ namespace Kerberos.NET.Transport
         {
             try
             {
-                using (var client = await GetClient(domain))
+                using (var client = await this.GetClient(domain).ConfigureAwait(true))
                 {
                     var stream = client.GetStream();
 
-                    await WriteMessage(encoded, stream, cancellation);
+                    await WriteMessage(encoded, stream, cancellation).ConfigureAwait(true);
 
-                    return await ReadResponse<T>(stream, cancellation);
+                    return await ReadResponse<T>(stream, cancellation).ConfigureAwait(true);
                 }
             }
             catch (SocketException sx)
             {
-                logger.LogDebug(sx, "TCP Socket exception during Connect {SocketCode}", sx.SocketErrorCode);
+                this.logger.LogDebug(sx, "TCP Socket exception during Connect {SocketCode}", sx.SocketErrorCode);
 
                 throw new KerberosTransportException("TCP Connect failed", sx);
             }
@@ -65,14 +71,14 @@ namespace Kerberos.NET.Transport
 
         private async Task<ITcpSocket> GetClient(string domain)
         {
-            var attempts = MaximumAttempts;
+            var attempts = this.MaximumAttempts;
             SocketException lastThrown = null;
 
             do
             {
-                var target = LocateKdc(domain);
+                var target = this.LocateKdc(domain);
 
-                logger.LogTrace("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
+                this.logger.LogTrace("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
 
                 ITcpSocket client = null;
 
@@ -80,7 +86,7 @@ namespace Kerberos.NET.Transport
 
                 try
                 {
-                    client = await pool.Request(target, ConnectTimeout);
+                    client = await Pool.Request(target, this.ConnectTimeout).ConfigureAwait(true);
 
                     if (client != null)
                     {
@@ -100,10 +106,10 @@ namespace Kerberos.NET.Transport
                     continue;
                 }
 
-                logger.LogDebug("TCP connected to {Target} on port {Port}", target.Target, target.Port);
+                this.logger.LogDebug("TCP connected to {Target} on port {Port}", target.Target, target.Port);
 
-                client.SendTimeout = SendTimeout;
-                client.ReceiveTimeout = ReceiveTimeout;
+                client.SendTimeout = this.SendTimeout;
+                client.ReceiveTimeout = this.ReceiveTimeout;
 
                 return client;
             }
@@ -112,14 +118,14 @@ namespace Kerberos.NET.Transport
             throw lastThrown;
         }
 
-        private async Task<T> ReadResponse<T>(NetworkStream stream, CancellationToken cancellation)
+        private static async Task<T> ReadResponse<T>(NetworkStream stream, CancellationToken cancellation)
             where T : Asn1.IAsn1ApplicationEncoder<T>, new()
         {
-            var messageSizeBytes = await Tcp.ReadFromStream(4, stream, cancellation);
+            var messageSizeBytes = await Tcp.ReadFromStream(4, stream, cancellation).ConfigureAwait(true);
 
             var messageSize = (int)messageSizeBytes.AsLong();
 
-            var response = await Tcp.ReadFromStream(messageSize, stream, cancellation);
+            var response = await Tcp.ReadFromStream(messageSize, stream, cancellation).ConfigureAwait(true);
 
             return Decode<T>(response);
         }
@@ -128,14 +134,14 @@ namespace Kerberos.NET.Transport
         {
             encoded = Tcp.FormatKerberosMessageStream(encoded);
 
-            await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation);
+            await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation).ConfigureAwait(true);
         }
 
         protected DnsRecord LocateKdc(string domain)
         {
-            var lookup = string.Format(TcpServiceTemplate, domain);
+            var lookup = string.Format(CultureInfo.InvariantCulture, TcpServiceTemplate, domain);
 
-            return QueryDomain(lookup);
+            return this.QueryDomain(lookup);
         }
     }
 }

@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Buffers.Text;
 using System.Diagnostics;
@@ -17,7 +18,7 @@ namespace System.Security.Cryptography.Asn1
         /// <param name="disallowFractions">
         ///   <c>true</c> to cause a <see cref="CryptographicException"/> to be thrown if a
         ///   fractional second is encountered, such as the restriction on the PKCS#7 Signing
-        ///   Time attribute. 
+        ///   Time attribute.
         /// </param>
         /// <returns>
         ///   a DateTimeOffset representing the value encoded in the GeneralizedTime.
@@ -28,7 +29,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public DateTimeOffset ReadGeneralizedTime(bool disallowFractions = false) =>
-            ReadGeneralizedTime(Asn1Tag.GeneralizedTime, disallowFractions);
+            this.ReadGeneralizedTime(Asn1Tag.GeneralizedTime, disallowFractions);
 
         /// <summary>
         ///   Reads the next value as a GeneralizedTime with a specified tag.
@@ -37,7 +38,7 @@ namespace System.Security.Cryptography.Asn1
         /// <param name="disallowFractions">
         ///   <c>true</c> to cause a <see cref="CryptographicException"/> to be thrown if a
         ///   fractional second is encountered, such as the restriction on the PKCS#7 Signing
-        ///   Time attribute. 
+        ///   Time attribute.
         /// </param>
         /// <returns>
         ///   a DateTimeOffset representing the value encoded in the GeneralizedTime.
@@ -61,21 +62,21 @@ namespace System.Security.Cryptography.Asn1
             // BER specified offset.
             Span<byte> tmpSpace = stackalloc byte[64];
 
-            ReadOnlySpan<byte> contents = GetOctetStringContents(
+            ReadOnlySpan<byte> contents = this.GetOctetStringContents(
                 expectedTag,
                 UniversalTagNumber.GeneralizedTime,
                 out int bytesRead,
                 ref rented,
                 tmpSpace);
 
-            DateTimeOffset value = ParseGeneralizedTime(RuleSet, contents, disallowFractions);
+            DateTimeOffset value = ParseGeneralizedTime(this.RuleSet, contents, disallowFractions);
 
             if (rented != null)
             {
                 CryptoPool.Return(rented, contents.Length);
             }
 
-            _data = _data.Slice(bytesRead);
+            this._data = this._data.Slice(bytesRead);
             return value;
         }
 

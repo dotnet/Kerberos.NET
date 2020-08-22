@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,7 +18,7 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class RpcInteropTests
     {
-        private const string pac =
+        private const string Pac =
             "BgAAAAAAAAABAAAAQAIAAGgAAAAAAAAADQAAABADAACoAgAAAAAAAAoAAAAkAAAAuAUAAAAAAAAMAAAAkAAAAOAFAAA" +
             "AAAAABgAAABQAAABwBgAAAAAAAAcAAAAUAAAAiAYAAAAAAAABEAgAzMzMzDACAAAAAAAAAAACAFhHYvGUCNMB//////" +
             "///3//////////f41sNc1m99IBjSyf9y/40gGN7I7CZxjTARoAGgAEAAIAAAAAAAgAAgAAAAAADAACAAAAAAAQAAIAAAA" +
@@ -54,7 +59,7 @@ namespace Tests.Kerberos.NET
 
             Assert.AreEqual("IDENTITYINTER\0", info.LogonDomainName.ToString());
             Assert.AreEqual("Administrator", info.EffectiveName.ToString());
-            Assert.AreEqual("", info.FullName.ToString());
+            Assert.AreEqual(string.Empty, info.FullName.ToString());
             Assert.AreEqual("DC01\0", info.LogonServer.ToString());
 
             handle.Close();
@@ -299,7 +304,7 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        private unsafe static T ConvertThing<T>(IntPtr p)
+        private static unsafe T ConvertThing<T>(IntPtr p)
             where T : unmanaged
         {
             T* pThing = (T*)p;
@@ -309,7 +314,7 @@ namespace Tests.Kerberos.NET
 
         private static Dictionary<PacType, ReadOnlyMemory<byte>> Setup()
         {
-            var pacBytes = Convert.FromBase64String(pac);
+            var pacBytes = Convert.FromBase64String(Pac);
 
             using (var reader = new BinaryReader(new MemoryStream(pacBytes)))
             {
@@ -383,7 +388,7 @@ namespace Tests.Kerberos.NET
             handle.Close();
         }
 
-        private static unsafe void AssertGroupMembershipsMatch(IEnumerable<GroupMembership> expectedGroups, _GROUP_MEMBERSHIP* actualGroups)
+        private static unsafe void AssertGroupMembershipsMatch(IEnumerable<GroupMembership> expectedGroups, GROUP_MEMBERSHIP* actualGroups)
         {
             for (var i = 0; i < expectedGroups.Count(); i++)
             {

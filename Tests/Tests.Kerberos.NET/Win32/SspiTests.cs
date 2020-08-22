@@ -1,8 +1,13 @@
-﻿using Kerberos.NET;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using Kerberos.NET;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Win32;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 
 namespace Tests.Kerberos.NET
 {

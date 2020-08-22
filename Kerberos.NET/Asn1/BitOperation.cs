@@ -1,8 +1,14 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET
 {
@@ -24,7 +30,7 @@ namespace Kerberos.NET
         {
             Debug.Assert(longVal <= int.MaxValue);
 
-            var bytes = new byte[sizeof(int)];
+            var bytes = new Span<byte>(new byte[4]);
 
             if (littleEndian)
             {

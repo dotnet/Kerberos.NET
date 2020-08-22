@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,25 +23,29 @@ namespace Kerberos.NET.Server
         //
         // 1. Validate and authenticate the request
         // 2. Find and issue a service ticket for the user
-        //
 
         private static readonly IEnumerable<PaDataType> ExpectedPreAuthTypes = new[] { PaDataType.PA_TGS_REQ };
 
         private readonly ILogger<KdcTgsReqMessageHandler> logger;
 
-        public KdcTgsReqMessageHandler(ReadOnlyMemory<byte> message, ListenerOptions options)
+        public KdcTgsReqMessageHandler(ReadOnlyMemory<byte> message, KdcServerOptions options)
             : base(message, options)
         {
-            logger = options.Log.CreateLoggerSafe<KdcTgsReqMessageHandler>();
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
 
-            PreAuthHandlers[PaDataType.PA_TGS_REQ] = service => new PaDataTgsTicketHandler(service);
+            this.logger = options.Log.CreateLoggerSafe<KdcTgsReqMessageHandler>();
+
+            this.PreAuthHandlers[PaDataType.PA_TGS_REQ] = service => new PaDataTgsTicketHandler(service);
         }
 
         protected override IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message)
         {
             var tgsReq = KrbTgsReq.DecodeApplication(message);
 
-            SetRealmContext(tgsReq.Realm);
+            this.SetRealmContext(tgsReq.Realm);
 
             return tgsReq;
         }
@@ -47,6 +56,11 @@ namespace Kerberos.NET.Server
 
         public override void QueryPreValidate(PreAuthenticationContext context)
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             if (context.EvidenceTicketIdentity != null)
             {
                 return;
@@ -54,11 +68,16 @@ namespace Kerberos.NET.Server
 
             var apReq = PaDataTgsTicketHandler.ExtractApReq(context);
 
-            context.EvidenceTicketIdentity = RealmService.Principals.Find(apReq.Ticket.SName);
+            context.EvidenceTicketIdentity = this.RealmService.Principals.Find(apReq.Ticket.SName, apReq.Ticket.Realm);
         }
 
         public override async Task QueryPreValidateAsync(PreAuthenticationContext context)
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             if (context.EvidenceTicketIdentity != null)
             {
                 return;
@@ -66,16 +85,42 @@ namespace Kerberos.NET.Server
 
             var apReq = PaDataTgsTicketHandler.ExtractApReq(context);
 
-            context.EvidenceTicketIdentity = await RealmService.Principals.FindAsync(apReq.Ticket.SName);
+            context.EvidenceTicketIdentity = await this.RealmService.Principals.FindAsync(apReq.Ticket.SName).ConfigureAwait(true);
         }
 
         public override void ValidateTicketRequest(PreAuthenticationContext context)
         {
-            ProcessPreAuth(context);
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            this.ProcessPreAuth(context);
 
             if (!context.PreAuthenticationSatisfied)
             {
                 throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_PADATA_TYPE_NOSUPP);
+            }
+
+            if (context.Principal == null)
+            {
+                context.Principal = this.TransformClientIdentity(context);
+            }
+
+            // this should never hit since we just copy the principal information from the krbtgt
+            // but callers can override TransformClientIdentity so lets fail quickly to be safe
+
+            if (context.Principal == null)
+            {
+                throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_C_PRINCIPAL_UNKNOWN);
+            }
+        }
+
+        protected virtual IKerberosPrincipal TransformClientIdentity(PreAuthenticationContext context)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
             }
 
             var state = context.GetState<TgsState>(PaDataType.PA_TGS_REQ);
@@ -89,58 +134,58 @@ namespace Kerberos.NET.Server
             // to include in the requested service ticket but excluding any potentially dangerous
             // authz values if it's from a referred realm
 
-            // NOTE: Transform should never be async. 
-            // It should eventually be a fast transform once the todo is resolved
-
-            var principal = TransformClientIdentity(state.DecryptedApReq, context.EvidenceTicketIdentity);
-
-            // this should never hit since we just copy the principal information from the krbtgt
-            // but callers can override TransformClientIdentity so lets fail quickly to be safe
-
-            context.Principal = principal ?? throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_C_PRINCIPAL_UNKNOWN);
-        }
-
-        protected virtual IKerberosPrincipal TransformClientIdentity(
-            DecryptedKrbApReq clientTicket,
-            IKerberosPrincipal ticketIssuerIdentity
-        )
-        {
-            if (ticketIssuerIdentity.Type == PrincipalType.TrustedDomain)
+            if (context.EvidenceTicketIdentity.Type == PrincipalType.TrustedDomain)
             {
                 // it's a referral from another realm so all the copy and filter
                 // goop is in TransitedKerberosPrincipal.GeneratePac()
 
-                return new TransitedKerberosPrincipal(clientTicket);
+                return new TransitedKerberosPrincipal(state.DecryptedApReq);
             }
 
             // TODO: shouldn't be calling Find(), but instead copying the existing PAC
             // This won't need an async call because it'll eventually go away
 
-            return RealmService.Principals.Find(clientTicket.Ticket.CName);
+            return this.RealmService.Principals.Find(state.DecryptedApReq.Ticket.CName, state.DecryptedApReq.Ticket.CRealm);
         }
 
         public override void QueryPreExecute(PreAuthenticationContext context)
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             var tgsReq = (KrbTgsReq)context.Message;
 
-            logger.LogInformation("TGS-REQ incoming. SPN = {SPN}", tgsReq.Body.SName.FullyQualifiedName);
+            this.logger.LogInformation(
+                "TGS-REQ incoming. SPN = {SPN}, Realm {REALM}",
+                tgsReq.Body.SName.FullyQualifiedName,
+                tgsReq.Body.Realm);
 
-            context.ServicePrincipal = RealmService.Principals.Find(tgsReq.Body.SName);
+            context.ServicePrincipal = this.RealmService.Principals.Find(tgsReq.Body.SName, tgsReq.Body.Realm);
         }
 
         public override async Task QueryPreExecuteAsync(PreAuthenticationContext context)
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             var tgsReq = (KrbTgsReq)context.Message;
 
-            logger.LogInformation("TGS-REQ incoming. SPN = {SPN}", tgsReq.Body.SName.FullyQualifiedName);
+            this.logger.LogInformation(
+                "TGS-REQ incoming. SPN = {SPN}, Realm {REALM}",
+                tgsReq.Body.SName.FullyQualifiedName,
+                tgsReq.Body.Realm);
 
-            context.ServicePrincipal = await RealmService.Principals.FindAsync(tgsReq.Body.SName);
+            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(tgsReq.Body.SName, tgsReq.Body.Realm).ConfigureAwait(true);
         }
 
         public override ReadOnlyMemory<byte> ExecuteCore(PreAuthenticationContext context)
         {
             // Now that we know who is requesting the ticket we can issue the ticket
-            // 
+            //
             // 3. Find the requested service principal
             // 4. Determine if the requested service principal is in another realm and if so refer them
             // 5. Evaluate whether the client identity should get a ticket to the service
@@ -148,13 +193,18 @@ namespace Kerberos.NET.Server
             // 7. Generate a service ticket for the calling client to the service
             // 8. return to client
 
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             var tgsReq = (KrbTgsReq)context.Message;
 
             if (context.ServicePrincipal == null)
             {
                 // we can't find what they're asking for, but maybe it's in a realm we can transit?
 
-                context.ServicePrincipal = ProposeTransitedRealm(tgsReq, context);
+                context.ServicePrincipal = this.ProposeTransitedRealm(tgsReq, context);
             }
 
             if (context.ServicePrincipal == null)
@@ -164,8 +214,8 @@ namespace Kerberos.NET.Server
 
                 return GenerateError(
                     KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN,
-                    "",
-                    RealmService.Name,
+                    string.Empty,
+                    tgsReq.Body.Realm,
                     tgsReq.Body.SName.FullyQualifiedName
                 );
             }
@@ -173,7 +223,7 @@ namespace Kerberos.NET.Server
             // renewal is an odd case here because the SName will be krbtgt
             // does this need to be validated more than the Decrypt call?
 
-            EvaluateSecurityPolicy(context.Principal, context.ServicePrincipal);
+            this.EvaluateSecurityPolicy(context.Principal, context.ServicePrincipal);
 
             KerberosKey serviceKey;
 
@@ -186,7 +236,7 @@ namespace Kerberos.NET.Server
                 serviceKey = context.ServicePrincipal.RetrieveLongTermCredential();
             }
 
-            var now = RealmService.Now();
+            var now = this.RealmService.Now();
 
             TicketFlags flags = 0;
 
@@ -200,39 +250,49 @@ namespace Kerberos.NET.Server
                 flags |= TicketFlags.PreAuthenticated;
             }
 
-            var includePac = DetectPacRequirement(tgsReq);
-
-            if (includePac == null)
+            if (context.IncludePac == null)
             {
-                includePac = context.Ticket?.AuthorizationData?.Any(a => a.Type == AuthorizationDataType.AdIfRelevant) ?? false;
+                context.IncludePac = DetectPacRequirement(tgsReq);
+
+                if (context.IncludePac == null)
+                {
+                    context.IncludePac = context.Ticket?.AuthorizationData?.Any(a => a.Type == AuthorizationDataType.AdIfRelevant) ?? false;
+                }
             }
 
-            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(
-                new ServiceTicketRequest
-                {
-                    KdcAuthorizationKey = context.EvidenceTicketKey,
-                    Principal = context.Principal,
-                    EncryptedPartKey = context.EncryptedPartKey,
-                    ServicePrincipal = context.ServicePrincipal,
-                    ServicePrincipalKey = serviceKey,
-                    RealmName = RealmService.Name,
-                    Addresses = tgsReq.Body.Addresses,
-                    RenewTill = context.Ticket.RenewTill,
-                    StartTime = now - RealmService.Settings.MaximumSkew,
-                    EndTime = now + RealmService.Settings.SessionLifetime,
-                    Flags = flags,
-                    Now = now,
-                    Nonce = tgsReq.Body.Nonce,
-                    IncludePac = includePac ?? false
-                }
-            );
+            var rst = new ServiceTicketRequest
+            {
+                KdcAuthorizationKey = context.EvidenceTicketKey,
+                Principal = context.Principal,
+                EncryptedPartKey = context.EncryptedPartKey,
+                ServicePrincipal = context.ServicePrincipal,
+                ServicePrincipalKey = serviceKey,
+                RealmName = tgsReq.Body.Realm,
+                Addresses = tgsReq.Body.Addresses,
+                RenewTill = context.Ticket.RenewTill,
+                StartTime = tgsReq.Body.From ?? DateTimeOffset.MinValue,
+                EndTime = tgsReq.Body.Till,
+                MaximumTicketLifetime = this.RealmService.Settings.SessionLifetime,
+                Flags = flags,
+                Now = now,
+                Nonce = tgsReq.Body.Nonce,
+                IncludePac = context.IncludePac ?? false,
+                PreferredClientEType = KerberosConstants.GetPreferredEType(tgsReq.Body.EType),
+            };
+
+            // this is set here instead of in GenerateServiceTicket because GST is used by unit tests to
+            // generate tickets with weird lifetimes for scenario testing and we don't want to break that
+
+            rst.ClampLifetime();
+
+            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(rst);
 
             return tgsRep.EncodeApplication();
         }
 
         private IKerberosPrincipal ProposeTransitedRealm(KrbTgsReq tgsReq, PreAuthenticationContext context)
         {
-            if (RealmService.TrustedRealms == null)
+            if (this.RealmService.TrustedRealms == null)
             {
                 return null;
             }
@@ -241,7 +301,7 @@ namespace Kerberos.NET.Server
             // we also can't really determine if that realm can fulfill the request through any fixed logic so we'll
             // defer to the realm service and they can provide their own logic
 
-            var realm = RealmService.TrustedRealms.ProposeTransit(tgsReq, context);
+            var realm = this.RealmService.TrustedRealms.ProposeTransit(tgsReq, context);
 
             if (realm != null)
             {
@@ -274,7 +334,17 @@ namespace Kerberos.NET.Server
             IKerberosPrincipal servicePrincipal
         )
         {
-            logger.LogDebug("Default policy evaluated for {User} to {Service}", principal.PrincipalName, servicePrincipal.PrincipalName);
+            if (principal == null)
+            {
+                throw new ArgumentNullException(nameof(principal));
+            }
+
+            if (servicePrincipal == null)
+            {
+                throw new ArgumentNullException(nameof(servicePrincipal));
+            }
+
+            this.logger.LogDebug("Default policy evaluated for {User} to {Service}", principal.PrincipalName, servicePrincipal.PrincipalName);
 
             // good place to check whether the incoming principal is allowed to access the service principal
         }

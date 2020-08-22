@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -42,7 +43,7 @@ namespace System.Security.Cryptography.Asn1
             UniversalTagNumber encodingType,
             out ReadOnlyMemory<byte> contents)
         {
-            return TryReadPrimitiveCharacterStringBytes(
+            return this.TryReadPrimitiveCharacterStringBytes(
                 new Asn1Tag(encodingType),
                 encodingType,
                 out contents);
@@ -87,7 +88,7 @@ namespace System.Security.Cryptography.Asn1
             CheckCharacterStringEncodingType(encodingType);
 
             // T-REC-X.690-201508 sec 8.23.3, all character strings are encoded as octet strings.
-            return TryReadPrimitiveOctetStringBytes(expectedTag, encodingType, out contents);
+            return this.TryReadPrimitiveOctetStringBytes(expectedTag, encodingType, out contents);
         }
 
         /// <summary>
@@ -125,7 +126,7 @@ namespace System.Security.Cryptography.Asn1
             Span<byte> destination,
             out int bytesWritten)
         {
-            return TryCopyCharacterStringBytes(
+            return this.TryCopyCharacterStringBytes(
                 new Asn1Tag(encodingType),
                 encodingType,
                 destination,
@@ -177,7 +178,7 @@ namespace System.Security.Cryptography.Asn1
         {
             CheckCharacterStringEncodingType(encodingType);
 
-            bool copied = TryCopyCharacterStringBytes(
+            bool copied = this.TryCopyCharacterStringBytes(
                 expectedTag,
                 encodingType,
                 destination,
@@ -186,7 +187,7 @@ namespace System.Security.Cryptography.Asn1
 
             if (copied)
             {
-                _data = _data.Slice(bytesRead);
+                this._data = this._data.Slice(bytesRead);
             }
 
             return copied;
@@ -227,7 +228,7 @@ namespace System.Security.Cryptography.Asn1
             ArraySegment<byte> destination,
             out int bytesWritten)
         {
-            return TryCopyCharacterStringBytes(
+            return this.TryCopyCharacterStringBytes(
                 new Asn1Tag(encodingType),
                 encodingType,
                 destination.AsSpan(),
@@ -277,7 +278,7 @@ namespace System.Security.Cryptography.Asn1
             ArraySegment<byte> destination,
             out int bytesWritten)
         {
-            return TryCopyCharacterStringBytes(
+            return this.TryCopyCharacterStringBytes(
                 expectedTag,
                 encodingType,
                 destination.AsSpan(),
@@ -317,7 +318,7 @@ namespace System.Security.Cryptography.Asn1
             Span<char> destination,
             out int charsWritten)
         {
-            return TryCopyCharacterString(
+            return this.TryCopyCharacterString(
                 new Asn1Tag(encodingType),
                 encodingType,
                 destination,
@@ -366,7 +367,7 @@ namespace System.Security.Cryptography.Asn1
             out int charsWritten)
         {
             Text.Encoding encoding = AsnCharacterStringEncodings.GetEncoding(encodingType);
-            return TryCopyCharacterString(expectedTag, encodingType, encoding, destination, out charsWritten);
+            return this.TryCopyCharacterString(expectedTag, encodingType, encoding, destination, out charsWritten);
         }
 
         /// <summary>
@@ -403,7 +404,7 @@ namespace System.Security.Cryptography.Asn1
             ArraySegment<char> destination,
             out int charsWritten)
         {
-            return TryCopyCharacterString(
+            return this.TryCopyCharacterString(
                 new Asn1Tag(encodingType),
                 encodingType,
                 destination.AsSpan(),
@@ -451,7 +452,7 @@ namespace System.Security.Cryptography.Asn1
             ArraySegment<char> destination,
             out int charsWritten)
         {
-            return TryCopyCharacterString(
+            return this.TryCopyCharacterString(
                 expectedTag,
                 encodingType,
                 destination.AsSpan(),
@@ -482,7 +483,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="TryCopyCharacterString(UniversalTagNumber,Span{char},out int)"/>
         /// <seealso cref="ReadCharacterString(Asn1Tag,UniversalTagNumber)"/>
         public string ReadCharacterString(UniversalTagNumber encodingType) =>
-            ReadCharacterString(new Asn1Tag(encodingType), encodingType);
+            this.ReadCharacterString(new Asn1Tag(encodingType), encodingType);
 
         /// <summary>
         ///   Reads the next value as character string with the specified tag and
@@ -516,7 +517,7 @@ namespace System.Security.Cryptography.Asn1
         public string ReadCharacterString(Asn1Tag expectedTag, UniversalTagNumber encodingType)
         {
             Text.Encoding encoding = AsnCharacterStringEncodings.GetEncoding(encodingType);
-            return ReadCharacterString(expectedTag, encodingType, encoding);
+            return this.ReadCharacterString(expectedTag, encodingType, encoding);
         }
 
         // T-REC-X.690-201508 sec 8.23
@@ -528,7 +529,7 @@ namespace System.Security.Cryptography.Asn1
             out int bytesWritten)
         {
             // T-REC-X.690-201508 sec 8.23.3, all character strings are encoded as octet strings.
-            if (TryReadPrimitiveOctetStringBytes(
+            if (this.TryReadPrimitiveOctetStringBytes(
                 expectedTag,
                 out Asn1Tag actualTag,
                 out int? contentLength,
@@ -552,8 +553,8 @@ namespace System.Security.Cryptography.Asn1
 
             Debug.Assert(actualTag.IsConstructed);
 
-            bool copied = TryCopyConstructedOctetStringContents(
-                Slice(_data, headerLength, contentLength),
+            bool copied = this.TryCopyConstructedOctetStringContents(
+                Slice(this._data, headerLength, contentLength),
                 destination,
                 contentLength == null,
                 out int contentBytesRead,
@@ -616,7 +617,7 @@ namespace System.Security.Cryptography.Asn1
             byte[] rented = null;
 
             // T-REC-X.690-201508 sec 8.23.3, all character strings are encoded as octet strings.
-            ReadOnlySpan<byte> contents = GetOctetStringContents(
+            ReadOnlySpan<byte> contents = this.GetOctetStringContents(
                 expectedTag,
                 universalTagNumber,
                 out int bytesRead,
@@ -648,7 +649,7 @@ namespace System.Security.Cryptography.Asn1
                     }
                 }
 
-                _data = _data.Slice(bytesRead);
+                this._data = this._data.Slice(bytesRead);
                 return str;
             }
             finally
@@ -670,7 +671,7 @@ namespace System.Security.Cryptography.Asn1
             byte[] rented = null;
 
             // T-REC-X.690-201508 sec 8.23.3, all character strings are encoded as octet strings.
-            ReadOnlySpan<byte> contents = GetOctetStringContents(
+            ReadOnlySpan<byte> contents = this.GetOctetStringContents(
                 expectedTag,
                 universalTagNumber,
                 out int bytesRead,
@@ -686,7 +687,7 @@ namespace System.Security.Cryptography.Asn1
 
                 if (copied)
                 {
-                    _data = _data.Slice(bytesRead);
+                    this._data = this._data.Slice(bytesRead);
                 }
 
                 return copied;

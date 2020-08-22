@@ -1,6 +1,12 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -8,23 +14,33 @@ namespace Kerberos.NET.Entities.Pac
     {
         public void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteInt32LittleEndian(ClaimsArray.Count());
-            buffer.WriteDeferredStructArray(ClaimsArray);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            buffer.WriteInt16LittleEndian(ReservedType);
-            buffer.WriteInt32LittleEndian(ReservedFieldSize);
-            buffer.WriteDeferredConformantArray<byte>(ReservedField);
+            buffer.WriteInt32LittleEndian(this.ClaimsArray.Count());
+            buffer.WriteDeferredStructArray(this.ClaimsArray);
+
+            buffer.WriteInt16LittleEndian(this.ReservedType);
+            buffer.WriteInt32LittleEndian(this.ReservedFieldSize);
+            buffer.WriteDeferredConformantArray<byte>(this.ReservedField.Span);
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            Count = buffer.ReadInt32LittleEndian();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            buffer.ReadDeferredStructArray<ClaimsArray>(Count, v => ClaimsArray = v);
+            this.Count = buffer.ReadInt32LittleEndian();
 
-            ReservedType = buffer.ReadInt16LittleEndian();
-            ReservedFieldSize = buffer.ReadInt32LittleEndian();
-            buffer.ReadDeferredConformantArray<byte>(ReservedFieldSize, v => ReservedField = v.ToArray());
+            buffer.ReadDeferredStructArray<ClaimsArray>(this.Count, v => this.ClaimsArray = v);
+
+            this.ReservedType = buffer.ReadInt16LittleEndian();
+            this.ReservedFieldSize = buffer.ReadInt32LittleEndian();
+            buffer.ReadDeferredConformantArray<byte>(this.ReservedFieldSize, v => this.ReservedField = v.ToArray());
         }
 
         [KerberosIgnore]
@@ -37,6 +53,6 @@ namespace Kerberos.NET.Entities.Pac
         [KerberosIgnore]
         public int ReservedFieldSize { get; set; }
 
-        public byte[] ReservedField { get; set; }
+        public ReadOnlyMemory<byte> ReservedField { get; set; }
     }
 }

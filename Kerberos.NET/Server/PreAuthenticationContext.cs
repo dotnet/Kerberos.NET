@@ -1,12 +1,17 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
 {
     /// <summary>
-    /// PreAuthenticationContext contains the state of the request 
+    /// PreAuthenticationContext contains the state of the request
     /// as it moves through KDC request handler pipelines
     /// </summary>
     public class PreAuthenticationContext
@@ -17,7 +22,7 @@ namespace Kerberos.NET.Server
         public IKerberosMessage Message { get; set; }
 
         /// <summary>
-        /// The identity that provides evidence the client is authenticated. 
+        /// The identity that provides evidence the client is authenticated.
         /// In this case it should always be krbtgt or or a referral realm service.
         /// </summary>
         public IKerberosPrincipal EvidenceTicketIdentity { get; set; }
@@ -46,7 +51,7 @@ namespace Kerberos.NET.Server
         /// Indicates whether the handler has decided if it has enough information
         /// to proceed with issuing a ticket to the requested service.
         /// </summary>
-        public bool PreAuthenticationSatisfied => EncryptedPartKey != null;
+        public bool PreAuthenticationSatisfied => this.EncryptedPartKey != null;
 
         /// <summary>
         /// Additional pre-auth data that should be included in the response.
@@ -68,22 +73,36 @@ namespace Kerberos.NET.Server
         /// </summary>
         public IDictionary<PaDataType, PaDataState> PreAuthenticationState { get; } = new Dictionary<PaDataType, PaDataState>();
 
-        public T GetState<T>(PaDataType type)
-            where T : PaDataState, new()
-        {
-            if (!PreAuthenticationState.TryGetValue(type, out PaDataState val))
-            {
-                val = new T();
-
-                PreAuthenticationState[type] = val;
-            }
-
-            return (T)val;
-        }
-
         /// <summary>
         /// The PA-Data type that authenticated the client.
         /// </summary>
         public PaDataType ClientAuthority { get; set; } = PaDataType.PA_NONE;
+
+        /// <summary>
+        /// Indicates whether the requested service ticket should include a PAC.
+        /// The null, the handler will detect if a PAC is required based on whether
+        /// the PA-Data includes the KrbPaPacRequest or the evidence ticket includes a PAC.
+        /// </summary>
+        public bool? IncludePac { get; set; }
+
+        /// <summary>
+        /// Retrieve the current pre-authentication state for a particular PA-Data type.
+        /// If the initial state is not present it will be created.
+        /// </summary>
+        /// <typeparam name="T">The expected type of the returned state instance.</typeparam>
+        /// <param name="type">The PA-Data type the state belongs to.</param>
+        /// <returns>Returns the current state of the pre-authentication type.</returns>
+        public T GetState<T>(PaDataType type)
+            where T : PaDataState, new()
+        {
+            if (!this.PreAuthenticationState.TryGetValue(type, out PaDataState val))
+            {
+                val = new T();
+
+                this.PreAuthenticationState[type] = val;
+            }
+
+            return (T)val;
+        }
     }
 }

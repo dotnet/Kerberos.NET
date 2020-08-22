@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Security;
@@ -14,9 +19,9 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class PacTests : BaseTest
     {
-        private const string RC4_PAC_SIGNATURE = "dv///9uwIJUdzAWaCdn16YcrrEk=";
+        private const string RC4PACSIGNATURE = "dv///9uwIJUdzAWaCdn16YcrrEk=";
         private const string
-            RC4_PAC = "BQAAAAAAAAABAAAAIAMAAFgAAAAAAAAACgAAABwAAAB4AwAAAAAAAAwAAABQAAAAmAMAAAAAAAAGAAAAFAAAAOgDAAAAAAAABwAA" +
+            RC4PAC = "BQAAAAAAAAABAAAAIAMAAFgAAAAAAAAACgAAABwAAAB4AwAAAAAAAAwAAABQAAAAmAMAAAAAAAAGAAAAFAAAAOgDAAAAAAAABwAA" +
                 "ABQAAAAABAAAAAAAAAEQCADMzMzMEAMAAAAAAAAAAAIAYE1z2X1yyQH/////////f/////////9/sFbR+dRwyQGwFjsknnHJAf////////" +
                 "9/EgASAAQAAgASABIACAACAAAAAAAMAAIAAAAAABAAAgAAAAAAFAACAAAAAAAYAAIALgAAAFIEAAABAgAACwAAABwAAgAgAAAAAAAAAAAA" +
                 "AAAAAAAAAAAAAAwADgAgAAIADAAOACQAAgAoAAIAAAAAAAAAAAAQAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAAAsAAIAAA" +
@@ -31,8 +36,8 @@ namespace Tests.Kerberos.NET
                 "ZQBzAHQAQABkAG8AbQBhAGkAbgAuAGMAbwBtAEQATwBNAEEASQBOAC4AQwBPAE0AAAAAAHb///8AAAAAAAAAAAAAAAAAAAAAAAAAAHb//" +
                 "/8AAAAAAAAAAAAAAAAAAAAAAAAAAA==";
 
-        private const string AES128_PAC_SIGNATURE = "DwAAAKPYyDLq7MP4qie/GQ==";
-        private const string AES128_PAC =
+        private const string AES128PACSIGNATURE = "DwAAAKPYyDLq7MP4qie/GQ==";
+        private const string AES128PAC =
            "BQAAAAAAAAABAAAAIAMAAFgAAAAAAAAACgAAABwAAAB4AwAAAAAAAAwAAABQAAAAmAMAAAAAAAAGAAAAEAAAAOgDAAAAAAAA" +
           "BwAAABQAAAD4AwAAAAAAAAEQCADMzMzMEAMAAAAAAAAAAAIAwAycyX9yyQH/////////f/////////9/4Cg/sn9yyQHg6KjcS" +
           "HPJAf////////9/EgASAAQAAgASABIACAACAAAAAAAMAAIAAAAAABAAAgAAAAAAFAACAAAAAAAYAAIAMgAAAFIEAAABAgAACw" +
@@ -49,8 +54,8 @@ namespace Tests.Kerberos.NET
           "cgAuAHQAZQBzAHQAQABkAG8AbQBhAGkAbgAuAGMAbwBtAEQATwBNAEEASQBOAC4AQwBPAE0AAAAAAA8AAAAAAAAAAAAAAAAAA" +
           "AB2////AAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
-        private const string AES256_PAC_SIGNATURE = "EAAAAHcQyvz922ZFzfua7A==";
-        private const string AES256_PAC
+        private const string AES256PACSIGNATURE = "EAAAAHcQyvz922ZFzfua7A==";
+        private const string AES256PAC
                 = "BQAAAAAAAAABAAAAIAMAAFgAAAAAAAAACgAAABwAAAB4AwAAAAAAAAwAAABQAAAAmAMAAAAAAAAGAAAAEAAAAOgDAAAAAAAAB" +
             "wAAABQAAAD4AwAAAAAAAAEQCADMzMzMEAMAAAAAAAAAAAIAsITafH9yyQH/////////f/////////9/4Cg/sn9yyQHg6KjcSHPJAf//" +
             "//////9/EgASAAQAAgASABIACAACAAAAAAAMAAIAAAAAABAAAgAAAAAAFAACAAAAAAAYAAIAMQAAAFIEAAABAgAACwAAABwAAgAgAAA" +
@@ -66,18 +71,20 @@ namespace Tests.Kerberos.NET
             "ABAAFAA4AAAAAAAAAAAAdQBzAGUAcgAuAHQAZQBzAHQAQABkAG8AbQBhAGkAbgAuAGMAbwBtAEQATwBNAEEASQBOAC4AQwBPAE0AAAA" +
             "AABAAAAAAAAAAAAAAAAAAAAB2////AAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
-        [TestMethod, ExpectedException(typeof(SecurityException))]
+        [TestMethod]
+        [ExpectedException(typeof(SecurityException))]
         public async Task KerberosValidatorBadKey()
         {
             var data = ReadDataFile("aes128-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = DefaultActions };
+            var validator = new KerberosValidator(new KerberosKey(key, etype: EncryptionType.AES128_CTS_HMAC_SHA1_96)) { ValidateAfterDecrypt = DefaultActions };
 
             await validator.Validate(data);
         }
 
-        [TestMethod, ExpectedException(typeof(SecurityException))]
+        [TestMethod]
+        [ExpectedException(typeof(SecurityException))]
         public void KerberosValidatorAes128ModifiedPac()
         {
             var key = ReadDataFile("aes128-key-data");
@@ -86,16 +93,17 @@ namespace Tests.Kerberos.NET
 
             var pacValidated = ValidatePac(
                 kerbKey,
-                Convert.FromBase64String(AES128_PAC_SIGNATURE),
-                Convert.FromBase64String(AES128_PAC)
+                Convert.FromBase64String(AES128PACSIGNATURE),
+                Convert.FromBase64String(AES128PAC)
             );
 
             Assert.IsTrue(pacValidated);
 
-            GenerateCorruptPac(AES128_PAC_SIGNATURE, AES128_PAC).Validator.Validate(kerbKey);
+            GenerateCorruptPac(AES128PACSIGNATURE, AES128PAC).Validator.Validate(kerbKey);
         }
 
-        [TestMethod, ExpectedException(typeof(SecurityException))]
+        [TestMethod]
+        [ExpectedException(typeof(SecurityException))]
         public void KerberosValidatorAes256ModifiedPac()
         {
             var key = ReadDataFile("aes256-key-data");
@@ -104,16 +112,17 @@ namespace Tests.Kerberos.NET
 
             var pacValidated = ValidatePac(
                 kerbKey,
-                Convert.FromBase64String(AES256_PAC_SIGNATURE),
-                Convert.FromBase64String(AES256_PAC)
+                Convert.FromBase64String(AES256PACSIGNATURE),
+                Convert.FromBase64String(AES256PAC)
             );
 
             Assert.IsTrue(pacValidated);
 
-            GenerateCorruptPac(AES256_PAC_SIGNATURE, AES256_PAC).Validator.Validate(kerbKey);
+            GenerateCorruptPac(AES256PACSIGNATURE, AES256PAC).Validator.Validate(kerbKey);
         }
 
-        [TestMethod, ExpectedException(typeof(SecurityException))]
+        [TestMethod]
+        [ExpectedException(typeof(SecurityException))]
         public void KerberosValidatorRC4ModifiedPac()
         {
             var key = ReadDataFile("rc4-key-data");
@@ -121,13 +130,13 @@ namespace Tests.Kerberos.NET
 
             var pacValidated = ValidatePac(
                 kerbKey,
-                Convert.FromBase64String(RC4_PAC_SIGNATURE),
-                Convert.FromBase64String(RC4_PAC)
+                Convert.FromBase64String(RC4PACSIGNATURE),
+                Convert.FromBase64String(RC4PAC)
             );
 
             Assert.IsTrue(pacValidated);
 
-            GenerateCorruptPac(RC4_PAC_SIGNATURE, RC4_PAC).Validator.Validate(kerbKey);
+            GenerateCorruptPac(RC4PACSIGNATURE, RC4PAC).Validator.Validate(kerbKey);
         }
 
         private static bool ValidatePac(KerberosKey kerbKey, byte[] infoBufferBytes, byte[] pacBytes)
@@ -141,7 +150,9 @@ namespace Tests.Kerberos.NET
                 sig.Validator.Validate(kerbKey);
                 pacValidated = true;
             }
-            catch (Exception)
+#pragma warning disable CA1031 // Do not catch general exception types
+            catch
+#pragma warning restore CA1031 // Do not catch general exception types
             {
                 pacValidated = false;
             }
@@ -165,6 +176,188 @@ namespace Tests.Kerberos.NET
             sig.Unmarshal(infoBufferBytes);
 
             return sig;
+        }
+
+        private class FakeCryptoTransform : KerberosCryptoTransformer
+        {
+            public override int ChecksumSize => 32;
+
+            public override int BlockSize => 32;
+
+            public override int KeySize => 32;
+
+            public override ChecksumType ChecksumType => (ChecksumType)(-1);
+
+            public override ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage)
+            {
+                return cipher;
+            }
+
+            public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)
+            {
+                return data;
+            }
+
+            public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
+            {
+                return new byte[this.KeySize];
+            }
+        }
+
+        private class FakeChecksum : KerberosChecksum
+        {
+            public FakeChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> data)
+                : base(signature, data)
+            {
+            }
+
+            public override int ChecksumSize => 200;
+
+            protected override ReadOnlyMemory<byte> SignInternal(KerberosKey key)
+            {
+                return new byte[this.ChecksumSize];
+            }
+
+            protected override bool ValidateInternal(KerberosKey key)
+            {
+                return this.Signature.Span.SequenceEqual(new byte[this.ChecksumSize]);
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void ThrowsUnknownChecksumType()
+        {
+            var principal = new FakeKerberosPrincipal("blah@lah.com");
+
+            var pac = principal.GeneratePac();
+
+            var kdcKey = new KerberosKey(new byte[234], etype: (EncryptionType)(-1));
+            var serverKey = new KerberosKey(new byte[32], etype: EncryptionType.AES256_CTS_HMAC_SHA1_96);
+
+            CryptoService.UnregisterChecksumAlgorithm((ChecksumType)(-1));
+            CryptoService.UnregisterCryptographicAlgorithm((EncryptionType)(-1));
+
+            pac.Encode(kdcKey, serverKey);
+        }
+
+        [TestMethod]
+        public void PacIgnoresUnknownKdcSignatureType()
+        {
+            var principal = new FakeKerberosPrincipal("blah@lah.com");
+
+            var pac = principal.GeneratePac();
+
+            var kdcKey = new KerberosKey(new byte[234], etype: (EncryptionType)(-1));
+            var serverKey = new KerberosKey(new byte[32], etype: EncryptionType.AES256_CTS_HMAC_SHA1_96);
+
+            CryptoService.RegisterChecksumAlgorithm((ChecksumType)(-1), (signature, signatureData) => new FakeChecksum(signature, signatureData));
+            CryptoService.RegisterCryptographicAlgorithm((EncryptionType)(-1), () => new FakeCryptoTransform());
+
+            var encoded = pac.Encode(kdcKey, serverKey);
+
+            CryptoService.UnregisterChecksumAlgorithm((ChecksumType)(-1));
+            CryptoService.UnregisterCryptographicAlgorithm((EncryptionType)(-1));
+
+            var roundtrip = new PrivilegedAttributeCertificate(
+                new KrbAuthorizationData
+                {
+                    Type = AuthorizationDataType.AdWin2kPac,
+                    Data = encoded
+                },
+                SignatureMode.Server
+            );
+
+            Assert.IsNotNull(roundtrip);
+
+            roundtrip.ServerSignature.Validate(serverKey);
+
+            Assert.AreEqual((ChecksumType)(-1), roundtrip.KdcSignature.Type);
+
+            bool threw = false;
+
+            try
+            {
+                roundtrip.KdcSignature.Validate(serverKey);
+            }
+            catch (InvalidOperationException)
+            {
+                threw = true;
+            }
+
+            Assert.IsTrue(threw);
+        }
+
+        [TestMethod]
+        public void PacHandlesCustomKdcSignatureType()
+        {
+            var principal = new FakeKerberosPrincipal("blah@lah.com");
+
+            var pac = principal.GeneratePac();
+
+            var kdcKey = new KerberosKey(new byte[234], etype: (EncryptionType)(-1));
+            var serverKey = new KerberosKey(new byte[32], etype: EncryptionType.AES256_CTS_HMAC_SHA1_96);
+
+            CryptoService.RegisterChecksumAlgorithm((ChecksumType)(-1), (signature, signatureData) => new FakeChecksum(signature, signatureData));
+            CryptoService.RegisterCryptographicAlgorithm((EncryptionType)(-1), () => new FakeCryptoTransform());
+
+            var encoded = pac.Encode(kdcKey, serverKey);
+
+            var roundtrip = new PrivilegedAttributeCertificate(
+                new KrbAuthorizationData
+                {
+                    Type = AuthorizationDataType.AdWin2kPac,
+                    Data = encoded
+                },
+                SignatureMode.Kdc
+            );
+
+            Assert.IsNotNull(roundtrip);
+
+            roundtrip.ServerSignature.Validate(serverKey);
+
+            Assert.AreEqual((ChecksumType)(-1), roundtrip.KdcSignature.Type);
+
+            roundtrip.KdcSignature.Validate(serverKey);
+        }
+
+        [TestMethod]
+        public void PacFailsOnUnknownKdcSignatureType()
+        {
+            var principal = new FakeKerberosPrincipal("blah@lah.com");
+
+            var pac = principal.GeneratePac();
+
+            var kdcKey = new KerberosKey(new byte[234], etype: (EncryptionType)(-1));
+            var serverKey = new KerberosKey(new byte[32], etype: EncryptionType.AES256_CTS_HMAC_SHA1_96);
+
+            CryptoService.RegisterChecksumAlgorithm((ChecksumType)(-1), (signature, signatureData) => new FakeChecksum(signature, signatureData));
+            CryptoService.RegisterCryptographicAlgorithm((EncryptionType)(-1), () => new FakeCryptoTransform());
+
+            var encoded = pac.Encode(kdcKey, serverKey);
+
+            CryptoService.UnregisterChecksumAlgorithm((ChecksumType)(-1));
+            CryptoService.UnregisterCryptographicAlgorithm((EncryptionType)(-1));
+
+            bool threw = false;
+
+            try
+            {
+                _ = new PrivilegedAttributeCertificate(
+                    new KrbAuthorizationData
+                    {
+                        Type = AuthorizationDataType.AdWin2kPac,
+                        Data = encoded
+                    },
+                    SignatureMode.Kdc
+                );
+            }
+            catch (InvalidOperationException)
+            {
+                threw = true;
+            }
+
+            Assert.IsTrue(threw);
         }
 
         [TestMethod]
@@ -228,10 +421,10 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(expectedLastLastFailedILogon, (DateTimeOffset)logonInfo.LastFailedILogon);
             Assert.AreEqual("user.test", logonInfo.UserName.ToString());
             Assert.AreEqual("User Test", logonInfo.UserDisplayName.ToString());
-            Assert.AreEqual("", logonInfo.LogonScript.ToString());
-            Assert.AreEqual("", logonInfo.ProfilePath.ToString());
-            Assert.AreEqual("", logonInfo.HomeDirectory.ToString());
-            Assert.AreEqual("", logonInfo.HomeDrive.ToString());
+            Assert.AreEqual(string.Empty, logonInfo.LogonScript.ToString());
+            Assert.AreEqual(string.Empty, logonInfo.ProfilePath.ToString());
+            Assert.AreEqual(string.Empty, logonInfo.HomeDirectory.ToString());
+            Assert.AreEqual(string.Empty, logonInfo.HomeDrive.ToString());
             Assert.AreEqual("WS2008\0", logonInfo.ServerName.ToString());
             Assert.AreEqual("DOMAIN\0", logonInfo.DomainName.ToString());
             Assert.AreEqual("S-1-5-21-4028881986-3284141023-698984075", logonInfo.DomainSid.Value);
@@ -271,8 +464,12 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void PacGenerationRoundtrip()
         {
-            var realmService = new FakeRealmService("foo.com");
-            var krbtgt = realmService.Principals.Find(KrbPrincipalName.WellKnown.Krbtgt());
+            const string realm = "foo.com";
+
+            KrbPrincipalName krbtgtName = KrbPrincipalName.WellKnown.Krbtgt(realm);
+
+            var realmService = new FakeRealmService(realm);
+            var krbtgt = realmService.Principals.Find(krbtgtName);
             var key = krbtgt.RetrieveLongTermCredential();
 
             var user = realmService.Principals.Find(KrbPrincipalName.FromString("user@foo.com"));
@@ -304,7 +501,7 @@ namespace Tests.Kerberos.NET
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = DefaultActions };
+            var validator = new KerberosValidator(new KerberosKey(key, etype: EncryptionType.RC4_HMAC_NT)) { ValidateAfterDecrypt = DefaultActions };
 
             var result = await validator.Validate(data);
 

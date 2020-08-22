@@ -1,11 +1,16 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -29,8 +34,10 @@ namespace Tests.Kerberos.NET
             {
                 DelegationTicket = new KrbCred
                 {
-                    Tickets = new[] {
-                        new KrbTicket {
+                    Tickets = new[]
+                    {
+                        new KrbTicket
+                        {
                             EncryptedPart = new KrbEncryptedData { Cipher = new byte[16], EType = EncryptionType.AES128_CTS_HMAC_SHA1_96 },
                             Realm = "blah.test.com",
                             SName = KrbPrincipalName.FromString("blah@test.com"),
@@ -69,7 +76,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(cred);
 
-            Assert.AreEqual(1, cred.TicketInfo.Count());
+            Assert.AreEqual(1, cred.TicketInfo.Length);
 
             var ticket = cred.TicketInfo.First();
 
@@ -98,11 +105,15 @@ namespace Tests.Kerberos.NET
                 },
                 Timestamp = DateTimeOffset.UtcNow,
                 USec = 123,
-                TicketInfo = new[] {
-                    new KrbCredInfo {
-                        AuthorizationData = new KrbAuthorizationData[] {
-                            new KrbAuthorizationData {
-                                Data = new byte[0],
+                TicketInfo = new[]
+                {
+                    new KrbCredInfo
+                    {
+                        AuthorizationData = new KrbAuthorizationData[]
+                        {
+                            new KrbAuthorizationData
+                            {
+                                Data = Array.Empty<byte>(),
                                 Type = AuthorizationDataType.AdAndOr
                             }
                         },
@@ -111,13 +122,15 @@ namespace Tests.Kerberos.NET
                         RenewTill = DateTimeOffset.UtcNow,
                         Flags = TicketFlags.Anonymous,
                         Key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96),
-                        PName = new KrbPrincipalName {
-                            Name = new [] { "pname" },
+                        PName = new KrbPrincipalName
+                        {
+                            Name = new[] { "pname" },
                             Type = PrincipalNameType.NT_ENTERPRISE
                         },
                         Realm = "realm.com",
-                        SName = new KrbPrincipalName {
-                            Name = new [] { "server" },
+                        SName = new KrbPrincipalName
+                        {
+                            Name = new[] { "server" },
                             Type = PrincipalNameType.NT_ENTERPRISE
                         },
                         SRealm = "srealm.com",

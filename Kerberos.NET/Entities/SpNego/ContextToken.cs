@@ -1,6 +1,11 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
@@ -20,7 +25,7 @@ namespace Kerberos.NET.Entities
 
         protected static DecryptedKrbApReq DecryptApReq(KrbApReq token, KeyTable keytab)
         {
-            if (token.Ticket == null)
+            if (token?.Ticket == null)
             {
                 return null;
             }

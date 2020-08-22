@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using Kerberos.NET.Asn1;
 using Kerberos.NET.Server;
 
@@ -8,7 +13,7 @@ namespace Kerberos.NET.Entities
     {
         public KrbAsRep()
         {
-            MessageType = MessageType.KRB_AS_REP;
+            this.MessageType = MessageType.KRB_AS_REP;
         }
 
         public KrbAsRep DecodeAsApplication(ReadOnlyMemory<byte> data)
@@ -21,18 +26,27 @@ namespace Kerberos.NET.Entities
             IRealmService realmService
         )
         {
+            if (realmService == null)
+            {
+                throw new ArgumentNullException(nameof(realmService));
+            }
+
             // This is approximately correct such that a client doesn't barf on it
             // The krbtgt Ticket structure is probably correct as far as AD thinks
             // Modulo the PAC, at least.
 
             if (string.IsNullOrWhiteSpace(rst.RealmName))
             {
+                // TODO: Possible bug. Realm service can have multiple krbtgt's so the name is always set
+                // to the name of our KDC name.
                 rst.RealmName = realmService.Name;
             }
 
+            KrbPrincipalName krbtgtName = KrbPrincipalName.WellKnown.Krbtgt(rst.RealmName);
+
             if (rst.ServicePrincipal == null)
             {
-                rst.ServicePrincipal = realmService.Principals.Find(KrbPrincipalName.WellKnown.Krbtgt());
+                rst.ServicePrincipal = realmService.Principals.Find(krbtgtName, rst.RealmName);
             }
 
             if (rst.ServicePrincipalKey == null)
@@ -44,17 +58,14 @@ namespace Kerberos.NET.Entities
             {
                 // Not using rst.ServicePrincipal because it may not actually be krbtgt
 
-                var krbtgt = realmService.Principals.Find(KrbPrincipalName.WellKnown.Krbtgt());
+                var krbtgt = realmService.Principals.Find(krbtgtName, rst.RealmName);
 
                 rst.KdcAuthorizationKey = krbtgt.RetrieveLongTermCredential();
             }
 
-            var now = realmService.Now();
-
-            rst.Now = now;
-            rst.RenewTill = now + realmService.Settings.MaximumRenewalWindow;
-            rst.StartTime = now - realmService.Settings.MaximumSkew;
-            rst.EndTime = now + realmService.Settings.SessionLifetime;
+            rst.Now = realmService.Now();
+            rst.MaximumTicketLifetime = realmService.Settings.SessionLifetime;
+            rst.MaximumRenewalWindow = realmService.Settings.MaximumRenewalWindow;
 
             if (rst.Flags == 0)
             {

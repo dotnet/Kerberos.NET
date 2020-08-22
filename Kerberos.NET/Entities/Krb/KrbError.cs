@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Cryptography.Asn1;
@@ -10,8 +15,8 @@ namespace Kerberos.NET.Entities
     {
         public KrbError()
         {
-            ProtocolVersionNumber = 5;
-            MessageType = MessageType.KRB_ERROR;
+            this.ProtocolVersionNumber = 5;
+            this.MessageType = MessageType.KRB_ERROR;
         }
 
         private static readonly Asn1Tag KrbErrorTag = new Asn1Tag(TagClass.Application, 30);
@@ -27,22 +32,25 @@ namespace Kerberos.NET.Entities
 
         public void StampServerTime()
         {
-            KerberosConstants.Now(out this.STime, out this.Susc);
+            KerberosConstants.Now(out DateTimeOffset stime, out int usec);
+
+            this.STime = stime;
+            this.Cusec = usec;
         }
 
         public IEnumerable<KrbPaData> DecodePreAuthentication()
         {
-            if (ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
+            if (this.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
             {
-                throw new InvalidOperationException($"Cannot parse Pre-Auth PaData because error is {ErrorCode}");
+                throw new InvalidOperationException($"Cannot parse Pre-Auth PaData because error is {this.ErrorCode}");
             }
 
-            if (!EData.HasValue)
+            if (!this.EData.HasValue)
             {
                 throw new InvalidOperationException("Pre-Auth data isn't present in EData");
             }
 
-            var krbMethod = KrbMethodData.Decode(EData.Value, AsnEncodingRules.DER);
+            var krbMethod = KrbMethodData.Decode(this.EData.Value, AsnEncodingRules.DER);
 
             return krbMethod.MethodData;
         }

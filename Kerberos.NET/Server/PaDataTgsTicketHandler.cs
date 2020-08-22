@@ -1,4 +1,10 @@
-﻿using System.Linq;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using System.Linq;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 
@@ -9,7 +15,6 @@ namespace Kerberos.NET.Server
         public PaDataTgsTicketHandler(IRealmService service)
             : base(service)
         {
-
         }
 
         public ValidationActions Validation { get; set; } = ValidationActions.All & ~ValidationActions.Replay;
@@ -17,9 +22,14 @@ namespace Kerberos.NET.Server
         /// <summary>
         /// Executes before the validation stage and can be used for initial decoding of the message.
         /// </summary>
-        /// <param name="preauth"></param>
+        /// <param name="preauth">The current context of the request</param>
         public override void PreValidate(PreAuthenticationContext preauth)
         {
+            if (preauth == null)
+            {
+                throw new ArgumentNullException(nameof(preauth));
+            }
+
             ExtractApReq(preauth);
 
             if (preauth.EvidenceTicketKey == null)
@@ -29,7 +39,7 @@ namespace Kerberos.NET.Server
 
             var state = preauth.GetState<TgsState>(PaDataType.PA_TGS_REQ);
 
-            state.DecryptedApReq = DecryptApReq(state.ApReq, preauth.EvidenceTicketKey);
+            state.DecryptedApReq = this.DecryptApReq(state.ApReq, preauth.EvidenceTicketKey);
         }
 
         /// <summary>
@@ -40,6 +50,11 @@ namespace Kerberos.NET.Server
         /// <returns>Optionally returns PA-Data that needs to be sent to the client otherwise returns null.</returns>
         public override KrbPaData Validate(KrbKdcReq asReq, PreAuthenticationContext context)
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             // First we authenticate the incoming request
             //
             // 1. Get the ApReq (TGT) from the PA-Data of the request
@@ -98,7 +113,7 @@ namespace Kerberos.NET.Server
 
             if (state.DecryptedApReq == null)
             {
-                state.DecryptedApReq = DecryptApReq(state.ApReq, context.EvidenceTicketKey);
+                state.DecryptedApReq = this.DecryptApReq(state.ApReq, context.EvidenceTicketKey);
             }
 
             context.EncryptedPartKey = state.DecryptedApReq.SessionKey;
@@ -114,6 +129,11 @@ namespace Kerberos.NET.Server
         /// <returns>Returns the AP-REQ message within the TGS-REQ PA-Data.</returns>
         public static KrbApReq ExtractApReq(PreAuthenticationContext context)
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             var state = context.GetState<TgsState>(PaDataType.PA_TGS_REQ);
 
             if (state.ApReq == null)
@@ -134,7 +154,7 @@ namespace Kerberos.NET.Server
 
             apReqDecrypted.Decrypt(krbtgtKey);
 
-            apReqDecrypted.Validate(Validation);
+            apReqDecrypted.Validate(this.Validation);
 
             return apReqDecrypted;
         }

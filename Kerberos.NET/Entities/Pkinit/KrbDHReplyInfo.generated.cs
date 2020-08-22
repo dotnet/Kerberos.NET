@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,9 +16,11 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbDHReplyInfo
     {
-        public ReadOnlyMemory<byte> DHSignedData;
-        public ReadOnlyMemory<byte>? ServerDHNonce;
-      
+        public ReadOnlyMemory<byte> DHSignedData { get; set; }
+  
+        public ReadOnlyMemory<byte>? ServerDHNonce { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -23,7 +29,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -41,7 +47,6 @@ namespace Kerberos.NET.Entities
                 writer.WriteOctetString(ServerDHNonce.Value.Span);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             }
-
             writer.PopSequence(tag);
         }
         
@@ -98,7 +103,9 @@ namespace Kerberos.NET.Entities
           where T: KrbDHReplyInfo, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -107,9 +114,12 @@ namespace Kerberos.NET.Entities
           where T: KrbDHReplyInfo, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
@@ -122,11 +132,10 @@ namespace Kerberos.NET.Entities
             {
                 decoded.DHSignedData = sequenceReader.ReadOctetString(new Asn1Tag(TagClass.ContextSpecific, 0));
             }
-
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));                
+            
 
                 if (explicitReader.TryReadPrimitiveOctetStringBytes(out ReadOnlyMemory<byte> tmpServerDHNonce))
                 {
@@ -136,10 +145,8 @@ namespace Kerberos.NET.Entities
                 {
                     decoded.ServerDHNonce = explicitReader.ReadOctetString();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

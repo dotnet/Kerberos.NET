@@ -1,7 +1,13 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities.Pac;
 
 namespace Kerberos.NET.Entities
 {
@@ -9,41 +15,89 @@ namespace Kerberos.NET.Entities
     {
         public KrbKdcRep()
         {
-            ProtocolVersionNumber = 5;
+            this.ProtocolVersionNumber = 5;
         }
 
         internal const TicketFlags DefaultFlags = TicketFlags.Renewable |
                                                   TicketFlags.Forwardable;
+
+        public static KrbCred GenerateWrappedServiceTicket(ServiceTicketRequest request)
+        {
+            GenerateServiceTicket<KrbTgsRep>(
+                request,
+                out KrbEncTicketPart encTicketPart,
+                out KrbTicket ticket,
+                out _,
+                out _,
+                out _
+            );
+
+            return KrbCred.WrapTicket(ticket, encTicketPart);
+        }
 
         public static T GenerateServiceTicket<T>(ServiceTicketRequest request)
             where T : KrbKdcRep, new()
         {
             if (request.EncryptedPartKey == null)
             {
-                throw new ArgumentException("A session key must be provided to encrypt the response", nameof(request.EncryptedPartKey));
+                throw new InvalidOperationException("A client key must be provided to encrypt the response");
             }
 
+            request = GenerateServiceTicket<T>(
+                request,
+                out KrbEncTicketPart encTicketPart,
+                out KrbTicket ticket,
+                out KrbEncKdcRepPart encKdcRepPart,
+                out KeyUsage keyUsage,
+                out MessageType messageType
+            );
+
+            var rep = new T
+            {
+                CName = encTicketPart.CName,
+                CRealm = request.RealmName,
+                MessageType = messageType,
+                Ticket = ticket,
+                EncPart = KrbEncryptedData.Encrypt(
+                    encKdcRepPart.EncodeApplication(),
+                    request.EncryptedPartKey,
+                    keyUsage
+                )
+            };
+
+            return rep;
+        }
+
+        private static ServiceTicketRequest GenerateServiceTicket<T>(
+            ServiceTicketRequest request,
+            out KrbEncTicketPart encTicketPart,
+            out KrbTicket ticket,
+            out KrbEncKdcRepPart encKdcRepPart,
+            out KeyUsage keyUsage,
+            out MessageType messageType
+        )
+            where T : KrbKdcRep, new()
+        {
             if (request.Principal == null)
             {
-                throw new ArgumentException("A Principal identity must be provided", nameof(request.Principal));
+                throw new InvalidOperationException("A Principal identity must be provided");
             }
 
             if (request.ServicePrincipal == null)
             {
-                throw new ArgumentException("A service principal must be provided", nameof(request.ServicePrincipal));
+                throw new InvalidOperationException("A service principal must be provided");
             }
 
             if (request.ServicePrincipalKey == null)
             {
-                throw new ArgumentException("A service principal key must be provided", nameof(request.ServicePrincipalKey));
+                throw new InvalidOperationException("A service principal key must be provided");
             }
 
             var authz = GenerateAuthorizationData(request);
 
-            var sessionKey = KrbEncryptionKey.Generate(request.ServicePrincipalKey.EncryptionType);
+            var sessionKey = KrbEncryptionKey.Generate(request.PreferredClientEType ?? request.ServicePrincipalKey.EncryptionType);
 
-            var encTicketPart = CreateEncTicketPart(request, authz.ToArray(), sessionKey);
-
+            encTicketPart = CreateEncTicketPart(request, authz.ToArray(), sessionKey);
             bool appendRealm = false;
 
             if (request.ServicePrincipal.PrincipalName.Contains("/"))
@@ -51,7 +105,7 @@ namespace Kerberos.NET.Entities
                 appendRealm = true;
             }
 
-            var ticket = new KrbTicket()
+            ticket = new KrbTicket()
             {
                 Realm = request.RealmName,
                 SName = KrbPrincipalName.FromPrincipal(
@@ -65,21 +119,17 @@ namespace Kerberos.NET.Entities
                     KeyUsage.Ticket
                 )
             };
-
-            KrbEncKdcRepPart encKdcRepPart;
-
-            KeyUsage keyUsage;
-
             if (typeof(T) == typeof(KrbAsRep))
             {
                 encKdcRepPart = new KrbEncAsRepPart();
                 keyUsage = KeyUsage.EncAsRepPart;
+                messageType = MessageType.KRB_AS_REP;
             }
             else if (typeof(T) == typeof(KrbTgsRep))
             {
                 encKdcRepPart = new KrbEncTgsRepPart();
-
-                keyUsage = request.EncryptedPartKey.Usage ?? KeyUsage.EncTgsRepPartSessionKey;
+                keyUsage = request.EncryptedPartKey?.Usage ?? KeyUsage.EncTgsRepPartSessionKey;
+                messageType = MessageType.KRB_TGS_REP;
             }
             else
             {
@@ -109,21 +159,7 @@ namespace Kerberos.NET.Entities
                     }
                 }
             };
-
-            var rep = new T
-            {
-                CName = encTicketPart.CName,
-                CRealm = request.RealmName,
-                MessageType = MessageType.KRB_AS_REP,
-                Ticket = ticket,
-                EncPart = KrbEncryptedData.Encrypt(
-                    encKdcRepPart.EncodeApplication(),
-                    request.EncryptedPartKey,
-                    keyUsage
-                )
-            };
-
-            return rep;
+            return request;
         }
 
         private static KrbEncTicketPart CreateEncTicketPart(
@@ -187,16 +223,16 @@ namespace Kerberos.NET.Entities
 
         private static IEnumerable<KrbAuthorizationData> GenerateAuthorizationData(ServiceTicketRequest request)
         {
-            // authorization-data is annoying because it's a sequence of 
+            // authorization-data is annoying because it's a sequence of
             // ad-if-relevant, which is a sequence of sequences
             // it ends up looking something like
             //
             // [
             //   {
             //      Type = ad-if-relevant,
-            //      Data = 
+            //      Data =
             //      [
-            //        { 
+            //        {
             //           Type = pac,
             //           Data = encoded-pac
             //        },
@@ -214,6 +250,12 @@ namespace Kerberos.NET.Entities
 
                 if (pac != null)
                 {
+                    pac.ClientInformation = new PacClientInfo
+                    {
+                        ClientId = RpcFileTime.ConvertWithoutMicroseconds(request.Now),
+                        Name = request.Principal.PrincipalName
+                    };
+
                     var sequence = new KrbAuthorizationDataSequence
                     {
                         AuthorizationData = new[]

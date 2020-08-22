@@ -1,7 +1,11 @@
-﻿using Kerberos.NET.Crypto;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
-using System.Runtime.InteropServices;
+using Kerberos.NET.Crypto;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -15,6 +19,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(pal);
         }
+
 #if WEAKCRYPTO
         [TestMethod]
         public void PalSupportsMd4()
@@ -39,6 +44,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(hmac);
         }
+
 #endif
         [TestMethod]
         public void PalSupportsHmacSha1()
@@ -80,19 +86,22 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(dh);
         }
 
-        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        [TestMethod]
+        [ExpectedException(typeof(PlatformNotSupportedException))]
         public void PalSupportsECDHP256()
         {
             CryptoPal.Platform.DiffieHellmanP256();
         }
 
-        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        [TestMethod]
+        [ExpectedException(typeof(PlatformNotSupportedException))]
         public void PalSupportsECDHP384()
         {
             CryptoPal.Platform.DiffieHellmanP384();
         }
 
-        [TestMethod, ExpectedException(typeof(PlatformNotSupportedException))]
+        [TestMethod]
+        [ExpectedException(typeof(PlatformNotSupportedException))]
         public void PalSupportsECDHP521()
         {
             CryptoPal.Platform.DiffieHellmanP521();
@@ -111,7 +120,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(dh2);
 
-            Assert.IsTrue(pk.Private.Span.SequenceEqual(dh2.PrivateKey.Private.Span));
+            Assert.IsTrue(pk.PrivateComponent.Span.SequenceEqual(dh2.PrivateKey.PrivateComponent.Span));
         }
     }
 }

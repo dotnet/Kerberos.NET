@@ -1,10 +1,15 @@
-﻿using Kerberos.NET.Client;
-using Kerberos.NET.Credentials;
-using Kerberos.NET.Transport;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.Client;
+using Kerberos.NET.Credentials;
+using Kerberos.NET.Transport;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Tests.Kerberos.NET.KdcListener;
 
 namespace Tests.Kerberos.NET
@@ -39,12 +44,13 @@ namespace Tests.Kerberos.NET
         {
             var port = NextPort();
 
-            var client = new KerberosClient($"127.0.0.1:{port}")
+            using (var client = new KerberosClient($"127.0.0.1:{port}")
             {
                 ConnectTimeout = TimeSpan.FromMilliseconds(1)
-            };
-
-            await client.Authenticate(new KerberosPasswordCredential("test", "test", "test"));
+            })
+            {
+                await client.Authenticate(new KerberosPasswordCredential("test", "test", "test"));
+            }
         }
 
         [TestMethod]

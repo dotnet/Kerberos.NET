@@ -1,5 +1,10 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
@@ -9,9 +14,9 @@ namespace Kerberos.NET.Entities
 
         public DelegationInfo DecodeDelegation()
         {
-            if (Type != ChecksumContainsDelegationType)
+            if (this.Type != ChecksumContainsDelegationType)
             {
-                throw new InvalidOperationException($"Cannot decode delegation ticket in checksum because type is {Type}");
+                throw new InvalidOperationException($"Cannot decode delegation ticket in checksum because type is {this.Type}");
             }
 
             return new DelegationInfo().Decode(this.Checksum);
@@ -19,6 +24,11 @@ namespace Kerberos.NET.Entities
 
         public static KrbChecksum EncodeDelegationChecksum(DelegationInfo deleg)
         {
+            if (deleg == null)
+            {
+                throw new ArgumentNullException(nameof(deleg));
+            }
+
             return new KrbChecksum
             {
                 Type = ChecksumContainsDelegationType,
@@ -28,6 +38,11 @@ namespace Kerberos.NET.Entities
 
         public static KrbChecksum Create(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage ku, ChecksumType type = 0)
         {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
             if (type == 0)
             {
                 type = CryptoService.ConvertType(key.EncryptionType);

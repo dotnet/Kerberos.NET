@@ -1,7 +1,12 @@
-﻿using Kerberos.NET.Asn1;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Transport
 {
@@ -25,12 +30,14 @@ namespace Kerberos.NET.Transport
             string domain,
             IAsn1ApplicationEncoder<TRequest> req,
             CancellationToken cancellation = default
-        ) where TResponse : IAsn1ApplicationEncoder<TResponse>, new();
+        )
+            where TResponse : IAsn1ApplicationEncoder<TResponse>, new();
 
         Task<T> SendMessage<T>(
             string domain,
             ReadOnlyMemory<byte> req,
             CancellationToken cancellation = default
-        ) where T : IAsn1ApplicationEncoder<T>, new();
+        )
+            where T : IAsn1ApplicationEncoder<T>, new();
     }
 }

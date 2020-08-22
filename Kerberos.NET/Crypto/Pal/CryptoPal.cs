@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 
 namespace Kerberos.NET.Crypto
 {
@@ -13,9 +18,9 @@ namespace Kerberos.NET.Crypto
 
         protected static readonly bool IsOsX = (Environment.OSVersion.Platform == PlatformID.MacOSX);
 
-        public static CryptoPal Platform => lazyPlatform.Value;
+        public static CryptoPal Platform => LazyPlatform.Value;
 
-        private static readonly Lazy<CryptoPal> lazyPlatform
+        private static readonly Lazy<CryptoPal> LazyPlatform
             = new Lazy<CryptoPal>(() => CreatePal());
 
         private static Func<CryptoPal> injectedPal;
@@ -51,6 +56,7 @@ namespace Kerberos.NET.Crypto
 
             throw PlatformNotSupported();
         }
+
 #if WEAKCRYPTO
         public abstract IHashAlgorithm Md4();
 
@@ -58,6 +64,7 @@ namespace Kerberos.NET.Crypto
 
         public abstract IHmacAlgorithm HmacMd5();
 #endif
+
         public abstract IHmacAlgorithm HmacSha1();
 
         public abstract IKeyDerivationAlgorithm Rfc2898DeriveBytes();

@@ -1,9 +1,14 @@
-﻿using Kerberos.NET.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Kerberos.NET.Entities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -13,7 +18,7 @@ namespace Tests.Kerberos.NET
         private static readonly Dictionary<string, string[]> EncodingTestCases = new Dictionary<string, string[]>
         {
             { "\"EDU,MIT.,ATHENA.,WASHINGTON.EDU,CS.\".", new[] { "EDU", "MIT.EDU", "ATHENA.MIT.EDU", "WASHINGTON.EDU", "CS.WASHINGTON.EDU" } },
-            { "\"EDU,MIT.,WASHINGTON.EDU\"", new [] { "EDU", "MIT.EDU", "WASHINGTON.EDU" } }
+            { "\"EDU,MIT.,WASHINGTON.EDU\"", new[] { "EDU", "MIT.EDU", "WASHINGTON.EDU" } }
         };
 
         [TestMethod]
@@ -35,7 +40,8 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        [TestMethod, ExpectedException(typeof(InvalidOperationException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void DomainX500EncodingSlashes()
         {
             var encoding = new KrbTransitedEncoding();
@@ -43,7 +49,8 @@ namespace Tests.Kerberos.NET
             encoding.EncodeTransit(new[] { "/COM/HP/APOLLO", "/COM/HP", "/COM" });
         }
 
-        [TestMethod, ExpectedException(typeof(InvalidOperationException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void DomainX500DecodingSlashes()
         {
             var encoding = new KrbTransitedEncoding()

@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers.Binary;
 using System.Net.Sockets;
 using System.Threading;
@@ -32,7 +37,7 @@ namespace Kerberos.NET.Transport
                     read,
                     response.Length - read,
                     cancellation
-                );
+                ).ConfigureAwait(true);
             }
 
             return response;

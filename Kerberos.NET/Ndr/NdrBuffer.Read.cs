@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
@@ -11,9 +16,9 @@ namespace Kerberos.NET.Ndr
         public NdrBuffer(ReadOnlyMemory<byte> memory, bool align = true)
             : this(align)
         {
-            backingBuffer = MemoryMarshal.AsMemory(memory);
+            this.backingBuffer = MemoryMarshal.AsMemory(memory);
 
-            MoveByOffset(0);
+            this.MoveByOffset(0);
         }
 
         public void UnmarshalObject(INdrStruct thing)
@@ -28,31 +33,31 @@ namespace Kerberos.NET.Ndr
                 throw new InvalidDataException("Expecting little endian encoding");
             }
 
-            if (header.ObjectBufferLength > BytesAvailable)
+            if (header.ObjectBufferLength > this.BytesAvailable)
             {
-                throw new InvalidDataException($"Expected length ({header.ObjectBufferLength} bytes) is greater than available bytes ({BytesAvailable} bytes)");
+                throw new InvalidDataException($"Expected length ({header.ObjectBufferLength} bytes) is greater than available bytes ({this.BytesAvailable} bytes)");
             }
 
-            ReadReferentStruct(thing);
+            this.ReadReferentStruct(thing);
         }
 
         public void ReadDeferredArray(int knownSize, Action op)
         {
             for (var i = 0; i < knownSize; i++)
             {
-                ReadDeferred(op);
+                this.ReadDeferred(op);
             }
         }
 
-        public ReadOnlyMemory<byte> ReadMemory(int length) => MoveByOffset(length).Slice(0, length);
+        public ReadOnlyMemory<byte> ReadMemory(int length) => this.MoveByOffset(length).Slice(0, length);
 
-        public ReadOnlySpan<byte> Read(int length) => ReadMemory(length).Span;
+        public ReadOnlySpan<byte> Read(int length) => this.ReadMemory(length).Span;
 
-        public byte ReadByteLittleEndian() => MoveByOffset(1).Span[0];
+        public byte ReadByteLittleEndian() => this.MoveByOffset(1).Span[0];
 
         public short ReadInt16LittleEndian()
         {
-            return BinaryPrimitives.ReadInt16LittleEndian(MoveByPrimitiveTypeSize<short>());
+            return BinaryPrimitives.ReadInt16LittleEndian(this.MoveByPrimitiveTypeSize<short>());
         }
 
         public short ReadInt16BigEndian()
@@ -62,7 +67,7 @@ namespace Kerberos.NET.Ndr
 
         public int ReadInt32LittleEndian()
         {
-            return BinaryPrimitives.ReadInt32LittleEndian(MoveByPrimitiveTypeSize<int>());
+            return BinaryPrimitives.ReadInt32LittleEndian(this.MoveByPrimitiveTypeSize<int>());
         }
 
         public int ReadInt32BigEndian()
@@ -72,17 +77,18 @@ namespace Kerberos.NET.Ndr
 
         public uint ReadUInt32LittleEndian()
         {
-            return BinaryPrimitives.ReadUInt32LittleEndian(MoveByPrimitiveTypeSize<uint>());
+            return BinaryPrimitives.ReadUInt32LittleEndian(this.MoveByPrimitiveTypeSize<uint>());
         }
 
         public long ReadInt64LittleEndian()
         {
-            return BinaryPrimitives.ReadInt64LittleEndian(MoveByPrimitiveTypeSize<long>());
+            return BinaryPrimitives.ReadInt64LittleEndian(this.MoveByPrimitiveTypeSize<long>());
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        public ReadOnlySpan<T> ReadFixedPrimitiveArray<T>(int knownLength) where T : struct
+        public ReadOnlySpan<T> ReadFixedPrimitiveArray<T>(int knownLength)
+            where T : struct
         {
             if (knownLength == 0)
             {
@@ -91,9 +97,9 @@ namespace Kerberos.NET.Ndr
 
             int size = SizeOf<T>();
 
-            Align(size);
+            this.Align(size);
 
-            var read = Read(size * knownLength);
+            var read = this.Read(size * knownLength);
 
             var result = MemoryMarshal.Cast<byte, T>(read);
 
@@ -110,7 +116,7 @@ namespace Kerberos.NET.Ndr
         {
             if (typeof(T) == typeof(char))
             {
-                var span = MemoryMarshal.Cast<char, T>(ReadConformantVaryingCharArray());
+                var span = MemoryMarshal.Cast<char, T>(this.ReadConformantVaryingCharArray());
 
                 return new ReadOnlyMemory<T>(span.ToArray());
             }
@@ -120,11 +126,11 @@ namespace Kerberos.NET.Ndr
 
         public ReadOnlySpan<char> ReadConformantVaryingCharArray()
         {
-            var total = ReadInt32LittleEndian();
-            var unused = ReadInt32LittleEndian();
-            var used = ReadInt32LittleEndian();
+            var total = this.ReadInt32LittleEndian();
+            var unused = this.ReadInt32LittleEndian();
+            var used = this.ReadInt32LittleEndian();
 
-            var chars = ReadFixedPrimitiveArray<char>(used);
+            var chars = this.ReadFixedPrimitiveArray<char>(used);
 
             if (total == used && unused == 0)
             {
@@ -141,7 +147,7 @@ namespace Kerberos.NET.Ndr
         public IEnumerable<T> ReadConformantArray<T>(int knownSize, Func<T> reader)
             where T : INdrStruct, new()
         {
-            var conformance = ReadInt32LittleEndian();
+            var conformance = this.ReadInt32LittleEndian();
 
             if (conformance != knownSize)
             {
@@ -161,14 +167,14 @@ namespace Kerberos.NET.Ndr
         public ReadOnlyMemory<T> ReadConformantArray<T>(int knownSize)
             where T : struct
         {
-            var conformance = ReadInt32LittleEndian();
+            var conformance = this.ReadInt32LittleEndian();
 
             if (conformance != knownSize)
             {
                 throw new InvalidOperationException($"Expected size {knownSize} doesn't match conformance {conformance}");
             }
 
-            var read = Read(knownSize);
+            var read = this.Read(knownSize);
 
             var cast = MemoryMarshal.Cast<byte, T>(read);
 
@@ -178,31 +184,31 @@ namespace Kerberos.NET.Ndr
         public void ReadDeferredStructArray<T>(int knownSize, Action<IEnumerable<T>> setter)
             where T : INdrStruct, new()
         {
-            ReadDeferred(() => setter(ReadConformantArray(knownSize, ReadStruct<T>)));
+            this.ReadDeferred(() => setter(this.ReadConformantArray(knownSize, this.ReadStruct<T>)));
         }
 
         public void ReadDeferredConformantArray<T>(int knownSize, Action<ReadOnlyMemory<T>> setter)
             where T : unmanaged
         {
-            ReadDeferred(() => setter(ReadConformantArray<T>(knownSize)));
+            this.ReadDeferred(() => setter(this.ReadConformantArray<T>(knownSize)));
         }
 
         public void ReadConformantStruct<T>(Action<T> setter)
             where T : INdrConformantStruct, new()
         {
-            ReadDeferred(() => setter(ReadStruct<T>()));
+            this.ReadDeferred(() => setter(this.ReadStruct<T>()));
         }
 
         public void ReadReferentStruct(INdrStruct thing)
         {
-            var referent = ReadInt32LittleEndian();
+            var referent = this.ReadInt32LittleEndian();
 
             if (referent == 0)
             {
                 return;
             }
 
-            ReadStruct(thing);
+            this.ReadStruct(thing);
         }
 
         public T ReadStruct<T>()
@@ -210,7 +216,7 @@ namespace Kerberos.NET.Ndr
         {
             var thing = new T();
 
-            ReadStruct(thing);
+            this.ReadStruct(thing);
 
             return thing;
         }
@@ -218,7 +224,7 @@ namespace Kerberos.NET.Ndr
         public void ReadStruct<T>(T thing)
             where T : INdrStruct
         {
-            using (deferrals.Push())
+            using (this.deferrals.Push())
             {
                 if (thing is INdrConformantStruct conformantStruct)
                 {
@@ -232,24 +238,24 @@ namespace Kerberos.NET.Ndr
         public void ReadDeferredConformantVaryingArray<T>(Action<ReadOnlyMemory<T>> callback)
             where T : struct
         {
-            ReadDeferred(() => callback(ReadConformantVaryingArray<T>()));
+            this.ReadDeferred(() => callback(this.ReadConformantVaryingArray<T>()));
         }
 
         public void ReadDeferred(Action callback)
         {
-            var referent = ReadInt32LittleEndian();
+            var referent = this.ReadInt32LittleEndian();
 
             if (referent == 0)
             {
                 return;
             }
 
-            deferrals.Defer(callback);
+            this.deferrals.Defer(callback);
         }
 
         public void ReadDeferredStructUnion(INdrUnion union)
         {
-            ReadDeferred(() => union.UnmarshalUnion(this));
+            this.ReadDeferred(() => union.UnmarshalUnion(this));
         }
     }
 }

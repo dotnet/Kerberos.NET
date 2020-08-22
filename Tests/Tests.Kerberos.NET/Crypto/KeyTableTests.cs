@@ -1,11 +1,16 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -42,14 +47,17 @@ namespace Tests.Kerberos.NET
 
             var buffer = new MemoryStream();
 
-            keytable.Write(new BinaryWriter(buffer));
+            using (var writer = new BinaryWriter(buffer))
+            {
+                keytable.Write(writer);
 
-            var secondKeyTable = new KeyTable(buffer.ToArray());
+                var secondKeyTable = new KeyTable(buffer.ToArray());
 
-            Assert.IsNotNull(secondKeyTable);
-            Assert.AreEqual(1, secondKeyTable.Entries.Count);
+                Assert.IsNotNull(secondKeyTable);
+                Assert.AreEqual(1, secondKeyTable.Entries.Count);
 
-            AssertKeytablesAreEqual(keytable, secondKeyTable);
+                AssertKeytablesAreEqual(keytable, secondKeyTable);
+            }
         }
 
         [TestMethod]
@@ -62,14 +70,17 @@ namespace Tests.Kerberos.NET
 
             var buffer = new MemoryStream();
 
-            keytable.Write(new BinaryWriter(buffer));
+            using (var writer = new BinaryWriter(buffer))
+            {
+                keytable.Write(writer);
 
-            var secondKeyTable = new KeyTable(buffer.ToArray());
+                var secondKeyTable = new KeyTable(buffer.ToArray());
 
-            Assert.IsNotNull(secondKeyTable);
-            Assert.AreEqual(15, secondKeyTable.Entries.Count);
+                Assert.IsNotNull(secondKeyTable);
+                Assert.AreEqual(15, secondKeyTable.Entries.Count);
 
-            AssertKeytablesAreEqual(keytable, secondKeyTable);
+                AssertKeytablesAreEqual(keytable, secondKeyTable);
+            }
         }
 
         [TestMethod]
@@ -82,14 +93,17 @@ namespace Tests.Kerberos.NET
 
             var buffer = new MemoryStream();
 
-            keytable.Write(new BinaryWriter(buffer));
+            using (var writer = new BinaryWriter(buffer))
+            {
+                keytable.Write(writer);
 
-            var secondKeyTable = new KeyTable(buffer.ToArray());
+                var secondKeyTable = new KeyTable(buffer.ToArray());
 
-            Assert.IsNotNull(secondKeyTable);
-            Assert.AreEqual(5, secondKeyTable.Entries.Count);
+                Assert.IsNotNull(secondKeyTable);
+                Assert.AreEqual(5, secondKeyTable.Entries.Count);
 
-            AssertKeytablesAreEqual(keytable, secondKeyTable);
+                AssertKeytablesAreEqual(keytable, secondKeyTable);
+            }
         }
 
         private static void AssertKeytablesAreEqual(KeyTable keytable, KeyTable secondKeyTable)
@@ -103,7 +117,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void KeyGeneration()
         {
-            var keys = new[] {
+            var keys = new[]
+            {
                 new KerberosKey(
                     "password",
                     new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "REALM.COM", new[] { "host/appservice" }),
@@ -116,11 +131,14 @@ namespace Tests.Kerberos.NET
 
             var buffer = new MemoryStream();
 
-            keytable.Write(new BinaryWriter(buffer));
+            using (var writer = new BinaryWriter(buffer))
+            {
+                keytable.Write(writer);
 
-            var secondKeytab = new KeyTable(buffer.ToArray());
+                var secondKeytab = new KeyTable(buffer.ToArray());
 
-            AssertKeytablesAreEqual(keytable, secondKeytab);
+                AssertKeytablesAreEqual(keytable, secondKeytab);
+            }
         }
 
         [TestMethod]
@@ -140,23 +158,26 @@ namespace Tests.Kerberos.NET
 
             var buffer = new MemoryStream();
 
-            keytab.Write(new BinaryWriter(buffer));
+            using (var writer = new BinaryWriter(buffer))
+            {
+                keytab.Write(writer);
 
-            var secondKeytab = new KeyTable(buffer.ToArray());
+                var secondKeytab = new KeyTable(buffer.ToArray());
 
-            var authenticator = new KerberosAuthenticator(
-                new KerberosValidator(secondKeytab)
-                {
-                    ValidateAfterDecrypt = DefaultActions
-                });
+                var authenticator = new KerberosAuthenticator(
+                    new KerberosValidator(secondKeytab)
+                    {
+                        ValidateAfterDecrypt = DefaultActions
+                    });
 
-            Assert.IsNotNull(authenticator);
+                Assert.IsNotNull(authenticator);
 
-            var result = await authenticator.Authenticate(RC4Header);
+                var result = await authenticator.Authenticate(RC4Header);
 
-            Assert.IsNotNull(result);
+                Assert.IsNotNull(result);
 
-            Assert.AreEqual("Administrator@identityintervention.com", result.Name);
+                Assert.AreEqual("Administrator@identityintervention.com", result.Name);
+            }
         }
 
         [TestMethod]
@@ -166,23 +187,26 @@ namespace Tests.Kerberos.NET
 
             var buffer = new MemoryStream();
 
-            keytab.Write(new BinaryWriter(buffer));
+            using (var writer = new BinaryWriter(buffer))
+            {
+                keytab.Write(writer);
 
-            var secondKeytab = new KeyTable(buffer.ToArray());
+                var secondKeytab = new KeyTable(buffer.ToArray());
 
-            var authenticator = new KerberosAuthenticator(
-                new KerberosValidator(secondKeytab)
-                {
-                    ValidateAfterDecrypt = DefaultActions
-                });
+                var authenticator = new KerberosAuthenticator(
+                    new KerberosValidator(secondKeytab)
+                    {
+                        ValidateAfterDecrypt = DefaultActions
+                    });
 
-            Assert.IsNotNull(authenticator);
+                Assert.IsNotNull(authenticator);
 
-            var result = await authenticator.Authenticate(RC4Header);
+                var result = await authenticator.Authenticate(RC4Header);
 
-            Assert.IsNotNull(result);
+                Assert.IsNotNull(result);
 
-            Assert.AreEqual("Administrator@identityintervention.com", result.Name);
+                Assert.AreEqual("Administrator@identityintervention.com", result.Name);
+            }
         }
 
         [TestMethod]
@@ -234,7 +258,7 @@ namespace Tests.Kerberos.NET
 
             var keytab = new KeyTable(file.ToArray());
 
-            Assert.AreEqual(1, keytab.Entries.Count());
+            Assert.AreEqual(1, keytab.Entries.Count);
 
             var key = keytab.Entries.First();
 
@@ -258,38 +282,6 @@ namespace Tests.Kerberos.NET
             };
 
             Assert.IsTrue(expectedKey.SequenceEqual(derivedKey.ToArray()));
-        }
-
-        [TestMethod]
-        public void MultipleVersionsInSameKeytab()
-        {
-            var keys = new[] {
-                new KerberosKey(
-                    "password",
-                    new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "REALM.COM", new[] { "host/appservice" }),
-                    host: "appservice",
-                    etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
-                    kvno: 1
-                ),
-                new KerberosKey(
-                    "password",
-                    new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "REALM.COM", new[] { "host/appservice" }),
-                    host: "appservice",
-                    etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
-                    kvno: 2
-                ),
-                new KerberosKey(
-                    "password",
-                    new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "REALM.COM", new[] { "host/appservice" }),
-                    host: "appservice",
-                    etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
-                    kvno: 12
-                )
-            };
-
-            var keytable = new KeyTable(keys);
-            var key = keytable.GetKey(EncryptionType.AES256_CTS_HMAC_SHA1_96, KrbPrincipalName.FromString("host/appservice"));
-            Assert.AreEqual(12, key.Version);
         }
     }
 }

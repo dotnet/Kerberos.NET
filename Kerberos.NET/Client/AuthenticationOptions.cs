@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 
 namespace Kerberos.NET.Client
 {
@@ -7,8 +12,8 @@ namespace Kerberos.NET.Client
     {
         AllAuthentication = PreAuthenticate | IncludePacRequest,
 
-        PreAuthenticate = (long)1 << 63,
-        IncludePacRequest = (long)1 << 62,
+        PreAuthenticate = 1L << 63,
+        IncludePacRequest = 1L << 62,
         RepPartCompatible = (long)1 << 61,
 
         Forwardable = 1 << 30,

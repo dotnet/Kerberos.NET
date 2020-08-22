@@ -1,5 +1,10 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities.SpNego
 {
@@ -7,7 +12,7 @@ namespace Kerberos.NET.Entities.SpNego
     {
         public NegoExContextToken(ReadOnlyMemory<byte> data)
         {
-            Token = new NegotiateExtension(data);
+            this.Token = new NegotiateExtension(data);
         }
 
         public NegotiateExtension Token { get; }

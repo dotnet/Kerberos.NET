@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Security.Cryptography.Asn1;
 using Kerberos.NET.Asn1;
 using Kerberos.NET.Crypto;
@@ -26,18 +31,18 @@ namespace Kerberos.NET.Entities
 
                 writer.PushSequence(tag);
 
-                writer.WriteKeyParameterInteger(P.Span);
-                writer.WriteKeyParameterInteger(G.Span);
-                writer.WriteKeyParameterInteger(Q.Span);
+                writer.WriteKeyParameterInteger(this.P.Span);
+                writer.WriteKeyParameterInteger(this.G.Span);
+                writer.WriteKeyParameterInteger(this.Q.Span);
 
-                if (Asn1Extension.HasValue(J))
+                if (Asn1Extension.HasValue(this.J))
                 {
-                    writer.WriteKeyParameterInteger(J.Value.Span);
+                    writer.WriteKeyParameterInteger(this.J.Value.Span);
                 }
 
-                if (Asn1Extension.HasValue(ValidationParameters))
+                if (Asn1Extension.HasValue(this.ValidationParameters))
                 {
-                    ValidationParameters?.Encode(writer);
+                    this.ValidationParameters?.Encode(writer);
                 }
 
                 writer.PopSequence(tag);

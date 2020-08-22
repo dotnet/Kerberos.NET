@@ -1,5 +1,10 @@
-﻿using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto
 {
@@ -10,8 +15,8 @@ namespace Kerberos.NET.Crypto
         [KerberosIgnore]
         public Func<DateTimeOffset> Now
         {
-            get { return nowFunc ?? (nowFunc = () => DateTimeOffset.UtcNow); }
-            set { nowFunc = value; }
+            get { return this.nowFunc ?? (this.nowFunc = () => DateTimeOffset.UtcNow); }
+            set { this.nowFunc = value; }
         }
 
         public abstract void Validate(ValidationActions validation);
@@ -81,13 +86,18 @@ namespace Kerberos.NET.Crypto
 
         protected virtual void ValidateClientPrincipalIdentifier(KrbPrincipalName leftName, KrbPrincipalName rightName)
         {
+            if (leftName == null)
+            {
+                throw new ArgumentNullException(nameof(leftName));
+            }
+
             if (!leftName.Matches(rightName))
             {
                 throw new KerberosValidationException(
                     "Ticket CName " +
                     $"({leftName.Type}: {leftName.Type})" +
                     " does not match Authenticator CName " +
-                    $"({rightName.Type}: {rightName.Name})",
+                    $"({rightName?.Type}: {rightName?.Name})",
                     nameof(KrbPrincipalName)
                 );
             }

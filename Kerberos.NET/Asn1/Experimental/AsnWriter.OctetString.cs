@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 
@@ -16,7 +17,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="WriteOctetString(Asn1Tag,ReadOnlySpan{byte})"/>
         public void WriteOctetString(ReadOnlySpan<byte> octetString)
         {
-            WriteOctetString(Asn1Tag.PrimitiveOctetString, octetString);
+            this.WriteOctetString(Asn1Tag.PrimitiveOctetString, octetString);
         }
 
         /// <summary>
@@ -36,28 +37,28 @@ namespace System.Security.Cryptography.Asn1
             CheckUniversalTag(tag, UniversalTagNumber.OctetString);
 
             // Primitive or constructed, doesn't matter.
-            WriteOctetStringCore(tag, octetString);
+            this.WriteOctetStringCore(tag, octetString);
         }
 
         // T-REC-X.690-201508 sec 8.7
         private void WriteOctetStringCore(Asn1Tag tag, ReadOnlySpan<byte> octetString)
         {
-            if (RuleSet == AsnEncodingRules.CER)
+            if (this.RuleSet == AsnEncodingRules.CER)
             {
                 // If it's bigger than a primitive segment, use the constructed encoding
                 // T-REC-X.690-201508 sec 9.2
                 if (octetString.Length > AsnReader.MaxCERSegmentSize)
                 {
-                    WriteConstructedCerOctetString(tag, octetString);
+                    this.WriteConstructedCerOctetString(tag, octetString);
                     return;
                 }
             }
 
             // Clear the constructed flag, if present.
-            WriteTag(tag.AsPrimitive());
-            WriteLength(octetString.Length);
-            octetString.CopyTo(_buffer.AsSpan(_offset));
-            _offset += octetString.Length;
+            this.WriteTag(tag.AsPrimitive());
+            this.WriteLength(octetString.Length);
+            octetString.CopyTo(this._buffer.AsSpan(this._offset));
+            this._offset += octetString.Length;
         }
 
         // T-REC-X.690-201508 sec 9.2, 8.7
@@ -66,8 +67,8 @@ namespace System.Security.Cryptography.Asn1
             const int MaxCERSegmentSize = AsnReader.MaxCERSegmentSize;
             Debug.Assert(payload.Length > MaxCERSegmentSize);
 
-            WriteTag(tag.AsConstructed());
-            WriteLength(-1);
+            this.WriteTag(tag.AsConstructed());
+            this.WriteLength(-1);
 
             int fullSegments = Math.DivRem(payload.Length, MaxCERSegmentSize, out int lastSegmentSize);
 
@@ -76,7 +77,7 @@ namespace System.Security.Cryptography.Asn1
             // And 1000 content octets (by T-REC-X.690-201508 sec 9.2)
             const int FullSegmentEncodedSize = 1004;
             Debug.Assert(
-                FullSegmentEncodedSize == 1 + 1 + MaxCERSegmentSize + GetEncodedLengthSubsequentByteCount(MaxCERSegmentSize));
+                1 + 1 + MaxCERSegmentSize + GetEncodedLengthSubsequentByteCount(MaxCERSegmentSize) == FullSegmentEncodedSize);
 
             int remainingEncodedSize;
 
@@ -92,11 +93,11 @@ namespace System.Security.Cryptography.Asn1
 
             // Reduce the number of copies by pre-calculating the size.
             // +2 for End-Of-Contents
-            int expectedSize = fullSegments * FullSegmentEncodedSize + remainingEncodedSize + 2;
-            EnsureWriteCapacity(expectedSize);
+            int expectedSize = (fullSegments * FullSegmentEncodedSize) + remainingEncodedSize + 2;
+            this.EnsureWriteCapacity(expectedSize);
 
-            byte[] ensureNoExtraCopy = _buffer;
-            int savedOffset = _offset;
+            byte[] ensureNoExtraCopy = this._buffer;
+            int savedOffset = this._offset;
 
             ReadOnlySpan<byte> remainingData = payload;
             Span<byte> dest;
@@ -105,26 +106,26 @@ namespace System.Security.Cryptography.Asn1
             while (remainingData.Length > MaxCERSegmentSize)
             {
                 // T-REC-X.690-201508 sec 8.7.3.2-note2
-                WriteTag(primitiveOctetString);
-                WriteLength(MaxCERSegmentSize);
+                this.WriteTag(primitiveOctetString);
+                this.WriteLength(MaxCERSegmentSize);
 
-                dest = _buffer.AsSpan(_offset);
+                dest = this._buffer.AsSpan(this._offset);
                 remainingData.Slice(0, MaxCERSegmentSize).CopyTo(dest);
 
-                _offset += MaxCERSegmentSize;
+                this._offset += MaxCERSegmentSize;
                 remainingData = remainingData.Slice(MaxCERSegmentSize);
             }
 
-            WriteTag(primitiveOctetString);
-            WriteLength(remainingData.Length);
-            dest = _buffer.AsSpan(_offset);
+            this.WriteTag(primitiveOctetString);
+            this.WriteLength(remainingData.Length);
+            dest = this._buffer.AsSpan(this._offset);
             remainingData.CopyTo(dest);
-            _offset += remainingData.Length;
+            this._offset += remainingData.Length;
 
-            WriteEndOfContents();
+            this.WriteEndOfContents();
 
-            Debug.Assert(_offset - savedOffset == expectedSize, $"expected size was {expectedSize}, actual was {_offset - savedOffset}");
-            Debug.Assert(_buffer == ensureNoExtraCopy, $"_buffer was replaced during {nameof(WriteConstructedCerOctetString)}");
+            Debug.Assert(this._offset - savedOffset == expectedSize, $"expected size was {expectedSize}, actual was {this._offset - savedOffset}");
+            Debug.Assert(this._buffer == ensureNoExtraCopy, $"_buffer was replaced during {nameof(this.WriteConstructedCerOctetString)}");
         }
     }
 }

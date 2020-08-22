@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System.Collections.Generic;
 using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
@@ -9,14 +14,16 @@ namespace Kerberos.NET.Server
 
         protected KdcPreAuthenticationHandlerBase(IRealmService service)
         {
-            Service = service;
+            this.Service = service;
         }
 
         /// <summary>
         /// Executes before the validation occurs and can be used to parse the message data for external pipelines.
         /// </summary>
         /// <param name="preauth">Contains the current state of the request to inform the outer message handler</param>
-        public virtual void PreValidate(PreAuthenticationContext preauth) { }
+        public virtual void PreValidate(PreAuthenticationContext preauth)
+        {
+        }
 
         /// <summary>
         /// Execute the PA-Data validation phase and verify if the presented message meets the requirement of the handler.
@@ -26,7 +33,7 @@ namespace Kerberos.NET.Server
         /// <returns>Optionally returns PA-Data that should be returned to the client in the response</returns>
         public virtual KrbPaData Validate(KrbKdcReq asReq, PreAuthenticationContext preauth)
         {
-            return Validate(asReq, preauth.Principal);
+            return this.Validate(asReq, preauth?.Principal);
         }
 
         /// <summary>
@@ -42,6 +49,8 @@ namespace Kerberos.NET.Server
         /// </summary>
         /// <param name="principal">The authenticated principal</param>
         /// <param name="preAuthRequirements">The list of PA-Data that will be sent in the response message</param>
-        public virtual void PostValidate(IKerberosPrincipal principal, List<KrbPaData> preAuthRequirements) { }
+        public virtual void PostValidate(IKerberosPrincipal principal, List<KrbPaData> preAuthRequirements)
+        {
+        }
     }
 }

@@ -1,11 +1,16 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Transport
 {
@@ -19,62 +24,70 @@ namespace Kerberos.NET.Transport
         private const string HttpsServiceTemplate = "_kerberos._https.{0}";
         private const string WellKnownKdcProxyPath = "/KdcProxy";
 
-        private static readonly Lazy<HttpClient> lazyHttp = new Lazy<HttpClient>();
+        private static readonly Lazy<HttpClient> LazyHttp = new Lazy<HttpClient>();
 
         public string CustomVirtualPath { get; set; }
 
         public bool TryResolvingServiceLocator { get; set; }
 
-        public IDictionary<string, Uri> DomainPaths { get; set; } = new Dictionary<string, Uri>();
+        public IDictionary<string, Uri> DomainPaths { get; } = new Dictionary<string, Uri>();
 
         public DcLocatorHint Hint { get; set; }
 
-        protected virtual HttpClient Client => lazyHttp.Value;
+        protected virtual HttpClient Client => LazyHttp.Value;
 
         public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
         {
-            var kdc = LocateKdc(domain);
+            var kdc = this.LocateKdc(domain);
 
-            var message = KdcProxyMessage.WrapMessage(req, domain, Hint);
+            var message = KdcProxyMessage.WrapMessage(req, domain, this.Hint);
 
-            var response = await Client.PostAsync(kdc, new BinaryContent(message.Encode()));
-
-            if (response.Content == null)
+            using (var content = new BinaryContent(message.Encode()))
             {
-                response.EnsureSuccessStatusCode();
-            }
+                var response = await this.Client.PostAsync(kdc, content).ConfigureAwait(true);
 
-            var responseBody = await response.Content.ReadAsByteArrayAsync();
-
-            if (!KdcProxyMessage.TryDecode(responseBody, out KdcProxyMessage kdcResponse))
-            {
-                response.EnsureSuccessStatusCode();
-
-                string body = "";
-
-                if (responseBody.Length > 0)
+                if (response.Content == null)
                 {
-                    body = Encoding.UTF8.GetString(responseBody);
+                    response.EnsureSuccessStatusCode();
                 }
 
-                throw new KerberosProtocolException($"Cannot process HTTP Response: {body}");
-            }
+                var responseBody = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(true);
 
-            return Decode<T>(kdcResponse.UnwrapMessage());
+                if (!KdcProxyMessage.TryDecode(responseBody, out KdcProxyMessage kdcResponse))
+                {
+                    response.EnsureSuccessStatusCode();
+
+                    string body = string.Empty;
+
+                    if (responseBody.Length > 0)
+                    {
+                        body = Encoding.UTF8.GetString(responseBody);
+                    }
+
+                    throw new KerberosProtocolException($"Cannot process HTTP Response: {body}");
+                }
+
+                return Decode<T>(kdcResponse.UnwrapMessage());
+            }
         }
 
         protected Uri LocateKdc(string domain)
         {
+            if (string.IsNullOrWhiteSpace(domain))
+            {
+                throw new ArgumentNullException(nameof(domain));
+            }
+
             domain = domain.ToLowerInvariant();
 
-            if (DomainPaths.TryGetValue(domain, out Uri uri))
+            if (this.DomainPaths.TryGetValue(domain, out Uri uri))
             {
                 return uri;
             }
 
-            if (TryResolvingServiceLocator)
+            if (this.TryResolvingServiceLocator)
             {
-                uri = ResolveByServiceLocator(domain);
+                uri = this.ResolveByServiceLocator(domain);
             }
 
             if (uri == null)
@@ -82,20 +95,20 @@ namespace Kerberos.NET.Transport
                 uri = new Uri($"https://{domain}/");
             }
 
-            var path = CustomVirtualPath ?? WellKnownKdcProxyPath;
+            var path = this.CustomVirtualPath ?? WellKnownKdcProxyPath;
 
             uri = new Uri(uri, path);
 
-            DomainPaths[domain] = uri;
+            this.DomainPaths[domain] = uri;
 
             return uri;
         }
 
         private Uri ResolveByServiceLocator(string domain)
         {
-            var lookup = string.Format(HttpsServiceTemplate, domain);
+            var lookup = string.Format(CultureInfo.InvariantCulture, HttpsServiceTemplate, domain);
 
-            var dnsRecord = QueryDomain(lookup);
+            var dnsRecord = this.QueryDomain(lookup);
 
             if (dnsRecord == null)
             {

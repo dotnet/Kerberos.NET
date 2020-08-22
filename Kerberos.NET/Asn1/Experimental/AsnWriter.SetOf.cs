@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 namespace System.Security.Cryptography.Asn1
 {
@@ -18,7 +19,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="PopSetOf()"/>
         public void PushSetOf()
         {
-            PushSetOf(Asn1Tag.SetOf);
+            this.PushSetOf(Asn1Tag.SetOf);
         }
 
         /// <summary>
@@ -42,7 +43,7 @@ namespace System.Security.Cryptography.Asn1
             CheckUniversalTag(tag, UniversalTagNumber.SetOf);
 
             // Assert the constructed flag, in case it wasn't.
-            PushSetOfCore(tag.AsConstructed());
+            this.PushSetOfCore(tag.AsConstructed());
         }
 
         /// <summary>
@@ -61,7 +62,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="PushSetOf()"/>
         public void PopSetOf()
         {
-            PopSetOfCore(Asn1Tag.SetOf);
+            this.PopSetOfCore(Asn1Tag.SetOf);
         }
 
         /// <summary>
@@ -89,7 +90,7 @@ namespace System.Security.Cryptography.Asn1
             CheckUniversalTag(tag, UniversalTagNumber.SetOf);
 
             // Assert the constructed flag, in case it wasn't.
-            PopSetOfCore(tag.AsConstructed());
+            this.PopSetOfCore(tag.AsConstructed());
         }
 
         // T-REC-X.690-201508 sec 8.12
@@ -97,16 +98,16 @@ namespace System.Security.Cryptography.Asn1
         // ordering clause of T-REC-X.690-201508 sec 9.3
         private void PushSetOfCore(Asn1Tag tag)
         {
-            PushTag(tag, UniversalTagNumber.SetOf);
+            this.PushTag(tag, UniversalTagNumber.SetOf);
         }
 
         // T-REC-X.690-201508 sec 8.12
         private void PopSetOfCore(Asn1Tag tag)
         {
             // T-REC-X.690-201508 sec 11.6
-            bool sortContents = RuleSet == AsnEncodingRules.CER || RuleSet == AsnEncodingRules.DER;
+            bool sortContents = this.RuleSet == AsnEncodingRules.CER || this.RuleSet == AsnEncodingRules.DER;
 
-            PopTag(tag, UniversalTagNumber.SetOf, sortContents);
+            this.PopTag(tag, UniversalTagNumber.SetOf, sortContents);
         }
     }
 }

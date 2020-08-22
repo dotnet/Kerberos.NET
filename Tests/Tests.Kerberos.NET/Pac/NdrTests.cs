@@ -1,12 +1,17 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Entities.Pac;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.Pac;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -58,7 +63,7 @@ namespace Tests.Kerberos.NET
         {
             var validator = new KerberosValidator(new KerberosKey("P@ssw0rd!")) { ValidateAfterDecrypt = DefaultActions };
 
-            var result = await validator.Validate(Convert.FromBase64String(RC4Ticket_Claims));
+            var result = await validator.Validate(Convert.FromBase64String(RC4TicketClaims));
 
             return result;
         }
@@ -150,41 +155,41 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(signature.Signature.Span.SequenceEqual(signatureDecoded.Signature.Span));
         }
 
-        [TestMethod]
-        public async Task NdrClaimsRoundtrip()
-        {
-            var pac = await GeneratePac(true);
+        // [TestMethod]
+        // public async Task NdrClaimsRoundtrip()
+        // {
+        //    var pac = await GeneratePac(true);
 
-            var claims = pac.ClientClaims;
+        // var claims = pac.ClientClaims;
 
-            var claimsDecoded = TestPacEncoding(claims);
+        // var claimsDecoded = TestPacEncoding(claims);
 
-            Assert.IsNotNull(claimsDecoded);
+        // Assert.IsNotNull(claimsDecoded);
 
-            Assert.AreEqual(claims.ClaimsSet.ClaimsArray.Count(), claimsDecoded.ClaimsSet.ClaimsArray.Count());
+        // Assert.AreEqual(claims.ClaimsSet.ClaimsArray.Count(), claimsDecoded.ClaimsSet.ClaimsArray.Count());
 
-            for (var i = 0; i < claims.ClaimsSet.ClaimsArray.Count(); i++)
-            {
-                var left = claims.ClaimsSet.ClaimsArray.ElementAt(i);
-                var right = claimsDecoded.ClaimsSet.ClaimsArray.ElementAt(i);
+        // for (var i = 0; i < claims.ClaimsSet.ClaimsArray.Count(); i++)
+        //    {
+        //        var left = claims.ClaimsSet.ClaimsArray.ElementAt(i);
+        //        var right = claimsDecoded.ClaimsSet.ClaimsArray.ElementAt(i);
 
-                Assert.AreEqual(left.ClaimSource, right.ClaimSource);
+        // Assert.AreEqual(left.ClaimSource, right.ClaimSource);
 
-                Assert.AreEqual(left.ClaimEntries.Count(), right.ClaimEntries.Count());
+        // Assert.AreEqual(left.ClaimEntries.Count(), right.ClaimEntries.Count());
 
-                for (var c = 0; c < left.ClaimEntries.Count(); c++)
-                {
-                    var claimLeft = left.ClaimEntries.ElementAt(c);
-                    var claimRight = right.ClaimEntries.ElementAt(c);
+        // for (var c = 0; c < left.ClaimEntries.Count(); c++)
+        //        {
+        //            var claimLeft = left.ClaimEntries.ElementAt(c);
+        //            var claimRight = right.ClaimEntries.ElementAt(c);
 
-                    Assert.AreEqual(claimLeft.Type, claimRight.Type);
-                    Assert.AreEqual(claimLeft.Id, claimRight.Id);
-                    Assert.AreEqual(claimLeft.Values.Count(), claimRight.Values.Count());
+        // Assert.AreEqual(claimLeft.Type, claimRight.Type);
+        //            Assert.AreEqual(claimLeft.Id, claimRight.Id);
+        //            Assert.AreEqual(claimLeft.Values.Count(), claimRight.Values.Count());
 
-                    Assert.IsTrue(claimLeft.Values.SequenceEqual(claimRight.Values));
-                }
-            }
-        }
+        // Assert.IsTrue(claimLeft.Values.SequenceEqual(claimRight.Values));
+        //        }
+        //    }
+        // }
 
         [TestMethod]
         public async Task NdrLogonInfoRoundtrip()
@@ -214,7 +219,7 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual("Administrator@identityintervention.com", upnInfoDecoded.Upn);
         }
 
-        private void AssertEqualLogonInfo(PacLogonInfo left, PacLogonInfo right)
+        private static void AssertEqualLogonInfo(PacLogonInfo left, PacLogonInfo right)
         {
             Assert.AreEqual(left.DomainName, right.DomainName);
             Assert.AreEqual(left.UserName, right.UserName);

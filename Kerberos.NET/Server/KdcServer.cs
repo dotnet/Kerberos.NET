@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Concurrent;
 using System.Security;
 using System.Security.Cryptography;
@@ -7,37 +12,41 @@ using System.Threading.Tasks;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
 using Microsoft.Extensions.Logging;
+using MessageHandlerConstructor = System.Func<System.ReadOnlyMemory<byte>, Kerberos.NET.Server.KdcServerOptions, Kerberos.NET.Server.KdcMessageHandlerBase>;
+using PreAuthHandlerConstructor = System.Func<Kerberos.NET.Server.IRealmService, Kerberos.NET.Server.KdcPreAuthenticationHandlerBase>;
 
 namespace Kerberos.NET.Server
 {
-    using MessageHandlerConstructor = Func<ReadOnlyMemory<byte>, ListenerOptions, KdcMessageHandlerBase>;
-    using PreAuthHandlerConstructor = Func<IRealmService, KdcPreAuthenticationHandlerBase>;
-
     public class KdcServer
     {
-        private readonly ListenerOptions options;
+        private readonly KdcServerOptions options;
 
         private readonly ILogger<KdcServer> logger;
 
-        public KdcServer(ListenerOptions options)
+        public KdcServer(KdcServerOptions options)
         {
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
             this.options = options;
             this.logger = options.Log.CreateLoggerSafe<KdcServer>();
 
             if (options.RegisterDefaultAsReqHandler)
             {
-                RegisterMessageHandler(MessageType.KRB_AS_REQ, (message, op) => new KdcAsReqMessageHandler(message, op));
-                RegisterPreAuthHandler(PaDataType.PA_ENC_TIMESTAMP, (service) => new PaDataTimestampHandler(service));
+                this.RegisterMessageHandler(MessageType.KRB_AS_REQ, (message, op) => new KdcAsReqMessageHandler(message, op));
+                this.RegisterPreAuthHandler(PaDataType.PA_ENC_TIMESTAMP, (service) => new PaDataTimestampHandler(service));
 
                 if (options.RegisterDefaultPkInitPreAuthHandler)
                 {
-                    RegisterPreAuthHandler(PaDataType.PA_PK_AS_REQ, (service) => new PaDataPkAsReqHandler(service));
+                    this.RegisterPreAuthHandler(PaDataType.PA_PK_AS_REQ, (service) => new PaDataPkAsReqHandler(service));
                 }
             }
 
             if (options.RegisterDefaultTgsReqHandler)
             {
-                RegisterMessageHandler(MessageType.KRB_TGS_REQ, (message, op) => new KdcTgsReqMessageHandler(message, op));
+                this.RegisterMessageHandler(MessageType.KRB_TGS_REQ, (message, op) => new KdcTgsReqMessageHandler(message, op));
             }
         }
 
@@ -51,7 +60,7 @@ namespace Kerberos.NET.Server
         {
             ValidateSupportedMessageType(type);
 
-            messageHandlers[type] = builder;
+            this.messageHandlers[type] = builder;
         }
 
         private static void ValidateSupportedMessageType(MessageType type)
@@ -66,7 +75,7 @@ namespace Kerberos.NET.Server
 
         public void RegisterPreAuthHandler(PaDataType type, PreAuthHandlerConstructor builder)
         {
-            preAuthHandlers[type] = builder;
+            this.preAuthHandlers[type] = builder;
         }
 
         public async Task<ReadOnlyMemory<byte>> ProcessMessage(ReadOnlyMemory<byte> request)
@@ -80,26 +89,26 @@ namespace Kerberos.NET.Server
 
             var tag = KrbMessage.PeekTag(request);
 
-            if (tag == Asn1Tag.Sequence && options.ProxyEnabled)
+            if (tag == Asn1Tag.Sequence && this.options.ProxyEnabled)
             {
                 try
                 {
-                    return await ProcessProxyMessageAsync(request);
+                    return await this.ProcessProxyMessageAsync(request).ConfigureAwait(true);
                 }
                 catch (Exception ex) when (IsProtocolException(ex))
                 {
-                    logger.LogWarning(ex, "Proxy message could not be parsed correctly");
+                    this.logger.LogWarning(ex, "Proxy message could not be parsed correctly");
 
-                    return KdcMessageHandlerBase.GenerateGenericError(ex, options);
+                    return KdcMessageHandlerBase.GenerateGenericError(ex, this.options);
                 }
             }
 
-            return await ProcessMessageCoreAsync(request, tag);
+            return await this.ProcessMessageCoreAsync(request, tag).ConfigureAwait(true);
         }
 
         private static bool IsProtocolException(Exception ex)
         {
-            // These checks should only apply when you're trying to return a graceful 
+            // These checks should only apply when you're trying to return a graceful
             // failure to the client with a krb-error and a generic error message
 
             // All other failures should be handled by the caller
@@ -128,24 +137,24 @@ namespace Kerberos.NET.Server
 
             try
             {
-                messageHandler = LocateMessageHandler(request, tag);
+                messageHandler = this.LocateMessageHandler(request, tag);
             }
             catch (Exception ex) when (IsProtocolException(ex))
             {
-                logger.LogWarning(ex, "Message handler could not be located for message");
+                this.logger.LogWarning(ex, "Message handler could not be located for message");
 
-                return KdcMessageHandlerBase.GenerateGenericError(ex, options);
+                return KdcMessageHandlerBase.GenerateGenericError(ex, this.options);
             }
 
             try
             {
-                return await messageHandler.ExecuteAsync();
+                return await messageHandler.ExecuteAsync().ConfigureAwait(true);
             }
             catch (Exception ex) when (IsProtocolException(ex))
             {
-                logger.LogWarning(ex, "Message handler {MessageHandler} could not process message", messageHandler.GetType());
+                this.logger.LogWarning(ex, "Message handler {MessageHandler} could not process message", messageHandler.GetType());
 
-                return KdcMessageHandlerBase.GenerateGenericError(ex, options);
+                return KdcMessageHandlerBase.GenerateGenericError(ex, this.options);
             }
         }
 
@@ -155,7 +164,7 @@ namespace Kerberos.NET.Server
 
             ValidateSupportedMessageType(messageType);
 
-            if (!messageHandlers.TryGetValue(messageType, out MessageHandlerConstructor builder))
+            if (!this.messageHandlers.TryGetValue(messageType, out MessageHandlerConstructor builder))
             {
                 throw new KerberosProtocolException(
                     KerberosErrorCode.KRB_ERR_GENERIC,
@@ -163,14 +172,14 @@ namespace Kerberos.NET.Server
                 );
             }
 
-            var handler = builder(request, options);
+            var handler = builder(request, this.options);
 
             if (handler == null)
             {
                 throw new InvalidOperationException($"Message handler builder {messageType} must not return null");
             }
 
-            handler.RegisterPreAuthHandlers(preAuthHandlers);
+            handler.RegisterPreAuthHandlers(this.preAuthHandlers);
 
             return handler;
         }
@@ -183,7 +192,7 @@ namespace Kerberos.NET.Server
 
             var tag = KrbMessage.PeekTag(unwrapped);
 
-            var response = await ProcessMessageCoreAsync(unwrapped, tag);
+            var response = await this.ProcessMessageCoreAsync(unwrapped, tag).ConfigureAwait(true);
 
             return EncodeProxyResponse(response, mode);
         }

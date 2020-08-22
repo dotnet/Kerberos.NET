@@ -1,6 +1,11 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
@@ -8,12 +13,12 @@ namespace Kerberos.NET.Entities
     {
         public KrbKdcReq()
         {
-            ProtocolVersionNumber = 5;
+            this.ProtocolVersionNumber = 5;
         }
 
         public DateTimeOffset DecryptTimestamp(KerberosKey key)
         {
-            var timestampPaData = PaData.FirstOrDefault(p => p.Type == PaDataType.PA_ENC_TIMESTAMP);
+            var timestampPaData = this.PaData.FirstOrDefault(p => p.Type == PaDataType.PA_ENC_TIMESTAMP);
 
             if (timestampPaData == null)
             {

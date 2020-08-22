@@ -1,4 +1,11 @@
-﻿namespace Kerberos.NET.Entities
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+
+namespace Kerberos.NET.Entities
 {
     public partial class KrbPaEncTsEnc
     {
@@ -6,7 +13,10 @@
         {
             var ts = new KrbPaEncTsEnc();
 
-            KerberosConstants.Now(out ts.PaTimestamp, out ts.PaUSec);
+            KerberosConstants.Now(out DateTimeOffset timestamp, out int usec);
+
+            ts.PaTimestamp = timestamp;
+            ts.PaUSec = usec;
 
             return ts;
         }

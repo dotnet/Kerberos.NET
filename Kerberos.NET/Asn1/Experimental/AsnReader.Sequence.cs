@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 namespace System.Security.Cryptography.Asn1
 {
@@ -25,7 +26,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         /// <see cref="ReadSequence(Asn1Tag)"/>
-        public AsnReader ReadSequence() => ReadSequence(Asn1Tag.Sequence);
+        public AsnReader ReadSequence() => this.ReadSequence(Asn1Tag.Sequence);
 
         /// <summary>
         ///   Reads the next value as a SEQUENCE or SEQUENCE-OF with the specified tag
@@ -54,7 +55,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public AsnReader ReadSequence(Asn1Tag expectedTag)
         {
-            Asn1Tag tag = ReadTagAndLength(out int? length, out int headerLength);
+            Asn1Tag tag = this.ReadTagAndLength(out int? length, out int headerLength);
             CheckExpectedTag(tag, expectedTag, UniversalTagNumber.Sequence);
 
             // T-REC-X.690-201508 sec 8.9.1
@@ -68,14 +69,14 @@ namespace System.Security.Cryptography.Asn1
 
             if (length == null)
             {
-                length = SeekEndOfContents(_data.Slice(headerLength));
+                length = this.SeekEndOfContents(this._data.Slice(headerLength));
                 suffix = EndOfContentsEncodedLength;
             }
 
-            ReadOnlyMemory<byte> contents = Slice(_data, headerLength, length.Value);
+            ReadOnlyMemory<byte> contents = Slice(this._data, headerLength, length.Value);
 
-            _data = _data.Slice(headerLength + contents.Length + suffix);
-            return new AsnReader(contents, RuleSet);
+            this._data = this._data.Slice(headerLength + contents.Length + suffix);
+            return new AsnReader(contents, this.RuleSet);
         }
     }
 }

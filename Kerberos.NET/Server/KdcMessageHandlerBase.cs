@@ -1,45 +1,50 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Kerberos.NET.Entities;
+using PreAuthHandlerConstructor = System.Func<Kerberos.NET.Server.IRealmService, Kerberos.NET.Server.KdcPreAuthenticationHandlerBase>;
 
 namespace Kerberos.NET.Server
 {
-    using PreAuthHandlerConstructor = Func<IRealmService, KdcPreAuthenticationHandlerBase>;
-
     public abstract class KdcMessageHandlerBase
     {
         private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> preAuthHandlers =
             new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
 
         private readonly ReadOnlyMemory<byte> message;
-        protected readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> PostProcessAuthHandlers =
+
+        protected ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> PostProcessAuthHandlers { get; } =
                 new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
 
-        protected ListenerOptions Options { get; }
+        protected KdcServerOptions Options { get; }
 
         protected IRealmService RealmService { get; private set; }
 
-        public IDictionary<PaDataType, PreAuthHandlerConstructor> PreAuthHandlers => preAuthHandlers;
+        public IDictionary<PaDataType, PreAuthHandlerConstructor> PreAuthHandlers => this.preAuthHandlers;
 
         protected abstract MessageType MessageType { get; }
 
-        protected KdcMessageHandlerBase(ReadOnlyMemory<byte> message, ListenerOptions options)
+        protected KdcMessageHandlerBase(ReadOnlyMemory<byte> message, KdcServerOptions options)
         {
             this.message = message;
-            Options = options;
+            this.Options = options;
         }
 
         protected abstract IKerberosMessage DecodeMessageCore(ReadOnlyMemory<byte> message);
 
         public virtual void ExecutePreValidate(PreAuthenticationContext context)
         {
-            InvokeAuthHandlers(
+            this.InvokeAuthHandlers(
                 context,
-                PreAuthHandlers.Keys,
-                PreAuthHandlers,
+                this.PreAuthHandlers.Keys,
+                this.PreAuthHandlers,
                 (handler, req, ctx) =>
                 {
                     handler.PreValidate(ctx);
@@ -54,7 +59,9 @@ namespace Kerberos.NET.Server
 
         public virtual Task QueryPreExecuteAsync(PreAuthenticationContext context) => Task.CompletedTask;
 
-        public virtual void QueryPreExecute(PreAuthenticationContext context) { }
+        public virtual void QueryPreExecute(PreAuthenticationContext context)
+        {
+        }
 
         public abstract void ValidateTicketRequest(PreAuthenticationContext context);
 
@@ -62,21 +69,21 @@ namespace Kerberos.NET.Server
 
         protected void SetRealmContext(string realm)
         {
-            RealmService = Options.RealmLocator(realm);
+            this.RealmService = this.Options.RealmLocator(realm);
         }
 
         private IKerberosMessage DecodeMessage(ReadOnlyMemory<byte> message)
         {
-            var decoded = DecodeMessageCore(message);
+            var decoded = this.DecodeMessageCore(message);
 
             if (decoded.KerberosProtocolVersionNumber != 5)
             {
                 throw new InvalidOperationException($"Message version should be set to v5. Actual: {decoded.KerberosProtocolVersionNumber}");
             }
 
-            if (decoded.KerberosMessageType != MessageType)
+            if (decoded.KerberosMessageType != this.MessageType)
             {
-                throw new InvalidOperationException($"MessageType should match application class. Actual: {decoded.KerberosMessageType}; Expected: {MessageType}");
+                throw new InvalidOperationException($"MessageType should match application class. Actual: {decoded.KerberosMessageType}; Expected: {this.MessageType}");
             }
 
             return decoded;
@@ -84,7 +91,12 @@ namespace Kerberos.NET.Server
 
         public virtual void DecodeMessage(PreAuthenticationContext context)
         {
-            context.Message = DecodeMessage(message);
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            context.Message = this.DecodeMessage(this.message);
         }
 
         public virtual async Task<ReadOnlyMemory<byte>> ExecuteAsync()
@@ -93,21 +105,21 @@ namespace Kerberos.NET.Server
             {
                 var context = new PreAuthenticationContext();
 
-                DecodeMessage(context);
+                this.DecodeMessage(context);
 
-                ExecutePreValidate(context);
+                this.ExecutePreValidate(context);
 
-                await QueryPreValidateAsync(context);
+                await this.QueryPreValidateAsync(context).ConfigureAwait(true);
 
-                ValidateTicketRequest(context);
+                this.ValidateTicketRequest(context);
 
-                await QueryPreExecuteAsync(context);
+                await this.QueryPreExecuteAsync(context).ConfigureAwait(true);
 
-                return ExecuteCore(context);
+                return this.ExecuteCore(context);
             }
             catch (Exception ex)
             {
-                return GenerateGenericError(ex, Options);
+                return GenerateGenericError(ex, this.Options);
             }
         }
 
@@ -117,25 +129,25 @@ namespace Kerberos.NET.Server
             {
                 var context = new PreAuthenticationContext();
 
-                DecodeMessage(context);
+                this.DecodeMessage(context);
 
-                ExecutePreValidate(context);
+                this.ExecutePreValidate(context);
 
-                QueryPreValidate(context);
+                this.QueryPreValidate(context);
 
-                ValidateTicketRequest(context);
+                this.ValidateTicketRequest(context);
 
-                QueryPreExecute(context);
+                this.QueryPreExecute(context);
 
-                return ExecuteCore(context);
+                return this.ExecuteCore(context);
             }
             catch (Exception ex)
             {
-                return GenerateGenericError(ex, Options);
+                return GenerateGenericError(ex, this.Options);
             }
         }
 
-        internal static ReadOnlyMemory<byte> GenerateGenericError(Exception ex, ListenerOptions options)
+        internal static ReadOnlyMemory<byte> GenerateGenericError(Exception ex, KdcServerOptions options)
         {
             KerberosErrorCode error = KerberosErrorCode.KRB_ERR_GENERIC;
             string errorText = options.IsDebug ? $"[Server] {ex}" : null;
@@ -159,7 +171,8 @@ namespace Kerberos.NET.Server
                 SName = new KrbPrincipalName
                 {
                     Type = PrincipalNameType.NT_SRV_INST,
-                    Name = new[] {
+                    Name = new[]
+                    {
                         sname,
                         realm
                     }
@@ -181,6 +194,11 @@ namespace Kerberos.NET.Server
 
         protected static bool? DetectPacRequirement(KrbKdcReq asReq)
         {
+            if (asReq == null)
+            {
+                throw new ArgumentNullException(nameof(asReq));
+            }
+
             var pacRequest = asReq.PaData.FirstOrDefault(pa => pa.Type == PaDataType.PA_PAC_REQUEST);
 
             if (pacRequest != null)
@@ -200,13 +218,23 @@ namespace Kerberos.NET.Server
             Func<KdcPreAuthenticationHandlerBase, KrbKdcReq, PreAuthenticationContext, bool> preauthExec
         )
         {
+            if (preauth == null)
+            {
+                throw new ArgumentNullException(nameof(preauth));
+            }
+
+            if (invokingAuthTypes == null)
+            {
+                throw new ArgumentNullException(nameof(invokingAuthTypes));
+            }
+
             if (preauth.Message is KrbKdcReq asReq)
             {
                 foreach (var preAuthType in invokingAuthTypes)
                 {
                     var func = handlers[preAuthType];
 
-                    var handler = func(RealmService);
+                    var handler = func(this.RealmService);
 
                     if (!preauthExec(handler, asReq, preauth))
                     {
@@ -223,14 +251,14 @@ namespace Kerberos.NET.Server
             // this would probably best be driven by some policy check, which would involve coming up with a logic
             // system of some sort. Will leave that as an exercise for future me.
 
-            IEnumerable<PaDataType> invokingAuthTypes = GetOrderedPreAuth(preauth);
+            IEnumerable<PaDataType> invokingAuthTypes = this.GetOrderedPreAuth(preauth);
 
             var preAuthRequirements = new List<KrbPaData>();
 
-            InvokeAuthHandlers(
+            this.InvokeAuthHandlers(
                 preauth,
                 invokingAuthTypes,
-                PreAuthHandlers,
+                this.PreAuthHandlers,
                 (handler, req, context) =>
                 {
                     var preAuthRequirement = handler.Validate(req, context);
@@ -251,10 +279,10 @@ namespace Kerberos.NET.Server
             // the post-auth handlers will determine if they need to do anything based
             // on their own criteria.
 
-            InvokeAuthHandlers(
+            this.InvokeAuthHandlers(
                preauth,
-               PostProcessAuthHandlers.Keys,
-               PostProcessAuthHandlers,
+               this.PostProcessAuthHandlers.Keys,
+               this.PostProcessAuthHandlers,
                (handler, req, context) =>
                {
                    handler.PostValidate(context.Principal, preAuthRequirements);

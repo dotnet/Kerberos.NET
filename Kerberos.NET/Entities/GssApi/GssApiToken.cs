@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 
@@ -13,13 +18,13 @@ namespace Kerberos.NET.Entities
         public MessageType MessageType { get; private set; }
 
         // GSSAPI-Token ::= [APPLICATION 0] IMPLICIT SEQUENCE {
-        // 		thisMech MechType,
-        // 		innerToken ANY DEFINED BY thisMech
-        // 
-        // 		// contents mechanism-specific
-        // 		// ASN.1 structure not required
+        //      thisMech MechType,
+        //      innerToken ANY DEFINED BY thisMech
+        //
+        //      // contents mechanism-specific
+        //      // ASN.1 structure not required
         // }
-        // 
+        //
         // Token               TOK_ID Value in Hex
         // - - - - - - - - - - - - - - - - - - - - -
         // KRB_AP_REQ            01 00
@@ -30,6 +35,11 @@ namespace Kerberos.NET.Entities
 
         public static ReadOnlyMemory<byte> Encode(Oid oid, NegotiationToken token)
         {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
             using (var writer = new AsnWriter(AsnEncodingRules.DER))
             {
                 writer.PushSequence(ApplicationTag);
@@ -46,6 +56,11 @@ namespace Kerberos.NET.Entities
 
         public static ReadOnlyMemory<byte> Encode(Oid oid, KrbApReq krbApReq)
         {
+            if (krbApReq == null)
+            {
+                throw new ArgumentNullException(nameof(krbApReq));
+            }
+
             using (var writer = new AsnWriter(AsnEncodingRules.DER))
             {
                 writer.PushSequence(ApplicationTag);

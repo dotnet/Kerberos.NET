@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -42,15 +47,17 @@ namespace Kerberos.NET.Server
         /// Find a user or service principal based on the provided <see cref="KrbPrincipalName" />
         /// </summary>
         /// <param name="principalName">The principal name to find</param>
+        /// <param name="realm">Kerberos realm. Used to fully qualify principal name.</param>
         /// <returns>Returns <see cref="IKerberosPrincipal"/> that contains enough information to fulfill a Kerberos request</returns>
-        IKerberosPrincipal Find(KrbPrincipalName principalName);
+        IKerberosPrincipal Find(KrbPrincipalName principalName, string realm = null);
 
         /// <summary>
         /// Find a user or service principal based on the provided <see cref="KrbPrincipalName" />
         /// </summary>
         /// <param name="principalName">The principal name to find</param>
+        /// <param name="realm">Kerberos realm. Used to fully qualify principal name.</param>
         /// <returns>Returns <see cref="IKerberosPrincipal"/> that contains enough information to fulfill a Kerberos request</returns>
-        Task<IKerberosPrincipal> FindAsync(KrbPrincipalName principalName);
+        Task<IKerberosPrincipal> FindAsync(KrbPrincipalName principalName, string realm = null);
 
         /// <summary>
         /// Returns a server authentication certificate that can be used by the KDC to sign server messages.

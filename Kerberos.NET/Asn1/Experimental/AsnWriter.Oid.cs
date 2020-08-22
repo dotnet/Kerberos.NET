@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Numerics;
@@ -24,14 +25,18 @@ namespace System.Security.Cryptography.Asn1
         public void WriteObjectIdentifier(Oid oid)
         {
             if (oid == null)
+            {
                 throw new ArgumentNullException(nameof(oid));
+            }
 
-            CheckDisposed();
+            this.CheckDisposed();
 
             if (oid.Value == null)
+            {
                 throw new CryptographicException(SR.Resource("Argument_InvalidOidValue"));
+            }
 
-            WriteObjectIdentifier(oid.Value);
+            this.WriteObjectIdentifier(oid.Value);
         }
 
         /// <summary>
@@ -49,9 +54,11 @@ namespace System.Security.Cryptography.Asn1
         public void WriteObjectIdentifier(string oidValue)
         {
             if (oidValue == null)
+            {
                 throw new ArgumentNullException(nameof(oidValue));
+            }
 
-            WriteObjectIdentifier(oidValue.AsSpan());
+            this.WriteObjectIdentifier(oidValue.AsSpan());
         }
 
         /// <summary>
@@ -65,7 +72,7 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public void WriteObjectIdentifier(ReadOnlySpan<char> oidValue)
         {
-            WriteObjectIdentifierCore(Asn1Tag.ObjectIdentifier, oidValue);
+            this.WriteObjectIdentifierCore(Asn1Tag.ObjectIdentifier, oidValue);
         }
 
         /// <summary>
@@ -90,15 +97,19 @@ namespace System.Security.Cryptography.Asn1
         public void WriteObjectIdentifier(Asn1Tag tag, Oid oid)
         {
             if (oid == null)
+            {
                 throw new ArgumentNullException(nameof(oid));
+            }
 
             CheckUniversalTag(tag, UniversalTagNumber.ObjectIdentifier);
-            CheckDisposed();
+            this.CheckDisposed();
 
             if (oid.Value == null)
+            {
                 throw new CryptographicException(SR.Resource("Argument_InvalidOidValue"));
+            }
 
-            WriteObjectIdentifier(tag, oid.Value);
+            this.WriteObjectIdentifier(tag, oid.Value);
         }
 
         /// <summary>
@@ -123,9 +134,11 @@ namespace System.Security.Cryptography.Asn1
         public void WriteObjectIdentifier(Asn1Tag tag, string oidValue)
         {
             if (oidValue == null)
+            {
                 throw new ArgumentNullException(nameof(oidValue));
+            }
 
-            WriteObjectIdentifier(tag, oidValue.AsSpan());
+            this.WriteObjectIdentifier(tag, oidValue.AsSpan());
         }
 
         /// <summary>
@@ -148,22 +161,26 @@ namespace System.Security.Cryptography.Asn1
         {
             CheckUniversalTag(tag, UniversalTagNumber.ObjectIdentifier);
 
-            WriteObjectIdentifierCore(tag.AsPrimitive(), oidValue);
+            this.WriteObjectIdentifierCore(tag.AsPrimitive(), oidValue);
         }
-
 
         // T-REC-X.690-201508 sec 8.19
         private void WriteObjectIdentifierCore(Asn1Tag tag, ReadOnlySpan<char> oidValue)
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
             // T-REC-X.690-201508 sec 8.19.4
             // The first character is in { 0, 1, 2 }, the second will be a '.', and a third (digit)
             // will also exist.
             if (oidValue.Length < 3)
+            {
                 throw new CryptographicException(SR.Resource("Argument_InvalidOidValue"));
+            }
+
             if (oidValue[1] != '.')
+            {
                 throw new CryptographicException(SR.Resource("Argument_InvalidOidValue"));
+            }
 
             // The worst case is "1.1.1.1.1", which takes 4 bytes (5 components, with the first two condensed)
             // Longer numbers get smaller: "2.1.127" is only 2 bytes. (81d (0x51) and 127 (0x7F))
@@ -218,10 +235,10 @@ namespace System.Security.Cryptography.Asn1
                 }
 
                 Debug.Assert(!tag.IsConstructed);
-                WriteTag(tag);
-                WriteLength(tmpOffset);
-                Buffer.BlockCopy(tmp, 0, _buffer, _offset, tmpOffset);
-                _offset += tmpOffset;
+                this.WriteTag(tag);
+                this.WriteLength(tmpOffset);
+                Buffer.BlockCopy(tmp, 0, this._buffer, this._offset, tmpOffset);
+                this._offset += tmpOffset;
             }
             finally
             {

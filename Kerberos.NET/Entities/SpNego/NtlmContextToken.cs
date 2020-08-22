@@ -1,5 +1,10 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities.SpNego
 {
@@ -7,7 +12,7 @@ namespace Kerberos.NET.Entities.SpNego
     {
         public NtlmContextToken(ReadOnlyMemory<byte> data)
         {
-            Token = new NtlmMessage(data);
+            this.Token = new NtlmMessage(data);
         }
 
         public NtlmMessage Token { get; }

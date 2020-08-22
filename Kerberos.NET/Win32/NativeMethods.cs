@@ -1,5 +1,11 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -8,12 +14,15 @@ namespace Kerberos.NET.Win32
     internal unsafe class NativeMethods
     {
         private const string SECUR32 = "secur32.dll";
+        private const string ADVAPI32 = "advapi32.dll";
+        private const string KERNEL32 = "kernel32.dll";
 
-        [DllImport(SECUR32,
-                CharSet = CharSet.Auto,
-                BestFitMapping = false,
-                ThrowOnUnmappableChar = true,
-                EntryPoint = "AcquireCredentialsHandle")]
+        [DllImport(
+            SECUR32,
+            CharSet = CharSet.Auto,
+            BestFitMapping = false,
+            ThrowOnUnmappableChar = true,
+            EntryPoint = "AcquireCredentialsHandle")]
         internal static extern SecStatus AcquireCredentialsHandle(
             string pszPrincipal,
             string pszPackage,
@@ -26,45 +35,47 @@ namespace Kerberos.NET.Win32
             IntPtr ptsExpiry
         );
 
-        [DllImport(SECUR32,
-                EntryPoint = "InitializeSecurityContext",
-                CharSet = CharSet.Auto,
-                BestFitMapping = false,
-                ThrowOnUnmappableChar = true,
-                SetLastError = true)]
+        [DllImport(
+            SECUR32,
+            EntryPoint = "InitializeSecurityContext",
+            CharSet = CharSet.Auto,
+            BestFitMapping = false,
+            ThrowOnUnmappableChar = true,
+            SetLastError = true)]
         internal static extern SecStatus InitializeSecurityContext_0(
             ref SECURITY_HANDLE phCredential,
             IntPtr phContext,
             string pszTargetName,
-            ContextFlag fContextReq,
+            InitContextFlag fContextReq,
             int Reserved1,
             int TargetDataRep,
             IntPtr pInput,
             int Reserved2,
             ref SECURITY_HANDLE phNewContext,
             ref SecBufferDesc pOutput,
-            out ContextFlag pfContextAttr,
+            out InitContextFlag pfContextAttr,
             IntPtr ptsExpiry
         );
 
-        [DllImport(SECUR32,
-                EntryPoint = "InitializeSecurityContext",
-                CharSet = CharSet.Auto,
-                BestFitMapping = false,
-                ThrowOnUnmappableChar = true,
-                SetLastError = true)]
+        [DllImport(
+            SECUR32,
+            EntryPoint = "InitializeSecurityContext",
+            CharSet = CharSet.Auto,
+            BestFitMapping = false,
+            ThrowOnUnmappableChar = true,
+            SetLastError = true)]
         internal static extern SecStatus InitializeSecurityContext_1(
             ref SECURITY_HANDLE phCredential,
             ref SECURITY_HANDLE phContext,
             string pszTargetName,
-            ContextFlag fContextReq,
+            InitContextFlag fContextReq,
             int Reserved1,
             int TargetDataRep,
             ref SecBufferDesc pInput,
             int Reserved2,
             ref SECURITY_HANDLE phNewContext,
             ref SecBufferDesc pOutput,
-            out ContextFlag pfContextAttr,
+            out InitContextFlag pfContextAttr,
             ref IntPtr ptsExpiry
         );
 
@@ -73,11 +84,11 @@ namespace Kerberos.NET.Win32
             ref SECURITY_HANDLE phCredential,
             IntPtr phContext,
             ref SecBufferDesc pInput,
-            ContextFlag fContextReq,
+            AcceptContextFlag fContextReq,
             uint TargetDataRep,
             ref SECURITY_HANDLE phNewContext,
             out SecBufferDesc pOutput,
-            out ContextFlag pfContextAttr,
+            out AcceptContextFlag pfContextAttr,
             out SECURITY_INTEGER ptsTimeStamp
         );
 
@@ -86,11 +97,11 @@ namespace Kerberos.NET.Win32
             ref SECURITY_HANDLE phCredential,
             ref SECURITY_HANDLE phContext,
             ref SecBufferDesc pInput,
-            ContextFlag fContextReq,
+            AcceptContextFlag fContextReq,
             uint TargetDataRep,
             ref SECURITY_HANDLE phNewContext,
             out SecBufferDesc pOutput,
-            out ContextFlag pfContextAttr,
+            out AcceptContextFlag pfContextAttr,
             out SECURITY_INTEGER ptsTimeStamp
         );
 
@@ -102,18 +113,283 @@ namespace Kerberos.NET.Win32
         );
 
         [DllImport(SECUR32)]
-        internal static extern int FreeCredentialsHandle(SECURITY_HANDLE* handle);
+        internal static extern uint FreeCredentialsHandle(SECURITY_HANDLE* handle);
 
         [DllImport(SECUR32)]
-        internal static extern int FreeContextBuffer(void* handle);
+        internal static extern uint FreeContextBuffer(void* handle);
 
         [DllImport(SECUR32)]
         public static extern SecStatus DeleteSecurityContext(SECURITY_HANDLE* context);
 
+        [DllImport(SECUR32)]
+        public static unsafe extern int LsaCallAuthenticationPackage(
+            LsaSafeHandle LsaHandle,
+            int AuthenticationPackage,
+            void* ProtocolSubmitBuffer,
+            int SubmitBufferLength,
+            out LsaBufferSafeHandle ProtocolReturnBuffer,
+            out int ReturnBufferLength,
+            out int ProtocolStatus
+        );
+
+        [DllImport(SECUR32)]
+        public static extern int LsaConnectUntrusted(
+           [Out] out LsaSafeHandle LsaHandle
+        );
+
+        [DllImport(SECUR32)]
+        public static extern int LsaRegisterLogonProcess(
+            ref LSA_STRING LogonProcessName,
+            out LsaSafeHandle LsaHandle,
+            out ulong SecurityMode
+        );
+
+        [DllImport(SECUR32)]
+        public static extern int LsaDeregisterLogonProcess(
+            IntPtr LsaHandle
+        );
+
+        [DllImport(SECUR32)]
+        public static extern int LsaLookupAuthenticationPackage(
+            LsaSafeHandle LsaHandle,
+            ref LSA_STRING PackageName,
+            out int AuthenticationPackage
+        );
+
+        [DllImport(ADVAPI32)]
+        public static extern int LsaNtStatusToWinError(int Status);
+
+        [DllImport(SECUR32)]
+        public static extern int LsaFreeReturnBuffer(IntPtr Buffer);
+
+        [DllImport(SECUR32)]
+        public static extern int LsaLogonUser(
+          LsaSafeHandle LsaHandle,
+          ref LSA_STRING OriginName,
+          SECURITY_LOGON_TYPE LogonType,
+          int AuthenticationPackage,
+          void* AuthenticationInformation,
+          int AuthenticationInformationLength,
+          IntPtr LocalGroups,
+          ref TOKEN_SOURCE SourceContext,
+          out LsaBufferSafeHandle ProfileBuffer,
+          ref int ProfileBufferLength,
+          out LUID LogonId,
+          out LsaTokenSafeHandle Token,
+          out IntPtr Quotas,
+          out int SubStatus
+        );
+
+        [DllImport(KERNEL32)]
+        public static extern bool CloseHandle(IntPtr hObject);
+
+        [DllImport(ADVAPI32)]
+        public static extern bool ImpersonateLoggedOnUser(LsaTokenSafeHandle hToken);
+
+        [DllImport(ADVAPI32)]
+        public static extern bool RevertToSelf();
+
+        public static void LsaThrowIfError(int result)
+        {
+            if (result != 0)
+            {
+                result = LsaNtStatusToWinError(result);
+
+                throw new Win32Exception(result);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_INTERACTIVE_LOGON
+        {
+            public KERB_LOGON_SUBMIT_TYPE MessageType;
+            public UNICODE_STRING LogonDomainName;
+            public UNICODE_STRING UserName;
+            public UNICODE_STRING Password;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct TOKEN_SOURCE
+        {
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public byte[] SourceName; // TOKEN_SOURCE_LENGTH
+            public LUID SourceIdentifier;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_S4U_LOGON
+        {
+            public KERB_LOGON_SUBMIT_TYPE MessageType;
+            public S4uFlags Flags;
+            public UNICODE_STRING ClientUpn;
+            public UNICODE_STRING ClientRealm;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct UNICODE_STRING
+        {
+            public ushort Length;
+            public ushort MaximumLength;
+            public IntPtr Buffer;
+        }
+
+        [Flags]
+        public enum S4uFlags
+        {
+            KERB_S4U_LOGON_FLAG_CHECK_LOGONHOURS = 0x2,
+            KERB_S4U_LOGON_FLAG_IDENTIFY = 0x8
+        }
+
+        public enum KERB_LOGON_SUBMIT_TYPE
+        {
+            KerbInteractiveLogon = 2,
+            KerbSmartCardLogon = 6,
+            KerbWorkstationUnlockLogon = 7,
+            KerbSmartCardUnlockLogon = 8,
+            KerbProxyLogon = 9,
+            KerbTicketLogon = 10,
+            KerbTicketUnlockLogon = 11,
+            KerbS4ULogon = 12,
+            KerbCertificateLogon = 13,
+            KerbCertificateS4ULogon = 14,
+            KerbCertificateUnlockLogon = 15,
+            KerbNoElevationLogon = 83,
+            KerbLuidLogon = 84,
+        }
+
+        public enum SECURITY_LOGON_TYPE
+        {
+            UndefinedLogonType = 0,
+            Interactive = 2,
+            Network,
+            Batch,
+            Service,
+            Proxy,
+            Unlock,
+            NetworkCleartext,
+            NewCredentials,
+            RemoteInteractive,
+            CachedInteractive,
+            CachedRemoteInteractive,
+            CachedUnlock
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct LSA_STRING
+        {
+            public ushort Length;
+            public ushort MaximumLength;
+            public string Buffer;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct LUID
+        {
+            public uint LowPart;
+            public int HighPart;
+
+            public static implicit operator ulong(LUID luid)
+            {
+                ulong val = (ulong)luid.HighPart << 32;
+
+                return val + luid.LowPart;
+            }
+
+            public static implicit operator LUID(long luid)
+            {
+                return new LUID
+                {
+                    LowPart = (UInt32)(luid & 0xffffffffL),
+                    HighPart = (Int32)(luid >> 32)
+                };
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_SUBMIT_TKT_REQUEST
+        {
+            public KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+            public LUID LogonId;
+            public int Flags;
+            public KERB_CRYPTO_KEY32 Key;
+            public int KerbCredSize;
+            public int KerbCredOffset;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_PURGE_TKT_CACHE_EX_REQUEST
+        {
+            public KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+            public LUID LogonId;
+            public int Flags;
+            public KERB_TICKET_CACHE_INFO_EX TicketTemplate;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_TICKET_CACHE_INFO_EX
+        {
+            public UNICODE_STRING ClientName;
+            public UNICODE_STRING ClientRealm;
+            public UNICODE_STRING ServerName;
+            public UNICODE_STRING ServerRealm;
+            public long StartTime;
+            public long EndTime;
+            public long RenewTime;
+            public int EncryptionType;
+            public int TicketFlags;
+        }
+
+        public enum KERB_PROTOCOL_MESSAGE_TYPE : UInt32
+        {
+            KerbDebugRequestMessage = 0,
+            KerbQueryTicketCacheMessage,
+            KerbChangeMachinePasswordMessage,
+            KerbVerifyPacMessage,
+            KerbRetrieveTicketMessage,
+            KerbUpdateAddressesMessage,
+            KerbPurgeTicketCacheMessage,
+            KerbChangePasswordMessage,
+            KerbRetrieveEncodedTicketMessage,
+            KerbDecryptDataMessage,
+            KerbAddBindingCacheEntryMessage,
+            KerbSetPasswordMessage,
+            KerbSetPasswordExMessage,
+            KerbVerifyCredentialsMessage,
+            KerbQueryTicketCacheExMessage,
+            KerbPurgeTicketCacheExMessage,
+            KerbRefreshSmartcardCredentialsMessage,
+            KerbAddExtraCredentialsMessage,
+            KerbQuerySupplementalCredentialsMessage,
+            KerbTransferCredentialsMessage,
+            KerbQueryTicketCacheEx2Message,
+            KerbSubmitTicketMessage,
+            KerbAddExtraCredentialsExMessage,
+            KerbQueryKdcProxyCacheMessage,
+            KerbPurgeKdcProxyCacheMessage,
+            KerbQueryTicketCacheEx3Message,
+            KerbCleanupMachinePkinitCredsMessage,
+            KerbAddBindingCacheEntryExMessage,
+            KerbQueryBindingCacheMessage,
+            KerbPurgeBindingCacheMessage,
+            KerbPinKdcMessage,
+            KerbUnpinAllKdcsMessage,
+            KerbQueryDomainExtendedPoliciesMessage,
+            KerbQueryS4U2ProxyCacheMessage,
+            KerbRetrieveKeyTabMessage,
+            KerbRefreshPolicyMessage
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_CRYPTO_KEY32
+        {
+            public int KeyType;
+            public int Length;
+            public int Offset;
+        }
+
         internal enum SecBufferType
         {
             SECBUFFER_VERSION = 0,
-            SECBUFFER_EMPTY = 0,
             SECBUFFER_DATA = 1,
             SECBUFFER_TOKEN = 2
         }
@@ -127,23 +403,23 @@ namespace Kerberos.NET.Win32
 
             public SecBuffer(int bufferSize)
             {
-                cbBuffer = bufferSize;
-                BufferType = SecBufferType.SECBUFFER_TOKEN;
-                pvBuffer = Marshal.AllocHGlobal(bufferSize);
+                this.cbBuffer = bufferSize;
+                this.BufferType = SecBufferType.SECBUFFER_TOKEN;
+                this.pvBuffer = Marshal.AllocHGlobal(bufferSize);
             }
 
             public SecBuffer(byte[] secBufferBytes)
                 : this(secBufferBytes.Length)
             {
-                Marshal.Copy(secBufferBytes, 0, pvBuffer, cbBuffer);
+                Marshal.Copy(secBufferBytes, 0, this.pvBuffer, this.cbBuffer);
             }
 
             public void Dispose()
             {
-                if (pvBuffer != IntPtr.Zero)
+                if (this.pvBuffer != IntPtr.Zero)
                 {
-                    Marshal.FreeHGlobal(pvBuffer);
-                    pvBuffer = IntPtr.Zero;
+                    Marshal.FreeHGlobal(this.pvBuffer);
+                    this.pvBuffer = IntPtr.Zero;
                 }
             }
         }
@@ -151,9 +427,9 @@ namespace Kerberos.NET.Win32
         [StructLayout(LayoutKind.Sequential)]
         internal struct SecBufferDesc : IDisposable
         {
-            private SecBufferType ulVersion;
+            private readonly SecBufferType ulVersion;
             public int cBuffers;
-            public IntPtr pBuffers; //Point to SecBuffer
+            public IntPtr pBuffers; // Point to SecBuffer
 
             public SecBufferDesc(int bufferSize)
                 : this(new SecBuffer(bufferSize))
@@ -167,37 +443,37 @@ namespace Kerberos.NET.Win32
 
             private SecBufferDesc(SecBuffer secBuffer)
             {
-                ulVersion = SecBufferType.SECBUFFER_VERSION;
+                this.ulVersion = SecBufferType.SECBUFFER_VERSION;
 
-                cBuffers = 1;
+                this.cBuffers = 1;
 
-                pBuffers = Marshal.AllocHGlobal(Marshal.SizeOf(secBuffer));
+                this.pBuffers = Marshal.AllocHGlobal(Marshal.SizeOf(secBuffer));
 
-                Marshal.StructureToPtr(secBuffer, pBuffers, false);
+                Marshal.StructureToPtr(secBuffer, this.pBuffers, false);
             }
 
             public void Dispose()
             {
-                if (pBuffers != IntPtr.Zero)
+                if (this.pBuffers != IntPtr.Zero)
                 {
-                    ForEachBuffer(thisSecBuffer => thisSecBuffer.Dispose());
+                    this.ForEachBuffer(thisSecBuffer => thisSecBuffer.Dispose());
 
                     // Freeing pBuffers
 
-                    Marshal.FreeHGlobal(pBuffers);
-                    pBuffers = IntPtr.Zero;
+                    Marshal.FreeHGlobal(this.pBuffers);
+                    this.pBuffers = IntPtr.Zero;
                 }
             }
 
             private void ForEachBuffer(Action<SecBuffer> onBuffer)
             {
-                for (int Index = 0; Index < cBuffers; Index++)
+                for (int Index = 0; Index < this.cBuffers; Index++)
                 {
                     int CurrentOffset = Index * Marshal.SizeOf(typeof(SecBuffer));
 
                     SecBuffer thisSecBuffer = (SecBuffer)Marshal.PtrToStructure(
                         IntPtr.Add(
-                            pBuffers,
+                            this.pBuffers,
                             CurrentOffset
                         ),
                         typeof(SecBuffer)
@@ -209,14 +485,14 @@ namespace Kerberos.NET.Win32
 
             public byte[] ReadBytes()
             {
-                if (cBuffers <= 0)
+                if (this.cBuffers <= 0)
                 {
                     return Array.Empty<byte>();
                 }
 
                 var bufferList = new List<byte[]>();
 
-                ForEachBuffer(thisSecBuffer =>
+                this.ForEachBuffer(thisSecBuffer =>
                 {
                     if (thisSecBuffer.cbBuffer <= 0)
                     {
@@ -253,15 +529,15 @@ namespace Kerberos.NET.Win32
             public ulong dwLower;
             public ulong dwUpper;
 
-            public bool IsSet { get { return dwLower > 0 || dwUpper > 0; } }
-        };
+            public bool IsSet => this.dwLower > 0 || this.dwUpper > 0;
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         internal struct SECURITY_INTEGER
         {
             public uint LowPart;
             public int HighPart;
-        };
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         internal struct SecPkgContext_SecString

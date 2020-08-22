@@ -1,8 +1,13 @@
-﻿using Kerberos.NET.Asn1;
-using Kerberos.NET.Crypto;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kerberos.NET.Asn1;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
@@ -10,17 +15,17 @@ namespace Kerberos.NET.Entities
     {
         public KrbTgsReq()
         {
-            MessageType = MessageType.KRB_TGS_REQ;
+            this.MessageType = MessageType.KRB_TGS_REQ;
         }
 
         [KerberosIgnore]
-        public MessageType KerberosMessageType => MessageType;
+        public MessageType KerberosMessageType => this.MessageType;
 
         [KerberosIgnore]
-        public string Realm => Body.Realm;
+        public string Realm => this.Body.Realm;
 
         [KerberosIgnore]
-        public int KerberosProtocolVersionNumber => ProtocolVersionNumber;
+        public int KerberosProtocolVersionNumber => this.ProtocolVersionNumber;
 
         public KrbTgsReq DecodeAsApplication(ReadOnlyMemory<byte> encoded)
         {
@@ -34,6 +39,16 @@ namespace Kerberos.NET.Entities
             out KrbEncryptionKey sessionKey
         )
         {
+            if (kdcRep == null)
+            {
+                throw new ArgumentNullException(nameof(kdcRep));
+            }
+
+            if (tgtSessionKey == null)
+            {
+                throw new ArgumentNullException(nameof(tgtSessionKey));
+            }
+
             var sname = rst.ServicePrincipalName.Split('/', '@');
             var tgt = kdcRep.Ticket;
 
@@ -89,12 +104,15 @@ namespace Kerberos.NET.Entities
                 Flags = PacOptions.ResourceBasedConstrainedDelegation | PacOptions.Claims | PacOptions.BranchAware
             }.Encode();
 
-            var paData = new List<KrbPaData>() {
-                new KrbPaData {
+            var paData = new List<KrbPaData>()
+            {
+                new KrbPaData
+                {
                     Type = PaDataType.PA_TGS_REQ,
                     Value = tgtApReq.EncodeApplication()
                 },
-                new KrbPaData {
+                new KrbPaData
+                {
                     Type = PaDataType.PA_PAC_OPTIONS,
                     Value = pacOptions
                 }
@@ -149,7 +167,10 @@ namespace Kerberos.NET.Entities
             sessionKey.Usage = KeyUsage.EncTgsRepPartSubSessionKey;
             authenticator.Subkey = sessionKey;
 
-            KerberosConstants.Now(out authenticator.CTime, out authenticator.CuSec);
+            KerberosConstants.Now(out DateTimeOffset ctime, out int usec);
+
+            authenticator.CTime = ctime;
+            authenticator.CuSec = usec;
 
             var encryptedAuthenticator = KrbEncryptedData.Encrypt(
                 authenticator.EncodeApplication(),

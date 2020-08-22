@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Security;
@@ -20,20 +25,25 @@ namespace Kerberos.NET.Crypto.AES
 
         protected AESTransformer(int keySize)
         {
-            KeySize = keySize;
+            this.KeySize = keySize;
         }
 
         public override int ChecksumSize => 96 / 8;
 
         public override int BlockSize => AesBlockSize;
 
-        public int ConfounderSize => BlockSize;
+        public int ConfounderSize => this.BlockSize;
 
         public override int KeySize { get; }
 
         public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
         {
-            return String2Key(
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            return this.String2Key(
                 key.PasswordBytes,
                 AesSalts.GenerateSalt(key),
                 key.IterationParameter
@@ -42,9 +52,9 @@ namespace Kerberos.NET.Crypto.AES
 
         public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey kerberosKey, KeyUsage usage)
         {
-            var Ke = GetOrDeriveKey(kerberosKey, usage);
+            var ke = this.GetOrDeriveKey(kerberosKey, usage);
 
-            var confounder = GenerateRandomBytes(ConfounderSize);
+            var confounder = this.GenerateRandomBytes(this.ConfounderSize);
 
             var concatLength = confounder.Length + data.Length;
 
@@ -54,11 +64,11 @@ namespace Kerberos.NET.Crypto.AES
 
                 var encrypted = AESCTS.Encrypt(
                     cleartext,
-                    Ke,
+                    ke,
                     AllZerosInitVector
                 );
 
-                var checksum = MakeChecksum(cleartext, kerberosKey, usage, KeyDerivationMode.Ki, ChecksumSize);
+                var checksum = this.MakeChecksum(cleartext, kerberosKey, usage, KeyDerivationMode.Ki, this.ChecksumSize);
 
                 return Concat(encrypted.Span, checksum.Span);
             }
@@ -74,8 +84,8 @@ namespace Kerberos.NET.Crypto.AES
 
             return kerberosKey.GetOrDeriveKey(
                 this,
-                $"{usage}|Ke|{KeySize}|{BlockSize}",
-                key => DK(key, usage, KeyDerivationMode.Ke, KeySize, BlockSize)
+                $"{usage}|Ke|{this.KeySize}|{this.BlockSize}",
+                key => DK(key, usage, KeyDerivationMode.Ke, this.KeySize, this.BlockSize)
             );
         }
 
@@ -89,33 +99,30 @@ namespace Kerberos.NET.Crypto.AES
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ReadOnlyMemory<byte> Concat(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2)
-        {
-            return Concat(s1, s2, new Memory<byte>(new byte[s1.Length + s2.Length]));
-        }
+        private static ReadOnlyMemory<byte> Concat(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2) => Concat(s1, s2, new Memory<byte>(new byte[s1.Length + s2.Length]));
 
         public override ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey kerberosKey, KeyUsage usage)
         {
-            var cipherLength = cipher.Length - ChecksumSize;
+            var cipherLength = cipher.Length - this.ChecksumSize;
 
-            var Ke = GetOrDeriveKey(kerberosKey, usage);
+            var ke = this.GetOrDeriveKey(kerberosKey, usage);
 
             var decrypted = AESCTS.Decrypt(
                 cipher.Slice(0, cipherLength),
-                Ke,
+                ke,
                 AllZerosInitVector
             );
 
-            var actualChecksum = MakeChecksum(decrypted, kerberosKey, usage, KeyDerivationMode.Ki, ChecksumSize);
+            var actualChecksum = this.MakeChecksum(decrypted, kerberosKey, usage, KeyDerivationMode.Ki, this.ChecksumSize);
 
-            var expectedChecksum = cipher.Slice(cipherLength, ChecksumSize);
+            var expectedChecksum = cipher.Slice(cipherLength, this.ChecksumSize);
 
             if (!AreEqualSlow(expectedChecksum.Span, actualChecksum.Span))
             {
                 throw new SecurityException("Invalid checksum");
             }
 
-            return decrypted.Slice(ConfounderSize, cipherLength - ConfounderSize);
+            return decrypted.Slice(this.ConfounderSize, cipherLength - this.ConfounderSize);
         }
 
         public override ReadOnlyMemory<byte> MakeChecksum(
@@ -126,10 +133,15 @@ namespace Kerberos.NET.Crypto.AES
             int hashSize
         )
         {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
             var ki = key.GetOrDeriveKey(
                 this,
-                $"{usage}|{kdf}|{KeySize}|{BlockSize}",
-                k => DK(k, usage, kdf, KeySize, BlockSize)
+                $"{usage}|{kdf}|{this.KeySize}|{this.BlockSize}",
+                k => DK(k, usage, kdf, this.KeySize, this.BlockSize)
             );
 
             return Hmac(ki, data).Slice(0, hashSize);
@@ -153,36 +165,36 @@ namespace Kerberos.NET.Crypto.AES
 
         private static ReadOnlyMemory<byte> DK(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
         {
-            //return Random2Key( DR(...) );
+            // return Random2Key( DR(...) );
 
             return DR(key, constant, keySize, blockSize);
         }
 
-        private ReadOnlyMemory<byte> String2Key(byte[] password, string salt, byte[] param)
+        private ReadOnlyMemory<byte> String2Key(ReadOnlyMemory<byte> password, string salt, ReadOnlyMemory<byte> param)
         {
-            var passwordBytes = KerberosConstants.UnicodeBytesToUtf8(password);
+            var passwordBytes = KerberosConstants.UnicodeBytesToUtf8(password.ToArray());
 
             var iterations = GetIterations(param, 4096);
 
             var saltBytes = KerberosConstants.UnicodeStringToUtf8(salt);
 
-            var random = PBKDF2(passwordBytes, saltBytes, iterations, KeySize);
+            var random = PBKDF2(passwordBytes, saltBytes, iterations, this.KeySize);
 
-            return DK(random, KerberosConstant, KeySize, BlockSize);
+            return DK(random, KerberosConstant, this.KeySize, this.BlockSize);
         }
 
-        private static int GetIterations(byte[] param, int defCount)
+        private static int GetIterations(ReadOnlyMemory<byte> param, int defCount)
         {
             int iterCount = defCount;
 
-            if (param != null)
+            if (param.Length > 0)
             {
                 if (param.Length % 4 != 0)
                 {
                     throw new ArgumentException("Invalid param to str2Key");
                 }
 
-                iterCount = ConvertInt(param, param.Length - 4);
+                iterCount = ConvertInt(param.Span, param.Length - 4);
             }
 
             if (iterCount == 0)
@@ -194,39 +206,39 @@ namespace Kerberos.NET.Crypto.AES
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int ConvertInt(byte[] bytes, int offset)
+        private static int ConvertInt(ReadOnlySpan<byte> bytes, int offset)
         {
-            return BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(offset));
+            return BinaryPrimitives.ReadInt32BigEndian(bytes.Slice(offset));
         }
 
         private static ReadOnlyMemory<byte> DR(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
         {
             var keyBytes = new Memory<byte>(new byte[keySize]);
 
-            ReadOnlyMemory<byte> Ki;
+            ReadOnlyMemory<byte> ki;
 
             if (constant.Length != blockSize)
             {
-                Ki = NFold(constant.Span, blockSize);
+                ki = NFold(constant.Span, blockSize);
             }
             else
             {
-                Ki = constant;
+                ki = constant;
             }
 
             var n = 0;
 
             do
             {
-                Ki = AESCTS.Encrypt(Ki, key, AllZerosInitVector);
+                ki = AESCTS.Encrypt(ki, key, AllZerosInitVector);
 
                 if (n + blockSize >= keySize)
                 {
-                    Ki.CopyTo(keyBytes.Slice(n, keySize - n));
+                    ki.CopyTo(keyBytes.Slice(n, keySize - n));
                     break;
                 }
 
-                Ki.CopyTo(keyBytes.Slice(n, blockSize));
+                ki.CopyTo(keyBytes.Slice(n, blockSize));
 
                 n += blockSize;
             }

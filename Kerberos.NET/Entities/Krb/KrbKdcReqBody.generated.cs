@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Collections.Generic;
@@ -13,20 +17,31 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbKdcReqBody
     {
-        public KdcOptions KdcOptions;
+        public KdcOptions KdcOptions { get; set; }
     
-        public KrbPrincipalName CName;
-        public string Realm;
-        public KrbPrincipalName SName;
-        public DateTimeOffset? From;
-        public DateTimeOffset Till;
-        public DateTimeOffset? RTime;
-        public int Nonce;
-        public EncryptionType[] EType;
-        public KrbHostAddress[] Addresses;
-        public KrbEncryptedData EncAuthorizationData;
-        public KrbTicket[] AdditionalTickets;
-      
+        public KrbPrincipalName CName { get; set; }
+  
+        public string Realm { get; set; }
+  
+        public KrbPrincipalName SName { get; set; }
+  
+        public DateTimeOffset? From { get; set; }
+  
+        public DateTimeOffset Till { get; set; }
+  
+        public DateTimeOffset? RTime { get; set; }
+  
+        public int Nonce { get; set; }
+  
+        public EncryptionType[] EType { get; set; }
+  
+        public KrbHostAddress[] Addresses { get; set; }
+  
+        public KrbEncryptedData EncAuthorizationData { get; set; }
+  
+        public KrbTicket[] AdditionalTickets { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -35,7 +50,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -55,7 +70,6 @@ namespace Kerberos.NET.Entities
                 CName?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             }
-
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             writer.WriteCharacterString(UniversalTagNumber.GeneralString, Realm);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
@@ -67,14 +81,12 @@ namespace Kerberos.NET.Entities
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             }
 
-
             if (Asn1Extension.HasValue(From))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
                 writer.WriteGeneralizedTime(From.Value);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
             }
-
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
             writer.WriteGeneralizedTime(Till);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
@@ -85,17 +97,17 @@ namespace Kerberos.NET.Entities
                 writer.WriteGeneralizedTime(RTime.Value);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
             }
-
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 7));
             writer.WriteInteger(Nonce);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 7));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
-
             writer.PushSequence();
+            
             for (int i = 0; i < EType.Length; i++)
             {
                 writer.WriteInteger((long)EType[i]); 
             }
+
             writer.PopSequence();
 
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
@@ -103,17 +115,18 @@ namespace Kerberos.NET.Entities
             if (Asn1Extension.HasValue(Addresses))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 9));
-
                 writer.PushSequence();
+            
                 for (int i = 0; i < Addresses.Length; i++)
                 {
                     Addresses[i]?.Encode(writer); 
                 }
+
                 writer.PopSequence();
 
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 9));
             }
-
+  
 
             if (Asn1Extension.HasValue(EncAuthorizationData))
             {
@@ -122,21 +135,21 @@ namespace Kerberos.NET.Entities
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
             }
 
-
             if (Asn1Extension.HasValue(AdditionalTickets))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 11));
-
                 writer.PushSequence();
+            
                 for (int i = 0; i < AdditionalTickets.Length; i++)
                 {
                     AdditionalTickets[i]?.Encode(writer); 
                 }
+
                 writer.PopSequence();
 
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 11));
             }
-
+  
             writer.PopSequence(tag);
         }
         
@@ -193,7 +206,9 @@ namespace Kerberos.NET.Entities
           where T: KrbKdcReqBody, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -202,14 +217,16 @@ namespace Kerberos.NET.Entities
           where T: KrbKdcReqBody, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
             
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
 
             if (explicitReader.TryReadPrimitiveBitStringValue(out _, out ReadOnlyMemory<byte> tmpKdcOptions))
@@ -221,69 +238,65 @@ namespace Kerberos.NET.Entities
                 decoded.KdcOptions = (KdcOptions)explicitReader.ReadBitString(out _).AsLong();
             }
 
-            explicitReader.ThrowIfNotEmpty();
 
+            explicitReader.ThrowIfNotEmpty();
 
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-                KrbPrincipalName tmpCName;
-                KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out tmpCName);
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));                
+            
+                KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out KrbPrincipalName tmpCName);
                 decoded.CName = tmpCName;
-
                 explicitReader.ThrowIfNotEmpty();
             }
-
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             decoded.Realm = explicitReader.ReadCharacterString(UniversalTagNumber.GeneralString);
-            explicitReader.ThrowIfNotEmpty();
 
+            explicitReader.ThrowIfNotEmpty();
 
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 3)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
-                KrbPrincipalName tmpSName;
-                KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out tmpSName);
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 3));                
+            
+                KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out KrbPrincipalName tmpSName);
                 decoded.SName = tmpSName;
-
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 4)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 4));                
+            
                 decoded.From = explicitReader.ReadGeneralizedTime();
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
             decoded.Till = explicitReader.ReadGeneralizedTime();
-            explicitReader.ThrowIfNotEmpty();
 
+            explicitReader.ThrowIfNotEmpty();
 
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 6)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 6));
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 6));                
+            
                 decoded.RTime = explicitReader.ReadGeneralizedTime();
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 7));
 
-            if (!explicitReader.TryReadInt32(out decoded.Nonce))
+            if (!explicitReader.TryReadInt32(out int tmpNonce))
             {
                 explicitReader.ThrowIfNotEmpty();
             }
+            
+            decoded.Nonce = tmpNonce;
 
             explicitReader.ThrowIfNotEmpty();
 
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 8));
-
             // Decode SEQUENCE OF for EType
             {
                 collectionReader = explicitReader.ReadSequence();
@@ -293,11 +306,12 @@ namespace Kerberos.NET.Entities
                 while (collectionReader.HasData)
                 {
 
-                    if (!collectionReader.TryReadInt32(out tmpItem))
+                    if (!collectionReader.TryReadInt32(out EncryptionType tmp))
                     {
                         collectionReader.ThrowIfNotEmpty();
                     }
- 
+            
+            tmpItem = tmp; 
                     tmpList.Add(tmpItem);
                 }
 
@@ -306,11 +320,10 @@ namespace Kerberos.NET.Entities
 
             explicitReader.ThrowIfNotEmpty();
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 9)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 9));
-
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 9));                
+            
                 // Decode SEQUENCE OF for Addresses
                 {
                     collectionReader = explicitReader.ReadSequence();
@@ -319,32 +332,29 @@ namespace Kerberos.NET.Entities
 
                     while (collectionReader.HasData)
                     {
-                        KrbHostAddress.Decode<KrbHostAddress>(collectionReader, out tmpItem); 
+                        KrbHostAddress.Decode<KrbHostAddress>(collectionReader, out KrbHostAddress tmp);
+                        tmpItem = tmp; 
                         tmpList.Add(tmpItem);
                     }
 
                     decoded.Addresses = tmpList.ToArray();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
-
 
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 10)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 10));
-                KrbEncryptedData tmpEncAuthorizationData;
-                KrbEncryptedData.Decode<KrbEncryptedData>(explicitReader, out tmpEncAuthorizationData);
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 10));                
+            
+                KrbEncryptedData.Decode<KrbEncryptedData>(explicitReader, out KrbEncryptedData tmpEncAuthorizationData);
                 decoded.EncAuthorizationData = tmpEncAuthorizationData;
-
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 11)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 11));
-
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 11));                
+            
                 // Decode SEQUENCE OF for AdditionalTickets
                 {
                     collectionReader = explicitReader.ReadSequence();
@@ -353,16 +363,15 @@ namespace Kerberos.NET.Entities
 
                     while (collectionReader.HasData)
                     {
-                        KrbTicket.Decode<KrbTicket>(collectionReader, out tmpItem); 
+                        KrbTicket.Decode<KrbTicket>(collectionReader, out KrbTicket tmp);
+                        tmpItem = tmp; 
                         tmpList.Add(tmpItem);
                     }
 
                     decoded.AdditionalTickets = tmpList.ToArray();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

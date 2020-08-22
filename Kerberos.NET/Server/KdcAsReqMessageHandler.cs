@@ -1,8 +1,14 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -18,14 +24,19 @@ namespace Kerberos.NET.Server
 
         private readonly ILogger<KdcAsReqMessageHandler> logger;
 
-        public KdcAsReqMessageHandler(ReadOnlyMemory<byte> message, ListenerOptions options)
+        public KdcAsReqMessageHandler(ReadOnlyMemory<byte> message, KdcServerOptions options)
             : base(message, options)
         {
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
             this.logger = options.Log.CreateLoggerSafe<KdcAsReqMessageHandler>();
 
-            PostProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);
+            this.PostProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);
 
-            RegisterPreAuthHandlers(PostProcessAuthHandlers);
+            this.RegisterPreAuthHandlers(this.PostProcessAuthHandlers);
         }
 
         protected override MessageType MessageType => MessageType.KRB_AS_REQ;
@@ -34,14 +45,19 @@ namespace Kerberos.NET.Server
         {
             var asReq = KrbAsReq.DecodeApplication(message);
 
-            SetRealmContext(asReq.Realm);
+            this.SetRealmContext(asReq.Realm);
 
             return asReq;
         }
 
         protected override IEnumerable<PaDataType> GetOrderedPreAuth(PreAuthenticationContext preauth)
         {
-            var keys = PreAuthHandlers.Keys.Intersect(preauth.Principal.SupportedPreAuthenticationTypes);
+            if (preauth == null)
+            {
+                throw new ArgumentNullException(nameof(preauth));
+            }
+
+            var keys = this.PreAuthHandlers.Keys.Intersect(preauth.Principal.SupportedPreAuthenticationTypes);
 
             keys = keys.OrderBy(k => Array.IndexOf(PreAuthAscendingPriority, k));
 
@@ -50,30 +66,42 @@ namespace Kerberos.NET.Server
 
         public override void QueryPreValidate(PreAuthenticationContext context)
         {
-            KrbAsReq asReq = (KrbAsReq)context.Message;
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
 
-            context.Principal = RealmService.Principals.Find(asReq.Body.CName);
-            context.ServicePrincipal = RealmService.Principals.Find(KrbPrincipalName.WellKnown.Krbtgt());
+            KrbAsReq asReq = (KrbAsReq)context.Message;
+            KrbPrincipalName krbtgtName = KrbPrincipalName.WellKnown.Krbtgt(asReq.Body.Realm);
+
+            context.Principal = this.RealmService.Principals.Find(asReq.Body.CName, asReq.Realm);
+            context.ServicePrincipal = this.RealmService.Principals.Find(krbtgtName, asReq.Realm);
         }
 
         public override async Task QueryPreValidateAsync(PreAuthenticationContext context)
         {
-            KrbAsReq asReq = (KrbAsReq)context.Message;
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
 
-            context.Principal = await RealmService.Principals.FindAsync(asReq.Body.CName);
-            context.ServicePrincipal = await RealmService.Principals.FindAsync(KrbPrincipalName.WellKnown.Krbtgt());
+            KrbAsReq asReq = (KrbAsReq)context.Message;
+            KrbPrincipalName krbtgtName = KrbPrincipalName.WellKnown.Krbtgt(asReq.Body.Realm);
+
+            context.Principal = await this.RealmService.Principals.FindAsync(asReq.Body.CName, asReq.Realm).ConfigureAwait(true);
+            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(krbtgtName, asReq.Realm).ConfigureAwait(true);
         }
 
         public override void ValidateTicketRequest(PreAuthenticationContext preauth)
         {
-            if (preauth.Principal == null)
+            if (preauth?.Principal == null)
             {
                 return;
             }
 
             try
             {
-                var preauthReq = ProcessPreAuth(preauth);
+                var preauthReq = this.ProcessPreAuth(preauth);
 
                 if (preauth.PaData == null)
                 {
@@ -84,7 +112,7 @@ namespace Kerberos.NET.Server
             }
             catch (KerberosValidationException kex)
             {
-                logger.LogWarning(kex, "AS-REQ failed processing for principal {Principal}", preauth.Principal.PrincipalName);
+                this.logger.LogWarning(kex, "AS-REQ failed processing for principal {Principal}", preauth.Principal.PrincipalName);
 
                 preauth.Failure = kex;
             }
@@ -101,26 +129,31 @@ namespace Kerberos.NET.Server
             // 6. if some pre-auth succeeded, return error
             // 7. if all required validation succeeds, generate PAC, TGT, and return it
 
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             if (context.Failure != null)
             {
-                return PreAuthFailed(context);
+                return this.PreAuthFailed(context);
             }
 
             KrbAsReq asReq = (KrbAsReq)context.Message;
 
             if (context.Principal == null)
             {
-                logger.LogInformation("User {User} not found in realm {Realm}", asReq.Body.CName.FullyQualifiedName, RealmService.Name);
+                this.logger.LogInformation("User {User} not found in realm {Realm}", asReq.Body.CName.FullyQualifiedName, asReq.Body.Realm);
 
-                return GenerateError(KerberosErrorCode.KDC_ERR_C_PRINCIPAL_UNKNOWN, null, RealmService.Name, asReq.Body.CName.FullyQualifiedName);
+                return GenerateError(KerberosErrorCode.KDC_ERR_C_PRINCIPAL_UNKNOWN, null, asReq.Body.Realm, asReq.Body.CName.FullyQualifiedName);
             }
 
             if (!context.PreAuthenticationSatisfied)
             {
-                return RequirePreAuth(context);
+                return this.RequirePreAuth(context);
             }
 
-            return GenerateAsRep(asReq, context);
+            return this.GenerateAsRep(asReq, context);
         }
 
         private ReadOnlyMemory<byte> GenerateAsRep(KrbAsReq asReq, PreAuthenticationContext context)
@@ -139,18 +172,25 @@ namespace Kerberos.NET.Server
                 ServicePrincipal = context.ServicePrincipal,
                 Addresses = asReq.Body.Addresses,
                 Nonce = asReq.Body.Nonce,
-                IncludePac = true,
-                Flags = TicketFlags.Initial | KrbKdcRep.DefaultFlags
+                Now = this.RealmService.Now(),
+                StartTime = asReq.Body.From ?? DateTimeOffset.MinValue,
+                EndTime = asReq.Body.Till,
+                MaximumTicketLifetime = this.RealmService.Settings.SessionLifetime,
+                Flags = TicketFlags.Initial | KrbKdcRep.DefaultFlags,
+                PreferredClientEType = KerberosConstants.GetPreferredEType(asReq.Body.EType),
             };
-
-            if (!asReq.Body.KdcOptions.HasFlag(KdcOptions.Canonicalize))
-            {
-                rst.SamAccountName = asReq.Body.CName.FullyQualifiedName;
-            }
 
             if (context.ClientAuthority != PaDataType.PA_NONE)
             {
                 rst.Flags |= TicketFlags.PreAuthenticated;
+            }
+
+            // Canonicalize means the CName in the reply is allowed to be different from the CName in the request.
+            // If this is not allowed, then we must use the CName from the request. Otherwise, we will set the CName
+            // to what we have in our realm, i.e. user@realm.
+            if (!asReq.Body.KdcOptions.HasFlag(KdcOptions.Canonicalize))
+            {
+                rst.SamAccountName = asReq.Body.CName.FullyQualifiedName;
             }
 
             if (rst.EncryptedPartKey == null)
@@ -158,9 +198,19 @@ namespace Kerberos.NET.Server
                 rst.EncryptedPartKey = rst.Principal.RetrieveLongTermCredential();
             }
 
-            rst.IncludePac = DetectPacRequirement(asReq) ?? false;
+            if (context.IncludePac == null)
+            {
+                context.IncludePac = DetectPacRequirement(asReq);
+            }
 
-            var asRep = KrbAsRep.GenerateTgt(rst, RealmService);
+            rst.IncludePac = context.IncludePac ?? false;
+
+            // this is set here instead of in GenerateServiceTicket because GST is used by unit tests to
+            // generate tickets with weird lifetimes for scenario testing and we don't want to break that
+
+            rst.ClampLifetime();
+
+            var asRep = KrbAsRep.GenerateTgt(rst, this.RealmService);
 
             if (context.PaData != null)
             {
@@ -176,7 +226,7 @@ namespace Kerberos.NET.Server
             {
                 ErrorCode = KerberosErrorCode.KDC_ERR_PREAUTH_FAILED,
                 EText = context.Failure.Message,
-                Realm = RealmService.Name,
+                Realm = this.RealmService.Name,
                 SName = KrbPrincipalName.FromPrincipal(context.Principal)
             };
 
@@ -185,13 +235,13 @@ namespace Kerberos.NET.Server
 
         private ReadOnlyMemory<byte> RequirePreAuth(PreAuthenticationContext context)
         {
-            logger.LogTrace("AS-REQ requires pre-auth for user {User}", context.Principal.PrincipalName);
+            this.logger.LogTrace("AS-REQ requires pre-auth for user {User}", context.Principal.PrincipalName);
 
             var err = new KrbError
             {
                 ErrorCode = KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED,
-                EText = "",
-                Realm = RealmService.Name,
+                EText = string.Empty,
+                Realm = this.RealmService.Name,
                 SName = KrbPrincipalName.FromPrincipal(context.Principal),
                 EData = new KrbMethodData
                 {

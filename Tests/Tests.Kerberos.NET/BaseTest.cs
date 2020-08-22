@@ -1,7 +1,12 @@
-﻿using Kerberos.NET;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Kerberos.NET;
 
 namespace Tests.Kerberos.NET
 {
@@ -46,7 +51,7 @@ namespace Tests.Kerberos.NET
             "SOBsLlSWVcbntYUvV4q2vXE8+hl8ee47gEfJavtewr6fZ1ZVKbKx30Nsq4uR016qgZTVn4E0N86HP5G7qAOunSWZTf6sqgO5EC7arj0mi" +
             "0BJbdXywf0XZfdL+T0IX9kiIrADgK3e8K";
 
-        public const string RC4Ticket_Claims = "YIIKbQYGKwYBBQUCoIIKYTCCCl2gMDAuBgkqhkiC9xIBAgIGCSqGSIb3EgECAgYKKwYBBAGCNwICHgYKKwY" +
+        public const string RC4TicketClaims = "YIIKbQYGKwYBBQUCoIIKYTCCCl2gMDAuBgkqhkiC9xIBAgIGCSqGSIb3EgECAgYKKwYBBAGCNwICHgYKKwY" +
             "BBAGCNwICCqKCCicEggojYIIKHwYJKoZIhvcSAQICAQBuggoOMIIKCqADAgEFoQMCAQ6iBwMFACAAAACjggiCYYIIfjCCCHqgAwIBBaEaGxhJREVOVElUWU" +
             "lOVEVSVkVOVElPTi5DT02iLTAroAMCAQKhJDAiGwRIVFRQGxphYWRnLndpbmRvd3MubmV0Lm5zYXRjLm5ldKOCCCYwgggioAMCARehAwIBA6KCCBQEgggQj" +
             "3u9OmvRqFMcpNQPVGL9GfXyt8uQXlMLzghXxhl6mLVqYSS6CwGoXwcGKqiDRXb1mll5br+naBy0ckhlnPN3LQmUNnEEk3rIOqHhKZYctiZ1QhVwatjBJ2yi" +

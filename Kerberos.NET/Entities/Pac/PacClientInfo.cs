@@ -1,6 +1,11 @@
-﻿using Kerberos.NET.Entities.Pac;
-using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities
 {
@@ -17,32 +22,34 @@ namespace Kerberos.NET.Entities
 
         public override ReadOnlySpan<byte> Marshal()
         {
-            var buffer = new NdrBuffer();
-
-            NameLength = (short)(Name.Length * sizeof(char));
-
-            buffer.WriteStruct(ClientId);
-            buffer.WriteInt16LittleEndian(NameLength);
-
-            if (NameLength > 0)
+            using (var buffer = new NdrBuffer())
             {
-                buffer.WriteFixedPrimitiveArray(Name.AsSpan());
-            }
+                this.NameLength = (short)(this.Name.Length * sizeof(char));
 
-            return buffer.ToSpan();
+                buffer.WriteStruct(this.ClientId);
+                buffer.WriteInt16LittleEndian(this.NameLength);
+
+                if (this.NameLength > 0)
+                {
+                    buffer.WriteFixedPrimitiveArray(this.Name.AsSpan());
+                }
+
+                return buffer.ToSpan();
+            }
         }
 
         public override void Unmarshal(ReadOnlyMemory<byte> bytes)
         {
-            var buffer = new NdrBuffer(bytes);
-
-            ClientId = buffer.ReadStruct<RpcFileTime>();
-
-            NameLength = buffer.ReadInt16LittleEndian();
-
-            if (NameLength > 0)
+            using (var buffer = new NdrBuffer(bytes))
             {
-                Name = buffer.ReadFixedPrimitiveArray<char>(NameLength / sizeof(char)).ToString();
+                this.ClientId = buffer.ReadStruct<RpcFileTime>();
+
+                this.NameLength = buffer.ReadInt16LittleEndian();
+
+                if (this.NameLength > 0)
+                {
+                    this.Name = buffer.ReadFixedPrimitiveArray<char>(this.NameLength / sizeof(char)).ToString();
+                }
             }
         }
     }

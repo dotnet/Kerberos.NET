@@ -1,6 +1,7 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Buffers.Text;
 using System.Diagnostics;
@@ -28,7 +29,7 @@ namespace System.Security.Cryptography.Asn1
         /// <summary>
         ///   An indication of whether or not the reader has remaining data available to process.
         /// </summary>
-        public bool HasData => !_data.IsEmpty;
+        public bool HasData => !this._data.IsEmpty;
 
         /// <summary>
         ///   Construct an <see cref="AsnReader"/> over <paramref name="data"/> with a given ruleset.
@@ -49,8 +50,8 @@ namespace System.Security.Cryptography.Asn1
         {
             CheckEncodingRules(ruleSet);
 
-            _data = data;
-            RuleSet = ruleSet;
+            this._data = data;
+            this.RuleSet = ruleSet;
         }
 
         /// <summary>
@@ -63,7 +64,7 @@ namespace System.Security.Cryptography.Asn1
         /// </remarks>
         public void ThrowIfNotEmpty()
         {
-            if (HasData)
+            if (this.HasData)
             {
                 throw new CryptographicException(SR.Resource("Cryptography_Der_Invalid_Encoding"));
             }
@@ -80,7 +81,7 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public Asn1Tag PeekTag()
         {
-            if (Asn1Tag.TryDecode(_data.Span, out Asn1Tag tag, out int bytesRead))
+            if (Asn1Tag.TryDecode(this._data.Span, out Asn1Tag tag, out _))
             {
                 return tag;
             }
@@ -102,15 +103,15 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="ReadEncodedValue"/>
         public ReadOnlyMemory<byte> PeekEncodedValue()
         {
-            Asn1Tag tag = ReadTagAndLength(out int? length, out int bytesRead);
+            _ = this.ReadTagAndLength(out int? length, out int bytesRead);
 
             if (length == null)
             {
-                int contentsLength = SeekEndOfContents(_data.Slice(bytesRead));
-                return Slice(_data, 0, bytesRead + contentsLength + EndOfContentsEncodedLength);
+                int contentsLength = this.SeekEndOfContents(this._data.Slice(bytesRead));
+                return Slice(this._data, 0, bytesRead + contentsLength + EndOfContentsEncodedLength);
             }
 
-            return Slice(_data, 0, bytesRead + length.Value);
+            return Slice(this._data, 0, bytesRead + length.Value);
         }
 
         /// <summary>
@@ -127,14 +128,14 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="PeekEncodedValue"/>
         public ReadOnlyMemory<byte> PeekContentBytes()
         {
-            Asn1Tag tag = ReadTagAndLength(out int? length, out int bytesRead);
+            _ = this.ReadTagAndLength(out int? length, out int bytesRead);
 
             if (length == null)
             {
-                return Slice(_data, bytesRead, SeekEndOfContents(_data.Slice(bytesRead)));
+                return Slice(this._data, bytesRead, this.SeekEndOfContents(this._data.Slice(bytesRead)));
             }
 
-            return Slice(_data, bytesRead, length.Value);
+            return Slice(this._data, bytesRead, length.Value);
         }
 
         /// <summary>
@@ -146,8 +147,8 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="PeekEncodedValue"/>
         public ReadOnlyMemory<byte> ReadEncodedValue()
         {
-            ReadOnlyMemory<byte> encodedValue = PeekEncodedValue();
-            _data = _data.Slice(encodedValue.Length);
+            ReadOnlyMemory<byte> encodedValue = this.PeekEncodedValue();
+            this._data = this._data.Slice(encodedValue.Length);
             return encodedValue;
         }
 
@@ -278,15 +279,15 @@ namespace System.Security.Cryptography.Asn1
 
         internal Asn1Tag ReadTagAndLength(out int? contentsLength, out int bytesRead)
         {
-            if (Asn1Tag.TryDecode(_data.Span, out Asn1Tag tag, out int tagBytesRead) &&
-                TryReadLength(_data.Slice(tagBytesRead).Span, RuleSet, out int? length, out int lengthBytesRead))
+            if (Asn1Tag.TryDecode(this._data.Span, out Asn1Tag tag, out int tagBytesRead) &&
+                TryReadLength(this._data.Slice(tagBytesRead).Span, this.RuleSet, out int? length, out int lengthBytesRead))
             {
                 int allBytesRead = tagBytesRead + lengthBytesRead;
 
                 if (tag.IsConstructed)
                 {
                     // T-REC-X.690-201508 sec 9.1 (CER: Length forms) says constructed is always indefinite.
-                    if (RuleSet == AsnEncodingRules.CER && length != null)
+                    if (this.RuleSet == AsnEncodingRules.CER && length != null)
                     {
                         throw new CryptographicException(SR.Resource("Cryptography_Der_Invalid_Encoding"));
                     }
@@ -323,7 +324,8 @@ namespace System.Security.Cryptography.Asn1
             ReadOnlyMemory<byte> cur = source;
             int totalLen = 0;
 
-            AsnReader tmpReader = new AsnReader(cur, RuleSet);
+            AsnReader tmpReader = new AsnReader(cur, this.RuleSet);
+
             // Our reader is bounded by int.MaxValue.
             // The most aggressive data input would be a one-byte tag followed by
             // indefinite length "ad infinitum", which would be half the input.
@@ -459,8 +461,11 @@ namespace System.Security.Cryptography.Asn1
             if (expectedTag.TagClass == TagClass.Universal && expectedTag.TagValue != (int)tagNumber)
             {
                 throw new ArgumentException(
-                    SR.Resource("Cryptography_Asn_UniversalValueIsFixed",
-                    nameof(expectedTag)));
+                    SR.Resource(
+                        "Cryptography_Asn_UniversalValueIsFixed",
+                        nameof(expectedTag)
+                    )
+                );
             }
 
             if (expectedTag.TagClass != tag.TagClass || expectedTag.TagValue != tag.TagValue)

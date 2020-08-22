@@ -1,10 +1,15 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -17,10 +22,11 @@ namespace Tests.Kerberos.NET
             "cSAQICBgkqhkiG9xIBAgIGCisGAQQBgjcCAh6iQgRATlRMTVNTUAABAAAAl7II4gkACQA3AAAADwAPACgAAAA" +
             "KAO5CAAAAD0RFU0tUT1AtUThSRTBVRVdPUktHUk9VUA==";
 
-        [TestMethod, ExpectedException(typeof(NotSupportedException))]
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
         public async Task NtlmFirstClassUnsupported()
         {
-            var validator = new KerberosValidator(new KerberosKey())
+            var validator = new KerberosValidator(new KerberosKey(key: new byte[16]))
             {
                 ValidateAfterDecrypt = DefaultActions
             };
@@ -28,10 +34,11 @@ namespace Tests.Kerberos.NET
             await validator.Validate(Convert.FromBase64String(NtlmStart));
         }
 
-        [TestMethod, ExpectedException(typeof(NotSupportedException))]
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
         public async Task SPNegoNtlmFirstClassUnsupported()
         {
-            var validator = new KerberosValidator(new KerberosKey())
+            var validator = new KerberosValidator(new KerberosKey(key: new byte[16]))
             {
                 ValidateAfterDecrypt = DefaultActions
             };
@@ -39,7 +46,8 @@ namespace Tests.Kerberos.NET
             await validator.Validate(Convert.FromBase64String(SPNegoNtlmStart));
         }
 
-        [TestMethod, ExpectedException(typeof(CryptographicException))]
+        [TestMethod]
+        [ExpectedException(typeof(CryptographicException))]
         public void ChoiceEncoding()
         {
             NegotiationToken negToken = new NegotiationToken

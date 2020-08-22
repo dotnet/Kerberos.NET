@@ -1,8 +1,14 @@
-﻿using Kerberos.NET.Dns;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using System.Globalization;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Dns;
 
 namespace Kerberos.NET.Transport
 {
@@ -17,7 +23,7 @@ namespace Kerberos.NET.Transport
         public UdpKerberosTransport(string kdc = null)
             : base(kdc)
         {
-            Enabled = false;
+            this.Enabled = false;
         }
 
         public override async Task<T> SendMessage<T>(
@@ -26,17 +32,17 @@ namespace Kerberos.NET.Transport
             CancellationToken cancellation = default
         )
         {
-            var target = LocateKdc(domain);
+            var target = this.LocateKdc(domain);
 
             using (var client = new UdpClient(target.Target, target.Port))
             {
                 cancellation.ThrowIfCancellationRequested();
 
-                var result = await client.SendAsync(encoded.ToArray(), encoded.Length);
+                var result = await client.SendAsync(encoded.ToArray(), encoded.Length).ConfigureAwait(true);
 
                 cancellation.ThrowIfCancellationRequested();
 
-                var response = await client.ReceiveAsync();
+                var response = await client.ReceiveAsync().ConfigureAwait(true);
 
                 return Decode<T>(response.Buffer);
             }
@@ -44,9 +50,9 @@ namespace Kerberos.NET.Transport
 
         protected DnsRecord LocateKdc(string domain)
         {
-            var lookup = string.Format(UdpServiceTemplate, domain);
+            var lookup = string.Format(CultureInfo.InvariantCulture, UdpServiceTemplate, domain);
 
-            return QueryDomain(lookup);
+            return this.QueryDomain(lookup);
         }
     }
 }

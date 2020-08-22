@@ -1,9 +1,11 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Globalization;
 using System.Numerics;
 using System.Text;
 
@@ -21,7 +23,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public string ReadObjectIdentifierAsString() =>
-            ReadObjectIdentifierAsString(Asn1Tag.ObjectIdentifier);
+            this.ReadObjectIdentifierAsString(Asn1Tag.ObjectIdentifier);
 
         /// <summary>
         ///   Reads the next value as an OBJECT IDENTIFIER with a specified tag, returning
@@ -41,9 +43,9 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public string ReadObjectIdentifierAsString(Asn1Tag expectedTag)
         {
-            string oidValue = ReadObjectIdentifierAsString(expectedTag, out int bytesRead);
+            string oidValue = this.ReadObjectIdentifierAsString(expectedTag, out int bytesRead);
 
-            _data = _data.Slice(bytesRead);
+            this._data = this._data.Slice(bytesRead);
 
             return oidValue;
         }
@@ -58,7 +60,7 @@ namespace System.Security.Cryptography.Asn1
         ///   the contents are not valid under the current encoding rules
         /// </exception>
         public Oid ReadObjectIdentifier() =>
-            ReadObjectIdentifier(Asn1Tag.ObjectIdentifier);
+            this.ReadObjectIdentifier(Asn1Tag.ObjectIdentifier);
 
         /// <summary>
         ///   Reads the next value as an OBJECT IDENTIFIER with a specified tag, returning
@@ -78,13 +80,14 @@ namespace System.Security.Cryptography.Asn1
         /// </exception>
         public Oid ReadObjectIdentifier(Asn1Tag expectedTag)
         {
-            string oidValue = ReadObjectIdentifierAsString(expectedTag, out int bytesRead);
+            string oidValue = this.ReadObjectIdentifierAsString(expectedTag, out int bytesRead);
+
             // Specifying null for friendly name makes the lookup deferred until first read
             // of the Oid.FriendlyName property.
             Oid oid = new Oid(oidValue, null);
 
             // Don't slice until the return object has been created.
-            _data = _data.Slice(bytesRead);
+            this._data = this._data.Slice(bytesRead);
 
             return oid;
         }
@@ -152,6 +155,7 @@ namespace System.Security.Cryptography.Asn1
             // Add one while we're shrunk to account for the needed padding byte or the len%8 discarded bytes.
             int bytesRequired = ((bytesRead / ContentByteCount) + 1) * SemanticByteCount;
             byte[] tmpBytes = CryptoPool.Rent(bytesRequired);
+
             // Ensure all the bytes are zeroed out for BigInteger's parsing.
             Array.Clear(tmpBytes, 0, tmpBytes.Length);
 
@@ -206,7 +210,7 @@ namespace System.Security.Cryptography.Asn1
 
         private string ReadObjectIdentifierAsString(Asn1Tag expectedTag, out int totalBytesRead)
         {
-            Asn1Tag tag = ReadTagAndLength(out int? length, out int headerLength);
+            Asn1Tag tag = this.ReadTagAndLength(out int? length, out int headerLength);
             CheckExpectedTag(tag, expectedTag, UniversalTagNumber.ObjectIdentifier);
 
             // T-REC-X.690-201508 sec 8.19.1
@@ -216,7 +220,7 @@ namespace System.Security.Cryptography.Asn1
                 throw new CryptographicException(SR.Resource("Cryptography_Der_Invalid_Encoding"));
             }
 
-            ReadOnlyMemory<byte> contentsMemory = Slice(_data, headerLength, length.Value);
+            ReadOnlyMemory<byte> contentsMemory = Slice(this._data, headerLength, length.Value);
             ReadOnlySpan<byte> contents = contentsMemory.Span;
 
             // Each byte can contribute a 3 digit value and a '.' (e.g. "126."), but usually
@@ -280,7 +284,7 @@ namespace System.Security.Cryptography.Asn1
 
                 builder.Append(firstArc);
                 builder.Append('.');
-                builder.Append(firstIdentifier.ToString());
+                builder.Append(firstIdentifier.ToString(CultureInfo.InvariantCulture));
             }
 
             contents = contents.Slice(bytesRead);
@@ -288,6 +292,7 @@ namespace System.Security.Cryptography.Asn1
             while (!contents.IsEmpty)
             {
                 ReadSubIdentifier(contents, out bytesRead, out smallValue, out largeValue);
+
                 // Exactly one should be non-null.
                 Debug.Assert((smallValue == null) != (largeValue == null));
 
@@ -299,7 +304,7 @@ namespace System.Security.Cryptography.Asn1
                 }
                 else
                 {
-                    builder.Append(largeValue.Value.ToString());
+                    builder.Append(largeValue.Value.ToString(CultureInfo.InvariantCulture));
                 }
 
                 contents = contents.Slice(bytesRead);

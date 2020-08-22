@@ -1,28 +1,49 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
+using System.Globalization;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
     public class RpcFileTime : INdrStruct
     {
-        public uint LowDateTime;
+        public uint LowDateTime { get; set; }
 
-        public uint HighDateTime;
+        public uint HighDateTime { get; set; }
 
         public void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteUInt32LittleEndian(LowDateTime);
-            buffer.WriteUInt32LittleEndian(HighDateTime);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            buffer.WriteUInt32LittleEndian(this.LowDateTime);
+            buffer.WriteUInt32LittleEndian(this.HighDateTime);
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            LowDateTime = buffer.ReadUInt32LittleEndian();
-            HighDateTime = buffer.ReadUInt32LittleEndian();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            this.LowDateTime = buffer.ReadUInt32LittleEndian();
+            this.HighDateTime = buffer.ReadUInt32LittleEndian();
         }
 
         public static implicit operator DateTimeOffset(RpcFileTime filetime)
         {
+            if (filetime == null)
+            {
+                return DateTimeOffset.MinValue;
+            }
+
             return Convert(filetime.LowDateTime, filetime.HighDateTime);
         }
 
@@ -33,7 +54,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public override string ToString()
         {
-            return ((DateTimeOffset)this).ToString();
+            return ((DateTimeOffset)this).ToString(CultureInfo.CurrentCulture);
         }
 
         private const long TicksPerDay = 864000000000L;
@@ -65,6 +86,28 @@ namespace Kerberos.NET.Entities.Pac
 
                 low = unchecked((uint)offset << 32);
                 high = (uint)unchecked(offset >> 32);
+            }
+
+            return new RpcFileTime
+            {
+                LowDateTime = low,
+                HighDateTime = high
+            };
+        }
+
+        public static RpcFileTime ConvertWithoutMicroseconds(DateTimeOffset filetime)
+        {
+            uint low = 0xff_ff_ff_ff;
+            uint high = 0x7f_ff_ff_ff;
+
+            if (filetime != DateTimeOffset.MinValue)
+            {
+                var utcFiletime = filetime.UtcDateTime.ToFileTime();
+
+                var time = utcFiletime - (utcFiletime % TimeSpan.TicksPerSecond);
+
+                low = (uint)(time & 0xFFFFFFFF);
+                high = (uint)(time >> 32);
             }
 
             return new RpcFileTime

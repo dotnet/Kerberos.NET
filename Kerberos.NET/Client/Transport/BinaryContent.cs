@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -18,14 +23,14 @@ namespace Kerberos.NET.Transport
 
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
-            var bytes = TryGetArrayFast(data);
+            var bytes = TryGetArrayFast(this.data);
 
             return stream.WriteAsync(bytes, 0, bytes.Length);
         }
 
         protected override bool TryComputeLength(out long length)
         {
-            length = data.Length;
+            length = this.data.Length;
 
             return true;
         }

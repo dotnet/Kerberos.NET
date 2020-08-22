@@ -1,4 +1,9 @@
-﻿namespace Kerberos.NET.Entities
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+namespace Kerberos.NET.Entities
 {
     public enum KerberosErrorCode
     {
@@ -366,5 +371,20 @@
         /// The KDC does not support public key encryption for PKINIT
         /// </summary>
         KDC_ERR_PUBLIC_KEY_ENCRYPTION_NOT_SUPPORTED = 81,
+
+        /// <summary>
+        /// A well-known Kerberos principal name is used but not supported.
+        /// </summary>
+        KRB_AP_ERR_PRINCIPAL_UNKNOWN = 82,
+
+        /// <summary>
+        /// A well-known Kerberos realm name is used but not supported.
+        /// </summary>
+        KRB_AP_ERR_REALM_UNKNOWN = 83,
+
+        /// <summary>
+        /// A reserved Kerberos principal name is used but not supported.
+        /// </summary>
+        KRB_AP_ERR_PRINCIPAL_RESERVED = 84,
     }
 }

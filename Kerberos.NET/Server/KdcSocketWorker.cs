@@ -1,7 +1,9 @@
-﻿using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.IO.Pipelines;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,21 +17,21 @@ namespace Kerberos.NET.Server
 
         private readonly ILogger<KdcSocketWorker> logger;
 
-        public KdcSocketWorker(Socket socket, ListenerOptions options)
+        public KdcSocketWorker(Socket socket, KdcServerOptions options)
             : base(socket, options)
         {
-            kdc = new KdcServer(options);
-            logger = options.Log.CreateLoggerSafe<KdcSocketWorker>();
+            this.kdc = new KdcServer(options);
+            this.logger = options.Log.CreateLoggerSafe<KdcSocketWorker>();
         }
 
         protected override async Task<ReadOnlyMemory<byte>> ProcessRequest(ReadOnlyMemory<byte> request, CancellationToken cancellation)
         {
-            logger.LogTrace("Message incoming. Request length = {RequestLength}", request.Length);
-            logger.TraceBinary(request);
+            this.logger.LogTrace("Message incoming. Request length = {RequestLength}", request.Length);
+            this.logger.TraceBinary(request);
 
-            var response = await kdc.ProcessMessage(request);
+            var response = await this.kdc.ProcessMessage(request).ConfigureAwait(true);
 
-            logger.LogTrace("Message processed. Response length = {ResponseLength}", response.Length);
+            this.logger.LogTrace("Message processed. Response length = {ResponseLength}", response.Length);
 
             return response;
         }

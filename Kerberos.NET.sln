@@ -23,11 +23,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		build.yaml = build.yaml
+		CodeAnalysisRules.ruleset = CodeAnalysisRules.ruleset
 		Directory.build.props = Directory.build.props
+		StyleCop.json = StyleCop.json
 		version.json = version.json
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RpcEncodingDebugHost", "RpcEncodingDebugHost\RpcEncodingDebugHost.csproj", "{53B7AEB1-6D10-4BC0-B761-559C4F11F463}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RpcEncodingDebugHost", "RpcEncodingDebugHost\RpcEncodingDebugHost.csproj", "{53B7AEB1-6D10-4BC0-B761-559C4F11F463}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

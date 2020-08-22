@@ -1,6 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 
@@ -8,7 +9,6 @@ namespace System.Security.Cryptography.Asn1
 {
     internal partial class AsnReader
     {
-
         /// <summary>
         ///   Reads the next value as a UTCTime with tag UNIVERSAL 23.
         /// </summary>
@@ -27,8 +27,7 @@ namespace System.Security.Cryptography.Asn1
         /// <seealso cref="System.Globalization.Calendar.TwoDigitYearMax"/>
         /// <seealso cref="ReadUtcTime(System.Security.Cryptography.Asn1.Asn1Tag,int)"/>
         public DateTimeOffset ReadUtcTime(int twoDigitYearMax = 2049) =>
-            ReadUtcTime(Asn1Tag.UtcTime, twoDigitYearMax);
-
+            this.ReadUtcTime(Asn1Tag.UtcTime, twoDigitYearMax);
 
         /// <summary>
         ///   Reads the next value as a UTCTime with a specified tag.
@@ -70,17 +69,18 @@ namespace System.Security.Cryptography.Asn1
             // T-REC-X.690-201510 sec 11.8
 
             byte[] rented = null;
+
             // The longest format is 17 bytes.
             Span<byte> tmpSpace = stackalloc byte[17];
 
-            ReadOnlySpan<byte> contents = GetOctetStringContents(
+            ReadOnlySpan<byte> contents = this.GetOctetStringContents(
                 expectedTag,
                 UniversalTagNumber.UtcTime,
                 out int bytesRead,
                 ref rented,
                 tmpSpace);
 
-            DateTimeOffset value = ParseUtcTime(contents, twoDigitYearMax);
+            DateTimeOffset value = this.ParseUtcTime(contents, twoDigitYearMax);
 
             if (rented != null)
             {
@@ -88,7 +88,7 @@ namespace System.Security.Cryptography.Asn1
                 CryptoPool.Return(rented, contents.Length);
             }
 
-            _data = _data.Slice(bytesRead);
+            this._data = this._data.Slice(bytesRead);
             return value;
         }
 
@@ -114,7 +114,7 @@ namespace System.Security.Cryptography.Asn1
             const int HasSecondsOffset = 17;
 
             // T-REC-X.690-201510 sec 11.8
-            if (RuleSet == AsnEncodingRules.DER || RuleSet == AsnEncodingRules.CER)
+            if (this.RuleSet == AsnEncodingRules.DER || this.RuleSet == AsnEncodingRules.CER)
             {
                 if (contentOctets.Length != HasSecondsZulu)
                 {
@@ -210,7 +210,7 @@ namespace System.Security.Cryptography.Asn1
                 century--;
             }
 
-            int scaledYear = century * 100 + year;
+            int scaledYear = (century * 100) + year;
 
             try
             {

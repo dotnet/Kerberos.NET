@@ -1,4 +1,10 @@
-﻿using System.Collections.Generic;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace Kerberos.NET.Entities.Pac
@@ -10,6 +16,11 @@ namespace Kerberos.NET.Entities.Pac
 
         public static string GetFriendlyName(string sid, string domainSid, string machineSid = null)
         {
+            if (string.IsNullOrWhiteSpace(sid))
+            {
+                throw new ArgumentNullException(nameof(sid));
+            }
+
             var template = sid.Replace(domainSid, DomainPrefix);
 
             if (!string.IsNullOrWhiteSpace(machineSid))

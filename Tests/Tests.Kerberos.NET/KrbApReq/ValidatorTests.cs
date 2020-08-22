@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,7 +23,7 @@ namespace Tests.Kerberos.NET
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = DefaultActions };
+            var validator = new KerberosValidator(new KerberosKey(key, etype: EncryptionType.RC4_HMAC_NT)) { ValidateAfterDecrypt = DefaultActions };
 
             var result = await validator.Validate(data);
 
@@ -31,7 +36,7 @@ namespace Tests.Kerberos.NET
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.None };
+            var validator = new KerberosValidator(new KerberosKey(key, etype: EncryptionType.RC4_HMAC_NT)) { ValidateAfterDecrypt = ValidationActions.None };
 
             var result = await validator.Validate(data);
 
@@ -44,7 +49,7 @@ namespace Tests.Kerberos.NET
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key)
+            var validator = new KerberosValidator(new KerberosKey(key, etype: EncryptionType.RC4_HMAC_NT))
             {
                 Now = () => DateTimeOffset.Parse("1/9/2009 5:20:00 PM +00:00", CultureInfo.InvariantCulture)
             };
@@ -54,24 +59,26 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(result);
         }
 
-        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        [TestMethod]
+        [ExpectedException(typeof(KerberosValidationException))]
         public async Task KerberosValidatorExpiredTicket()
         {
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key);
+            var validator = new KerberosValidator(new KerberosKey(key, etype: EncryptionType.RC4_HMAC_NT));
 
             await validator.Validate(data);
         }
 
-        [TestMethod, ExpectedException(typeof(ReplayException))]
+        [TestMethod]
+        [ExpectedException(typeof(ReplayException))]
         public async Task ValidatorReplayCache()
         {
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("rc4-key-data");
 
-            var validator = new KerberosValidator(key)
+            var validator = new KerberosValidator(new KerberosKey(key, etype: EncryptionType.RC4_HMAC_NT))
             {
                 Now = () => DateTimeOffset.Parse("1/9/2009 5:20:00 PM +00:00", CultureInfo.InvariantCulture)
             };
@@ -84,51 +91,51 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task ValidatorMemoryCacheExpiration()
         {
-            var logger = new FakeExceptionLoggerFactory();
-
-            var replay = new TicketReplayValidator(logger);
-
-            var entry = new TicketCacheEntry
+            using (var logger = new FakeExceptionLoggerFactory())
+            using (var replay = new TicketReplayValidator(logger))
             {
-                Key = "blargh",
-                Expires = DateTimeOffset.UtcNow.AddHours(1)
-            };
+                var entry = new TicketCacheEntry
+                {
+                    Key = "blargh",
+                    Expires = DateTimeOffset.UtcNow.AddHours(1)
+                };
 
-            var added = await replay.Add(entry);
+                var added = await replay.Add(entry);
 
-            Assert.IsTrue(added);
+                Assert.IsTrue(added);
 
-            Assert.IsTrue(logger.Logs.Count() > 0);
+                Assert.IsTrue(logger.Logs.Any());
 
-            added = await replay.Add(entry);
+                added = await replay.Add(entry);
 
-            Assert.IsFalse(added);
+                Assert.IsFalse(added);
+            }
         }
 
         [TestMethod]
         public async Task ValidatorMemoryCacheExpirationExpired()
         {
-            var logger = new FakeExceptionLoggerFactory();
-
-            var replay = new TicketReplayValidator(logger);
-
-            var entry = new TicketCacheEntry
+            using (var logger = new FakeExceptionLoggerFactory())
+            using (var replay = new TicketReplayValidator(logger))
             {
-                Key = "blargh",
-                Expires = DateTimeOffset.UtcNow.AddMilliseconds(100)
-            };
+                var entry = new TicketCacheEntry
+                {
+                    Key = "blargh",
+                    Expires = DateTimeOffset.UtcNow.AddMilliseconds(100)
+                };
 
-            var added = await replay.Add(entry);
+                var added = await replay.Add(entry);
 
-            Assert.IsTrue(added);
+                Assert.IsTrue(added);
 
-            await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(TimeSpan.FromSeconds(1));
 
-            added = await replay.Add(entry);
+                added = await replay.Add(entry);
 
-            Assert.IsTrue(added);
+                Assert.IsTrue(added);
 
-            Assert.IsTrue(logger.Logs.Count() > 1);
+                Assert.IsTrue(logger.Logs.Count() > 1);
+            }
         }
 
         [TestMethod]
@@ -150,7 +157,8 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(123, decoded.CuSec);
         }
 
-        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        [TestMethod]
+        [ExpectedException(typeof(KerberosValidationException))]
         public void DecryptedKrbApReq_Validate_NotBefore()
         {
             // generate ticket for the future
@@ -215,7 +223,7 @@ namespace Tests.Kerberos.NET
                 d => KrbEncTgsRepPart.DecodeApplication(d)
             );
 
-            var apReq = KrbApReq.CreateApReq(tgsRep, encKdcRepPart.Key.AsKey(), 0, out KrbAuthenticator authenticator);
+            var apReq = KrbApReq.CreateApReq(tgsRep, encKdcRepPart.Key.AsKey(), default, out KrbAuthenticator authenticator);
 
             var decrypted = new DecryptedKrbApReq(apReq);
 
@@ -223,7 +231,8 @@ namespace Tests.Kerberos.NET
             return decrypted;
         }
 
-        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        [TestMethod]
+        [ExpectedException(typeof(KerberosValidationException))]
         public void DecryptedKrbApReq_Validate_NotAfter()
         {
             // generate ticket for the past
@@ -238,7 +247,8 @@ namespace Tests.Kerberos.NET
             decrypted.Validate(ValidationActions.All);
         }
 
-        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        [TestMethod]
+        [ExpectedException(typeof(KerberosValidationException))]
         public void DecryptedKrbApReq_Validate_RenewUntil()
         {
             // generate ticket for the future
@@ -253,7 +263,8 @@ namespace Tests.Kerberos.NET
             decrypted.Validate(ValidationActions.All);
         }
 
-        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        [TestMethod]
+        [ExpectedException(typeof(KerberosValidationException))]
         public void DecryptedKrbApReq_Validate_Skew()
         {
             // generate ticket where now is ten minutes ago
@@ -270,7 +281,8 @@ namespace Tests.Kerberos.NET
             decrypted.Validate(ValidationActions.All);
         }
 
-        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        [TestMethod]
+        [ExpectedException(typeof(KerberosValidationException))]
         public void DecryptedKrbApRep_Validate_Skew()
         {
             // generate ticket where now is ten minutes ago
@@ -286,7 +298,8 @@ namespace Tests.Kerberos.NET
             decrypted.Validate(ValidationActions.All);
         }
 
-        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        [TestMethod]
+        [ExpectedException(typeof(KerberosValidationException))]
         public void DecryptedKrbApRep_Validate_CTime()
         {
             var now = DateTimeOffset.UtcNow;
@@ -298,7 +311,8 @@ namespace Tests.Kerberos.NET
             decrypted.Validate(ValidationActions.All);
         }
 
-        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        [TestMethod]
+        [ExpectedException(typeof(KerberosValidationException))]
         public void DecryptedKrbApRep_Validate_CuSec()
         {
             var now = DateTimeOffset.UtcNow;
@@ -312,7 +326,8 @@ namespace Tests.Kerberos.NET
             decrypted.Validate(ValidationActions.All);
         }
 
-        [TestMethod, ExpectedException(typeof(KerberosValidationException))]
+        [TestMethod]
+        [ExpectedException(typeof(KerberosValidationException))]
         public void DecryptedKrbApRep_Validate_Sequence()
         {
             var now = DateTimeOffset.UtcNow;

@@ -1,8 +1,13 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Credentials
 {
@@ -20,13 +25,18 @@ namespace Kerberos.NET.Credentials
 
         public virtual void TransformKdcReq(KrbKdcReq req)
         {
+            if (req == null)
+            {
+                throw new ArgumentNullException(nameof(req));
+            }
+
             var ts = KrbPaEncTsEnc.Now();
 
             var tsEncoded = ts.Encode();
 
             var padata = req.PaData.ToList();
 
-            var key = CreateKey();
+            var key = this.CreateKey();
 
             KrbEncryptedData encData = KrbEncryptedData.Encrypt(
                 tsEncoded,
@@ -45,6 +55,11 @@ namespace Kerberos.NET.Credentials
 
         public void IncludePreAuthenticationHints(IEnumerable<KrbPaData> preauth)
         {
+            if (preauth == null)
+            {
+                throw new ArgumentNullException(nameof(preauth));
+            }
+
             foreach (var padata in preauth)
             {
                 if (padata.Type != PaDataType.PA_ETYPE_INFO2)
@@ -54,12 +69,17 @@ namespace Kerberos.NET.Credentials
 
                 var etypeInfo = padata.DecodeETypeInfo2();
 
-                Salts = etypeInfo.Select(e => new KeyValuePair<EncryptionType, string>(e.EType, e.Salt));
+                this.Salts = etypeInfo.Select(e => new KeyValuePair<EncryptionType, string>(e.EType, e.Salt));
             }
         }
 
         protected static void TrySplitUserNameDomain(string original, out string username, ref string domain)
         {
+            if (string.IsNullOrEmpty(original))
+            {
+                throw new ArgumentNullException(nameof(original));
+            }
+
             username = original;
 
             var index = original.IndexOf('@');
@@ -77,21 +97,26 @@ namespace Kerberos.NET.Credentials
 
         public virtual void Validate()
         {
-            if (string.IsNullOrWhiteSpace(UserName))
+            if (string.IsNullOrWhiteSpace(this.UserName))
             {
-                throw new ArgumentException("UserName cannot be null or empty", nameof(UserName));
+                throw new InvalidOperationException("UserName cannot be null or empty");
             }
 
-            if (string.IsNullOrWhiteSpace(Domain))
+            if (string.IsNullOrWhiteSpace(this.Domain))
             {
-                throw new ArgumentException("Domain cannot be null or empty", nameof(Domain));
+                throw new InvalidOperationException("Domain cannot be null or empty");
             }
         }
 
         public virtual T DecryptKdcRep<T>(KrbKdcRep kdcRep, KeyUsage keyUsage, Func<ReadOnlyMemory<byte>, T> func)
         {
+            if (kdcRep == null)
+            {
+                throw new ArgumentNullException(nameof(kdcRep));
+            }
+
             return kdcRep.EncPart.Decrypt(
-                CreateKey(),
+                this.CreateKey(),
                 keyUsage,
                 func
             );

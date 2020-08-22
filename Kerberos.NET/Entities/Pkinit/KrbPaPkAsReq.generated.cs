@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Collections.Generic;
@@ -13,10 +17,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaPkAsReq
     {
-        public ReadOnlyMemory<byte> SignedAuthPack;
-        public KrbExternalPrincipalIdentifier[] TrustedCertifiers;
-        public ReadOnlyMemory<byte>? KdcPkId;
-      
+        public ReadOnlyMemory<byte> SignedAuthPack { get; set; }
+  
+        public KrbExternalPrincipalIdentifier[] TrustedCertifiers { get; set; }
+  
+        public ReadOnlyMemory<byte>? KdcPkId { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -25,7 +32,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -40,23 +47,23 @@ namespace Kerberos.NET.Entities
             if (Asn1Extension.HasValue(TrustedCertifiers))
             {
                 writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-
                 writer.PushSequence();
+            
                 for (int i = 0; i < TrustedCertifiers.Length; i++)
                 {
                     TrustedCertifiers[i]?.Encode(writer); 
                 }
+
                 writer.PopSequence();
 
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             }
-
+  
 
             if (Asn1Extension.HasValue(KdcPkId))
             {
                 writer.WriteOctetString(new Asn1Tag(TagClass.ContextSpecific, 2), KdcPkId.Value.Span);
             }
-
             writer.PopSequence(tag);
         }
         
@@ -113,7 +120,9 @@ namespace Kerberos.NET.Entities
           where T: KrbPaPkAsReq, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -122,9 +131,12 @@ namespace Kerberos.NET.Entities
           where T: KrbPaPkAsReq, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             AsnReader collectionReader;
@@ -138,12 +150,10 @@ namespace Kerberos.NET.Entities
             {
                 decoded.SignedAuthPack = sequenceReader.ReadOctetString(new Asn1Tag(TagClass.ContextSpecific, 0));
             }
-
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));                
+            
                 // Decode SEQUENCE OF for TrustedCertifiers
                 {
                     collectionReader = explicitReader.ReadSequence();
@@ -152,13 +162,13 @@ namespace Kerberos.NET.Entities
 
                     while (collectionReader.HasData)
                     {
-                        KrbExternalPrincipalIdentifier.Decode<KrbExternalPrincipalIdentifier>(collectionReader, out tmpItem); 
+                        KrbExternalPrincipalIdentifier.Decode<KrbExternalPrincipalIdentifier>(collectionReader, out KrbExternalPrincipalIdentifier tmp);
+                        tmpItem = tmp; 
                         tmpList.Add(tmpItem);
                     }
 
                     decoded.TrustedCertifiers = tmpList.ToArray();
                 }
-
                 explicitReader.ThrowIfNotEmpty();
             }
 
@@ -174,9 +184,7 @@ namespace Kerberos.NET.Entities
                 {
                     decoded.KdcPkId = sequenceReader.ReadOctetString(new Asn1Tag(TagClass.ContextSpecific, 2));
                 }
-
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

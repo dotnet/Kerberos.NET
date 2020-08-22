@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
@@ -27,12 +32,19 @@ namespace Kerberos.NET.Client
         //                   -> cache TGT/cache service ticket
 
         private const AuthenticationOptions DefaultAuthentication =
-            AuthenticationOptions.RepPartCompatible |
-            AuthenticationOptions.IncludePacRequest |
-            AuthenticationOptions.RenewableOk |
-            AuthenticationOptions.Canonicalize |
-            AuthenticationOptions.Renewable |
-            AuthenticationOptions.Forwardable;
+                        AuthenticationOptions.RepPartCompatible |
+                        AuthenticationOptions.IncludePacRequest |
+                        AuthenticationOptions.RenewableOk |
+                        AuthenticationOptions.Canonicalize |
+                        AuthenticationOptions.Renewable |
+                        AuthenticationOptions.Forwardable;
+
+        private const GssContextEstablishmentFlag DefaultGssContextFlags =
+                       GssContextEstablishmentFlag.GSS_C_REPLAY_FLAG |
+                       GssContextEstablishmentFlag.GSS_C_SEQUENCE_FLAG |
+                       GssContextEstablishmentFlag.GSS_C_CONF_FLAG |
+                       GssContextEstablishmentFlag.GSS_C_INTEG_FLAG |
+                       GssContextEstablishmentFlag.GSS_C_EXTENDED_ERROR_FLAG;
 
         private const ApOptions DefaultApOptions = 0;
 
@@ -158,7 +170,7 @@ namespace Kerberos.NET.Client
         /// <summary>
         /// The kerberos options used during the TGS-REQ flow.
         /// </summary>
-        public KdcOptions KdcOptions { get => (KdcOptions)(AuthenticationOptions & ~AuthenticationOptions.AllAuthentication); }
+        public KdcOptions KdcOptions => (KdcOptions)(this.AuthenticationOptions & ~AuthenticationOptions.AllAuthentication);
 
         /// <summary>
         /// The realm of the currently authenticated user.
@@ -181,6 +193,11 @@ namespace Kerberos.NET.Client
         /// <returns>Returns an awaitable task</returns>
         public async Task Authenticate(KerberosCredential credential)
         {
+            if (credential == null)
+            {
+                throw new ArgumentNullException(nameof(credential));
+            }
+
             credential.Validate();
 
             int preauthAttempts = 0;
@@ -200,7 +217,7 @@ namespace Kerberos.NET.Client
                     {
                         // Authenticate to the KDC and if it succeeds break out of the retry loop
 
-                        await RequestTgt(credential);
+                        await this.RequestTgt(credential).ConfigureAwait(true);
                         break;
                     }
                     catch (KerberosProtocolException pex)
@@ -213,7 +230,7 @@ namespace Kerberos.NET.Client
                         {
                             // in this case we don't know what it was so bail
 
-                            logger.LogKerberosProtocolException(pex);
+                            this.logger.LogKerberosProtocolException(pex);
                             throw;
                         }
 
@@ -247,6 +264,21 @@ namespace Kerberos.NET.Client
             CancellationToken cancellation = default
         )
         {
+            if (rst.GssContextFlags == 0)
+            {
+                rst.GssContextFlags = DefaultGssContextFlags;
+            }
+
+            if (rst.GssContextFlags == GssContextEstablishmentFlag.GSS_C_NONE)
+            {
+                rst.GssContextFlags = 0;
+            }
+
+            if (rst.ApOptions.HasFlag(ApOptions.MutualRequired))
+            {
+                rst.GssContextFlags |= GssContextEstablishmentFlag.GSS_C_MUTUAL_FLAG;
+            }
+
             // attempt to normalize the SPN we're trying to get a ticket to
             // holding it here because the request may need intermediate tickets
             // if we have to cross realms
@@ -391,7 +423,7 @@ namespace Kerberos.NET.Client
                     ApReq = KrbApReq.CreateApReq(
                         serviceTicketCacheEntry.KdcResponse,
                         sessionKey.AsKey(),
-                        rst.ApOptions,
+                        rst,
                         out KrbAuthenticator authenticator
                     ),
                     SessionKey = authenticator.Subkey ?? sessionKey,
@@ -458,6 +490,66 @@ namespace Kerberos.NET.Client
             );
 
             return session.ApReq;
+        }
+
+        public virtual void ImportCredential(ReadOnlyMemory<byte> krbCred)
+        {
+            this.ImportCredential(KrbCred.DecodeApplication(krbCred));
+        }
+
+        public virtual void ImportCredential(KrbCred krbCred)
+        {
+            if (krbCred is null)
+            {
+                throw new ArgumentNullException(nameof(krbCred));
+            }
+
+            var credPart = krbCred.Validate();
+
+            for (var i = 0; i < krbCred.Tickets.Length; i++)
+            {
+                var ticket = krbCred.Tickets[i];
+                var ticketInfo = credPart.TicketInfo[i];
+
+                var key = new byte[ticketInfo.Key.KeyValue.Length];
+                ticketInfo.Key.KeyValue.CopyTo(key);
+
+                var usage = KeyUsage.EncTgsRepPartSessionKey;
+
+                var sessionKey = new KrbEncryptionKey { EType = ticketInfo.Key.EType, Usage = usage, KeyValue = key };
+
+                var kdcRepData = new KrbEncTgsRepPart
+                {
+                    AuthTime = ticketInfo.AuthTime ?? DateTimeOffset.UtcNow,
+                    EndTime = ticketInfo.EndTime ?? DateTimeOffset.MaxValue,
+                    Flags = ticketInfo.Flags,
+                    Key = sessionKey,
+                    Nonce = credPart.Nonce ?? 0,
+                    Realm = ticketInfo.Realm,
+                    RenewTill = ticketInfo.RenewTill,
+                    SName = ticketInfo.SName,
+                    StartTime = ticketInfo.StartTime ?? DateTimeOffset.MinValue,
+                    LastReq = Array.Empty<KrbLastReq>()
+                };
+
+                this.Cache.Add(new TicketCacheEntry
+                {
+                    Key = ticket.SName.FullyQualifiedName,
+                    Expires = ticketInfo.EndTime ?? DateTimeOffset.MaxValue,
+                    RenewUntil = ticketInfo.RenewTill,
+                    Value = new KerberosClientCacheEntry
+                    {
+                        SessionKey = sessionKey,
+                        KdcResponse = new KrbTgsRep
+                        {
+                            Ticket = ticket,
+                            CName = ticketInfo.PName,
+                            CRealm = ticketInfo.Realm,
+                            EncPart = KrbEncryptedData.Encrypt(kdcRepData.EncodeApplication(), sessionKey.AsKey(), usage)
+                        }
+                    }
+                });
+            }
         }
 
         private async Task Refresh(MemoryTicketCache.CacheEntry entry)

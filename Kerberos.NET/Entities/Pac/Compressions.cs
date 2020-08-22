@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -13,9 +18,9 @@ namespace Kerberos.NET.Entities.Pac
         COMPRESSION_FORMAT_XPRESS_HUFF = 4
     }
 
-    internal unsafe static class Compressions
+    internal static unsafe class Compressions
     {
-        const ushort COMPRESSION_ENGINE_MAXIMUM = 0x100;
+        private const ushort COMPRESSION_ENGINE_MAXIMUM = 0x100;
 
         [DllImport("ntdll.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern uint RtlGetCompressionWorkSpaceSize(
@@ -36,7 +41,7 @@ namespace Kerberos.NET.Entities.Pac
         );
 
         [DllImport("ntdll.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern uint RtlCompressBuffer(
+        private static extern uint RtlCompressBuffer(
             ushort CompressionFormat,
             byte* SourceBuffer,
             int SourceBufferLength,

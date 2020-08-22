@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,9 +16,11 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAlgorithmIdentifier
     {
-        public Oid Algorithm;
-        public ReadOnlyMemory<byte>? Parameters;
-      
+        public Oid Algorithm { get; set; }
+  
+        public ReadOnlyMemory<byte>? Parameters { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -23,7 +29,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -39,7 +45,6 @@ namespace Kerberos.NET.Entities
             {
                 writer.WriteEncodedValue(Parameters.Value.Span);
             }
-
             writer.PopSequence(tag);
         }
         
@@ -96,7 +101,9 @@ namespace Kerberos.NET.Entities
           where T: KrbAlgorithmIdentifier, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -105,9 +112,12 @@ namespace Kerberos.NET.Entities
           where T: KrbAlgorithmIdentifier, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             
             decoded.Algorithm = sequenceReader.ReadObjectIdentifier();
@@ -116,7 +126,6 @@ namespace Kerberos.NET.Entities
             {
                 decoded.Parameters = sequenceReader.ReadEncodedValue();
             }
-
 
             sequenceReader.ThrowIfNotEmpty();
         }

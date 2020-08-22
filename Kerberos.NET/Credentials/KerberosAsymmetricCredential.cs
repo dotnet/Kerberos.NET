@@ -1,10 +1,15 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Credentials
 {
@@ -24,7 +29,7 @@ namespace Kerberos.NET.Credentials
         /// Creates a new instance of an asymmetric credential.
         /// </summary>
         /// <param name="cert">The certificate used to authenticate the client.</param>
-        /// <param name="username">Optionally an NT_PRINCIPAL name can be supplied as a 
+        /// <param name="username">Optionally an NT_PRINCIPAL name can be supplied as a
         /// hint otherwise the username will be pulled from the certificate.</param>
         public KerberosAsymmetricCredential(
             X509Certificate2 cert,
@@ -38,7 +43,7 @@ namespace Kerberos.NET.Credentials
 
             if (!cert.HasPrivateKey)
             {
-                throw new ArgumentException("Certificate must have a private key", nameof(cert.PrivateKey));
+                throw new InvalidOperationException("Certificate must have a private key");
             }
 
             if (string.IsNullOrWhiteSpace(username))
@@ -50,13 +55,13 @@ namespace Kerberos.NET.Credentials
 
             TrySplitUserNameDomain(username, out username, ref domain);
 
-            Certificate = cert;
+            this.Certificate = cert;
 
-            UserName = username;
+            this.UserName = username;
 
             if (!string.IsNullOrWhiteSpace(domain))
             {
-                Domain = domain.ToUpperInvariant();
+                this.Domain = domain.ToUpperInvariant();
             }
         }
 
@@ -68,7 +73,7 @@ namespace Kerberos.NET.Credentials
         /// <summary>
         /// Indicates whether the credential has enough information to skip the initial KDC prompt for credentials step.
         /// </summary>
-        public override bool SupportsOptimisticPreAuthentication => Certificate != null;
+        public override bool SupportsOptimisticPreAuthentication => this.Certificate != null;
 
         /// <summary>
         /// Indicates how the client certificate should be packaged into the request to the KDC.
@@ -98,36 +103,36 @@ namespace Kerberos.NET.Credentials
         {
             // We should try and pick smart defaults based on what we know if it's set to none
 
-            if (KeyAgreement == KeyAgreementAlgorithm.None)
+            if (this.KeyAgreement == KeyAgreementAlgorithm.None)
             {
-                if (SupportsEllipticCurveDiffieHellman)
+                if (this.SupportsEllipticCurveDiffieHellman)
                 {
-                    KeyAgreement = KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256;
+                    this.KeyAgreement = KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256;
                 }
-                else if (SupportsDiffieHellman)
+                else if (this.SupportsDiffieHellman)
                 {
-                    KeyAgreement = KeyAgreementAlgorithm.DiffieHellmanModp14;
+                    this.KeyAgreement = KeyAgreementAlgorithm.DiffieHellmanModp14;
                 }
             }
 
             // if neither EC nor DH are enabled then KeyAgreement still equals None
             // None will fall through to null which is validated in TransformKdcReq
 
-            switch (KeyAgreement)
+            switch (this.KeyAgreement)
             {
-                case KeyAgreementAlgorithm.DiffieHellmanModp2 when SupportsDiffieHellman:
+                case KeyAgreementAlgorithm.DiffieHellmanModp2 when this.SupportsDiffieHellman:
                     return CryptoPal.Platform.DiffieHellmanModp2();
 
-                case KeyAgreementAlgorithm.DiffieHellmanModp14 when SupportsDiffieHellman:
+                case KeyAgreementAlgorithm.DiffieHellmanModp14 when this.SupportsDiffieHellman:
                     return CryptoPal.Platform.DiffieHellmanModp14();
 
-                case KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256 when SupportsEllipticCurveDiffieHellman:
+                case KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256 when this.SupportsEllipticCurveDiffieHellman:
                     return CryptoPal.Platform.DiffieHellmanP256();
 
-                case KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP384 when SupportsEllipticCurveDiffieHellman:
+                case KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP384 when this.SupportsEllipticCurveDiffieHellman:
                     return CryptoPal.Platform.DiffieHellmanP384();
 
-                case KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP521 when SupportsEllipticCurveDiffieHellman:
+                case KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP521 when this.SupportsEllipticCurveDiffieHellman:
                     return CryptoPal.Platform.DiffieHellmanP521();
             }
 
@@ -148,13 +153,18 @@ namespace Kerberos.NET.Credentials
         /// <param name="req">The <see cref="KrbKdcReq"/> that will be modified.</param>
         public override void TransformKdcReq(KrbKdcReq req)
         {
-            agreement = StartKeyAgreement();
+            if (req == null)
+            {
+                throw new ArgumentNullException(nameof(req));
+            }
+
+            this.agreement = this.StartKeyAgreement();
 
             // We don't support the straight RSA mode because
             // it doesn't rely on ephemeral key agreement
             // which isn't great security-wise
 
-            if (agreement == null)
+            if (this.agreement == null)
             {
                 throw OnlyKeyAgreementSupportedException();
             }
@@ -163,20 +173,23 @@ namespace Kerberos.NET.Credentials
 
             KrbAuthPack authPack;
 
-            if (SupportsEllipticCurveDiffieHellman)
+            if (this.SupportsEllipticCurveDiffieHellman)
             {
-                authPack = CreateEllipticCurveDiffieHellmanAuthPack(req.Body);
+                authPack = this.CreateEllipticCurveDiffieHellmanAuthPack(req.Body);
             }
-            else if (SupportsDiffieHellman)
+            else if (this.SupportsDiffieHellman)
             {
-                authPack = CreateDiffieHellmanAuthPack(req.Body);
+                authPack = this.CreateDiffieHellmanAuthPack(req.Body);
             }
             else
             {
                 throw OnlyKeyAgreementSupportedException();
             }
 
-            KerberosConstants.Now(out authPack.PKAuthenticator.CTime, out authPack.PKAuthenticator.CuSec);
+            KerberosConstants.Now(out DateTimeOffset ctime, out int usec);
+
+            authPack.PKAuthenticator.CTime = ctime;
+            authPack.PKAuthenticator.CuSec = usec;
 
             SignedCms signed = new SignedCms(
                 new ContentInfo(
@@ -185,7 +198,7 @@ namespace Kerberos.NET.Credentials
                 )
             );
 
-            var signer = new CmsSigner(Certificate) { IncludeOption = IncludeOption };
+            var signer = new CmsSigner(this.Certificate) { IncludeOption = this.IncludeOption };
 
             signed.ComputeSignature(signer, silent: true);
 
@@ -215,14 +228,21 @@ namespace Kerberos.NET.Credentials
 
                 var paChecksum = sha1.ComputeHash(encoded.Span);
 
-                var parametersAreCached = CacheKeyAgreementParameters(agreement);
+                var parametersAreCached = this.CacheKeyAgreementParameters(this.agreement);
 
                 if (parametersAreCached)
                 {
-                    clientDHNonce = GenerateNonce(body.EType.First(), agreement.PublicKey.KeyLength);
+                    var etype = KerberosConstants.GetPreferredEType(body.EType);
+
+                    if (etype is null)
+                    {
+                        throw new InvalidOperationException("Cannot find a common EType");
+                    }
+
+                    this.clientDHNonce = GenerateNonce(etype.Value, this.agreement.PublicKey.KeyLength);
                 }
 
-                var domainParams = KrbDiffieHellmanDomainParameters.FromKeyAgreement(agreement);
+                var domainParams = KrbDiffieHellmanDomainParameters.FromKeyAgreement(this.agreement);
 
                 var authPack = new KrbAuthPack
                 {
@@ -238,9 +258,9 @@ namespace Kerberos.NET.Credentials
                             Algorithm = DiffieHellman,
                             Parameters = domainParams.EncodeSpecial()
                         },
-                        SubjectPublicKey = agreement.PublicKey.EncodePublicKey()
+                        SubjectPublicKey = this.agreement.PublicKey.EncodePublicKey()
                     },
-                    ClientDHNonce = clientDHNonce
+                    ClientDHNonce = this.clientDHNonce
                 };
 
                 return authPack;
@@ -275,7 +295,7 @@ namespace Kerberos.NET.Credentials
 
             if (pkRep.DHInfo != null)
             {
-                sharedSecret = DeriveDHKeyAgreement(kdcRep, pkRep);
+                this.sharedSecret = this.DeriveDHKeyAgreement(kdcRep, pkRep, out this.sharedSecretEType);
             }
             else
             {
@@ -285,15 +305,15 @@ namespace Kerberos.NET.Credentials
             return base.DecryptKdcRep(kdcRep, keyUsage, func);
         }
 
-        private ReadOnlyMemory<byte> DeriveDHKeyAgreement(KrbKdcRep kdcRep, KrbPaPkAsRep pkRep)
+        private ReadOnlyMemory<byte> DeriveDHKeyAgreement(KrbKdcRep kdcRep, KrbPaPkAsRep pkRep, out EncryptionType etype)
         {
-            var dhKeyInfo = ValidateDHReply(pkRep);
+            var dhKeyInfo = this.ValidateDHReply(pkRep);
 
-            var kdcPublicKey = DiffieHellmanKey.ParsePublicKey(dhKeyInfo.SubjectPublicKey, agreement.PublicKey.KeyLength);
+            var kdcPublicKey = DiffieHellmanKey.ParsePublicKey(dhKeyInfo.SubjectPublicKey, this.agreement.PublicKey.KeyLength);
 
-            agreement.ImportPartnerKey(kdcPublicKey);
+            this.agreement.ImportPartnerKey(kdcPublicKey);
 
-            var derivedKey = agreement.GenerateAgreement();
+            var derivedKey = this.agreement.GenerateAgreement();
 
             ReadOnlySpan<byte> serverDHNonce = default;
 
@@ -304,10 +324,14 @@ namespace Kerberos.NET.Credentials
 
             var transform = CryptoService.CreateTransform(kdcRep.EncPart.EType);
 
-            return PKInitString2Key.String2Key(derivedKey.Span, transform.KeySize, clientDHNonce.Span, serverDHNonce);
+            etype = kdcRep.EncPart.EType;
+
+            return PKInitString2Key.String2Key(derivedKey.Span, transform.KeySize, this.clientDHNonce.Span, serverDHNonce);
         }
 
+        private EncryptionType sharedSecretEType;
         private ReadOnlyMemory<byte> sharedSecret;
+        private bool disposedValue;
 
         private KrbKdcDHKeyInfo ValidateDHReply(KrbPaPkAsRep pkRep)
         {
@@ -315,19 +339,24 @@ namespace Kerberos.NET.Credentials
 
             signed.Decode(pkRep.DHInfo.DHSignedData.ToArray());
 
-            VerifyKdcSignature(signed);
+            this.VerifyKdcSignature(signed);
 
             return KrbKdcDHKeyInfo.Decode(signed.ContentInfo.Content);
         }
 
         /// <summary>
-        /// Verifies the PKINIT response from the KDC is signed and validates as expected. 
+        /// Verifies the PKINIT response from the KDC is signed and validates as expected.
         /// Throws <see cref="CryptographicException"/> if the KDC certificate cannot be validated.
         /// </summary>
-        /// <param name="signed">The signed CMS message within the response</param>
-        protected virtual void VerifyKdcSignature(SignedCms signed)
+        /// <param name="signedMessage">The signed CMS message within the response</param>
+        protected virtual void VerifyKdcSignature(SignedCms signedMessage)
         {
-            signed.CheckSignature(verifySignatureOnly: false);
+            if (signedMessage == null)
+            {
+                throw new ArgumentNullException(nameof(signedMessage));
+            }
+
+            signedMessage.CheckSignature(verifySignatureOnly: false);
         }
 
         private static string TryExtractPrincipalName(X509Certificate2 cert)
@@ -342,14 +371,14 @@ namespace Kerberos.NET.Credentials
         {
             base.Validate();
 
-            if (Certificate.PrivateKey == null)
+            if (this.Certificate.PrivateKey == null)
             {
-                throw new ArgumentException("A Private Key must be set", nameof(Certificate.PrivateKey));
+                throw new InvalidOperationException("A Private Key must be set");
             }
 
-            if (Certificate.PublicKey == null)
+            if (this.Certificate.PublicKey == null)
             {
-                throw new ArgumentException("A Public Key must be set", nameof(Certificate.PublicKey));
+                throw new InvalidOperationException("A Public Key must be set");
             }
         }
 
@@ -359,15 +388,26 @@ namespace Kerberos.NET.Credentials
         /// <returns>Returns the Key Agreement shared secret</returns>
         public override KerberosKey CreateKey()
         {
-            return new KerberosKey(key: sharedSecret.ToArray());
+            return new KerberosKey(key: this.sharedSecret.ToArray(), etype: this.sharedSecretEType);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this.disposedValue)
+            {
+                if (disposing)
+                {
+                    this.agreement?.Dispose();
+                }
+
+                this.disposedValue = true;
+            }
         }
 
         public void Dispose()
         {
-            if (agreement != null)
-            {
-                agreement.Dispose();
-            }
+            this.Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

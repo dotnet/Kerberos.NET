@@ -1,4 +1,11 @@
-﻿namespace Kerberos.NET.Entities
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System.Linq;
+
+namespace Kerberos.NET.Entities
 {
     internal static class EntityHashCode
     {
@@ -13,7 +20,7 @@
             {
                 int hash = (int)2166136261;
 
-                foreach (var field in fields)
+                foreach (var field in fields.Where(f => f != null))
                 {
                     hash = (hash * 16777619) ^ field.GetHashCode();
                 }

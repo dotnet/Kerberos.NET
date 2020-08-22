@@ -1,7 +1,12 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 
 namespace Tests.Kerberos.NET
 {
@@ -16,7 +21,8 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(asreq);
         }
 
-        [TestMethod, ExpectedException(typeof(ArgumentNullException))]
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
         public void DecryptedApReq_NullToken()
         {
             Assert.IsNull(new DecryptedKrbApReq(null));
@@ -30,13 +36,15 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(asrep);
         }
 
-        [TestMethod, ExpectedException(typeof(ArgumentNullException))]
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
         public void DecryptedApRep_NullToken()
         {
             Assert.IsNull(new DecryptedKrbApRep(null));
         }
 
-        [TestMethod, ExpectedException(typeof(NotSupportedException))]
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
         public void DecryptedApRep_Decrypt_Keytab()
         {
             new DecryptedKrbApRep(new KrbApRep { }).Decrypt(new KeyTable());

@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers.Binary;
 using System.Security;
 using System.Text;
@@ -17,20 +22,32 @@ namespace Kerberos.NET.Crypto
 
         public override int KeySize => HashSize;
 
+        public override ChecksumType ChecksumType => ChecksumType.KERB_CHECKSUM_HMAC_MD5;
+
         public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
         {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
             return MD4(key.PasswordBytes);
         }
 
         public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)
         {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
             var k1 = key.GetKey(this);
 
             var salt = GetSalt((int)usage);
 
             var k2 = HMACMD5(k1, salt);
 
-            var confounder = GenerateRandomBytes(ConfounderSize);
+            var confounder = this.GenerateRandomBytes(ConfounderSize);
 
             var plaintextBuffer = new byte[data.Length + confounder.Length];
             var plaintext = new Memory<byte>(plaintextBuffer);
@@ -53,6 +70,11 @@ namespace Kerberos.NET.Crypto
 
         public override ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ciphertext, KerberosKey key, KeyUsage usage)
         {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
             var k1 = key.GetKey(this);
 
             var salt = GetSalt((int)usage);
@@ -85,7 +107,7 @@ namespace Kerberos.NET.Crypto
         {
             var ksign = HMACMD5(key, ChecksumSignatureKey);
 
-            Span<byte> span = new byte[4 + data.Length];
+            var span = new Span<byte>(new byte[4 + data.Length]);
 
             data.CopyTo(span.Slice(4));
 
@@ -129,11 +151,11 @@ namespace Kerberos.NET.Crypto
             return hmac.ComputeHash(key, data);
         }
 
-        private static ReadOnlyMemory<byte> MD4(byte[] key)
+        private static ReadOnlyMemory<byte> MD4(ReadOnlyMemory<byte> key)
         {
             using (var md4 = CryptoPal.Platform.Md4())
             {
-                return md4.ComputeHash(key);
+                return md4.ComputeHash(key.Span);
             }
         }
     }

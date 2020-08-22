@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers.Binary;
 using System.Security;
 using Kerberos.NET.Crypto;
@@ -11,7 +16,7 @@ namespace Kerberos.NET.Entities
 
         public void GenerateChecksum(KerberosKey key)
         {
-            Checksum = GenerateChecksum(key, UserName, UserRealm, AuthPackage);
+            this.Checksum = GenerateChecksum(key, this.UserName, this.UserRealm, this.AuthPackage);
         }
 
         private static KrbChecksum GenerateChecksum(KerberosKey key, KrbPrincipalName userName, string userRealm, string authPackage)
@@ -47,7 +52,7 @@ namespace Kerberos.NET.Entities
 
         public void ValidateChecksum(KerberosKey key)
         {
-            var expected = GenerateChecksum(key, UserName, UserRealm, AuthPackage);
+            var expected = GenerateChecksum(key, this.UserName, this.UserRealm, this.AuthPackage);
 
             if (!KerberosCryptoTransformer.AreEqualSlow(expected.Checksum.Span, this.Checksum.Checksum.Span))
             {

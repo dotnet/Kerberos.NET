@@ -1,16 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <Product>Kerberos.NET library</Product>
     <Description>A cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
     <PackageTags>security kerberos</PackageTags>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <DefineConstants>WEAKCRYPTO</DefineConstants>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>..\CodeAnalysisRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
 
   <ItemGroup>
     <AsnXml Include="Entities\Kkdcp\KdcProxyMessage.xml" />
@@ -47,7 +54,6 @@
     <AsnXml Include="Entities\Krb\KrbPaForUser.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacOptions.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacRequest.xml" />
-    <AsnXml Include="Entities\Krb\KrbPaSvrReferralData.xml" />
     <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsReq.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
@@ -67,7 +73,6 @@
     <AsnXml Include="Entities\SpNego\NegotiationToken.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenInit.xml" />
     <AsnXml Include="Entities\SpNego\NegTokenResp.xml" />
-
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,12 @@
-﻿using Kerberos.NET.Dns;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System.ComponentModel;
 using System.Linq;
+using Kerberos.NET.Dns;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -21,7 +26,7 @@ namespace Tests.Kerberos.NET
 
             var records = DnsQuery.QuerySrv(ExternalSrvRecord);
 
-            Assert.IsTrue(records.Count() > 0);
+            Assert.IsTrue(records.Any());
 
             var srv = records.Single(r => r.Type == DnsRecordType.SRV);
 
@@ -39,7 +44,8 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(0, records.Count());
         }
 
-        [TestMethod, ExpectedException(typeof(Win32Exception))]
+        [TestMethod]
+        [ExpectedException(typeof(Win32Exception))]
         public void BadDataLookup()
         {
             DnsQuery.QuerySrv(BadSrvRecord);

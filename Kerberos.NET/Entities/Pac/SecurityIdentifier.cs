@@ -1,5 +1,10 @@
-﻿using System;
-using System.Linq;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using System.Globalization;
 using System.Text;
 
 namespace Kerberos.NET.Entities.Pac
@@ -14,45 +19,49 @@ namespace Kerberos.NET.Entities.Pac
         public SecurityIdentifier(IdentifierAuthority authority, uint[] subs, SidAttributes attributes)
         {
             this.authority = authority;
-            subAuthorities = subs;
+            this.subAuthorities = subs;
 
-            Attributes = attributes;
+            this.Attributes = attributes;
         }
 
         public SecurityIdentifier(SecurityIdentifier sub, uint id)
-            : this(sub.authority, Concat(sub.subAuthorities, id), sub.Attributes)
+            : this(sub?.authority ?? 0, Concat(sub?.subAuthorities, id), sub.Attributes)
         {
-
         }
 
         public static SecurityIdentifier FromRpcSid(RpcSid sid, uint id = 0, SidAttributes attributes = 0)
         {
+            if (sid == null)
+            {
+                throw new ArgumentNullException(nameof(sid));
+            }
+
             return new SecurityIdentifier(sid.IdentifierAuthority.Authority, Concat(sid.SubAuthority, id), attributes);
         }
 
-        public uint Id => subAuthorities.Length > 0 ? subAuthorities[subAuthorities.Length - 1] : 0;
+        public uint Id => this.subAuthorities.Length > 0 ? this.subAuthorities[this.subAuthorities.Length - 1] : 0;
 
         public SidAttributes Attributes { get; }
 
-        public string Value { get { return ToString(); } }
+        public string Value => this.ToString();
 
         public override string ToString()
         {
-            if (sddl == null)
+            if (this.sddl == null)
             {
                 var result = new StringBuilder();
 
-                result.AppendFormat("S-1-{0}", (long)authority);
+                result.AppendFormat(CultureInfo.InvariantCulture, "S-1-{0}", (long)this.authority);
 
-                for (int i = 0; i < subAuthorities.Length; i++)
+                for (int i = 0; i < this.subAuthorities.Length; i++)
                 {
-                    result.AppendFormat("-{0}", subAuthorities[i]);
+                    result.AppendFormat(CultureInfo.InvariantCulture, "-{0}", this.subAuthorities[i]);
                 }
 
-                sddl = result.ToString().ToUpperInvariant();
+                this.sddl = result.ToString().ToUpperInvariant();
             }
 
-            return sddl;
+            return this.sddl;
         }
 
         public RpcSid ToRpcSid()
@@ -63,11 +72,11 @@ namespace Kerberos.NET.Entities.Pac
 
                 IdentifierAuthority = new RpcSidIdentifierAuthority
                 {
-                    IdentifierAuthority = new byte[] { 0, 0, 0, 0, 0, (byte)authority }
+                    IdentifierAuthority = new byte[] { 0, 0, 0, 0, 0, (byte)this.authority }
                 },
 
-                SubAuthority = subAuthorities,
-                SubAuthorityCount = (byte)subAuthorities.Count()
+                SubAuthority = this.subAuthorities,
+                SubAuthorityCount = (byte)this.subAuthorities.Length
             };
 
             return sid;
@@ -82,7 +91,7 @@ namespace Kerberos.NET.Entities.Pac
 
             if (obj is SecurityIdentifier sid)
             {
-                return string.Equals(ToString(), sid.ToString(), StringComparison.InvariantCultureIgnoreCase);
+                return string.Equals(this.ToString(), sid.ToString(), StringComparison.InvariantCultureIgnoreCase);
             }
 
             return base.Equals(obj);
@@ -90,7 +99,7 @@ namespace Kerberos.NET.Entities.Pac
 
         public override int GetHashCode()
         {
-            return ToString().GetHashCode();
+            return this.ToString().GetHashCode();
         }
 
         private static uint[] Concat(ReadOnlyMemory<uint> subAuthority, uint id)

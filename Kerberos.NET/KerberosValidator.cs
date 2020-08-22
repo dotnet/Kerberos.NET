@@ -1,26 +1,34 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Microsoft.Extensions.Logging;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET
 {
     public class KerberosValidator : IKerberosValidator
     {
-        private readonly ITicketReplayValidator TokenCache;
+        private readonly ITicketReplayValidator tokenCache;
 
         private readonly KeyTable keytab;
 
+        [Obsolete("The use of this constructor is obsolete and should be replaced with KerberosValidator(KerberosKey, ...) or KerberosValidator(KeyTable, ...)")]
         public KerberosValidator(byte[] key, ILoggerFactory logger = null, ITicketReplayValidator ticketCache = null)
             : this(new KerberosKey(key), logger, ticketCache)
-        { }
+        {
+        }
 
         public KerberosValidator(KerberosKey key, ILoggerFactory logger = null, ITicketReplayValidator ticketCache = null)
             : this(new KeyTable(key), logger, ticketCache)
-        { }
+        {
+        }
 
         public KerberosValidator(KeyTable keytab, ILoggerFactory logger = null, ITicketReplayValidator ticketCache = null)
         {
@@ -28,9 +36,9 @@ namespace Kerberos.NET
 
             this.logger = logger.CreateLoggerSafe<KerberosValidator>();
 
-            TokenCache = ticketCache ?? new TicketReplayValidator(logger);
+            this.tokenCache = ticketCache ?? new TicketReplayValidator(logger);
 
-            ValidateAfterDecrypt = ValidationActions.All;
+            this.ValidateAfterDecrypt = ValidationActions.All;
         }
 
         private readonly ILogger<KerberosValidator> logger;
@@ -41,30 +49,30 @@ namespace Kerberos.NET
 
         public Func<DateTimeOffset> Now
         {
-            get { return nowFunc ?? (nowFunc = () => DateTimeOffset.UtcNow); }
-            set { nowFunc = value; }
+            get { return this.nowFunc ?? (this.nowFunc = () => DateTimeOffset.UtcNow); }
+            set { this.nowFunc = value; }
         }
 
         public async Task<DecryptedKrbApReq> Validate(byte[] requestBytes)
         {
             var kerberosRequest = MessageParser.ParseContext(requestBytes);
 
-            logger.LogTrace("Validating Kerberos request {Request}", kerberosRequest);
+            this.logger.LogTrace("Validating Kerberos request {Request}", kerberosRequest);
 
-            var decryptedToken = kerberosRequest.DecryptApReq(keytab);
+            var decryptedToken = kerberosRequest.DecryptApReq(this.keytab);
 
             if (decryptedToken == null)
             {
                 return null;
             }
 
-            logger.LogTrace("Kerberos request decrypted {Request}", decryptedToken);
+            this.logger.LogTrace("Kerberos request decrypted {Request}", decryptedToken);
 
-            decryptedToken.Now = Now;
+            decryptedToken.Now = this.Now;
 
-            if (ValidateAfterDecrypt > 0)
+            if (this.ValidateAfterDecrypt > 0)
             {
-                await Validate(decryptedToken);
+                await this.Validate(decryptedToken).ConfigureAwait(true);
             }
 
             return decryptedToken;
@@ -72,13 +80,23 @@ namespace Kerberos.NET
 
         public void Validate(PrivilegedAttributeCertificate pac, KrbPrincipalName sname)
         {
-            pac.ServerSignature.Validate(keytab, sname);
+            if (pac == null)
+            {
+                throw new ArgumentNullException(nameof(pac));
+            }
+
+            pac.ServerSignature.Validate(this.keytab, sname);
         }
 
         protected virtual async Task Validate(DecryptedKrbApReq decryptedToken)
         {
-            var sequence = ObscureSequence(decryptedToken.Authenticator.SequenceNumber ?? 0);
-            var container = ObscureContainer(decryptedToken.Ticket.CRealm);
+            if (decryptedToken == null)
+            {
+                throw new ArgumentNullException(nameof(decryptedToken));
+            }
+
+            var sequence = this.ObscureSequence(decryptedToken.Authenticator.SequenceNumber ?? 0);
+            var container = this.ObscureContainer(decryptedToken.Ticket.CRealm);
 
             var entry = new TicketCacheEntry
             {
@@ -89,18 +107,18 @@ namespace Kerberos.NET
 
             var replayDetected = true;
 
-            var detectReplay = ValidateAfterDecrypt.HasFlag(ValidationActions.Replay);
+            var detectReplay = this.ValidateAfterDecrypt.HasFlag(ValidationActions.Replay);
 
             if (!detectReplay)
             {
-                decryptedToken.Validate(ValidateAfterDecrypt);
+                decryptedToken.Validate(this.ValidateAfterDecrypt);
                 replayDetected = false;
             }
-            else if (!await TokenCache.Contains(entry))
+            else if (!await this.tokenCache.Contains(entry).ConfigureAwait(true))
             {
-                decryptedToken.Validate(ValidateAfterDecrypt);
+                decryptedToken.Validate(this.ValidateAfterDecrypt);
 
-                if (await TokenCache.Add(entry))
+                if (await this.tokenCache.Add(entry).ConfigureAwait(true))
                 {
                     replayDetected = false;
                 }

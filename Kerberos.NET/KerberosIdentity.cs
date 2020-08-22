@@ -1,7 +1,12 @@
-﻿using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET
 {
@@ -15,11 +20,12 @@ namespace Kerberos.NET
             IEnumerable<Restriction> restrictions,
             ValidationActions validationMode,
             string apRep
-        ) : base(userClaims, authenticationType, nameType, roleType)
+        )
+            : base(userClaims, authenticationType, nameType, roleType)
         {
-            Restrictions = restrictions.GroupBy(r => r.Type).ToDictionary(r => r.Key, r => r.ToList().AsEnumerable());
-            ValidationMode = validationMode;
-            ApRep = apRep;
+            this.Restrictions = restrictions.GroupBy(r => r.Type).ToDictionary(r => r.Key, r => r.ToList().AsEnumerable());
+            this.ValidationMode = validationMode;
+            this.ApRep = apRep;
         }
 
         public IDictionary<AuthorizationDataType, IEnumerable<Restriction>> Restrictions { get; }

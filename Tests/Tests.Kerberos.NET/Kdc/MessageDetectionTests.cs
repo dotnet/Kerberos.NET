@@ -1,4 +1,9 @@
-﻿using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
@@ -45,14 +50,14 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(((MessageType)15).IsValidMessageType());
             Assert.IsTrue(((MessageType)16).IsValidMessageType());
             Assert.IsTrue(((MessageType)17).IsValidMessageType());
-            
+
             Assert.IsFalse(((MessageType)18).IsValidMessageType());
             Assert.IsFalse(((MessageType)19).IsValidMessageType());
-            
+
             Assert.IsTrue(((MessageType)20).IsValidMessageType());
             Assert.IsTrue(((MessageType)21).IsValidMessageType());
             Assert.IsTrue(((MessageType)22).IsValidMessageType());
-            
+
             Assert.IsFalse(((MessageType)23).IsValidMessageType());
             Assert.IsFalse(((MessageType)24).IsValidMessageType());
             Assert.IsFalse(((MessageType)25).IsValidMessageType());
@@ -60,9 +65,9 @@ namespace Tests.Kerberos.NET
             Assert.IsFalse(((MessageType)27).IsValidMessageType());
             Assert.IsFalse(((MessageType)28).IsValidMessageType());
             Assert.IsFalse(((MessageType)29).IsValidMessageType());
-            
+
             Assert.IsTrue(((MessageType)30).IsValidMessageType());
-            
+
             Assert.IsFalse(((MessageType)31).IsValidMessageType());
         }
     }

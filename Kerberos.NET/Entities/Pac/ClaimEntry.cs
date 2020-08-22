@@ -1,8 +1,14 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using Kerberos.NET.Ndr;
 
 namespace Kerberos.NET.Entities.Pac
 {
@@ -19,10 +25,15 @@ namespace Kerberos.NET.Entities.Pac
     {
         public void Marshal(NdrBuffer buffer)
         {
-            buffer.WriteDeferredConformantVaryingArray(Id.AsMemory());
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            buffer.WriteInt16LittleEndian((short)Type);
-            buffer.WriteInt32LittleEndian(Count);
+            buffer.WriteDeferredConformantVaryingArray(this.Id.AsMemory());
+
+            buffer.WriteInt16LittleEndian((short)this.Type);
+            buffer.WriteInt32LittleEndian(this.Count);
 
             buffer.WriteDeferredStructUnion(this);
         }
@@ -34,53 +45,68 @@ namespace Kerberos.NET.Entities.Pac
         [KerberosIgnore]
         public int Count { get; set; }
 
-        public IList<object> Values { get; set; }
+        public IList<object> Values { get; private set; } = new List<object>();
 
-        public IEnumerable<T> GetValues<T>()
+        public IEnumerable<T> GetValuesOfType<T>()
         {
-            return Values.Select(v => (T)Convert.ChangeType(v, typeof(T)));
+            return this.Values.Select(v => (T)Convert.ChangeType(v, typeof(T), CultureInfo.InvariantCulture));
         }
 
         public void Unmarshal(NdrBuffer buffer)
         {
-            buffer.ReadDeferredConformantVaryingArray<char>(v => Id = v.ToString());
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            Type = (ClaimType)buffer.ReadInt16LittleEndian();
-            Count = buffer.ReadInt32LittleEndian();
+            buffer.ReadDeferredConformantVaryingArray<char>(v => this.Id = v.ToString());
+
+            this.Type = (ClaimType)buffer.ReadInt16LittleEndian();
+            this.Count = buffer.ReadInt32LittleEndian();
 
             buffer.ReadDeferredStructUnion(this);
         }
 
         public void UnmarshalUnion(NdrBuffer buffer)
         {
-            Values = new List<object>();
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            this.Values = new List<object>();
 
             var count = buffer.ReadInt32LittleEndian();
 
-            switch (Type)
+            switch (this.Type)
             {
                 case ClaimType.CLAIM_TYPE_STRING:
-                    buffer.ReadDeferredArray(count, () => Values.Add(buffer.ReadConformantVaryingCharArray().ToString()));
+                    buffer.ReadDeferredArray(count, () => this.Values.Add(buffer.ReadConformantVaryingCharArray().ToString()));
                     break;
                 default:
-                    Values = buffer.ReadFixedPrimitiveArray<long>(count).ToArray().Cast<object>().ToList();
+                    this.Values = buffer.ReadFixedPrimitiveArray<long>(count).ToArray().Cast<object>().ToList();
                     break;
             }
         }
 
         public void MarshalUnion(NdrBuffer buffer)
         {
-            buffer.WriteInt32LittleEndian(Values.Count);
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
 
-            switch (Type)
+            buffer.WriteInt32LittleEndian(this.Values.Count);
+
+            switch (this.Type)
             {
                 case ClaimType.CLAIM_TYPE_STRING:
-                    var arr = GetValues<string>().Select(v => v.AsMemory());
+                    var arr = this.GetValuesOfType<string>().Select(v => v.AsMemory());
 
                     buffer.WriteDeferredArray(arr, val => buffer.WriteConformantVaryingArray(val.Span));
                     break;
                 default:
-                    buffer.WriteFixedPrimitiveArray<long>(GetValues<long>().ToArray());
+                    buffer.WriteFixedPrimitiveArray<long>(this.GetValuesOfType<long>().ToArray());
                     break;
             }
         }

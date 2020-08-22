@@ -1,6 +1,7 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Numerics;
@@ -16,7 +17,7 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public void WriteInteger(long value)
         {
-            WriteIntegerCore(Asn1Tag.Integer, value);
+            this.WriteIntegerCore(Asn1Tag.Integer, value);
         }
 
         /// <summary>
@@ -26,7 +27,7 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public void WriteInteger(ulong value)
         {
-            WriteNonNegativeIntegerCore(Asn1Tag.Integer, value);
+            this.WriteNonNegativeIntegerCore(Asn1Tag.Integer, value);
         }
 
         /// <summary>
@@ -36,7 +37,7 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public void WriteInteger(BigInteger value)
         {
-            WriteIntegerCore(Asn1Tag.Integer, value);
+            this.WriteIntegerCore(Asn1Tag.Integer, value);
         }
 
         /// <summary>
@@ -50,7 +51,7 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public void WriteInteger(ReadOnlySpan<byte> value)
         {
-            WriteIntegerCore(Asn1Tag.Integer, value);
+            this.WriteIntegerCore(Asn1Tag.Integer, value);
         }
 
         /// <summary>
@@ -69,7 +70,7 @@ namespace System.Security.Cryptography.Asn1
         {
             CheckUniversalTag(tag, UniversalTagNumber.Integer);
 
-            WriteIntegerCore(tag.AsPrimitive(), value);
+            this.WriteIntegerCore(tag.AsPrimitive(), value);
         }
 
         /// <summary>
@@ -88,7 +89,7 @@ namespace System.Security.Cryptography.Asn1
         {
             CheckUniversalTag(tag, UniversalTagNumber.Integer);
 
-            WriteNonNegativeIntegerCore(tag.AsPrimitive(), value);
+            this.WriteNonNegativeIntegerCore(tag.AsPrimitive(), value);
         }
 
         /// <summary>
@@ -107,7 +108,7 @@ namespace System.Security.Cryptography.Asn1
         {
             CheckUniversalTag(tag, UniversalTagNumber.Integer);
 
-            WriteIntegerCore(tag.AsPrimitive(), value);
+            this.WriteIntegerCore(tag.AsPrimitive(), value);
         }
 
         /// <summary>
@@ -130,7 +131,7 @@ namespace System.Security.Cryptography.Asn1
         {
             CheckUniversalTag(tag, UniversalTagNumber.Integer);
 
-            WriteIntegerCore(tag.AsPrimitive(), value);
+            this.WriteIntegerCore(tag.AsPrimitive(), value);
         }
 
         /// <summary>
@@ -143,7 +144,7 @@ namespace System.Security.Cryptography.Asn1
         /// <exception cref="ObjectDisposedException">The writer has been Disposed.</exception>
         public void WriteIntegerUnsigned(ReadOnlySpan<byte> value)
         {
-            WriteIntegerUnsignedCore(Asn1Tag.Integer, value);
+            this.WriteIntegerUnsignedCore(Asn1Tag.Integer, value);
         }
 
         /// <summary>
@@ -165,7 +166,7 @@ namespace System.Security.Cryptography.Asn1
         {
             CheckUniversalTag(tag, UniversalTagNumber.Integer);
 
-            WriteIntegerUnsignedCore(tag.AsPrimitive(), value);
+            this.WriteIntegerUnsignedCore(tag.AsPrimitive(), value);
         }
 
         // T-REC-X.690-201508 sec 8.3
@@ -173,53 +174,70 @@ namespace System.Security.Cryptography.Asn1
         {
             if (value >= 0)
             {
-                WriteNonNegativeIntegerCore(tag, (ulong)value);
+                this.WriteNonNegativeIntegerCore(tag, (ulong)value);
                 return;
             }
 
             int valueLength;
 
             if (value >= sbyte.MinValue)
+            {
                 valueLength = 1;
+            }
             else if (value >= short.MinValue)
+            {
                 valueLength = 2;
+            }
             else if (value >= unchecked((long)0xFFFFFFFF_FF800000))
+            {
                 valueLength = 3;
+            }
             else if (value >= int.MinValue)
+            {
                 valueLength = 4;
+            }
             else if (value >= unchecked((long)0xFFFFFF80_00000000))
+            {
                 valueLength = 5;
+            }
             else if (value >= unchecked((long)0xFFFF8000_00000000))
+            {
                 valueLength = 6;
+            }
             else if (value >= unchecked((long)0xFF800000_00000000))
+            {
                 valueLength = 7;
+            }
             else
+            {
                 valueLength = 8;
+            }
 
             Debug.Assert(!tag.IsConstructed);
-            WriteTag(tag);
-            WriteLength(valueLength);
+            this.WriteTag(tag);
+            this.WriteLength(valueLength);
 
             long remaining = value;
-            int idx = _offset + valueLength - 1;
+            int idx = this._offset + valueLength - 1;
 
             do
             {
-                _buffer[idx] = (byte)remaining;
+                this._buffer[idx] = (byte)remaining;
                 remaining >>= 8;
                 idx--;
-            } while (idx >= _offset);
+            }
+            while (idx >= this._offset);
 
 #if DEBUG
             if (valueLength > 1)
             {
                 // T-REC-X.690-201508 sec 8.3.2
                 // Cannot start with 9 bits of 1 (or 9 bits of 0, but that's not this method).
-                Debug.Assert(_buffer[_offset] != 0xFF || _buffer[_offset + 1] < 0x80);
+                Debug.Assert(this._buffer[this._offset] != 0xFF || this._buffer[this._offset + 1] < 0x80);
             }
 #endif
 
-            _offset += valueLength;
+            this._offset += valueLength;
         }
 
         // T-REC-X.690-201508 sec 8.3
@@ -229,49 +247,68 @@ namespace System.Security.Cryptography.Asn1
 
             // 0x80 needs two bytes: 0x00 0x80
             if (value < 0x80)
+            {
                 valueLength = 1;
+            }
             else if (value < 0x8000)
+            {
                 valueLength = 2;
+            }
             else if (value < 0x800000)
+            {
                 valueLength = 3;
+            }
             else if (value < 0x80000000)
+            {
                 valueLength = 4;
+            }
             else if (value < 0x80_00000000)
+            {
                 valueLength = 5;
+            }
             else if (value < 0x8000_00000000)
+            {
                 valueLength = 6;
+            }
             else if (value < 0x800000_00000000)
+            {
                 valueLength = 7;
+            }
             else if (value < 0x80000000_00000000)
+            {
                 valueLength = 8;
+            }
             else
+            {
                 valueLength = 9;
+            }
 
             // Clear the constructed bit, if it was set.
             Debug.Assert(!tag.IsConstructed);
-            WriteTag(tag);
-            WriteLength(valueLength);
+            this.WriteTag(tag);
+            this.WriteLength(valueLength);
 
             ulong remaining = value;
-            int idx = _offset + valueLength - 1;
+            int idx = this._offset + valueLength - 1;
 
             do
             {
-                _buffer[idx] = (byte)remaining;
+                this._buffer[idx] = (byte)remaining;
                 remaining >>= 8;
                 idx--;
-            } while (idx >= _offset);
+            }
+            while (idx >= this._offset);
 
 #if DEBUG
             if (valueLength > 1)
             {
                 // T-REC-X.690-201508 sec 8.3.2
                 // Cannot start with 9 bits of 0 (or 9 bits of 1, but that's not this method).
-                Debug.Assert(_buffer[_offset] != 0 || _buffer[_offset + 1] > 0x7F);
+                Debug.Assert(this._buffer[this._offset] != 0 || this._buffer[this._offset + 1] > 0x7F);
             }
 #endif
 
-            _offset += valueLength;
+            this._offset += valueLength;
         }
 
         private void WriteIntegerUnsignedCore(Asn1Tag tag, ReadOnlySpan<byte> value)
@@ -288,26 +325,26 @@ namespace System.Security.Cryptography.Asn1
             }
 
             Debug.Assert(!tag.IsConstructed);
-            WriteTag(tag);
+            this.WriteTag(tag);
 
             if (value[0] >= 0x80)
             {
-                WriteLength(checked(value.Length + 1));
-                _buffer[_offset] = 0;
-                _offset++;
+                this.WriteLength(checked(value.Length + 1));
+                this._buffer[this._offset] = 0;
+                this._offset++;
             }
             else
             {
-                WriteLength(value.Length);
+                this.WriteLength(value.Length);
             }
 
-            value.CopyTo(_buffer.AsSpan(_offset));
-            _offset += value.Length;
+            value.CopyTo(this._buffer.AsSpan(this._offset));
+            this._offset += value.Length;
         }
 
         private void WriteIntegerCore(Asn1Tag tag, ReadOnlySpan<byte> value)
         {
-            CheckDisposed();
+            this.CheckDisposed();
 
             if (value.IsEmpty)
             {
@@ -329,11 +366,12 @@ namespace System.Security.Cryptography.Asn1
             }
 
             Debug.Assert(!tag.IsConstructed);
-            WriteTag(tag);
-            WriteLength(value.Length);
+            this.WriteTag(tag);
+            this.WriteLength(value.Length);
+
             // WriteLength ensures the content-space
-            value.CopyTo(_buffer.AsSpan(_offset));
-            _offset += value.Length;
+            value.CopyTo(this._buffer.AsSpan(this._offset));
+            this._offset += value.Length;
         }
 
         // T-REC-X.690-201508 sec 8.3
@@ -344,10 +382,10 @@ namespace System.Security.Cryptography.Asn1
             Array.Reverse(encoded);
 
             Debug.Assert(!tag.IsConstructed);
-            WriteTag(tag);
-            WriteLength(encoded.Length);
-            Buffer.BlockCopy(encoded, 0, _buffer, _offset, encoded.Length);
-            _offset += encoded.Length;
+            this.WriteTag(tag);
+            this.WriteLength(encoded.Length);
+            Buffer.BlockCopy(encoded, 0, this._buffer, this._offset, encoded.Length);
+            this._offset += encoded.Length;
         }
     }
 }

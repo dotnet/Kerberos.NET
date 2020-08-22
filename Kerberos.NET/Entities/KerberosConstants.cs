@@ -1,9 +1,14 @@
-﻿using Kerberos.NET.Crypto;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
@@ -11,13 +16,14 @@ namespace Kerberos.NET.Entities
     {
         private static readonly int Pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-        private static long RequestCounter = 0;
+        private static long requestCounter = 0;
 
-        private static long NonceCounter = DateTimeOffset.UtcNow.Ticks / 1_000_000_000L;
+        private static long nonceCounter = DateTimeOffset.UtcNow.Ticks / 1_000_000_000L;
 
         public static readonly DateTimeOffset EndOfTime = new DateTimeOffset(642720196850000000, TimeSpan.Zero);
 
-        public static IEnumerable<EncryptionType> ETypes = new[] {
+        public static IEnumerable<EncryptionType> ETypes = new[]
+        {
             EncryptionType.AES256_CTS_HMAC_SHA1_96,
             EncryptionType.AES128_CTS_HMAC_SHA1_96,
             EncryptionType.RC4_HMAC_NT,
@@ -25,9 +31,24 @@ namespace Kerberos.NET.Entities
             EncryptionType.RC4_HMAC_OLD_EXP
         };
 
+        internal static EncryptionType? GetPreferredEType(IEnumerable<EncryptionType> etypes)
+        {
+            foreach (var etype in etypes)
+            {
+                // client sent the etypes they support in preferred order
+
+                if (CryptoService.SupportsEType(etype))
+                {
+                    return etype;
+                }
+            }
+
+            return null;
+        }
+
         internal static Guid GetRequestActivityId()
         {
-            var counter = Interlocked.Increment(ref RequestCounter);
+            var counter = Interlocked.Increment(ref requestCounter);
 
             var b = BitConverter.GetBytes(counter);
 
@@ -36,12 +57,12 @@ namespace Kerberos.NET.Entities
 
         internal static int GetNonce()
         {
-            // .NET Runtime guarantees operations on variables up to the natural 
+            // .NET Runtime guarantees operations on variables up to the natural
             // processor pointer size are intrinsically atomic, but there's no
             // guarantee we'll be running in a 64 bit process on a 64 bit processor
             // so maybe let's not give the system an opportunity to corrupt this
 
-            var counter = Interlocked.Increment(ref NonceCounter);
+            var counter = Interlocked.Increment(ref nonceCounter);
 
             return (int)counter;
         }
