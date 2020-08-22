@@ -1,26 +1,14 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Numerics;
 using System.Security.Cryptography;
 
 namespace Kerberos.NET.Crypto
 {
-    public class ManagedDiffieHellmanOakley14 : ManagedDiffieHellman
-    {
-        public ManagedDiffieHellmanOakley14()
-            : base(Oakley.Group14.PrimeLittleEndian, Oakley.Group14.GeneratorLittleEndian, Oakley.Group14.Factor)
-        {
-        }
-    }
-
-    public class ManagedDiffieHellmanOakley2 : ManagedDiffieHellman
-    {
-        public ManagedDiffieHellmanOakley2()
-            : base(Oakley.Group2.PrimeLittleEndian, Oakley.Group2.GeneratorLittleEndian, Oakley.Group2.Factor)
-        {
-        }
-
-    }
-
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //
     // DO NOT USE THIS
@@ -32,6 +20,14 @@ namespace Kerberos.NET.Crypto
     //
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /// <summary>
+    /// DO NOT USE THIS
+    ///
+    /// THIS IS NOT PRODUCTION-WORTHY CODE
+    /// IT IS UNSAFE AND UNTESTED
+    ///
+    /// DO NOT USE THIS
+    /// </summary>
     public abstract class ManagedDiffieHellman : IKeyAgreement
     {
         private readonly int keyLength;
@@ -44,6 +40,7 @@ namespace Kerberos.NET.Crypto
         private readonly BigInteger y;
 
         private BigInteger partnerKey;
+        private bool disposedValue;
 
         public ManagedDiffieHellman(ReadOnlyMemory<byte> prime, ReadOnlyMemory<byte> generator, ReadOnlyMemory<byte> factor)
         {
@@ -53,28 +50,28 @@ namespace Kerberos.NET.Crypto
             this.generator = ParseBigInteger(generator);
             this.factor = ParseBigInteger(factor);
 
-            this.x = GeneratePrime();
+            this.x = this.GeneratePrime();
 
-            y = BigInteger.ModPow(this.generator, this.x, this.prime);
+            this.y = BigInteger.ModPow(this.generator, this.x, this.prime);
 
-            PublicKey = new DiffieHellmanKey
+            this.PublicKey = new DiffieHellmanKey
             {
                 Type = AsymmetricKeyType.Public,
-                Generator = Depad(this.generator.ToByteArray(), true),
-                Modulus = Depad(this.prime.ToByteArray(), true),
-                PublicComponent = Depad(y.ToByteArray(), true),
-                Factor = Depad(this.factor.ToByteArray(), true),
+                Generator = this.Depad(this.generator.ToByteArray(), true),
+                Modulus = this.Depad(this.prime.ToByteArray(), true),
+                PublicComponent = this.Depad(this.y.ToByteArray(), true),
+                Factor = this.Depad(this.factor.ToByteArray(), true),
                 KeyLength = prime.Length
             };
 
-            PrivateKey = new DiffieHellmanKey
+            this.PrivateKey = new DiffieHellmanKey
             {
                 Type = AsymmetricKeyType.Private,
-                Generator = Depad(this.generator.ToByteArray(), true),
-                Modulus = Depad(this.prime.ToByteArray(), true),
-                PublicComponent = Depad(y.ToByteArray(), true),
-                Factor = Depad(this.factor.ToByteArray(), true),
-                PrivateComponent = Depad(x.ToByteArray(), true),
+                Generator = this.Depad(this.generator.ToByteArray(), true),
+                Modulus = this.Depad(this.prime.ToByteArray(), true),
+                PublicComponent = this.Depad(this.y.ToByteArray(), true),
+                Factor = this.Depad(this.factor.ToByteArray(), true),
+                PrivateComponent = this.Depad(this.x.ToByteArray(), true),
                 KeyLength = prime.Length
             };
         }
@@ -88,7 +85,7 @@ namespace Kerberos.NET.Crypto
             // P in RSA is a safer prime than primes used in DH so it's
             // good enough here, though it's costlier to generate.
 
-            using (var alg = new RSACryptoServiceProvider(keyLength * 2 * 8))
+            using (var alg = new RSACryptoServiceProvider(this.keyLength * 2 * 8))
             {
                 var rsa = alg.ExportParameters(true);
 
@@ -121,23 +118,26 @@ namespace Kerberos.NET.Crypto
 
         public IExchangeKey PrivateKey { get; }
 
-        public void Dispose() { }
-
         public ReadOnlyMemory<byte> GenerateAgreement()
         {
-            var z = BigInteger.ModPow(partnerKey, x, prime);
+            var z = BigInteger.ModPow(this.partnerKey, this.x, this.prime);
 
             var ag = z.ToByteArray();
 
-            var agreement = Depad(ag, true);
+            var agreement = this.Depad(ag, true);
 
-            agreement = Pad(agreement, keyLength);
+            agreement = Pad(agreement, this.keyLength);
 
             return agreement;
         }
 
         public void ImportPartnerKey(IExchangeKey publicKey)
         {
+            if (publicKey == null)
+            {
+                throw new ArgumentNullException(nameof(publicKey));
+            }
+
             this.partnerKey = ParseBigInteger(publicKey.PublicComponent, true);
         }
 
@@ -147,7 +147,7 @@ namespace Kerberos.NET.Crypto
 
             for (var i = data.Length - 1; i > 0; i--)
             {
-                if (data[i] == 0 && mem.Length > keyLength)
+                if (data[i] == 0 && mem.Length > this.keyLength)
                 {
                     mem = mem.Slice(0, i);
                 }
@@ -174,6 +174,20 @@ namespace Kerberos.NET.Crypto
             agreement.CopyTo(copy, keyLength - agreement.Length);
 
             return copy;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this.disposedValue)
+            {
+                this.disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

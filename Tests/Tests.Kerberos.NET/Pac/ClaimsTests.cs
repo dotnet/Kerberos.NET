@@ -1,13 +1,17 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
-
     [TestClass]
     public class ClaimsTests : BaseTest
     {
@@ -18,11 +22,11 @@ namespace Tests.Kerberos.NET
 
             var authenticator = new KerberosAuthenticator(validator);
 
-            var result = await authenticator.Authenticate(RC4Ticket_Claims);
+            var result = await authenticator.Authenticate(RC4TicketClaims);
 
             Assert.IsNotNull(result);
 
-            Assert.IsTrue(result.Claims.Count() > 0);
+            Assert.IsTrue(result.Claims.Any());
 
             Assert.IsTrue(result.Claims.Any(c => c.Type == "ad://ext/employeeType:88d4d68c56082042" && c.Value == "lazy"));
 
@@ -41,7 +45,7 @@ namespace Tests.Kerberos.NET
 
             var authenticator = new KerberosAuthenticator(validator);
 
-            var result = await authenticator.Authenticate(RC4Ticket_Claims);
+            var result = await authenticator.Authenticate(RC4TicketClaims);
 
             Assert.IsNotNull(result);
 
@@ -49,7 +53,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(kerbIdentity);
 
-            Assert.IsTrue(result.Claims.Count() > 0);
+            Assert.IsTrue(result.Claims.Any());
 
             Assert.IsFalse(result.Claims.Any(c => c.Type == "Validated"));
 

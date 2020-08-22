@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET;
 using Kerberos.NET.Client;
@@ -45,7 +50,7 @@ namespace Tests.Kerberos.NET
                 out KrbEncryptionKey sessionKey
             );
 
-            var handler = new KdcTgsReqMessageHandler(tgsReq.EncodeApplication(), new ListenerOptions
+            var handler = new KdcTgsReqMessageHandler(tgsReq.EncodeApplication(), new KdcServerOptions
             {
                 DefaultRealm = Realm,
                 IsDebug = true,
@@ -87,7 +92,7 @@ namespace Tests.Kerberos.NET
                 AuthenticationOptions.AllAuthentication
             );
 
-            var handler = new KdcAsReqMessageHandler(asReq.EncodeApplication(), new ListenerOptions
+            var handler = new KdcAsReqMessageHandler(asReq.EncodeApplication(), new KdcServerOptions
             {
                 DefaultRealm = Realm,
                 IsDebug = true,
@@ -114,52 +119,52 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void AsReqPreAuth_PkinitCertificateAccessible()
         {
-            var credCert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p");
-
-            var cred = new TrustedAsymmetricCredential(credCert, "user@domain.com");
-
-            var asReq = KrbAsReq.CreateAsReq(cred, AuthenticationOptions.AllAuthentication);
-
-            var handler = new KdcAsReqMessageHandler(
-                asReq.EncodeApplication(),
-                new ListenerOptions
-                {
-                    DefaultRealm = "corp.identityintervention.com",
-                    RealmLocator = realm => new FakeRealmService(realm)
-                });
-
-            handler.PreAuthHandlers[PaDataType.PA_PK_AS_REQ] = service => new PaDataPkAsReqHandler(service)
+            using (var credCert = new X509Certificate2(ReadDataFile("testuser.pfx"), "p"))
+            using (var cred = new TrustedAsymmetricCredential(credCert, "user@domain.com"))
             {
-                IncludeOption = X509IncludeOption.EndCertOnly
-            };
+                var asReq = KrbAsReq.CreateAsReq(cred, AuthenticationOptions.AllAuthentication);
 
-            var context = new PreAuthenticationContext();
+                var handler = new KdcAsReqMessageHandler(
+                    asReq.EncodeApplication(),
+                    new KdcServerOptions
+                    {
+                        DefaultRealm = "corp.identityintervention.com",
+                        RealmLocator = realm => new FakeRealmService(realm)
+                    });
 
-            handler.DecodeMessage(context);
-            handler.ExecutePreValidate(context);
-            handler.QueryPreValidate(context);
-            handler.ValidateTicketRequest(context);
-            handler.QueryPreExecute(context);
-            handler.ExecuteCore(context);
+                handler.PreAuthHandlers[PaDataType.PA_PK_AS_REQ] = service => new PaDataPkAsReqHandler(service)
+                {
+                    IncludeOption = X509IncludeOption.EndCertOnly
+                };
 
-            Assert.AreEqual(PaDataType.PA_PK_AS_REQ, context.ClientAuthority);
+                var context = new PreAuthenticationContext();
 
-            Assert.AreEqual(1, context.PreAuthenticationState.Count);
+                handler.DecodeMessage(context);
+                handler.ExecutePreValidate(context);
+                handler.QueryPreValidate(context);
+                handler.ValidateTicketRequest(context);
+                handler.QueryPreExecute(context);
+                handler.ExecuteCore(context);
 
-            Assert.IsTrue(context.PreAuthenticationState.TryGetValue(PaDataType.PA_PK_AS_REQ, out PaDataState paState));
+                Assert.AreEqual(PaDataType.PA_PK_AS_REQ, context.ClientAuthority);
 
-            var state = paState as PkInitState;
+                Assert.AreEqual(1, context.PreAuthenticationState.Count);
 
-            Assert.IsNotNull(state);
+                Assert.IsTrue(context.PreAuthenticationState.TryGetValue(PaDataType.PA_PK_AS_REQ, out PaDataState paState));
 
-            Assert.IsNotNull(state.ClientCertificate);
-            Assert.AreEqual(1, state.ClientCertificate.Count);
+                var state = paState as PkInitState;
 
-            var clientCert = state.ClientCertificate[0];
+                Assert.IsNotNull(state);
 
-            Assert.IsFalse(clientCert.HasPrivateKey);
+                Assert.IsNotNull(state.ClientCertificate);
+                Assert.AreEqual(1, state.ClientCertificate.Count);
 
-            Assert.AreEqual(credCert.Thumbprint, clientCert.Thumbprint);
+                var clientCert = state.ClientCertificate[0];
+
+                Assert.IsFalse(clientCert.HasPrivateKey);
+
+                Assert.AreEqual(credCert.Thumbprint, clientCert.Thumbprint);
+            }
         }
     }
 }

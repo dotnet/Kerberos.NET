@@ -1,11 +1,16 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -67,9 +72,11 @@ namespace Tests.Kerberos.NET
                 new KerberosValidator(new KeyTable(ReadDataFile("sample.keytab")))
                 {
                     ValidateAfterDecrypt = DefaultActions
-                });
+                })
+            {
+                UserNameFormat = UserNameFormat.DownLevelLogonName
+            };
 
-            authenticator.UserNameFormat = UserNameFormat.DownLevelLogonName;
             var result = await authenticator.Authenticate(RC4Header);
 
             Assert.IsNotNull(result);
@@ -134,7 +141,7 @@ namespace Tests.Kerberos.NET
             var auth = new KrbAuthenticator
             {
                 AuthorizationData = new[] { new KrbAuthorizationData { Data = new byte[16], Type = AuthorizationDataType.AdAndOr } },
-                Checksum = KrbChecksum.Create(new byte[16], new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96), KeyUsage.ApReqAuthenticator),
+                Checksum = KrbChecksum.Create(new byte[16], new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96), KeyUsage.AdKdcIssuedChecksum),
                 CName = KrbPrincipalName.FromString("blah@blah.com"),
                 CTime = DateTimeOffset.UtcNow,
                 CuSec = 1234,

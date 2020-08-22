@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -8,7 +13,8 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class KrbKdcRepTests
     {
-        [TestMethod, ExpectedException(typeof(ArgumentException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void CreateServiceTicket_NullEncPartKey()
         {
             KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
@@ -17,7 +23,8 @@ namespace Tests.Kerberos.NET
             });
         }
 
-        [TestMethod, ExpectedException(typeof(ArgumentException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void CreateServiceTicket_NullServicePrincipal()
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
@@ -29,7 +36,8 @@ namespace Tests.Kerberos.NET
             });
         }
 
-        [TestMethod, ExpectedException(typeof(ArgumentException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void CreateServiceTicket_NullServicePrincipalKey()
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
@@ -41,7 +49,8 @@ namespace Tests.Kerberos.NET
             });
         }
 
-        [TestMethod, ExpectedException(typeof(ArgumentException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void CreateServiceTicket_NullPrincipal()
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();

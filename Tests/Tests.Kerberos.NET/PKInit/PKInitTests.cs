@@ -1,9 +1,14 @@
-﻿using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Security.Cryptography.Pkcs;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -13,7 +18,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParsePaPkAsReq()
         {
-            KrbPaPkAsReq asreq = KrbPaPkAsReq.Decode(signedPkAsReq);
+            KrbPaPkAsReq asreq = KrbPaPkAsReq.Decode(this.signedPkAsReq);
 
             Assert.IsNotNull(asreq);
         }
@@ -21,7 +26,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParsePaPkAsReq_SignedAuthPack()
         {
-            KrbPaPkAsReq asreq = KrbPaPkAsReq.Decode(signedPkAsReq);
+            KrbPaPkAsReq asreq = KrbPaPkAsReq.Decode(this.signedPkAsReq);
 
             SignedCms signedCms = new SignedCms();
             signedCms.Decode(asreq.SignedAuthPack.ToArray());
@@ -31,7 +36,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParsePaPkAsReq_SignedAuthPack_ParseAuthPack()
         {
-            KrbPaPkAsReq asreq = KrbPaPkAsReq.Decode(signedPkAsReq);
+            KrbPaPkAsReq asreq = KrbPaPkAsReq.Decode(this.signedPkAsReq);
 
             SignedCms signedCms = new SignedCms();
             signedCms.Decode(asreq.SignedAuthPack.ToArray());
@@ -43,8 +48,6 @@ namespace Tests.Kerberos.NET
 
             var param = authPack.ClientPublicValue.Algorithm.Parameters.Value;
 
-            var b64 = Convert.ToBase64String(param.ToArray());
-
             var domainParams = KrbDiffieHellmanDomainParameters.DecodeSpecial(param);
 
             Assert.IsNotNull(domainParams);
@@ -52,14 +55,13 @@ namespace Tests.Kerberos.NET
             var special = domainParams.EncodeSpecial();
 
             Assert.IsTrue(special.Span.SequenceEqual(param.ToArray()));
-
-            var decodedPk = CryptEncode.CryptDecodePublicParameter(authPack.ClientPublicValue.SubjectPublicKey).Slice(16);
+            _ = CryptEncode.CryptDecodePublicParameter(authPack.ClientPublicValue.SubjectPublicKey).Slice(16);
         }
 
         [TestMethod]
         public void ParsePaPkAsRep()
         {
-            KrbPaPkAsRep asrep = KrbPaPkAsRep.Decode(signedPkAsRep);
+            KrbPaPkAsRep asrep = KrbPaPkAsRep.Decode(this.signedPkAsRep);
 
             Assert.IsNotNull(asrep);
         }
@@ -67,7 +69,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParsePaPkAsRep_SignedDHRep()
         {
-            KrbPaPkAsRep asrep = KrbPaPkAsRep.Decode(signedPkAsRep);
+            KrbPaPkAsRep asrep = KrbPaPkAsRep.Decode(this.signedPkAsRep);
 
             Assert.IsNotNull(asrep);
 
@@ -79,7 +81,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParsePaPkAsRep_SignedDHRep_KDCDHKeyInfo()
         {
-            KrbPaPkAsRep asrep = KrbPaPkAsRep.Decode(signedPkAsRep);
+            KrbPaPkAsRep asrep = KrbPaPkAsRep.Decode(this.signedPkAsRep);
 
             Assert.IsNotNull(asrep);
 

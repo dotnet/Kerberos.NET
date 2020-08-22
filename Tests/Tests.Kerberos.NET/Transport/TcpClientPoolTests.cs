@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -15,9 +20,10 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void CreateSocketPool()
         {
-            var pool = TcpKerberosTransport.CreateSocketPool();
-
-            Assert.IsNotNull(pool);
+            using (var pool = TcpKerberosTransport.CreateSocketPool())
+            {
+                Assert.IsNotNull(pool);
+            }
         }
 
         [TestMethod]
@@ -75,7 +81,7 @@ namespace Tests.Kerberos.NET
                     for (var i = 0; i < pool.MaxPoolSize + 1; i++)
                     {
                         var req = await pool.Request(
-                            new DnsRecord { Target = "127.0.0.1", Port = port }, 
+                            new DnsRecord { Target = "127.0.0.1", Port = port },
                             TimeSpan.FromMilliseconds(500)
                         );
 

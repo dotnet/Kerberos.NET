@@ -1,4 +1,9 @@
-﻿using Kerberos.NET.Entities;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
@@ -72,10 +77,10 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void PrincipalName_Empty()
         {
-            var principal = KrbPrincipalName.FromString(principal: "");
+            var principal = KrbPrincipalName.FromString(principal: string.Empty);
 
             Assert.IsNotNull(principal);
-            Assert.AreEqual("", principal.FullyQualifiedName);
+            Assert.AreEqual(string.Empty, principal.FullyQualifiedName);
         }
 
         [TestMethod]

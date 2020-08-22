@@ -1,11 +1,16 @@
-﻿using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -15,10 +20,32 @@ namespace Tests.Kerberos.NET
         private static KerberosKey CreateKey()
         {
             var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "CORP.IDENTITYINTERVENTION.COM", new[] { "testuser" });
-            var host = "";
+            var host = string.Empty;
 
             var key = new KerberosKey("P@ssw0rd!", principalName: principalName, host: host, saltType: SaltType.ActiveDirectoryUser);
             return key;
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void KrbEncryptedDataFailsMismatchedDerivedKey()
+        {
+            var key = new KerberosKey(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96);
+
+            var encryptedData = KrbEncryptedData.Encrypt(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, key, KeyUsage.Ticket);
+
+            var keyOther = new KerberosKey(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, etype: EncryptionType.AES128_CTS_HMAC_SHA1_96);
+
+            encryptedData.Decrypt(keyOther, KeyUsage.Ticket, d => d);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void KrbEncryptedDataFailsUnknownETypeKey()
+        {
+            var key = new KerberosKey(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+
+            KrbEncryptedData.Encrypt(Array.Empty<byte>(), key, KeyUsage.Ticket);
         }
 
         [TestMethod]
@@ -26,6 +53,20 @@ namespace Tests.Kerberos.NET
         {
             Assert.IsFalse(KerberosCryptoTransformer.AreEqualSlow(new byte[] { 3, 3, 3 }, new byte[] { 4, 4, 4, 4 }));
             Assert.IsFalse(KerberosCryptoTransformer.AreEqualSlow(new byte[] { 4, 4, 4, 4 }, new byte[] { 3, 3, 3 }));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void KerberosKeyValidatesPasswordParameter()
+        {
+            new KerberosKey(string.Empty);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void KerberosKeyValidatesPasswordOrKeyParameter()
+        {
+            new KerberosKey();
         }
 
         [TestMethod]
@@ -96,7 +137,8 @@ namespace Tests.Kerberos.NET
             await AssertDecode(data, key, EncryptionType.RC4_HMAC_NT);
         }
 
-        [TestMethod, ExpectedException(typeof(SecurityException))]
+        [TestMethod]
+        [ExpectedException(typeof(SecurityException))]
         public async Task RC4SPNego_IncorrectKey()
         {
             var data = ReadDataFile("rc4-spnego-data");
@@ -114,7 +156,8 @@ namespace Tests.Kerberos.NET
             await AssertDecode(data, key, EncryptionType.AES128_CTS_HMAC_SHA1_96);
         }
 
-        [TestMethod, ExpectedException(typeof(SecurityException))]
+        [TestMethod]
+        [ExpectedException(typeof(SecurityException))]
         public async Task AES128Kerberos_IncorrectKey()
         {
             var data = ReadDataFile("aes128-kerberos-data");
@@ -141,7 +184,8 @@ namespace Tests.Kerberos.NET
             await AssertDecode(data, key, EncryptionType.AES256_CTS_HMAC_SHA1_96);
         }
 
-        [TestMethod, ExpectedException(typeof(SecurityException))]
+        [TestMethod]
+        [ExpectedException(typeof(SecurityException))]
         public async Task AES256Kerberos_IncorrectKey()
         {
             var data = ReadDataFile("aes256-kerberos-data");
@@ -162,7 +206,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Aes128ADServiceSalt()
         {
-            var expectedKey = new byte[] {
+            var expectedKey = new byte[]
+            {
                 0x8d, 0x5b, 0xaf, 0xed, 0x84, 0xe0, 0xdd, 0x15,
                 0xdf, 0xde, 0x34, 0xe8, 0xc0, 0x39, 0x81, 0x39
             };
@@ -173,7 +218,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Aes128ADUserSalt()
         {
-            var expectedKey = new byte[] {
+            var expectedKey = new byte[]
+            {
                 0x0f, 0xbc, 0xd2, 0xcc, 0x43, 0x65, 0x29, 0x13,
                 0x1a, 0x78, 0xfa, 0x02, 0xd8, 0x3a, 0x6e, 0xb8
             };
@@ -184,7 +230,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Aes128Rfc4120Salt()
         {
-            var expectedKey = new byte[] {
+            var expectedKey = new byte[]
+            {
                 0x88, 0xc8, 0xa5, 0xfc, 0xe3, 0x0a, 0x96, 0x97,
                 0x46, 0xfe, 0xb5, 0xcb, 0xe6, 0x17, 0xbf, 0xe0
             };
@@ -195,7 +242,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Aes256ADServiceSalt()
         {
-            var expectedKey = new byte[] {
+            var expectedKey = new byte[]
+            {
                 0x37, 0x17, 0x8c, 0x78, 0xc2, 0xf4, 0xad, 0xa2,
                 0xe0, 0x69, 0x28, 0x01, 0x68, 0x3d, 0x9d, 0xf9,
                 0x25, 0x5f, 0x77, 0x52, 0x90, 0xdc, 0x50, 0x4e,
@@ -208,7 +256,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Aes256ADUserSalt()
         {
-            var expectedKey = new byte[] {
+            var expectedKey = new byte[]
+            {
                 0xb3, 0xf9, 0xca, 0x1b, 0x81, 0xc5, 0x38, 0xe5,
                 0x5f, 0x38, 0x4e, 0xe3, 0xc4, 0xec, 0x19, 0x23,
                 0xc9, 0x15, 0x47, 0x09, 0x23, 0x90, 0xfe, 0xb0,
@@ -221,7 +270,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Aes256Rfc4120Salt()
         {
-            var expectedKey = new byte[] {
+            var expectedKey = new byte[]
+            {
                 0x0e, 0x1a, 0xff, 0xd8, 0x90, 0xb5, 0x91, 0x2a,
                 0x19, 0xa3, 0xa6, 0x79, 0x7e, 0xc7, 0x8b, 0x94,
                 0xb8, 0xc2, 0xe7, 0x68, 0x64, 0xa3, 0x82, 0xaf,
@@ -277,7 +327,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void MsKileInterop()
         {
-            var rawKey = new byte[] {
+            var rawKey = new byte[]
+            {
                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -320,8 +371,11 @@ namespace Tests.Kerberos.NET
                 salt: "ATHENA.MIT.EDUraeburn",
                 principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "ATHENA.MIT.EDU", new[] { "raeburn" }),
                 aes128key: new byte[] { 0x42, 0x26, 0x3c, 0x6e, 0x89, 0xf4, 0xfc, 0x28, 0xb8, 0xdf, 0x68, 0xee, 0x09, 0x79, 0x9f, 0x15 },
-                aes256key: new byte[] { 0xfe, 0x69, 0x7b, 0x52, 0xbc, 0x0d, 0x3c, 0xe1, 0x44, 0x32, 0xba, 0x03, 0x6a, 0x92, 0xe6, 0x5b,
-                                        0xbb, 0x52, 0x28, 0x09, 0x90, 0xa2, 0xfa, 0x27, 0x88, 0x39, 0x98, 0xd7, 0x2a, 0xf3, 0x01, 0x61 }
+                aes256key: new byte[]
+                {
+                    0xfe, 0x69, 0x7b, 0x52, 0xbc, 0x0d, 0x3c, 0xe1, 0x44, 0x32, 0xba, 0x03, 0x6a, 0x92, 0xe6, 0x5b,
+                    0xbb, 0x52, 0x28, 0x09, 0x90, 0xa2, 0xfa, 0x27, 0x88, 0x39, 0x98, 0xd7, 0x2a, 0xf3, 0x01, 0x61
+                }
             );
         }
 
@@ -334,8 +388,11 @@ namespace Tests.Kerberos.NET
                 salt: "ATHENA.MIT.EDUraeburn",
                 principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "ATHENA.MIT.EDU", new[] { "raeburn" }),
                 aes128key: new byte[] { 0xc6, 0x51, 0xbf, 0x29, 0xe2, 0x30, 0x0a, 0xc2, 0x7f, 0xa4, 0x69, 0xd6, 0x93, 0xbd, 0xda, 0x13 },
-                aes256key: new byte[] { 0xa2, 0xe1, 0x6d, 0x16, 0xb3, 0x60, 0x69, 0xc1, 0x35, 0xd5, 0xe9, 0xd2, 0xe2, 0x5f, 0x89, 0x61,
-                                        0x02, 0x68, 0x56, 0x18, 0xb9, 0x59, 0x14, 0xb4, 0x67, 0xc6, 0x76, 0x22, 0x22, 0x58, 0x24, 0xff }
+                aes256key: new byte[]
+                {
+                    0xa2, 0xe1, 0x6d, 0x16, 0xb3, 0x60, 0x69, 0xc1, 0x35, 0xd5, 0xe9, 0xd2, 0xe2, 0x5f, 0x89, 0x61,
+                    0x02, 0x68, 0x56, 0x18, 0xb9, 0x59, 0x14, 0xb4, 0x67, 0xc6, 0x76, 0x22, 0x22, 0x58, 0x24, 0xff
+                }
             );
         }
 
@@ -348,8 +405,11 @@ namespace Tests.Kerberos.NET
                 salt: "ATHENA.MIT.EDUraeburn",
                 principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "ATHENA.MIT.EDU", new[] { "raeburn" }),
                 aes128key: new byte[] { 0x4c, 0x01, 0xcd, 0x46, 0xd6, 0x32, 0xd0, 0x1e, 0x6d, 0xbe, 0x23, 0x0a, 0x01, 0xed, 0x64, 0x2a },
-                aes256key: new byte[] { 0x55, 0xa6, 0xac, 0x74, 0x0a, 0xd1, 0x7b, 0x48, 0x46, 0x94, 0x10, 0x51, 0xe1, 0xe8, 0xb0, 0xa7,
-                                        0x54, 0x8d, 0x93, 0xb0, 0xab, 0x30, 0xa8, 0xbc, 0x3f, 0xf1, 0x62, 0x80, 0x38, 0x2b, 0x8c, 0x2a }
+                aes256key: new byte[]
+                {
+                    0x55, 0xa6, 0xac, 0x74, 0x0a, 0xd1, 0x7b, 0x48, 0x46, 0x94, 0x10, 0x51, 0xe1, 0xe8, 0xb0, 0xa7,
+                    0x54, 0x8d, 0x93, 0xb0, 0xab, 0x30, 0xa8, 0xbc, 0x3f, 0xf1, 0x62, 0x80, 0x38, 0x2b, 0x8c, 0x2a
+                }
             );
         }
 
@@ -413,7 +473,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(result);
 
-            Assert.IsTrue(result.Claims.Count() > 0);
+            Assert.IsTrue(result.Claims.Any());
 
             Assert.AreEqual("Kerberos", result.AuthenticationType);
 
@@ -427,7 +487,7 @@ namespace Tests.Kerberos.NET
         private class IntrospectiveValidator : KerberosValidator
         {
             public IntrospectiveValidator(byte[] key, EncryptionType etype)
-                : base(new KerberosKey(key, etype: etype), ticketCache: null)
+                : base(new KerberosKey(key: key, etype: etype), ticketCache: null)
             {
             }
 
@@ -435,7 +495,7 @@ namespace Tests.Kerberos.NET
 
             protected override Task Validate(DecryptedKrbApReq decryptedToken)
             {
-                Data = decryptedToken;
+                this.Data = decryptedToken;
 
                 return base.Validate(decryptedToken);
             }

@@ -1,8 +1,13 @@
-﻿using Kerberos.NET.Crypto;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Numerics;
+using Kerberos.NET.Crypto;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -12,39 +17,43 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Oakley14_Ctor()
         {
-            var dh = new BCryptDiffieHellmanOakleyGroup14();
-
-            Assert.IsNotNull(dh);
+            using (var dh = new BCryptDiffieHellmanOakleyGroup14())
+            {
+                Assert.IsNotNull(dh);
+            }
         }
 
         [TestMethod]
         public void Oakley2_Ctor()
         {
-            var dh = new BCryptDiffieHellmanOakleyGroup2();
-
-            Assert.IsNotNull(dh);
+            using (var dh = new BCryptDiffieHellmanOakleyGroup2())
+            {
+                Assert.IsNotNull(dh);
+            }
         }
 
         [TestMethod]
         public void Oakley14_PublicKey()
         {
-            var dh = new BCryptDiffieHellmanOakleyGroup14();
+            using (var dh = new BCryptDiffieHellmanOakleyGroup14())
+            {
+                Assert.IsNotNull(dh);
 
-            Assert.IsNotNull(dh);
-
-            Assert.IsNotNull(dh.PublicKey);
-            Assert.IsTrue(dh.PublicKey.KeyLength > 0);
+                Assert.IsNotNull(dh.PublicKey);
+                Assert.IsTrue(dh.PublicKey.KeyLength > 0);
+            }
         }
 
         [TestMethod]
         public void Oakley2_PublicKey()
         {
-            var dh = new BCryptDiffieHellmanOakleyGroup2();
+            using (var dh = new BCryptDiffieHellmanOakleyGroup2())
+            {
+                Assert.IsNotNull(dh);
 
-            Assert.IsNotNull(dh);
-
-            Assert.IsNotNull(dh.PublicKey);
-            Assert.IsTrue(dh.PublicKey.KeyLength > 0);
+                Assert.IsNotNull(dh.PublicKey);
+                Assert.IsTrue(dh.PublicKey.KeyLength > 0);
+            }
         }
 
         [TestMethod]
@@ -294,7 +303,7 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        private void AssertKeysMatch(IExchangeKey a, IExchangeKey b)
+        private static void AssertKeysMatch(IExchangeKey a, IExchangeKey b)
         {
             var alice = a as DiffieHellmanKey;
             var bob = b as DiffieHellmanKey;
@@ -307,7 +316,7 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(alice.PrivateComponent.Span.SequenceEqual(bob.PrivateComponent.Span));
         }
 
-        private ReadOnlyMemory<byte> Pad(ReadOnlyMemory<byte> data, int length)
+        private static ReadOnlyMemory<byte> Pad(ReadOnlyMemory<byte> data, int length)
         {
             var copy = new Memory<byte>(new byte[length]);
 

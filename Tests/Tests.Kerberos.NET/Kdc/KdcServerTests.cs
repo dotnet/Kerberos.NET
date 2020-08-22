@@ -1,6 +1,9 @@
-﻿using System;
-using System.Buffers;
-using System.Buffers.Binary;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Threading.Tasks;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Entities;
@@ -15,7 +18,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task KdcTagPeekFailureApplication()
         {
-            var kdc = new KdcServer(new ListenerOptions { DefaultRealm = "domain.com", IsDebug = true, Log = new FakeExceptionLoggerFactory() });
+            var kdc = new KdcServer(new KdcServerOptions { DefaultRealm = "domain.com", IsDebug = true, Log = new FakeExceptionLoggerFactory() });
 
             var checksum = new KrbChecksum { };
 
@@ -31,9 +34,9 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task KdcTagPeekFailureUnknownHandler()
         {
-            var kdc = new KdcServer(new ListenerOptions { DefaultRealm = "domain.com", IsDebug = true });
+            var kdc = new KdcServer(new KdcServerOptions { DefaultRealm = "domain.com", IsDebug = true });
 
-            var krbCred = new KrbCred { Tickets = new KrbTicket[0] };
+            var krbCred = new KrbCred { Tickets = Array.Empty<KrbTicket>() };
 
             var response = await kdc.ProcessMessage(krbCred.EncodeApplication());
 
@@ -48,10 +51,10 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task KdcTagPeekFailureNullBuilder()
         {
-            var kdc = new KdcServer(new ListenerOptions { DefaultRealm = "domain.com", IsDebug = true });
+            var kdc = new KdcServer(new KdcServerOptions { DefaultRealm = "domain.com", IsDebug = true });
             kdc.RegisterMessageHandler(MessageType.KRB_CRED, (b, o) => null);
 
-            var krbCred = new KrbCred { Tickets = new KrbTicket[0] };
+            var krbCred = new KrbCred { Tickets = Array.Empty<KrbTicket>() };
 
             var response = await kdc.ProcessMessage(krbCred.EncodeApplication());
 
@@ -63,18 +66,20 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(err.EText.Contains("Message handler builder KRB_CRED must not return null"));
         }
 
-        [TestMethod, ExpectedException(typeof(InvalidOperationException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void RegisterHandlerInvalidHigh()
         {
-            var kdc = new KdcServer(new ListenerOptions { });
+            var kdc = new KdcServer(new KdcServerOptions { });
 
             kdc.RegisterMessageHandler((MessageType)123, null);
         }
 
-        [TestMethod, ExpectedException(typeof(InvalidOperationException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void RegisterHandlerInvalidLow()
         {
-            var kdc = new KdcServer(new ListenerOptions { });
+            var kdc = new KdcServer(new KdcServerOptions { });
 
             kdc.RegisterMessageHandler((MessageType)9, null);
         }
@@ -92,7 +97,7 @@ namespace Tests.Kerberos.NET
 
             var message = KdcProxyMessage.WrapMessage(req, domain, hint, mode: KdcProxyMessageMode.IncludeLengthPrefix);
 
-            var kdc = new KdcServer(new ListenerOptions { RealmLocator = realm => new FakeRealmService(realm) });
+            var kdc = new KdcServer(new KdcServerOptions { RealmLocator = realm => new FakeRealmService(realm) });
 
             var response = await kdc.ProcessMessage(message.Encode());
 
@@ -121,7 +126,7 @@ namespace Tests.Kerberos.NET
 
             var message = KdcProxyMessage.WrapMessage(req, domain, hint, mode: KdcProxyMessageMode.NoPrefix);
 
-            var kdc = new KdcServer(new ListenerOptions { RealmLocator = realm => new FakeRealmService(realm) });
+            var kdc = new KdcServer(new KdcServerOptions { RealmLocator = realm => new FakeRealmService(realm) });
 
             var response = await kdc.ProcessMessage(message.Encode());
 

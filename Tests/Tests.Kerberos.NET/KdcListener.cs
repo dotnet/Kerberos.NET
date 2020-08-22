@@ -1,4 +1,10 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using System.Globalization;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -8,27 +14,6 @@ using Kerberos.NET.Server;
 
 namespace Tests.Kerberos.NET
 {
-    internal class TcpKdcListener : IDisposable
-    {
-        private readonly KdcServiceListener server;
-
-        public TcpKdcListener(KdcServiceListener server)
-        {
-            this.server = server;
-        }
-
-        public void Dispose()
-        {
-            server.Stop();
-            server.Dispose();
-        }
-
-        public Task Start()
-        {
-            return server.Start();
-        }
-    }
-
     internal class KdcListener : IDisposable
     {
         private readonly KdcServer server;
@@ -38,23 +23,23 @@ namespace Tests.Kerberos.NET
             this.server = server;
         }
 
-        private static readonly Random rng = new Random();
+        private static readonly Random Rng = new Random();
 
         public static int NextPort()
         {
-            return rng.Next(1000, 60000);
+            return Rng.Next(1000, 60000);
         }
 
-        public void Dispose() { }
-
-        public void Stop() { }
+        public void Dispose()
+        {
+        }
 
         public static TcpKdcListener StartTcpListener(int port, bool slow = false)
         {
-            var options = new ListenerOptions
+            var options = new KdcServerOptions
             {
                 ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
+                DefaultRealm = "corp2.identityintervention.com".ToUpper(CultureInfo.InvariantCulture),
                 IsDebug = true,
                 RealmLocator = realm => LocateRealm(realm, slow),
                 ReceiveTimeout = TimeSpan.FromHours(1)
@@ -67,10 +52,10 @@ namespace Tests.Kerberos.NET
 
         public static KdcListener StartListener(int port, bool slow = false)
         {
-            var options = new ListenerOptions
+            var options = new KdcServerOptions
             {
                 ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(),
+                DefaultRealm = "corp2.identityintervention.com".ToUpper(CultureInfo.InvariantCulture),
                 IsDebug = true,
                 RealmLocator = realm => LocateRealm(realm, slow),
                 ReceiveTimeout = TimeSpan.FromHours(1)
@@ -88,7 +73,7 @@ namespace Tests.Kerberos.NET
 
         internal async Task<ReadOnlyMemory<byte>> Receive(ReadOnlyMemory<byte> req)
         {
-            return await server.ProcessMessage(req);
+            return await this.server.ProcessMessage(req);
         }
 
         public static IRealmService LocateRealm(string realm, bool slow = false)

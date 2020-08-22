@@ -1,9 +1,14 @@
-﻿using Kerberos.NET.Client;
-using Kerberos.NET.Transport;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.Client;
+using Kerberos.NET.Transport;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -22,21 +27,20 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void ServiceTicketsCached()
+        public void ServiceTicketsNotCached()
         {
-            using (var client = new KerberosClient())
+            using (var client = new KerberosClient() { CacheServiceTickets = false })
             {
                 Assert.IsNotNull(client.Cache);
-                Assert.IsTrue(client.CacheServiceTickets);
+                Assert.IsFalse(client.CacheServiceTickets);
             }
         }
 
-        [TestMethod, ExpectedException(typeof(InvalidOperationException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public void CacheCannotBeNull()
         {
-#pragma warning disable IDE0067 // Dispose objects before losing scope
-            _ = new KerberosClient { Cache = null };
-#pragma warning restore IDE0067 // Dispose objects before losing scope
+            new KerberosClient { Cache = null }.Dispose();
         }
 
         [TestMethod]
@@ -65,7 +69,8 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        [TestMethod, ExpectedException(typeof(InvalidOperationException))]
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
         public async Task ClientRequestsServiceTicketBeforeAuthentication()
         {
             using (var client = new KerberosClient())

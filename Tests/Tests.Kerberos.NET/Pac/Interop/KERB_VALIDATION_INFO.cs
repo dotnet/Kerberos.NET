@@ -1,7 +1,12 @@
-﻿using Kerberos.NET.Entities.Pac;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Kerberos.NET.Entities.Pac;
 
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -9,17 +14,17 @@ namespace Tests.Kerberos.NET.Pac.Interop
 {
     [DebuggerDisplay("{AsDateTimeOffset()}")]
     [StructLayout(LayoutKind.Sequential)]
-    internal partial struct _FILETIME
+    internal partial struct FILETIME
     {
-        public uint dwLowDateTime;
+        public uint DwLowDateTime;
 
-        public uint dwHighDateTime;
+        public uint DwHighDateTime;
 
         public DateTimeOffset AsDateTimeOffset()
         {
-            if (dwLowDateTime != 0xffffffffL && dwHighDateTime != 0x7fffffffL)
+            if (this.DwLowDateTime != 0xffffffffL && this.DwHighDateTime != 0x7fffffffL)
             {
-                var fileTime = ((long)dwHighDateTime << 32) + dwLowDateTime;
+                var fileTime = ((long)this.DwHighDateTime << 32) + this.DwLowDateTime;
 
                 if (fileTime > 0)
                 {
@@ -32,7 +37,7 @@ namespace Tests.Kerberos.NET.Pac.Interop
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal unsafe struct _RPC_UNICODE_STRING
+    internal unsafe struct RPC_UNICODE_STRING
     {
         public ushort Length;
 
@@ -42,11 +47,11 @@ namespace Tests.Kerberos.NET.Pac.Interop
 
         public override string ToString()
         {
-            if (Buffer != null && MaximumLength > 0)
+            if (this.Buffer != null && this.MaximumLength > 0)
             {
-                var copied = new byte[MaximumLength];
+                var copied = new byte[this.MaximumLength];
 
-                Marshal.Copy((IntPtr)Buffer, copied, 0, Length);
+                Marshal.Copy((IntPtr)this.Buffer, copied, 0, this.Length);
 
                 var span = new ReadOnlySpan<byte>(copied);
 
@@ -61,7 +66,7 @@ namespace Tests.Kerberos.NET.Pac.Interop
 
     [StructLayout(LayoutKind.Sequential)]
     [DebuggerDisplay("{RelativeId} {Attributes}")]
-    internal partial struct _GROUP_MEMBERSHIP
+    internal partial struct GROUP_MEMBERSHIP
     {
         public uint RelativeId;
 
@@ -69,7 +74,7 @@ namespace Tests.Kerberos.NET.Pac.Interop
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal unsafe struct _SID
+    internal unsafe struct SID
     {
         public byte Revision;
         public byte SubAuthorityCount;
@@ -80,11 +85,11 @@ namespace Tests.Kerberos.NET.Pac.Interop
 
         public SecurityIdentifier ToSecurityIdentifier()
         {
-            var auth = new uint[SubAuthorityCount];
+            var auth = new uint[this.SubAuthorityCount];
 
-            fixed (uint* pAuth = &SubAuthority)
+            fixed (uint* pAuth = &this.SubAuthority)
             {
-                for (var i = 0; i < SubAuthorityCount; i++)
+                for (var i = 0; i < this.SubAuthorityCount; i++)
                 {
                     var val = pAuth[i];
 
@@ -93,14 +98,13 @@ namespace Tests.Kerberos.NET.Pac.Interop
             }
 
             long idAuth = 0;
-
             {
-                idAuth = idAuth << 8 | IdentifierAuthority[0];
-                idAuth = idAuth << 8 | IdentifierAuthority[1];
-                idAuth = idAuth << 8 | IdentifierAuthority[2];
-                idAuth = idAuth << 8 | IdentifierAuthority[3];
-                idAuth = idAuth << 8 | IdentifierAuthority[4];
-                idAuth = idAuth << 8 | IdentifierAuthority[5];
+                idAuth = idAuth << 8 | this.IdentifierAuthority[0];
+                idAuth = idAuth << 8 | this.IdentifierAuthority[1];
+                idAuth = idAuth << 8 | this.IdentifierAuthority[2];
+                idAuth = idAuth << 8 | this.IdentifierAuthority[3];
+                idAuth = idAuth << 8 | this.IdentifierAuthority[4];
+                idAuth = idAuth << 8 | this.IdentifierAuthority[5];
             }
 
             return new SecurityIdentifier((IdentifierAuthority)idAuth, auth, 0);
@@ -108,27 +112,27 @@ namespace Tests.Kerberos.NET.Pac.Interop
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal unsafe struct _KERB_SID_AND_ATTRIBUTES
+    internal unsafe struct KERB_SID_AND_ATTRIBUTES
     {
-        public _SID* Sid;
+        public SID* Sid;
         public SidAttributes Attributes;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     internal unsafe struct KERB_VALIDATION_INFO
     {
-        public _FILETIME LogonTime;
-        public _FILETIME LogoffTime;
-        public _FILETIME KickOffTime;
-        public _FILETIME PasswordLastSet;
-        public _FILETIME PasswordCanChange;
-        public _FILETIME PasswordMustChange;
-        public _RPC_UNICODE_STRING EffectiveName;
-        public _RPC_UNICODE_STRING FullName;
-        public _RPC_UNICODE_STRING LogonScript;
-        public _RPC_UNICODE_STRING ProfilePath;
-        public _RPC_UNICODE_STRING HomeDirectory;
-        public _RPC_UNICODE_STRING HomeDirectoryDrive;
+        public FILETIME LogonTime;
+        public FILETIME LogoffTime;
+        public FILETIME KickOffTime;
+        public FILETIME PasswordLastSet;
+        public FILETIME PasswordCanChange;
+        public FILETIME PasswordMustChange;
+        public RPC_UNICODE_STRING EffectiveName;
+        public RPC_UNICODE_STRING FullName;
+        public RPC_UNICODE_STRING LogonScript;
+        public RPC_UNICODE_STRING ProfilePath;
+        public RPC_UNICODE_STRING HomeDirectory;
+        public RPC_UNICODE_STRING HomeDirectoryDrive;
 
         public ushort LogonCount;
         public ushort BadPasswordCount;
@@ -136,16 +140,16 @@ namespace Tests.Kerberos.NET.Pac.Interop
         public uint PrimaryGroupId;
 
         public uint GroupCount;
-        public _GROUP_MEMBERSHIP* GroupIds;
+        public GROUP_MEMBERSHIP* GroupIds;
 
         public UserFlags UserFlags;
 
         public fixed byte UserSessionKey[16];
 
-        public _RPC_UNICODE_STRING LogonServer;
-        public _RPC_UNICODE_STRING LogonDomainName;
+        public RPC_UNICODE_STRING LogonServer;
+        public RPC_UNICODE_STRING LogonDomainName;
 
-        public _SID* LogonDomainId;
+        public SID* LogonDomainId;
 
         public fixed int Reserved1[2];
 
@@ -153,18 +157,18 @@ namespace Tests.Kerberos.NET.Pac.Interop
 
         public int SubAuthStatus;
 
-        public _FILETIME LastSuccessfulILogon;
-        public _FILETIME LastFailedILogon;
+        public FILETIME LastSuccessfulILogon;
+        public FILETIME LastFailedILogon;
         public int FailedILogonCount;
 
         public int Reserved3;
 
         public uint SidCount;
-        public _KERB_SID_AND_ATTRIBUTES* ExtraSids;
+        public KERB_SID_AND_ATTRIBUTES* ExtraSids;
 
-        public _SID* ResourceGroupDomainSid;
+        public SID* ResourceGroupDomainSid;
 
         public uint ResourceGroupCount;
-        public _GROUP_MEMBERSHIP* ResourceGroupIds;
+        public GROUP_MEMBERSHIP* ResourceGroupIds;
     }
 }

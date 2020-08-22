@@ -1,4 +1,9 @@
-﻿using Kerberos.NET.Ndr;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using Kerberos.NET.Ndr;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
@@ -9,24 +14,26 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void SingleWrite()
         {
-            var buffer = new NdrBuffer();
+            using (var buffer = new NdrBuffer())
+            {
+                buffer.WriteSpan(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 });
 
-            buffer.WriteSpan(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 });
-
-            Assert.AreEqual(20, buffer.Offset);
+                Assert.AreEqual(20, buffer.Offset);
+            }
         }
 
         [TestMethod]
         public void BufferExpansion()
         {
-            var buffer = new NdrBuffer();
-
-            for (var i = 0; i < 1000; i++)
+            using (var buffer = new NdrBuffer())
             {
-                buffer.WriteSpan(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 });
-            }
+                for (var i = 0; i < 1000; i++)
+                {
+                    buffer.WriteSpan(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 });
+                }
 
-            Assert.AreEqual(20_000, buffer.Offset);
+                Assert.AreEqual(20_000, buffer.Offset);
+            }
         }
     }
 }

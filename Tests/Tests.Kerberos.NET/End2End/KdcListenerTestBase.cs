@@ -1,4 +1,9 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -79,6 +84,7 @@ namespace Tests.Kerberos.NET
 
             KerberosClient client = CreateClient(listener, overrideKdc, caching: caching);
 
+            using (kerbCred as IDisposable)
             using (client)
             {
                 if (!includePac)
@@ -130,6 +136,11 @@ namespace Tests.Kerberos.NET
             string spn = FakeAppServiceSpn
         )
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             var ticket = context.ApReq;
 
             byte[] encoded;
@@ -225,6 +236,7 @@ namespace Tests.Kerberos.NET
 
             KerberosClient client = CreateClient(listener, kdc);
 
+            using (kerbCred as IDisposable)
             using (client)
             {
                 client.CacheServiceTickets = cacheTickets;
@@ -257,7 +269,9 @@ namespace Tests.Kerberos.NET
 
                             await ValidateTicket(ticket, encodeNego: encodeNego, includePac: includePac);
                         }
+#pragma warning disable CA1031 // Do not catch general exception types
                         catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
                         {
                             exceptions.Add(ex);
                         }
@@ -271,9 +285,10 @@ namespace Tests.Kerberos.NET
         internal class TrustedAsymmetricCredential : KerberosAsymmetricCredential
         {
             public TrustedAsymmetricCredential(
-                X509Certificate2 cert, 
+                X509Certificate2 cert,
                 string username = null
-            ) : base(cert, username)
+            )
+                : base(cert, username)
             {
                 this.IncludeOption = X509IncludeOption.EndCertOnly;
             }

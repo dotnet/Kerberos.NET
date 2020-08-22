@@ -1,35 +1,64 @@
-﻿using System;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Crypto
 {
-    public unsafe struct CERT_X942_DH_PARAMETERS
+    internal unsafe struct CERT_X942_DH_PARAMETERS : IEquatable<CERT_X942_DH_PARAMETERS>
     {
-        public CRYPT_UINT_BLOB p;
-        public CRYPT_UINT_BLOB g;
-        public CRYPT_UINT_BLOB q;
-        public CRYPT_UINT_BLOB j;
-        public CERT_X942_DH_VALIDATION_PARAMS* pValidationParams;
+        public CRYPT_UINT_BLOB P;
+        public CRYPT_UINT_BLOB G;
+        public CRYPT_UINT_BLOB Q;
+        public CRYPT_UINT_BLOB J;
+        public CERT_X942_DH_VALIDATION_PARAMS* PValidationParams;
+
+        public override bool Equals(object obj)
+        {
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return 0;
+        }
+
+        public static bool operator ==(CERT_X942_DH_PARAMETERS left, CERT_X942_DH_PARAMETERS right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(CERT_X942_DH_PARAMETERS left, CERT_X942_DH_PARAMETERS right)
+        {
+            return !(left == right);
+        }
+
+        public bool Equals(CERT_X942_DH_PARAMETERS other)
+        {
+            return false;
+        }
     }
 
-    public struct CERT_X942_DH_VALIDATION_PARAMS
+    internal struct CERT_X942_DH_VALIDATION_PARAMS
     {
-
     }
 
-    public unsafe struct CRYPT_UINT_BLOB
+    internal unsafe struct CRYPT_UINT_BLOB
     {
-        public int cbData;
-        public byte* pbData;
+        public int CbData;
+        public byte* PbData;
     }
 
-    internal unsafe static class CryptEncode
+    internal static unsafe class CryptEncode
     {
-        internal const int X509_ASN_ENCODING = 0x00000001;
-        internal const int X942_DH_PARAMETERS = 50;
-        internal const int X509_DH_PUBLICKEY = 38;
+        internal const int X509AsnEncoding = 0x00000001;
+        internal const int X942DhParameters = 50;
+        internal const int X509DhPublicKey = 38;
 
         private static Span<byte> Reverse(ReadOnlySpan<byte> data)
         {
@@ -48,7 +77,7 @@ namespace Kerberos.NET.Crypto
 
             fixed (byte* pData = &MemoryMarshal.GetReference(data.Span))
             {
-                if (!CryptDecodeObject(X509_ASN_ENCODING, new IntPtr(X509_DH_PUBLICKEY), pData, data.Length, 0, null, ref pcbStructInfo))
+                if (!CryptDecodeObject(X509AsnEncoding, new IntPtr(X509DhPublicKey), pData, data.Length, 0, null, ref pcbStructInfo))
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error());
                 }
@@ -57,7 +86,7 @@ namespace Kerberos.NET.Crypto
 
                 fixed (byte* pStructInfo = &MemoryMarshal.GetReference(structInfo.Span))
                 {
-                    if (!CryptDecodeObject(X509_ASN_ENCODING, new IntPtr(X509_DH_PUBLICKEY), pData, data.Length, 0, pStructInfo, ref pcbStructInfo))
+                    if (!CryptDecodeObject(X509AsnEncoding, new IntPtr(X509DhPublicKey), pData, data.Length, 0, pStructInfo, ref pcbStructInfo))
                     {
                         throw new Win32Exception(Marshal.GetLastWin32Error());
                     }
@@ -75,13 +104,13 @@ namespace Kerberos.NET.Crypto
             {
                 var dhKey = new CRYPT_UINT_BLOB
                 {
-                    cbData = publicKey.Span.Length,
-                    pbData = pPub
+                    CbData = publicKey.Span.Length,
+                    PbData = pPub
                 };
 
                 CRYPT_UINT_BLOB* pDhKey = &dhKey;
 
-                if (!CryptEncodeObject(X509_ASN_ENCODING, new IntPtr(X509_DH_PUBLICKEY), pDhKey, null, ref pcbEncoded))
+                if (!CryptEncodeObject(X509AsnEncoding, new IntPtr(X509DhPublicKey), pDhKey, null, ref pcbEncoded))
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error());
                 }
@@ -90,7 +119,7 @@ namespace Kerberos.NET.Crypto
                 {
                     fixed (byte* pbEncoded = &MemoryMarshal.GetReference(rented.Memory.Span))
                     {
-                        if (!CryptEncodeObject(X509_ASN_ENCODING, new IntPtr(X509_DH_PUBLICKEY), pDhKey, pbEncoded, ref pcbEncoded))
+                        if (!CryptEncodeObject(X509AsnEncoding, new IntPtr(X509DhPublicKey), pDhKey, pbEncoded, ref pcbEncoded))
                         {
                             throw new Win32Exception(Marshal.GetLastWin32Error());
                         }
@@ -109,9 +138,9 @@ namespace Kerberos.NET.Crypto
             {
                 return CryptEncodeObject(new CERT_X942_DH_PARAMETERS
                 {
-                    p = new CRYPT_UINT_BLOB { cbData = publicKey.Modulus.Length, pbData = pM },
-                    g = new CRYPT_UINT_BLOB { cbData = publicKey.Generator.Length, pbData = pG },
-                    q = new CRYPT_UINT_BLOB { cbData = publicKey.Factor.Length, pbData = pQ },
+                    P = new CRYPT_UINT_BLOB { CbData = publicKey.Modulus.Length, PbData = pM },
+                    G = new CRYPT_UINT_BLOB { CbData = publicKey.Generator.Length, PbData = pG },
+                    Q = new CRYPT_UINT_BLOB { CbData = publicKey.Factor.Length, PbData = pQ },
                 });
             }
         }
@@ -122,7 +151,7 @@ namespace Kerberos.NET.Crypto
 
             int pcbEncoded = 0;
 
-            if (!CryptEncodeObject(X509_ASN_ENCODING, new IntPtr(X942_DH_PARAMETERS), pParams, null, ref pcbEncoded))
+            if (!CryptEncodeObject(X509AsnEncoding, new IntPtr(X942DhParameters), pParams, null, ref pcbEncoded))
             {
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
@@ -131,7 +160,7 @@ namespace Kerberos.NET.Crypto
             {
                 fixed (byte* pbEncoded = &MemoryMarshal.GetReference(rented.Memory.Span))
                 {
-                    if (!CryptEncodeObject(X509_ASN_ENCODING, new IntPtr(X942_DH_PARAMETERS), pParams, pbEncoded, ref pcbEncoded))
+                    if (!CryptEncodeObject(X509AsnEncoding, new IntPtr(X942DhParameters), pParams, pbEncoded, ref pcbEncoded))
                     {
                         throw new Win32Exception(Marshal.GetLastWin32Error());
                     }

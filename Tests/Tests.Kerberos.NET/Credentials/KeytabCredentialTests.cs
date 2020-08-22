@@ -1,8 +1,13 @@
-﻿using Kerberos.NET.Credentials;
-using Kerberos.NET.Crypto;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
+using Kerberos.NET.Credentials;
+using Kerberos.NET.Crypto;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
@@ -12,7 +17,8 @@ namespace Tests.Kerberos.NET
         private static readonly KerberosKey Aes128Key = new KerberosKey("P@ssw0rd!", etype: EncryptionType.AES128_CTS_HMAC_SHA1_96);
         private static readonly KerberosKey RC4Key = new KerberosKey("P@ssw0rd!", etype: EncryptionType.RC4_HMAC_NT);
 
-        [TestMethod, ExpectedException(typeof(ArgumentNullException))]
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
         public void CreateKey_NullCtor()
         {
             new KeytabCredential("sdf", null);

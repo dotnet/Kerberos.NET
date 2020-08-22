@@ -1,7 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace Tests.Kerberos.NET
 {
@@ -10,9 +15,9 @@ namespace Tests.Kerberos.NET
         private readonly ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
         private readonly ConcurrentBag<string> logs = new ConcurrentBag<string>();
 
-        public IEnumerable<Exception> Exceptions => exceptions;
+        public IEnumerable<Exception> Exceptions => this.exceptions;
 
-        public IEnumerable<string> Logs => logs;
+        public IEnumerable<string> Logs => this.logs;
 
         public void AddProvider(ILoggerProvider provider)
         {
@@ -20,12 +25,11 @@ namespace Tests.Kerberos.NET
 
         public ILogger CreateLogger(string categoryName)
         {
-            return new ExceptionLogger(exceptions, logs);
+            return new ExceptionLogger(this.exceptions, this.logs);
         }
 
         public void Dispose()
         {
-
         }
 
         private class ExceptionLogger : ILogger
@@ -41,7 +45,9 @@ namespace Tests.Kerberos.NET
 
             private class Scope : IDisposable
             {
-                public void Dispose() { }
+                public void Dispose()
+                {
+                }
             }
 
             public IDisposable BeginScope<TState>(TState state)
@@ -58,10 +64,10 @@ namespace Tests.Kerberos.NET
             {
                 if (exception != null)
                 {
-                    exceptions.Add(exception);
+                    this.exceptions.Add(exception);
                 }
 
-                logs.Add($"[{logLevel}] {eventId} " + formatter(state, exception));
+                this.logs.Add($"[{logLevel}] {eventId} " + formatter(state, exception));
             }
         }
     }
