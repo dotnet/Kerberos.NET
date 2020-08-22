@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -15,9 +15,7 @@ using Tests.Kerberos.NET.Pac.Interop;
 
 namespace Tests.Kerberos.NET
 {
-#if X64
     [TestClass]
-#endif
     public class RpcInteropTests
     {
         private const string Pac =

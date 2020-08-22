@@ -13,11 +13,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <CodeAnalysisRuleSet>$(EnlistmentRoot)\src\Product\Kerberos.NET\CodeAnalysisRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>..\CodeAnalysisRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="$(EnlistmentRoot)\src\Product\Kerberos.NET\stylecop.json" Link="stylecop.json" />
+    <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BuildingInsideVisualStudio)' == 'true'">

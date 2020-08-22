@@ -1,0 +1,18 @@
+﻿{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "documentationRules": {
+      "companyName": "The .NET Foundation",
+      "xmlHeader": false,
+      "documentationCulture": "en-US",
+      "headerDecoration": "-----------------------------------------------------------------------",
+      "copyrightText": "{headerDecoration}\nLicensed to {companyName} under one or more agreements.\n{companyName} licenses this file to you under the MIT license.\r\n{headerDecoration}",
+      "variables": {
+        "headerDecoration": "-----------------------------------------------------------------------"
+      }
+    },
+    "orderingRules": {
+      "usingDirectivesPlacement": "outsideNamespace"
+    }
+  }
+}

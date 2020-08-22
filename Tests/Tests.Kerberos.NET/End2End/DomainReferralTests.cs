@@ -1,10 +1,14 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using static Tests.Kerberos.NET.KdcListener;
 
 namespace Tests.Kerberos.NET
@@ -27,8 +31,6 @@ namespace Tests.Kerberos.NET
                     spn: FakeAppServiceInOtherRealm,
                     includePac: false
                 );
-
-                listener.Stop();
             }
         }
 

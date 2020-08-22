@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="Microsoft Managed Recommended Rules" Description="These rules focus on the most critical problems in your code, including potential security holes, application crashes, and other important logic and design errors. It is recommended to include this rule set in any custom rule set you create for your projects." ToolsVersion="16.0">
+  <Localization ResourceAssembly="Microsoft.VisualStudio.CodeAnalysis.RuleSets.Strings.dll" ResourceBaseName="Microsoft.VisualStudio.CodeAnalysis.RuleSets.Strings.Localized">
+    <Name Resource="MinimumRecommendedRules_Name" />
+    <Description Resource="MinimumRecommendedRules_Description" />
+  </Localization>
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp.Features" RuleNamespace="Microsoft.CodeAnalysis.CSharp.Features">
+    <Rule Id="IDE0008" Action="None" />
+    <Rule Id="IDE0012" Action="None" />
+    <Rule Id="IDE0049" Action="None" />
+  </Rules>
+  <Rules AnalyzerId="Microsoft.NetCore.Analyzers" RuleNamespace="Microsoft.NetCore.Analyzers">
+    <Rule Id="CA1303" Action="None" />
+  </Rules>
+  <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
+    <Rule Id="SA0001" Action="None" />
+    <Rule Id="SA1025" Action="None" />
+    <Rule Id="SA1117" Action="None" />
+    <Rule Id="SA1118" Action="None" />
+    <Rule Id="SA1119" Action="None" />
+    <Rule Id="SA1121" Action="None" />
+    <Rule Id="SA1124" Action="None" />
+    <Rule Id="SA1132" Action="None" />
+    <Rule Id="SA1201" Action="None" />
+    <Rule Id="SA1202" Action="None" />
+    <Rule Id="SA1204" Action="None" />
+    <Rule Id="SA1401" Action="None" />
+    <Rule Id="SA1413" Action="None" />
+    <Rule Id="SA1600" Action="None" />
+    <Rule Id="SA1602" Action="None" />
+    <Rule Id="SA1611" Action="None" />
+    <Rule Id="SA1615" Action="None" />
+    <Rule Id="SA1618" Action="None" />
+    <Rule Id="SA1623" Action="None" />
+    <Rule Id="SA1629" Action="None" />
+    <Rule Id="SA1642" Action="None" />
+    <Rule Id="SA1649" Action="None" />
+    <Rule Id="SA1652" Action="None" />
+
+    <!-- Kerberos.NET specific rules -->
+    
+    <Rule Id="SA1512" Action="None" /> <!-- Single line comments -->
+    <Rule Id="CA1707" Action="None" /> <!-- Underscores are required for compat -->
+    <Rule Id="SA1310" Action="None" /> <!-- Underscores -->
+    <Rule Id="SA1313" Action="None" /> <!-- Underscores -->
+    <Rule Id="SA1309" Action="None" /> <!-- Underscores -->
+    <Rule Id="SA1009" Action="None" /> <!-- parentheses -->
+    <Rule Id="SA1111" Action="None" /> <!-- parentheses -->
+    <Rule Id="SA1405" Action="None" /> <!-- Debug.Assert -->
+    <Rule Id="CA1034" Action="None" /> <!-- Nested types -->
+    <Rule Id="SA1601" Action="None" /> <!-- Partial elements should be documented -->
+    <Rule Id="SA1636" Action="None" /> <!-- Header should match settings -->
+    <Rule Id="CA1028" Action="None" /> <!-- underlying types -->
+    <Rule Id="CA1308" Action="None" /> <!-- ToLowerInvariant -->
+    <Rule Id="CA1031" Action="None" /> <!-- Specific exceptions -->
+    <Rule Id="CA2225" Action="None" /> <!-- op_implicit -->
+  </Rules>
+</RuleSet>
