@@ -1,10 +1,12 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
 using System.Buffers;
+using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Kerberos.NET.Crypto;
 
@@ -26,15 +28,17 @@ namespace Kerberos.NET
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlySpan<byte> AsReadOnly(long longVal, bool littleEndian = false)
         {
+            Debug.Assert(longVal <= int.MaxValue);
+
             var bytes = new Span<byte>(new byte[4]);
 
             if (littleEndian)
             {
-                Endian.ConvertToLittleEndian((int)longVal, bytes);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes, (int)longVal);
             }
             else
             {
-                Endian.ConvertToBigEndian((int)longVal, bytes);
+                BinaryPrimitives.WriteInt32BigEndian(bytes, (int)longVal);
             }
 
             return bytes;
@@ -49,27 +53,17 @@ namespace Kerberos.NET
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long AsLong(this byte[] val, bool littleEndian = false)
         {
-            return AsLong((ReadOnlyMemory<byte>)val, littleEndian);
+            return AsLong(val.AsSpan(), littleEndian);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long AsLong(this ReadOnlySpan<byte> val, bool littleEndian = false)
         {
-            var bytes = val.ToArray();
+            Debug.Assert(val.Length >= sizeof(int));
 
-            if (littleEndian)
-            {
-                Array.Reverse(bytes);
-            }
-
-            long num = 0;
-
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                num = (num << 8) | bytes[i];
-            }
-
-            return num;
+            return littleEndian
+                ? BinaryPrimitives.ReadInt32LittleEndian(val)
+                : BinaryPrimitives.ReadInt32BigEndian(val);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

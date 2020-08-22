@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Security;
 using Kerberos.NET.Crypto;
 
@@ -34,7 +35,7 @@ namespace Kerberos.NET.Entities
 
             var checksumData = new Memory<byte>(new byte[dataLength]);
 
-            Endian.ConvertToLittleEndian((int)userName.Type, checksumData);
+            BinaryPrimitives.WriteInt32LittleEndian(checksumData.Span, (int)userName.Type);
 
             var position = 4;
 

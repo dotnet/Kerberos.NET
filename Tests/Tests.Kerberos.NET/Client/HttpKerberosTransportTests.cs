@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -99,7 +100,7 @@ namespace Tests.Kerberos.NET
                 var encoded = tgt.EncodeApplication();
 
                 var response = new Memory<byte>(new byte[encoded.Length + 4]);
-                Endian.ConvertToBigEndian(encoded.Length, response.Slice(0, 4));
+                BinaryPrimitives.WriteInt32BigEndian(response.Span.Slice(0, 4), encoded.Length);
                 encoded.CopyTo(response.Slice(4));
 
                 var kdcMessage = new KdcProxyMessage

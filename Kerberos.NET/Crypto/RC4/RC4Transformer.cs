@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Security;
 using System.Text;
 
@@ -110,7 +111,7 @@ namespace Kerberos.NET.Crypto
 
             data.CopyTo(span.Slice(4));
 
-            Endian.ConvertToLittleEndian((int)keyUsage, span);
+            BinaryPrimitives.WriteInt32LittleEndian(span, (int)keyUsage);
 
             var tmp = MD5(span);
 
@@ -129,13 +130,8 @@ namespace Kerberos.NET.Crypto
                     break;
             }
 
-            var salt = new byte[4]
-            {
-                (byte)(usage & 0xff),
-                (byte)((usage >> 8) & 0xff),
-                (byte)((usage >> 16) & 0xff),
-                (byte)((usage >> 24) & 0xff)
-            };
+            var salt = new byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32LittleEndian(salt, usage);
 
             return salt;
         }
