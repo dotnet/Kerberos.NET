@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace Kerberos.NET.Configuration
@@ -67,8 +72,8 @@ namespace Kerberos.NET.Configuration
         public IEnumerable<string> KPasswdServer { get; set; }
 
         /// <summary>
-        ///Specifies the location of trusted anchor (root) certificates which the client trusts to sign KDC certificates.
-        ///This option may be specified multiple times.
+        /// Specifies the location of trusted anchor (root) certificates which the client trusts to sign KDC certificates.
+        /// This option may be specified multiple times.
         /// </summary>
         [DisplayName("pkinit_anchors")]
         public IEnumerable<string> PkInitAnchors { get; set; }

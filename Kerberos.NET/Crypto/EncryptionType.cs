@@ -23,7 +23,6 @@ namespace Kerberos.NET.Crypto
         AES256_CTS_HMAC_SHA1_96 = 18,
         AES128_CTS_HMAC_SHA256_128 = 19,
         AES256_CTS_HMAC_SHA384_192 = 20,
-        DES_CBC_MD5_NT = 20,
         RC4_HMAC_NT = 23,
         RC4_HMAC_NT_EXP = 24,
         PK_CROSS = 48,

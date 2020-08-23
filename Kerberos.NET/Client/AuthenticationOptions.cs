@@ -14,7 +14,7 @@ namespace Kerberos.NET.Client
 
         PreAuthenticate = 1L << 63,
         IncludePacRequest = 1L << 62,
-        RepPartCompatible = (long)1 << 61,
+        RepPartCompatible = 1L << 61,
 
         Forwardable = 1 << 30,
         Forwarded = 1 << 29,

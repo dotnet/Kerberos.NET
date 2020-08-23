@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,11 +23,12 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParseFile()
         {
-            var cache = new Krb5TicketCache(FilePath);
+            using (var cache = new Krb5TicketCache(FilePath))
+            {
+                Assert.IsNotNull(cache);
 
-            Assert.IsNotNull(cache);
-
-            AssertCacheFile(cache);
+                AssertCacheFile(cache);
+            }
         }
 
         [TestMethod]
@@ -30,14 +36,15 @@ namespace Tests.Kerberos.NET
         {
             var cacheBytes = ReadDataFile("cache\\krb5cc");
 
-            var cache = new Krb5TicketCache(cacheBytes);
+            using (var cache = new Krb5TicketCache(cacheBytes))
+            {
+                Assert.IsNotNull(cacheBytes);
 
-            Assert.IsNotNull(cacheBytes);
-
-            AssertCacheFile(cache);
+                AssertCacheFile(cache);
+            }
         }
 
-        private void AssertCacheFile(Krb5TicketCache cache)
+        private static void AssertCacheFile(Krb5TicketCache cache)
         {
             var ticket = cache.GetCacheItem<KerberosClientCacheEntry>("krbtgt/IPA.IDENTITYINTERVENTION.COM");
 
@@ -48,26 +55,26 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParseRoundTrip()
         {
-            var cache = new Krb5TicketCache(FilePath);
+            using (var cache = new Krb5TicketCache(FilePath))
+            {
+                Assert.IsNotNull(cache);
 
-            Assert.IsNotNull(cache);
+                var serialized = cache.Serialize();
 
-            var serialized = cache.Serialize();
+                var originalBytes = ReadDataFile("cache\\krb5cc");
 
-            var originalBytes = ReadDataFile("cache\\krb5cc");
-
-            Assert.IsTrue(originalBytes.SequenceEqual(serialized));
+                Assert.IsTrue(originalBytes.SequenceEqual(serialized));
+            }
         }
 
         [TestMethod]
         public void ParseFileRoundTrip()
         {
             var tmp = Path.GetTempFileName();
+            var cache = new Krb5TicketCache(tmp);
 
             try
             {
-                var cache = new Krb5TicketCache(tmp);
-
                 Assert.IsNotNull(cache);
 
                 cache.Add(new TicketCacheEntry
@@ -86,7 +93,7 @@ namespace Tests.Kerberos.NET
                                 EncryptedPart = new KrbEncryptedData
                                 {
                                     EType = EncryptionType.AES128_CTS_HMAC_SHA1_96,
-                                    Cipher = new byte[0]
+                                    Cipher = Array.Empty<byte>()
                                 }
                             }
                         },
@@ -95,16 +102,19 @@ namespace Tests.Kerberos.NET
                     }
                 });
 
-                var secondCache = new Krb5TicketCache(tmp);
+                using (var secondCache = new Krb5TicketCache(tmp))
+                {
+                    var entry = secondCache.GetCacheItem<KerberosClientCacheEntry>("krbtgt/bar.com");
 
-                var entry = secondCache.GetCacheItem<KerberosClientCacheEntry>("krbtgt/bar.com");
-
-                Assert.IsNotNull(entry.KdcResponse);
-                Assert.AreEqual("bar.com", entry.KdcResponse.CRealm);
-                Assert.AreEqual("user@bar.com", entry.KdcResponse.CName.FullyQualifiedName);
+                    Assert.IsNotNull(entry.KdcResponse);
+                    Assert.AreEqual("bar.com", entry.KdcResponse.CRealm);
+                    Assert.AreEqual("user@bar.com", entry.KdcResponse.CName.FullyQualifiedName);
+                }
             }
             finally
             {
+                cache.Dispose();
+
                 if (File.Exists(tmp))
                 {
                     File.Delete(tmp);
@@ -115,14 +125,15 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task ClientGetsCachedItem()
         {
-            var client = new KerberosClient() { Cache = new Krb5TicketCache(FilePath) };
+            using (var client = new KerberosClient() { Cache = new Krb5TicketCache(FilePath) })
+            {
+                var apReq = await client.GetServiceTicket("krbtgt/IPA.IDENTITYINTERVENTION.COM");
 
-            var apReq = await client.GetServiceTicket("krbtgt/IPA.IDENTITYINTERVENTION.COM");
-
-            Assert.IsNotNull(apReq);
-            Assert.IsNotNull(apReq.Authenticator);
-            Assert.IsNotNull(apReq.Ticket);
-            Assert.AreEqual("krbtgt@IPA.IDENTITYINTERVENTION.COM", apReq.Ticket.SName.FullyQualifiedName);
+                Assert.IsNotNull(apReq);
+                Assert.IsNotNull(apReq.Authenticator);
+                Assert.IsNotNull(apReq.Ticket);
+                Assert.AreEqual("krbtgt@IPA.IDENTITYINTERVENTION.COM", apReq.Ticket.SName.FullyQualifiedName);
+            }
         }
     }
 }

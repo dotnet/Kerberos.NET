@@ -1,5 +1,11 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using static System.FormattableString;
 
 namespace Kerberos.NET.Configuration
@@ -21,10 +27,10 @@ namespace Kerberos.NET.Configuration
         private static readonly Dictionary<TimeComponent, string[]> TimeSuffixes = new Dictionary<TimeComponent, string[]>
         {
             { TimeComponent.Year, new[] { "y", "yr", "year", "years" } },
-            { TimeComponent.Day, new[]{ "d", "day", "days" } },
-            { TimeComponent.Hour, new[]{ "h", "hr", "hrs", "hour", "hours" } },
-            { TimeComponent.Minute, new[]{ "m", "min", "minute", "minutes" } },
-            { TimeComponent.Second, new[]{ "s", "sec", "second", "seconds" } },
+            { TimeComponent.Day, new[] { "d", "day", "days" } },
+            { TimeComponent.Hour, new[] { "h", "hr", "hrs", "hour", "hours" } },
+            { TimeComponent.Minute, new[] { "m", "min", "minute", "minutes" } },
+            { TimeComponent.Second, new[] { "s", "sec", "second", "seconds" } },
         };
 
         public static string ToString(TimeSpan ts)
@@ -89,27 +95,27 @@ namespace Kerberos.NET.Configuration
 
                 if (yearIndex > 0)
                 {
-                    year = int.Parse(component.Substring(0, yearIndex));
+                    year = int.Parse(component.Substring(0, yearIndex), CultureInfo.InvariantCulture);
                 }
                 else if (dayIndex > 0)
                 {
-                    day = int.Parse(component.Substring(0, dayIndex));
+                    day = int.Parse(component.Substring(0, dayIndex), CultureInfo.InvariantCulture);
                 }
                 else if (hourIndex > 0)
                 {
-                    hour = int.Parse(component.Substring(0, hourIndex));
+                    hour = int.Parse(component.Substring(0, hourIndex), CultureInfo.InvariantCulture);
                 }
                 else if (minuteIndex > 0)
                 {
-                    minute = int.Parse(component.Substring(0, minuteIndex));
+                    minute = int.Parse(component.Substring(0, minuteIndex), CultureInfo.InvariantCulture);
                 }
                 else if (secondIndex > 0)
                 {
-                    second = int.Parse(component.Substring(0, secondIndex));
+                    second = int.Parse(component.Substring(0, secondIndex), CultureInfo.InvariantCulture);
                 }
                 else
                 {
-                    second = int.Parse(component);
+                    second = int.Parse(component, CultureInfo.InvariantCulture);
                 }
             }
 
@@ -124,7 +130,7 @@ namespace Kerberos.NET.Configuration
 
             foreach (var suffix in suffixes)
             {
-                var index = value.IndexOf(suffix);
+                var index = value.IndexOf(suffix, StringComparison.OrdinalIgnoreCase);
 
                 if (index >= 0)
                 {

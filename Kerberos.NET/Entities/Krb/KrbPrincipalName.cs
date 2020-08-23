@@ -173,6 +173,7 @@ namespace Kerberos.NET.Entities
 
                     return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
                 }
+
                 case PrincipalName principal:
                 {
                     var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
@@ -180,6 +181,7 @@ namespace Kerberos.NET.Entities
 
                     return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
                 }
+
                 default:
                     return false;
             }
@@ -194,7 +196,7 @@ namespace Kerberos.NET.Entities
         {
             get
             {
-                switch (Type)
+                switch (this.Type)
                 {
                     case PrincipalNameType.NT_SRV_HST:
                     case PrincipalNameType.NT_SRV_INST:
