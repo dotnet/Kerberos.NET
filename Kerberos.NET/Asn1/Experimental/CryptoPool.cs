@@ -1,10 +1,10 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
+// -----------------------------------------------------------------------
 
 using System.Buffers;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace System.Security.Cryptography
 {
@@ -27,39 +27,31 @@ namespace System.Security.Cryptography
 
             if (!clearWholeArray && clearSize != 0)
             {
-                ZeroMemory(array.AsSpan(0, clearSize));
+                Array.Clear(array, 0, clearSize);
             }
 
             ArrayPool<T>.Shared.Return(array, clearWholeArray);
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        private static void ZeroMemory<T>(Span<T> buffer)
-        {
-            // NoOptimize to prevent the optimizer from deciding this call is unnecessary
-            // NoInlining to prevent the inliner from forgetting that the method was no-optimize
-            buffer.Clear();
         }
     }
 
     internal struct CryptoMemoryOwner<T> : IMemoryOwner<T>
     {
-        private readonly T[] _memory;
-        private readonly bool _clearAll;
+        private readonly T[] memory;
+        private readonly bool clearAll;
 
         public CryptoMemoryOwner(int minimumLength, bool clearAll = true)
         {
-            _memory = CryptoPool.SharedRent<T>(minimumLength);
-            _clearAll = clearAll;
+            this.memory = CryptoPool.SharedRent<T>(minimumLength);
+            this.clearAll = clearAll;
 
-            Memory = _memory.AsMemory();
+            this.Memory = new Memory<T>(this.memory);
         }
 
         public Memory<T> Memory { get; }
 
         public void Dispose()
         {
-            CryptoPool.Return(_memory, _clearAll ? -1 : 0);
+            CryptoPool.Return(this.memory, this.clearAll ? -1 : 0);
         }
     }
 }

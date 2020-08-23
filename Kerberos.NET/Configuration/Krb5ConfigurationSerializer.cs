@@ -1,5 +1,11 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -85,7 +91,7 @@ namespace Kerberos.NET.Configuration
 
         private static void SerializeSection(StringBuilder sb, ConfigurationSectionList section, Krb5ConfigurationSerializationConfig serializerConfig)
         {
-            sb.AppendFormat("[{0}]", section.Name);
+            sb.AppendFormat(CultureInfo.InvariantCulture, "[{0}]", section.Name);
             sb.AppendLine();
 
             foreach (var config in section)
@@ -107,7 +113,7 @@ namespace Kerberos.NET.Configuration
             else
             {
                 Indent(sb, serializerConfig);
-                sb.AppendFormat("{0} = {1}", key, val);
+                sb.AppendFormat(CultureInfo.InvariantCulture, "{0} = {1}", key, val);
                 sb.AppendLine();
             }
         }
@@ -123,7 +129,7 @@ namespace Kerberos.NET.Configuration
         private static void SerializeValues(StringBuilder sb, string key, ConfigurationSectionList multiVal, Krb5ConfigurationSerializationConfig serializerConfig)
         {
             Indent(sb, serializerConfig);
-            sb.AppendFormat("{0} = {{", key);
+            sb.AppendFormat(CultureInfo.InvariantCulture, "{0} = {{", key);
             sb.AppendLine();
 
             serializerConfig.CurrentIndent++;

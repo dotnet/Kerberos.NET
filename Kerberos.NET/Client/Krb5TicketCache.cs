@@ -1,4 +1,10 @@
-﻿using System.Diagnostics;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -45,7 +51,7 @@ namespace Kerberos.NET.Client
 
         private void ReadCache()
         {
-            if (string.IsNullOrWhiteSpace(filePath))
+            if (string.IsNullOrWhiteSpace(this.filePath))
             {
                 return;
             }
@@ -70,6 +76,11 @@ namespace Kerberos.NET.Client
 
         public override bool Add(TicketCacheEntry entry)
         {
+            if (entry == null)
+            {
+                throw new ArgumentNullException(nameof(entry));
+            }
+
             this.ReadCache();
 
             this.cache.Add(entry);
@@ -81,7 +92,7 @@ namespace Kerberos.NET.Client
 
         private void WriteCache()
         {
-            if (string.IsNullOrWhiteSpace(filePath))
+            if (string.IsNullOrWhiteSpace(this.filePath))
             {
                 return;
             }
@@ -90,7 +101,7 @@ namespace Kerberos.NET.Client
             {
                 using (var stream = this.OpenFile())
                 {
-                    byte[] bytes = Serialize();
+                    byte[] bytes = this.Serialize();
 
                     stream.Seek(0, SeekOrigin.Begin);
 
@@ -107,7 +118,7 @@ namespace Kerberos.NET.Client
 
         private FileStream OpenFile()
         {
-            return File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         }
 
         public override object GetCacheItem(string key, string container = null)
@@ -129,6 +140,11 @@ namespace Kerberos.NET.Client
 
         public override bool Contains(TicketCacheEntry entry)
         {
+            if (entry == null)
+            {
+                throw new ArgumentNullException(nameof(entry));
+            }
+
             this.ReadCache();
 
             return this.cache.Contains(entry);

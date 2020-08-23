@@ -1,6 +1,12 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Kerberos.NET.Crypto;
@@ -16,20 +22,20 @@ namespace Kerberos.NET.Client
         private const byte ExpectedVersion = 4;
 
         /* The format of this file is described here: https://web.mit.edu/kerberos/krb5-devel/doc/formats/ccache_file_format.html
-         * 
+         *
          * The first byte of the file always has the value 5, and the value of the second byte contains the version number (1 through 4).
-         * 
+         *
          * Versions 3 and 4 always use big-endian byte order.
-         * 
+         *
          * After the two-byte version indicator, the file has three parts:
          *  * the header (in version 4 only),
          *  * the default principal name,
          *  * and a sequence of credentials
-         * 
+         *
          * header ::=
-         *     It begins with a 16-bit integer giving the length of the entire header, followed by a sequence of fields. 
+         *     It begins with a 16-bit integer giving the length of the entire header, followed by a sequence of fields.
          *     Each field consists of a 16-bit tag, a 16-bit length, and a value of the given length.
-         * 
+         *
          * principal ::=
          *     name type (32 bits) [omitted in version 1]
          *     count of components (32 bits) [includes realm in version 1]
@@ -37,11 +43,11 @@ namespace Kerberos.NET.Client
          *     component1 (data)
          *     component2 (data)
          *     ...
-         * 
+         *
          * data ::=
          *     length (32 bits)
          *     value (length bytes)
-         *     
+         *
          * credential ::=
          *     client (principal)
          *     server (principal)
@@ -56,27 +62,27 @@ namespace Kerberos.NET.Client
          *     authdata (authdata)
          *     ticket (data)
          *     second_ticket (data)
-         * 
+         *
          * keyblock ::=
          *     enctype (16 bits) [repeated twice in version 3]
          *     data
-         * 
+         *
          * addresses ::=
          *     count (32 bits)
          *     address1
          *     address2
          *     ...
-         * 
+         *
          * address ::=
          *     addrtype (16 bits)
          *     data
-         * 
+         *
          * authdata ::=
          *     count (32 bits)
          *     authdata1
          *     authdata2
          *     ...
-         * 
+         *
          * authdata ::=
          *     ad_type (16 bits)
          *     data
@@ -103,46 +109,48 @@ namespace Kerberos.NET.Client
             this.Credentials.Clear();
             this.Header.Clear();
 
-            var buffer = new NdrBuffer(cache, align: false);
-
-            var magic = buffer.Read(1)[0];
-
-            if (magic != Magic)
+            using (var buffer = new NdrBuffer(cache, align: false))
             {
-                throw new InvalidOperationException($"Unknown file format. Expected 0x{Magic}; Actual 0x{magic}.");
+                var magic = buffer.Read(1)[0];
+
+                if (magic != Magic)
+                {
+                    throw new InvalidOperationException($"Unknown file format. Expected 0x{Magic}; Actual 0x{magic}.");
+                }
+
+                var version = buffer.Read(1)[0];
+
+                if (version != ExpectedVersion)
+                {
+                    throw new InvalidOperationException($"Unknown file format version. Expected 0x{ExpectedVersion}; Actual 0x{version}.");
+                }
+
+                this.ReadHeader(buffer);
+                this.DefaultPrincipalName = ReadPrincipal(buffer);
+
+                this.ReadCredentials(buffer);
             }
-
-            var version = buffer.Read(1)[0];
-
-            if (version != ExpectedVersion)
-            {
-                throw new InvalidOperationException($"Unknown file format version. Expected 0x{ExpectedVersion}; Actual 0x{version}.");
-            }
-
-            this.ReadHeader(buffer);
-            this.DefaultPrincipalName = ReadPrincipal(buffer);
-
-            this.ReadCredentials(buffer);
         }
 
         internal byte[] Serialize()
         {
-            var buffer = new NdrBuffer(align: false);
+            using (var buffer = new NdrBuffer(align: false))
+            {
+                buffer.WriteByte(Magic);
+                buffer.WriteByte(ExpectedVersion);
 
-            buffer.WriteByte(Magic);
-            buffer.WriteByte(ExpectedVersion);
+                this.WriteHeader(buffer);
+                WritePrincipal(this.DefaultPrincipalName, buffer);
 
-            this.WriteHeader(buffer);
-            WritePrincipal(this.DefaultPrincipalName, buffer);
+                this.WriteCredentials(buffer);
 
-            this.WriteCredentials(buffer);
-
-            return buffer.ToMemory(0).ToArray();
+                return buffer.ToMemory(0).ToArray();
+            }
         }
 
         internal void Add(TicketCacheEntry entry)
         {
-            var existing = FindCredential(entry.Key);
+            var existing = this.FindCredential(entry.Key);
 
             if (existing != null)
             {
@@ -195,7 +203,7 @@ namespace Kerberos.NET.Client
 
         internal object GetCacheItem(string key)
         {
-            Krb5Credential cred = FindCredential(key);
+            Krb5Credential cred = this.FindCredential(key);
 
             if (cred is null)
             {
@@ -227,7 +235,7 @@ namespace Kerberos.NET.Client
 
         internal bool Contains(TicketCacheEntry entry)
         {
-            Krb5Credential cred = FindCredential(entry.Key);
+            Krb5Credential cred = this.FindCredential(entry.Key);
 
             return cred != null;
         }
@@ -314,7 +322,7 @@ namespace Kerberos.NET.Client
             WriteCredential(
                 new Krb5Credential
                 {
-                    Ticket = new[] { (byte)((int)this.PreAuthType).ToString()[0] },
+                    Ticket = new[] { (byte)((int)this.PreAuthType).ToString(CultureInfo.InvariantCulture)[0] },
                     Client = client,
                     Server = new PrincipalName(PrincipalNameType.NT_UNKNOWN, confRealm, new[] { confData, "pa_type", $"krbtgt/{client.Realm}@{client.Realm}" })
                 },
@@ -467,7 +475,7 @@ namespace Kerberos.NET.Client
 
             var realmData = ReadData(buffer);
 
-            string realm = "";
+            string realm = string.Empty;
 
             if (realmData.length > 0)
             {
@@ -508,19 +516,20 @@ namespace Kerberos.NET.Client
 
         private void WriteHeader(NdrBuffer buffer)
         {
-            var headerBuffer = new NdrBuffer(align: false);
-
-            foreach (var kv in this.Header)
+            using (var headerBuffer = new NdrBuffer(align: false))
             {
-                headerBuffer.WriteInt16BigEndian((short)kv.Key);
-                headerBuffer.WriteInt16BigEndian((short)kv.Value.Length);
-                headerBuffer.WriteMemory(kv.Value);
+                foreach (var kv in this.Header)
+                {
+                    headerBuffer.WriteInt16BigEndian((short)kv.Key);
+                    headerBuffer.WriteInt16BigEndian((short)kv.Value.Length);
+                    headerBuffer.WriteMemory(kv.Value);
+                }
+
+                var header = headerBuffer.ToMemory(0);
+
+                buffer.WriteInt16BigEndian((short)header.Length);
+                buffer.WriteMemory(header);
             }
-
-            var header = headerBuffer.ToMemory(0);
-
-            buffer.WriteInt16BigEndian((short)header.Length);
-            buffer.WriteMemory(header);
         }
 
         private void ReadHeader(NdrBuffer buffer)

@@ -62,7 +62,7 @@ namespace Kerberos.NET.Ndr
 
         public short ReadInt16BigEndian()
         {
-            return BinaryPrimitives.ReadInt16BigEndian(MoveByPrimitiveTypeSize<short>());
+            return BinaryPrimitives.ReadInt16BigEndian(this.MoveByPrimitiveTypeSize<short>());
         }
 
         public int ReadInt32LittleEndian()
@@ -72,7 +72,7 @@ namespace Kerberos.NET.Ndr
 
         public int ReadInt32BigEndian()
         {
-            return BinaryPrimitives.ReadInt32BigEndian(MoveByPrimitiveTypeSize<int>());
+            return BinaryPrimitives.ReadInt32BigEndian(this.MoveByPrimitiveTypeSize<int>());
         }
 
         public uint ReadUInt32LittleEndian()

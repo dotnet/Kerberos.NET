@@ -1,7 +1,13 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -32,8 +38,8 @@ namespace Kerberos.NET.Configuration
         /// <summary>
         /// Converts a <see cref="Krb5Config"/> instance into a <see cref="ConfigurationSectionList" /> for possible future serialization.
         /// </summary>
-        /// <param name="config"></param>
-        /// <returns></returns>
+        /// <param name="config">The configuration instance to load</param>
+        /// <returns>Returns a sectioned version of the configuration</returns>
         public static ConfigurationSectionList FromConfigObject(Krb5Config config)
         {
             if (config is null)
@@ -72,7 +78,7 @@ namespace Kerberos.NET.Configuration
                 {
                     var element = result.ElementAt(endOfList);
 
-                    if (element is string str && str.EndsWith("*"))
+                    if (element is string str && str.EndsWith("*", StringComparison.OrdinalIgnoreCase))
                     {
                         str = str.Substring(0, str.Length - 1);
 
@@ -137,7 +143,7 @@ namespace Kerberos.NET.Configuration
         /// <returns>Returns an item from the list</returns>
         public T Get<T>(string key)
         {
-            return (T)Get(key, typeof(T));
+            return (T)this.Get(key, typeof(T));
         }
 
         /// <summary>
@@ -148,7 +154,7 @@ namespace Kerberos.NET.Configuration
         /// <returns>Returns an item from the list</returns>
         public object Get(string key, Type type)
         {
-            return Get(key, type, null);
+            return this.Get(key, type, null);
         }
 
         /// <summary>
@@ -160,7 +166,17 @@ namespace Kerberos.NET.Configuration
         /// <returns>Returns an item from the list</returns>
         public object Get(string key, Type type, IEnumerable<Attribute> attributes)
         {
-            if (finalizedKeys.Contains(key))
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+
+            if (this.finalizedKeys.Contains(key))
             {
                 return null;
             }
@@ -181,9 +197,9 @@ namespace Kerberos.NET.Configuration
 
             if (found is string str)
             {
-                if (str.EndsWith("*"))
+                if (str.EndsWith("*", StringComparison.OrdinalIgnoreCase))
                 {
-                    finalizedKeys.Add(key);
+                    this.finalizedKeys.Add(key);
 
                     found = str.Substring(0, str.Length - 1);
                 }
@@ -209,7 +225,7 @@ namespace Kerberos.NET.Configuration
 
             foreach (var property in properties)
             {
-                SetPropertyValue(config, property);
+                this.SetPropertyValue(config, property);
             }
 
             return config;
@@ -301,7 +317,7 @@ namespace Kerberos.NET.Configuration
                 {
                     int val = (int)value;
 
-                    config.Add(new KeyValuePair<string, object>(name, "0x" + val.ToString("X8")));
+                    config.Add(new KeyValuePair<string, object>(name, "0x" + val.ToString("X8", CultureInfo.InvariantCulture)));
                 }
                 else
                 {
@@ -403,7 +419,7 @@ namespace Kerberos.NET.Configuration
 
             var propertyType = property.PropertyType;
 
-            property.SetValue(config, CreateProperty(propertyType, baseName));
+            property.SetValue(config, this.CreateProperty(propertyType, baseName));
         }
 
         private static string GetName(PropertyInfo property)
@@ -434,12 +450,12 @@ namespace Kerberos.NET.Configuration
 
             if (IsDictionary(propertyType))
             {
-                return CreatePropertyAsDictionary(propertyType, baseName);
+                return this.CreatePropertyAsDictionary(propertyType, baseName);
             }
 
             if (IsEnumerable(propertyType))
             {
-                return CreatePropertyAsList(propertyType, baseName);
+                return this.CreatePropertyAsList(propertyType, baseName);
             }
 
             if (IsPrimitive(propertyType))
@@ -448,7 +464,7 @@ namespace Kerberos.NET.Configuration
             }
             else
             {
-                return CreateInstance(propertyType, baseName);
+                return this.CreateInstance(propertyType, baseName);
             }
         }
 
@@ -464,7 +480,7 @@ namespace Kerberos.NET.Configuration
 
                 if (IsDictionary(property.PropertyType))
                 {
-                    value = CreateProperty(property.PropertyType, name);
+                    value = this.CreateProperty(property.PropertyType, name);
                 }
                 else
                 {
@@ -498,7 +514,7 @@ namespace Kerberos.NET.Configuration
                 {
                     if (!(bool)containsKey.Invoke(dict, new[] { val.Key }))
                     {
-                        var obj = CreateProperty(genericArgs[1], AppendName(baseName, val.Key));
+                        var obj = this.CreateProperty(genericArgs[1], AppendName(baseName, val.Key));
 
                         if (obj != null)
                         {
@@ -527,7 +543,7 @@ namespace Kerberos.NET.Configuration
 
             foreach (var val in values)
             {
-                var obj = CreateProperty(genericParamType, AppendName(baseName, val.Key));
+                var obj = this.CreateProperty(genericParamType, AppendName(baseName, val.Key));
 
                 add.Invoke(list, new[] { obj });
             }
@@ -542,7 +558,7 @@ namespace Kerberos.NET.Configuration
             keyName = keys[0];
             downStreamKey = keys.Length > 1 ? keys[1] : null;
 
-            if (keyName.StartsWith("\"") && !string.IsNullOrWhiteSpace(downStreamKey))
+            if (keyName.StartsWith("\"", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(downStreamKey))
             {
                 var nextIndexOfQuote = downStreamKey.IndexOf('"');
 
@@ -560,7 +576,7 @@ namespace Kerberos.NET.Configuration
             }
         }
 
-        private object FormatResult(object found, Type type, IEnumerable<Attribute> attributes)
+        private static object FormatResult(object found, Type type, IEnumerable<Attribute> attributes)
         {
             if (found == null)
             {
@@ -644,7 +660,7 @@ namespace Kerberos.NET.Configuration
                 return ParseBool(stringValue);
             }
 
-            return Convert.ChangeType(stringValue, type);
+            return Convert.ChangeType(stringValue, type, CultureInfo.InvariantCulture);
         }
 
         private static object ParseBool(string stringValue)

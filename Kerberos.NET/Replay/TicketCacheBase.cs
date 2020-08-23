@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -9,6 +14,7 @@ namespace Kerberos.NET
     public abstract class TicketCacheBase : ITicketCache, IDisposable
     {
         private readonly Task backgroundRunner;
+        private bool disposedValue;
 
         public TicketCacheBase(ILoggerFactory logger)
         {
@@ -51,14 +57,6 @@ namespace Kerberos.NET
             return Task.CompletedTask;
         }
 
-        public void Dispose()
-        {
-            this.Cancellation.Cancel();
-            this.Cancellation.Dispose();
-
-            this.backgroundRunner.ContinueWith(t => t.Dispose(), TaskScheduler.Default);
-        }
-
         public abstract ValueTask<bool> AddAsync(TicketCacheEntry entry);
 
         public abstract bool Add(TicketCacheEntry entry);
@@ -74,5 +72,27 @@ namespace Kerberos.NET
         public abstract ValueTask<T> GetCacheItemAsync<T>(string key, string container = null);
 
         public abstract T GetCacheItem<T>(string key, string container = null);
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this.disposedValue)
+            {
+                if (disposing)
+                {
+                    this.Cancellation.Cancel();
+                    this.Cancellation.Dispose();
+
+                    this.backgroundRunner.ContinueWith(t => t.Dispose(), TaskScheduler.Default);
+                }
+
+                this.disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

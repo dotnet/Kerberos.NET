@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -72,7 +77,7 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(obj.Defaults.DefaultCCacheName, obj2.Defaults.DefaultCCacheName);
             Assert.AreEqual(obj.Defaults.DefaultRealm, obj2.Defaults.DefaultRealm);
 
-            Assert.AreEqual(1, obj.Realms.Count());
+            Assert.AreEqual(1, obj.Realms.Count);
             Assert.AreEqual(3, obj.Realms["EXAMPLE.COM"].Kdc.Count());
 
             Assert.AreEqual(obj.CaPaths["EXAMPLE.COM"]["DEV.EXAMPLE.COM"], obj2.CaPaths["EXAMPLE.COM"]["DEV.EXAMPLE.COM"]);

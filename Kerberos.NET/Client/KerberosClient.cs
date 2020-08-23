@@ -80,11 +80,11 @@ namespace Kerberos.NET.Client
             this.logger = logger.CreateLoggerSafe<KerberosClient>();
             this.clientLoggingScope = this.logger.BeginScope("KerberosClient");
 
-            transport = new KerberosTransportSelector(transports);
+            this.transport = new KerberosTransportSelector(transports);
 
-            Cache = new MemoryTicketCache(logger) { Refresh = this.Refresh };
+            this.Cache = new MemoryTicketCache(logger) { Refresh = this.Refresh };
 
-            MaximumRetries = 10;
+            this.MaximumRetries = 10;
         }
 
         /// <summary>
@@ -93,8 +93,8 @@ namespace Kerberos.NET.Client
         /// </summary>
         public int MaximumRetries
         {
-            get => transport.MaximumAttempts;
-            set => transport.MaximumAttempts = value;
+            get => this.transport.MaximumAttempts;
+            set => this.transport.MaximumAttempts = value;
         }
 
         /// <summary>
@@ -102,8 +102,8 @@ namespace Kerberos.NET.Client
         /// </summary>
         public bool RenewTickets
         {
-            get => Cache.RefreshTickets;
-            set => Cache.RefreshTickets = value;
+            get => this.Cache.RefreshTickets;
+            set => this.Cache.RefreshTickets = value;
         }
 
         /// <summary>
@@ -117,22 +117,22 @@ namespace Kerberos.NET.Client
         /// </summary>
         public TimeSpan RefreshPollInterval
         {
-            get => Cache.RefreshInterval;
-            set => Cache.RefreshInterval = value;
+            get => this.Cache.RefreshInterval;
+            set => this.Cache.RefreshInterval = value;
         }
 
         /// <summary>
         /// The transports this client will attempt to use to communicate with the KDC
         /// </summary>
-        public IEnumerable<IKerberosTransport> Transports => transport.Transports;
+        public IEnumerable<IKerberosTransport> Transports => this.transport.Transports;
 
         /// <summary>
         /// The cache that stores tickets for this client instance
         /// </summary>
         public ITicketCache Cache
         {
-            get => ticketCache;
-            set => ticketCache = value ?? throw new InvalidOperationException("Cache cannot be null");
+            get => this.ticketCache;
+            set => this.ticketCache = value ?? throw new InvalidOperationException("Cache cannot be null");
         }
 
         /// <summary>
@@ -140,20 +140,20 @@ namespace Kerberos.NET.Client
         /// </summary>
         public TimeSpan ConnectTimeout
         {
-            get => transport.ConnectTimeout;
-            set => transport.ConnectTimeout = value;
+            get => this.transport.ConnectTimeout;
+            set => this.transport.ConnectTimeout = value;
         }
 
         public TimeSpan SendTimeout
         {
-            get => transport.SendTimeout;
-            set => transport.SendTimeout = value;
+            get => this.transport.SendTimeout;
+            set => this.transport.SendTimeout = value;
         }
 
         public TimeSpan ReceiveTimeout
         {
-            get => transport.ReceiveTimeout;
-            set => transport.ReceiveTimeout = value;
+            get => this.transport.ReceiveTimeout;
+            set => this.transport.ReceiveTimeout = value;
         }
 
         /// <summary>
@@ -182,8 +182,8 @@ namespace Kerberos.NET.Client
         /// </summary>
         public Guid ScopeId
         {
-            get => scopeId ?? (scopeId = KerberosConstants.GetRequestActivityId()).Value;
-            set => scopeId = value;
+            get => this.scopeId ?? (this.scopeId = KerberosConstants.GetRequestActivityId()).Value;
+            set => this.scopeId = value;
         }
 
         /// <summary>
@@ -206,10 +206,10 @@ namespace Kerberos.NET.Client
 
             if (!credential.SupportsOptimisticPreAuthentication)
             {
-                AuthenticationOptions &= ~AuthenticationOptions.PreAuthenticate;
+                this.AuthenticationOptions &= ~AuthenticationOptions.PreAuthenticate;
             }
 
-            using (logger.BeginRequestScope(ScopeId))
+            using (this.logger.BeginRequestScope(this.ScopeId))
             {
                 do
                 {
@@ -241,12 +241,12 @@ namespace Kerberos.NET.Client
 
                         foreach (var salt in credential.Salts)
                         {
-                            logger.LogDebug("AS-REP PA-Data: EType = {Etype}; Salt = {Salt};", salt.Key, salt.Value);
+                            this.logger.LogDebug("AS-REP PA-Data: EType = {Etype}; Salt = {Salt};", salt.Key, salt.Value);
                         }
 
                         // now we try pre-auth
 
-                        AuthenticationOptions |= AuthenticationOptions.PreAuthenticate;
+                        this.AuthenticationOptions |= AuthenticationOptions.PreAuthenticate;
                     }
                 }
                 while (++preauthAttempts <= 3);
@@ -285,10 +285,10 @@ namespace Kerberos.NET.Client
 
             var originalServicePrincipalName = KrbPrincipalName.FromString(rst.ServicePrincipalName);
 
-            var tgtCacheName = $"krbtgt/{DefaultDomain}";
+            var tgtCacheName = $"krbtgt/{this.DefaultDomain}";
             var receivedRequestedTicket = false;
 
-            using (logger.BeginRequestScope(ScopeId))
+            using (this.logger.BeginRequestScope(this.ScopeId))
             {
                 KrbEncTgsRepPart encKdcRepPart = null;
                 KrbEncryptionKey sessionKey;
@@ -296,7 +296,7 @@ namespace Kerberos.NET.Client
 
                 if (rst.KdcOptions == 0)
                 {
-                    rst.KdcOptions = KdcOptions;
+                    rst.KdcOptions = this.KdcOptions;
                 }
 
                 if (rst.UserToUserTicket != null)
@@ -315,22 +315,22 @@ namespace Kerberos.NET.Client
 
                     // first of all, do we already have the ticket?
 
-                    serviceTicketCacheEntry = Cache.GetCacheItem<KerberosClientCacheEntry>(
+                    serviceTicketCacheEntry = this.Cache.GetCacheItem<KerberosClientCacheEntry>(
                         originalServicePrincipalName.FullyQualifiedName,
                         rst.S4uTarget
                     );
 
                     bool cacheResult = false;
 
-                    if (serviceTicketCacheEntry.KdcResponse == null || !CacheServiceTickets)
+                    if (serviceTicketCacheEntry.KdcResponse == null || !this.CacheServiceTickets)
                     {
                         // nope, try and request it from the KDC that issued the TGT
 
-                        var tgtEntry = CopyTicket(tgtCacheName);
+                        var tgtEntry = this.CopyTicket(tgtCacheName);
 
                         rst.Realm = ResolveKdcTarget(tgtEntry);
 
-                        serviceTicketCacheEntry = await RequestTgs(rst, tgtEntry, cancellation);
+                        serviceTicketCacheEntry = await this.RequestTgs(rst, tgtEntry, cancellation).ConfigureAwait(true);
 
                         cacheResult = true;
                     }
@@ -401,7 +401,7 @@ namespace Kerberos.NET.Client
                         // regardless of what state we're in we got a valuable ticket
                         // that can be used in future requests
 
-                        Cache.Add(new TicketCacheEntry
+                        this.Cache.Add(new TicketCacheEntry
                         {
                             Key = respondedSName.FullyQualifiedName,
                             Container = rst.S4uTarget,
@@ -434,7 +434,7 @@ namespace Kerberos.NET.Client
             }
         }
 
-        private string TryFindReferralShortcut(KrbEncTgsRepPart encKdcRepPart)
+        private static string TryFindReferralShortcut(KrbEncTgsRepPart encKdcRepPart)
         {
             var svrReferralPaData = encKdcRepPart.EncryptedPaData?.MethodData?.FirstOrDefault(d => d.Type == PaDataType.PA_SVR_REFERRAL_INFO);
 
@@ -477,7 +477,7 @@ namespace Kerberos.NET.Client
             KrbTicket u2uServerTicket = null
         )
         {
-            var session = await GetServiceTicket(
+            var session = await this.GetServiceTicket(
                 new RequestServiceTicket
                 {
                     ServicePrincipalName = spn,
@@ -486,8 +486,8 @@ namespace Kerberos.NET.Client
                     S4uTicket = s4uTicket,
                     UserToUserTicket = u2uServerTicket
                 },
-                cancellation.Token
-            );
+                this.cancellation.Token
+            ).ConfigureAwait(true);
 
             return session.ApReq;
         }
@@ -583,14 +583,14 @@ namespace Kerberos.NET.Client
             // we also don't want to renew too early otherwise it's a waste of energy
             // only renew if the ticket is nearing expiration
 
-            if (IsRenewable(entry, out KerberosClientCacheEntry ticket))
+            if (this.IsRenewable(entry, out KerberosClientCacheEntry ticket))
             {
                 var cname = ticket.KdcResponse.CName.FullyQualifiedName;
                 var sname = ticket.KdcResponse.Ticket.SName.FullyQualifiedName;
 
-                logger.LogInformation("Ticket for {CName} to {SName} is renewing because it's expiring in {TTL}", cname, sname, entry.TimeToLive);
+                this.logger.LogInformation("Ticket for {CName} to {SName} is renewing because it's expiring in {TTL}", cname, sname, entry.TimeToLive);
 
-                await RenewTicket(sname);
+                await this.RenewTicket(sname).ConfigureAwait(true);
             }
         }
 
@@ -600,7 +600,7 @@ namespace Kerberos.NET.Client
 
             if (entry.Value is KerberosClientCacheEntry tick)
             {
-                if (entry.TimeToLive <= TimeSpan.Zero || entry.TimeToLive > RenewTicketsThreshold)
+                if (entry.TimeToLive <= TimeSpan.Zero || entry.TimeToLive > this.RenewTicketsThreshold)
                 {
                     return false;
                 }
@@ -623,7 +623,7 @@ namespace Kerberos.NET.Client
             CancellationToken cancellation
         )
         {
-            logger.LogInformation(
+            this.logger.LogInformation(
                 "Requesting TGS for {SPN}; TGT Realm = {TGTRealm}; TGT Service = {TGTService}; S4U = {S4U}; S4UTicket = {S4UTicketSPN}",
                 rst.ServicePrincipalName,
                 tgtEntry.KdcResponse.CRealm,
@@ -638,11 +638,11 @@ namespace Kerberos.NET.Client
 
             cancellation.ThrowIfCancellationRequested();
 
-            var tgsRep = await transport.SendMessage<KrbTgsRep>(
+            var tgsRep = await this.transport.SendMessage<KrbTgsRep>(
                 rst.Realm,
                 encodedTgs,
                 cancellation
-            );
+            ).ConfigureAwait(true);
 
             var entry = new KerberosClientCacheEntry
             {
@@ -651,16 +651,16 @@ namespace Kerberos.NET.Client
                 Nonce = tgsReq.Body.Nonce
             };
 
-            logger.LogInformation("TGS-REP for {SPN}", tgsRep.Ticket.SName.FullyQualifiedName);
+            this.logger.LogInformation("TGS-REP for {SPN}", tgsRep.Ticket.SName.FullyQualifiedName);
 
             return entry;
         }
 
         private KerberosClientCacheEntry CopyTicket(string spn)
         {
-            var entry = Cache.GetCacheItem<KerberosClientCacheEntry>(spn);
+            var entry = this.Cache.GetCacheItem<KerberosClientCacheEntry>(spn);
 
-            lock (_syncTicketCache)
+            lock (this._syncTicketCache)
             {
                 if (entry.KdcResponse == null)
                 {
@@ -687,16 +687,16 @@ namespace Kerberos.NET.Client
         {
             if (string.IsNullOrWhiteSpace(spn))
             {
-                spn = $"krbtgt/{DefaultDomain}";
+                spn = $"krbtgt/{this.DefaultDomain}";
             }
 
-            var entry = CopyTicket(spn);
+            var entry = this.CopyTicket(spn);
 
             var tgs = KrbTgsReq.CreateTgsReq(
                 new RequestServiceTicket
                 {
                     ServicePrincipalName = spn,
-                    KdcOptions = KdcOptions | KdcOptions.Renew | KdcOptions.RenewableOk,
+                    KdcOptions = this.KdcOptions | KdcOptions.Renew | KdcOptions.RenewableOk,
                     Realm = ResolveKdcTarget(entry)
                 },
                 entry.SessionKey,
@@ -706,10 +706,10 @@ namespace Kerberos.NET.Client
 
             var encodedTgs = tgs.EncodeApplication();
 
-            var tgsRep = await transport.SendMessage<KrbTgsRep>(
+            var tgsRep = await this.transport.SendMessage<KrbTgsRep>(
                 tgs.Body.Realm,
                 encodedTgs
-            );
+            ).ConfigureAwait(true);
 
             var encKdcRepPart = tgsRep.EncPart.Decrypt(
                 subkey.AsKey(),
@@ -717,7 +717,7 @@ namespace Kerberos.NET.Client
                 d => KrbEncTgsRepPart.DecodeApplication(d)
             );
 
-            CacheTgt(tgsRep, encKdcRepPart);
+            this.CacheTgt(tgsRep, encKdcRepPart);
         }
 
         private void CacheTgt(KrbKdcRep kdcRep, KrbEncKdcRepPart encKdcRepPart)
@@ -726,7 +726,7 @@ namespace Kerberos.NET.Client
 
             encKdcRepPart.Key.Usage = KeyUsage.EncTgsRepPartSessionKey;
 
-            Cache.Add(new TicketCacheEntry
+            this.Cache.Add(new TicketCacheEntry
             {
                 Key = key,
                 Expires = encKdcRepPart.EndTime,
@@ -741,30 +741,30 @@ namespace Kerberos.NET.Client
 
         private async Task RequestTgt(KerberosCredential credential)
         {
-            var asReqMessage = KrbAsReq.CreateAsReq(credential, AuthenticationOptions);
+            var asReqMessage = KrbAsReq.CreateAsReq(credential, this.AuthenticationOptions);
 
             var asReq = asReqMessage.EncodeApplication();
 
-            logger.LogTrace(
+            this.logger.LogTrace(
                 "Attempting AS-REQ. UserName = {UserName}; Domain = {Domain}; Nonce = {Nonce}",
                 credential.UserName,
                 credential.Domain,
                 asReqMessage.Body.Nonce
             );
 
-            var asRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq);
+            var asRep = await this.transport.SendMessage<KrbAsRep>(credential.Domain, asReq).ConfigureAwait(true);
 
             var decrypted = credential.DecryptKdcRep(
                 asRep,
                 KeyUsage.EncAsRepPart,
-                d => DecodeEncKdcRepPart<KrbEncAsRepPart>(d)
+                d => this.DecodeEncKdcRepPart<KrbEncAsRepPart>(d)
             );
 
             VerifyNonces(asReqMessage.Body.Nonce, decrypted.Nonce);
 
-            DefaultDomain = credential.Domain;
+            this.DefaultDomain = credential.Domain;
 
-            CacheTgt(asRep, decrypted);
+            this.CacheTgt(asRep, decrypted);
         }
 
         private KrbEncKdcRepPart DecodeEncKdcRepPart<T>(ReadOnlyMemory<byte> decrypted)
@@ -795,13 +795,13 @@ namespace Kerberos.NET.Client
 
             if (repPart != null)
             {
-                logger.LogDebug(
+                this.logger.LogDebug(
                     "EncPart expected to be {ExpectedType} and is actually {ActualType}",
                     typeof(T).Name,
                     repPart.GetType().Name
                 );
 
-                if (AuthenticationOptions.HasFlag(AuthenticationOptions.RepPartCompatible) || repPart is T)
+                if (this.AuthenticationOptions.HasFlag(AuthenticationOptions.RepPartCompatible) || repPart is T)
                 {
                     return repPart;
                 }
@@ -829,33 +829,33 @@ namespace Kerberos.NET.Client
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (!this.disposed)
             {
                 if (disposing)
                 {
-                    if (Cache is IDisposable cache)
+                    if (this.Cache is IDisposable cache)
                     {
                         cache.Dispose();
                     }
 
-                    transport.Dispose();
+                    this.transport.Dispose();
 
-                    clientLoggingScope.Dispose();
-                    cancellation.Dispose();
+                    this.clientLoggingScope.Dispose();
+                    this.cancellation.Dispose();
                 }
 
-                disposed = true;
+                this.disposed = true;
             }
         }
 
         ~KerberosClient()
         {
-            Dispose(false);
+            this.Dispose(false);
         }
 
         public void Dispose()
         {
-            Dispose(true);
+            this.Dispose(true);
             GC.SuppressFinalize(this);
         }
     }
