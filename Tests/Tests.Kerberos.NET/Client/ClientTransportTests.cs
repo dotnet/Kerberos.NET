@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -57,9 +57,9 @@ namespace Tests.Kerberos.NET
             {
             }
 
-            protected override DnsRecord QueryDomain(string lookup)
+            protected override Task<DnsRecord> QueryDomain(string lookup)
             {
-                return new DnsRecord { Target = "127.0.0.1", Port = 12345 };
+                return Task.FromResult(new DnsRecord { Target = "127.0.0.1", Port = 12345 });
             }
         }
 
@@ -99,9 +99,9 @@ namespace Tests.Kerberos.NET
                 return Task.FromResult(Decode<T>(response));
             }
 
-            protected override IEnumerable<DnsRecord> Query(string lookup)
+            protected override Task<IEnumerable<DnsRecord>> Query(string lookup)
             {
-                return new List<DnsRecord>
+                return Task.FromResult<IEnumerable<DnsRecord>>(new List<DnsRecord>
                 {
                     new DnsRecord
                     {
@@ -113,7 +113,7 @@ namespace Tests.Kerberos.NET
                         Type = DnsRecordType.SRV,
                         Weight = 1
                     }
-                };
+                });
             }
         }
     }

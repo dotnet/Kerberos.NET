@@ -327,11 +327,11 @@ namespace KerberosClientApp
                 kdcProxyTransport.DomainPaths[kdcProxy.DnsSafeHost.ToLowerInvariant()] = kdcProxy;
                 kdcProxyTransport.DomainPaths[kerbCred.Domain.ToLowerInvariant()] = kdcProxy;
 
-                client = new KerberosClient(factory, kdcProxyTransport) { Cache = new Krb5TicketCache("krb5cc", factory) };
+                client = new KerberosClient(factory, kdcProxyTransport) { /*Cache = new Krb5TicketCache("krb5cc", factory)*/ };
             }
             else
             {
-                client = new KerberosClient(overrideKdc, factory) { Cache = new Krb5TicketCache("krb5cc", factory) };
+                client = new KerberosClient(overrideKdc, factory) { /*Cache = new Krb5TicketCache("krb5cc", factory)*/ };
             }
 
             KrbPrincipalName cnameHint = null;

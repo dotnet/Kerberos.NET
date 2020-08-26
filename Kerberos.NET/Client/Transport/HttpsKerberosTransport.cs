@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -38,7 +38,7 @@ namespace Kerberos.NET.Transport
 
         public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
         {
-            var kdc = this.LocateKdc(domain);
+            var kdc = await this.LocateKdc(domain);
 
             var message = KdcProxyMessage.WrapMessage(req, domain, this.Hint);
 
@@ -71,7 +71,7 @@ namespace Kerberos.NET.Transport
             }
         }
 
-        protected Uri LocateKdc(string domain)
+        protected async Task<Uri> LocateKdc(string domain)
         {
             if (string.IsNullOrWhiteSpace(domain))
             {
@@ -87,7 +87,7 @@ namespace Kerberos.NET.Transport
 
             if (this.TryResolvingServiceLocator)
             {
-                uri = this.ResolveByServiceLocator(domain);
+                uri = await this.ResolveByServiceLocator(domain);
             }
 
             if (uri == null)
@@ -104,11 +104,11 @@ namespace Kerberos.NET.Transport
             return uri;
         }
 
-        private Uri ResolveByServiceLocator(string domain)
+        private async Task<Uri> ResolveByServiceLocator(string domain)
         {
             var lookup = string.Format(CultureInfo.InvariantCulture, HttpsServiceTemplate, domain);
 
-            var dnsRecord = this.QueryDomain(lookup);
+            var dnsRecord = await this.QueryDomain(lookup);
 
             if (dnsRecord == null)
             {

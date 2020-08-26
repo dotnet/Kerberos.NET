@@ -1,10 +1,13 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using Kerberos.NET.Dns;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -20,11 +23,11 @@ namespace Tests.Kerberos.NET
         public const string BadSrvRecord = "_sip._tls.internal#$@%$^&R*.fake";
 
         [TestMethod]
-        public void QuerySrvRecordHittingInternet()
+        public async Task QuerySrvRecordHittingInternet()
         {
             DnsQuery.Debug = true;
 
-            var records = DnsQuery.QuerySrv(ExternalSrvRecord);
+            var records = await DnsQuery.QuerySrv(ExternalSrvRecord);
 
             Assert.IsTrue(records.Any());
 
@@ -35,20 +38,55 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void FailedLookup()
+        public async Task FailedLookup()
         {
             DnsQuery.Debug = true;
 
-            var records = DnsQuery.QuerySrv(UnknownSrvRecord);
+            var records = await DnsQuery.QuerySrv(UnknownSrvRecord);
 
             Assert.AreEqual(0, records.Count());
         }
 
         [TestMethod]
         [ExpectedException(typeof(Win32Exception))]
-        public void BadDataLookup()
+        public async Task BadDataLookup()
         {
-            DnsQuery.QuerySrv(BadSrvRecord);
+            await DnsQuery.QuerySrv(BadSrvRecord);
+        }
+
+        [TestMethod]
+        public async Task QueryUsesCustomType()
+        {
+            var fake = new FakeDnsImplementation();
+
+            DnsQuery.RegisterImplementation(fake);
+
+            var result = await DnsQuery.QuerySrv("blah.blah.blah");
+
+            Assert.AreEqual(1, result.Count());
+            Assert.AreEqual("blah", result.First().Target);
+
+            Assert.IsTrue(fake.WasCalled);
+
+            DnsQuery.RegisterImplementation(new WindowsDnsQuery());
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void RegisteringNullFails()
+        {
+            DnsQuery.RegisterImplementation(null);
+        }
+
+        private class FakeDnsImplementation : IKerberosDnsQuery
+        {
+            public bool WasCalled { get; set; }
+
+            public Task<IEnumerable<DnsRecord>> Query(string query, DnsRecordType type)
+            {
+                this.WasCalled = true;
+                return Task.FromResult<IEnumerable<DnsRecord>>(new List<DnsRecord> { new DnsRecord { Target = "blah" } });
+            }
         }
     }
 }

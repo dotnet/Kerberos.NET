@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -32,7 +32,7 @@ namespace Kerberos.NET.Transport
             CancellationToken cancellation = default
         )
         {
-            var target = this.LocateKdc(domain);
+            var target = await this.LocateKdc(domain);
 
             using (var client = new UdpClient(target.Target, target.Port))
             {
@@ -48,7 +48,7 @@ namespace Kerberos.NET.Transport
             }
         }
 
-        protected DnsRecord LocateKdc(string domain)
+        protected Task<DnsRecord> LocateKdc(string domain)
         {
             var lookup = string.Format(CultureInfo.InvariantCulture, UdpServiceTemplate, domain);
 

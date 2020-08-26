@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -61,6 +61,15 @@ namespace Kerberos.NET.Transport
                     return await ReadResponse<T>(stream, cancellation).ConfigureAwait(true);
                 }
             }
+            catch (KerberosProtocolException kex)
+            {
+                if (kex.Error?.ErrorCode == Entities.KerberosErrorCode.KDC_ERR_WRONG_REALM)
+                {
+                    throw new KerberosTransportException(kex.Error);
+                }
+
+                throw;
+            }
             catch (SocketException sx)
             {
                 this.logger.LogDebug(sx, "TCP Socket exception during Connect {SocketCode}", sx.SocketErrorCode);
@@ -76,7 +85,7 @@ namespace Kerberos.NET.Transport
 
             do
             {
-                var target = this.LocateKdc(domain);
+                var target = await this.LocateKdc(domain);
 
                 this.logger.LogTrace("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
 
@@ -137,7 +146,7 @@ namespace Kerberos.NET.Transport
             await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation).ConfigureAwait(true);
         }
 
-        protected DnsRecord LocateKdc(string domain)
+        protected Task<DnsRecord> LocateKdc(string domain)
         {
             var lookup = string.Format(CultureInfo.InvariantCulture, TcpServiceTemplate, domain);
 

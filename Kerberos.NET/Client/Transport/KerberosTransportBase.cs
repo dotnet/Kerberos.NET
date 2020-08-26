@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -27,6 +27,13 @@ namespace Kerberos.NET.Transport
         private readonly ConcurrentDictionary<string, DnsRecord> negativeCache
             = new ConcurrentDictionary<string, DnsRecord>();
 
+        private static readonly Task CacheCleanup;
+
+        static KerberosTransportBase()
+        {
+            CacheCleanup = Task.Run(MonitorDnsCache).ContinueWith(t => t.Dispose(), TaskScheduler.Default);
+        }
+
         protected KerberosTransportBase(string kdc = null)
         {
             this.kdc = kdc;
@@ -50,6 +57,8 @@ namespace Kerberos.NET.Transport
         public TimeSpan ReceiveTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
         public int MaximumAttempts { get; set; } = 30;
+
+        public static TimeSpan CacheCleanupInterval { get; set; } = TimeSpan.FromMinutes(5);
 
         protected static T Decode<T>(ReadOnlyMemory<byte> response)
             where T : IAsn1ApplicationEncoder<T>, new()
@@ -91,16 +100,18 @@ namespace Kerberos.NET.Transport
         )
             where T : IAsn1ApplicationEncoder<T>, new();
 
-        protected virtual DnsRecord QueryDomain(string lookup)
+        protected virtual async Task<DnsRecord> QueryDomain(string lookup)
         {
-            return DomainCache.AddOrUpdate(
-                lookup, // find SRV by domain name in cache
-                dn => this.QueryDns(dn, null), // if it doesn't exist in cache just query and add
-                (dn, existing) => existing.Purge ? this.QueryDns(dn, existing) : existing // if it already exists check if its ignored and replace
-            );
+            if (!DomainCache.TryGetValue(lookup, out DnsRecord record) || record.Purge)
+            {
+                record = await this.QueryDns(lookup, record);
+                DomainCache[lookup] = record;
+            }
+
+            return record;
         }
 
-        private DnsRecord QueryDns(string lookup, DnsRecord ignored)
+        private async Task<DnsRecord> QueryDns(string lookup, DnsRecord ignored)
         {
             if (!string.IsNullOrWhiteSpace(this.kdc))
             {
@@ -123,7 +134,7 @@ namespace Kerberos.NET.Transport
                 return record;
             }
 
-            var results = this.Query(lookup).Where(r => r.Type == DnsRecordType.SRV);
+            var results = (await this.Query(lookup)).Where(r => r.Type == DnsRecordType.SRV);
 
             if (ignored != null && ignored.Ignore)
             {
@@ -135,7 +146,15 @@ namespace Kerberos.NET.Transport
 
             results = results.Where(s => !this.negativeCache.TryGetValue(s.Target, out DnsRecord record) || record.Expired);
 
-            var weighted = results.GroupBy(r => r.Weight).OrderBy(r => r.Key).OrderByDescending(r => r.Sum(a => a.Canonical.Count())).FirstOrDefault();
+            foreach (var result in results.Where(r => r.Expired).ToList())
+            {
+                this.negativeCache.TryRemove(result.Target, out _);
+            }
+
+            var weighted = results.GroupBy(r => r.Weight)
+                                  .OrderBy(r => r.Key)
+                                  .OrderByDescending(r => r.Sum(a => a.Canonical.Count()))
+                                  .FirstOrDefault();
 
             var rand = Random.Next(0, weighted?.Count() ?? 0);
 
@@ -154,9 +173,32 @@ namespace Kerberos.NET.Transport
             return srv;
         }
 
-        protected virtual IEnumerable<DnsRecord> Query(string lookup)
+        protected virtual Task<IEnumerable<DnsRecord>> Query(string lookup)
         {
             return DnsQuery.QuerySrv(lookup);
+        }
+
+        private static async Task MonitorDnsCache()
+        {
+            // allows any callers to modify CacheCleanupInterval
+            // without having to wait the full 5 minute default.
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+
+            // yes this is somewhat redundant
+
+            while (!CacheCleanup.IsCompleted)
+            {
+                foreach (var entry in DomainCache.ToList())
+                {
+                    if (entry.Value.Expired)
+                    {
+                        DomainCache.TryRemove(entry.Key, out _);
+                    }
+                }
+
+                await Task.Delay(CacheCleanupInterval);
+            }
         }
 
         protected virtual void Dispose(bool disposing)
