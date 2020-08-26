@@ -377,7 +377,8 @@ namespace Kerberos.NET.Client
 
                         string referral = TryFindReferralShortcut(encKdcRepPart);
 
-                        if (string.IsNullOrWhiteSpace(referral))
+                        if (string.IsNullOrWhiteSpace(referral) ||
+                            encKdcRepPart.SName.Matches(KrbPrincipalName.FromString(referral, PrincipalNameType.NT_SRV_INST)))
                         {
                             referral = originalServicePrincipalName.FullyQualifiedName;
                         }
