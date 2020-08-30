@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -22,7 +22,7 @@ namespace Tests.Kerberos.NET
             {
                 Assert.IsNotNull(client);
 
-                Assert.AreEqual(2, client.Transports.Count());
+                Assert.AreEqual(3, client.Transports.Count());
             }
         }
 

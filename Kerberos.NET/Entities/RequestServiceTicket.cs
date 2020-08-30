@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Entities;
 
 namespace Kerberos.NET
@@ -60,6 +61,11 @@ namespace Kerberos.NET
         /// Indicates which flags should be sent to the target within the GSS Delegation Info structure
         /// </summary>
         public GssContextEstablishmentFlag GssContextFlags { get; set; }
+
+        /// <summary>
+        /// Includes additional configuration details for the request.
+        /// </summary>
+        public Krb5Config Configuration { get; set; }
 
         public override bool Equals(object obj)
         {

@@ -4,26 +4,24 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Globalization;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
-using Kerberos.NET.Dns;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Transport
 {
     public class TcpKerberosTransport : KerberosTransportBase
     {
-        private const string TcpServiceTemplate = "_kerberos._tcp.{0}";
+        private const string TcpServiceTemplate = "_kerberos._tcp";
 
         private static readonly ISocketPool Pool = CreateSocketPool();
 
         private readonly ILogger<TcpKerberosTransport> logger;
 
-        public TcpKerberosTransport(ILoggerFactory logger, string kdc = null)
-            : base(kdc)
+        public TcpKerberosTransport(ILoggerFactory logger)
+            : base(logger)
         {
             this.logger = logger.CreateLoggerSafe<TcpKerberosTransport>();
 
@@ -61,15 +59,6 @@ namespace Kerberos.NET.Transport
                     return await ReadResponse<T>(stream, cancellation).ConfigureAwait(true);
                 }
             }
-            catch (KerberosProtocolException kex)
-            {
-                if (kex.Error?.ErrorCode == Entities.KerberosErrorCode.KDC_ERR_WRONG_REALM)
-                {
-                    throw new KerberosTransportException(kex.Error);
-                }
-
-                throw;
-            }
             catch (SocketException sx)
             {
                 this.logger.LogDebug(sx, "TCP Socket exception during Connect {SocketCode}", sx.SocketErrorCode);
@@ -85,7 +74,7 @@ namespace Kerberos.NET.Transport
 
             do
             {
-                var target = await this.LocateKdc(domain);
+                var target = await this.LocatePreferredKdc(domain, TcpServiceTemplate);
 
                 this.logger.LogTrace("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
 
@@ -111,7 +100,8 @@ namespace Kerberos.NET.Transport
                 {
                     lastThrown = lastThrown ?? new SocketException((int)SocketError.TimedOut);
 
-                    target.Ignore = true;
+                    this.ClientRealmService.NegativeCache(target);
+
                     continue;
                 }
 
@@ -144,13 +134,6 @@ namespace Kerberos.NET.Transport
             encoded = Tcp.FormatKerberosMessageStream(encoded);
 
             await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation).ConfigureAwait(true);
-        }
-
-        protected Task<DnsRecord> LocateKdc(string domain)
-        {
-            var lookup = string.Format(CultureInfo.InvariantCulture, TcpServiceTemplate, domain);
-
-            return this.QueryDomain(lookup);
         }
     }
 }

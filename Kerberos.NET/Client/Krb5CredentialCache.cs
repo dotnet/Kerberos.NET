@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Kerberos.NET.Crypto;
@@ -125,10 +126,17 @@ namespace Kerberos.NET.Client
                     throw new InvalidOperationException($"Unknown file format version. Expected 0x{ExpectedVersion}; Actual 0x{version}.");
                 }
 
-                this.ReadHeader(buffer);
-                this.DefaultPrincipalName = ReadPrincipal(buffer);
+                try
+                {
+                    this.ReadHeader(buffer);
+                    this.DefaultPrincipalName = ReadPrincipal(buffer);
 
-                this.ReadCredentials(buffer);
+                    this.ReadCredentials(buffer);
+                }
+                catch (ArgumentException)
+                {
+                    throw new InvalidDataException($"The cache file appears corrupt around byte offset {buffer.Offset}");
+                }
             }
         }
 
@@ -172,13 +180,7 @@ namespace Kerberos.NET.Client
                 }
                 else
                 {
-                    var encKdcRepPart = entryValue.KdcResponse.EncPart.Decrypt(
-                        entryValue.SessionKey.AsKey(),
-                        entryValue.SessionKey.Usage,
-                        d => KrbEncTgsRepPart.DecodeApplication(d)
-                    );
-
-                    sessionKey = encKdcRepPart.Key;
+                    sessionKey = entryValue.SessionKey;
                 }
 
                 this.Credentials.Add(new Krb5Credential

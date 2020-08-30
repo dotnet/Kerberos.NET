@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -29,13 +29,15 @@ namespace Tests.Kerberos.NET
         protected const string FakeAppServiceSpn = "host/appservice.corp.identityintervention.com";
         protected const string FakeAppServiceInOtherRealm = "fake/app.otherrealm.identityintervention.com";
 
-        internal static KerberosClient CreateClient(KdcListener listener, string kdc = null, bool caching = true)
+        internal static KerberosClient CreateClient(KdcListener listener, string kdc = null, bool caching = true, bool queryDns = false)
         {
             KerberosClient client;
 
             if (listener == null)
             {
-                client = new KerberosClient(kdc: kdc);
+                client = new KerberosClient();
+
+                client.PinKdc("corp.identityintervention.com", kdc);
             }
             else
             {
@@ -43,6 +45,8 @@ namespace Tests.Kerberos.NET
 
                 client = new KerberosClient(transports: transport);
             }
+
+            client.Configuration.Defaults.DnsLookupKdc = queryDns;
 
             client.CacheServiceTickets = caching;
             client.RenewTickets = caching;
@@ -239,6 +243,8 @@ namespace Tests.Kerberos.NET
             using (kerbCred as IDisposable)
             using (client)
             {
+                client.PinKdc(kerbCred.Domain, kdc);
+
                 client.CacheServiceTickets = cacheTickets;
 
                 if (!includePac)

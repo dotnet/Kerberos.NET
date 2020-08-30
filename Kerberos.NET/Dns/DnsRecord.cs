@@ -35,12 +35,19 @@ namespace Kerberos.NET.Dns
 
         public int Port { get; set; }
 
-        public bool Ignore { get; set; }
-
-        public bool Purge => this.Ignore || this.Expired;
-
         public bool Expired => this.stamp.AddSeconds(this.TimeToLive) <= DateTimeOffset.UtcNow;
 
-        public string Address => $"{this.Target}:{this.Port}";
+        public string Address
+        {
+            get
+            {
+                if (this.Port > 0)
+                {
+                    return $"{this.Target}:{this.Port}";
+                }
+
+                return this.Target;
+            }
+        }
     }
 }

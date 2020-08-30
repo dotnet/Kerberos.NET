@@ -99,7 +99,7 @@ namespace Kerberos.NET.Client
 
             lock (this.fileSync)
             {
-                using (var stream = this.OpenFile())
+                using (var stream = this.OpenFile(write: true))
                 {
                     byte[] bytes = this.Serialize();
 
@@ -116,9 +116,16 @@ namespace Kerberos.NET.Client
             return this.cache.Serialize();
         }
 
-        private FileStream OpenFile()
+        private FileStream OpenFile(bool write = false)
         {
-            return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            if (write)
+            {
+                return File.Open(this.filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+            }
+            else
+            {
+                return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.None);
+            }
         }
 
         public override object GetCacheItem(string key, string container = null)

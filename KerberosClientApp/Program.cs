@@ -10,7 +10,6 @@ using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using Kerberos.NET.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Win32;
@@ -34,6 +33,8 @@ namespace KerberosClientApp
 
             bool includeCNameHint = ReadString("Hint", "n", args, required: false, prompt: prompt).Equals("y", StringComparison.InvariantCultureIgnoreCase);
 
+            bool cacheToFile = ReadString("Cache", "n", args, required: false, prompt: prompt).Equals("y", StringComparison.InvariantCultureIgnoreCase);
+
             string servicePassword = ReadString("ServicePassword", "P@ssw0rd!", args, required: false, prompt: prompt);
             string serviceSalt = ReadString("ServiceSalt", "", args, required: false, prompt: prompt);
 
@@ -46,7 +47,7 @@ namespace KerberosClientApp
 
             W();
 
-            await RequestTicketsAsync(cert, user, password, overrideKdc, s4u, spn, randomDH, includeCNameHint, servicePassword, serviceSalt);
+            await RequestTicketsAsync(cert, user, password, overrideKdc, s4u, spn, randomDH, includeCNameHint, servicePassword, serviceSalt, cacheToFile);
 
             Write("Press [Any] key to exit...");
 
@@ -112,10 +113,11 @@ namespace KerberosClientApp
             bool randomDH,
             bool includeCNameHint,
             string servicePassword,
-            string serviceSalt
+            string serviceSalt,
+            bool cacheToFile
         )
         {
-            if (File.Exists("krb5cc"))
+            if (!cacheToFile && File.Exists("krb5cc"))
             {
                 File.Delete("krb5cc");
             }
@@ -124,7 +126,8 @@ namespace KerberosClientApp
             {
                 try
                 {
-                    await RequestTickets(cert, user, password, overrideKdc, s4u, spn, randomDH, includeCNameHint, servicePassword, serviceSalt);
+                    await RequestTickets(cert, user, password, overrideKdc, s4u, spn, randomDH, includeCNameHint, servicePassword, serviceSalt, cacheToFile);
+                    //break;
                 }
                 catch (Exception ex)
                 {
@@ -275,7 +278,8 @@ namespace KerberosClientApp
             bool retryDH,
             bool includeCNameHint,
             string servicePassword,
-            string serviceSalt
+            string serviceSalt,
+            bool cacheToFile
         )
         {
             KerberosCredential kerbCred;
@@ -318,20 +322,23 @@ namespace KerberosClientApp
                 builder.AddFilter<ConsoleLoggerProvider>(level => level >= LogLevel.Trace);
             });
 
-            KerberosClient client;
+            var client = new KerberosClient(logger: factory);
 
             if (Uri.TryCreate(overrideKdc, UriKind.Absolute, out Uri kdcProxy))
             {
-                var kdcProxyTransport = new HttpsKerberosTransport();
-
-                kdcProxyTransport.DomainPaths[kdcProxy.DnsSafeHost.ToLowerInvariant()] = kdcProxy;
-                kdcProxyTransport.DomainPaths[kerbCred.Domain.ToLowerInvariant()] = kdcProxy;
-
-                client = new KerberosClient(factory, kdcProxyTransport) { /*Cache = new Krb5TicketCache("krb5cc", factory)*/ };
+                client.Configuration.Realms[kdcProxy.DnsSafeHost].Kdc.Add(kdcProxy.OriginalString);
+                client.Configuration.Realms[kerbCred.Domain].Kdc.Add(kdcProxy.OriginalString);
+                client.Configuration.Defaults.DnsLookupKdc = false;
             }
-            else
+            else if (!string.IsNullOrWhiteSpace(overrideKdc))
             {
-                client = new KerberosClient(overrideKdc, factory) { /*Cache = new Krb5TicketCache("krb5cc", factory)*/ };
+                client.Configuration.Defaults.DnsLookupKdc = false;
+                client.PinKdc(kerbCred.Domain, overrideKdc);
+            }
+
+            if (cacheToFile)
+            {
+                client.Configuration.Defaults.DefaultCCacheName = "krb5cc";
             }
 
             KrbPrincipalName cnameHint = null;

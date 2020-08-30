@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -15,6 +15,7 @@ namespace Tests.Kerberos.NET
         private readonly KdcListener listener;
 
         public InMemoryTransport(KdcListener listener)
+            : base(null)
         {
             this.listener = listener;
             this.Enabled = true;

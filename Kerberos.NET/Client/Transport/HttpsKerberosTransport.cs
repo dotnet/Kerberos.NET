@@ -5,30 +5,39 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Asn1;
 using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Transport
 {
     public class HttpsKerberosTransport : KerberosTransportBase
     {
-        public HttpsKerberosTransport()
+        private static readonly Random Random = new Random();
+
+        private readonly ILogger logger;
+
+        public HttpsKerberosTransport(ILoggerFactory logger = null)
+            : base(logger)
         {
+            this.logger = logger.CreateLoggerSafe<HttpsKerberosTransport>();
             this.Enabled = true;
         }
 
-        private const string HttpsServiceTemplate = "_kerberos._https.{0}";
+        private const string HttpsServicePrefix = "_kerberos._https";
         private const string WellKnownKdcProxyPath = "/KdcProxy";
+
+        private const string RequestIdHeader = "x-ms-request-id";
+        private const string CorrelationIdHeader = "client-request-id";
 
         private static readonly Lazy<HttpClient> LazyHttp = new Lazy<HttpClient>();
 
         public string CustomVirtualPath { get; set; }
-
-        public bool TryResolvingServiceLocator { get; set; }
 
         public IDictionary<string, Uri> DomainPaths { get; } = new Dictionary<string, Uri>();
 
@@ -36,15 +45,77 @@ namespace Kerberos.NET.Transport
 
         protected virtual HttpClient Client => LazyHttp.Value;
 
+        public string RequestId { get; private set; }
+
         public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
         {
             var kdc = await this.LocateKdc(domain);
 
+            if (kdc == null)
+            {
+                throw new KerberosTransportException($"Cannot locate a KDC Proxy endpoint for {domain}");
+            }
+
+            logger.LogInformation("KDC target found {KDC}", kdc);
+
+            try
+            {
+                return await SendMessage<T>(domain, req, kdc);
+            }
+            catch (KerberosTransportException kex)
+            {
+                var error = kex.Error ?? new KrbError();
+
+                error.EText = this.GetErrorText(kex.Message);
+
+                throw new KerberosTransportException(kex.Error);
+            }
+            catch (KerberosProtocolException kex)
+            {
+                var error = kex.Error ?? new KrbError();
+
+                error.EText = this.GetErrorText(kex.Message);
+
+                throw new KerberosProtocolException(kex.Error);
+            }
+            catch (HttpRequestException hex)
+            {
+                var errorMessage = this.GetErrorText(hex.Message);
+
+                throw new HttpRequestException(errorMessage, hex);
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = this.GetErrorText(ex.Message);
+
+                throw new KerberosProtocolException(errorMessage, ex);
+            }
+        }
+
+        private string GetErrorText(string errorMessage)
+        {
+            string message = errorMessage;
+
+            if (!string.IsNullOrWhiteSpace(this.RequestId))
+            {
+                message = $"{errorMessage} [RequestId:{this.RequestId}]".Trim();
+            }
+
+            return message;
+        }
+
+        private async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, Uri kdc)
+            where T : IAsn1ApplicationEncoder<T>, new()
+        {
             var message = KdcProxyMessage.WrapMessage(req, domain, this.Hint);
 
             using (var content = new BinaryContent(message.Encode()))
             {
+                content.Headers.Add(CorrelationIdHeader, this.ScopeId.ToString());
+
                 var response = await this.Client.PostAsync(kdc, content).ConfigureAwait(true);
+
+                this.TryParseRequestId(response);
 
                 if (response.Content == null)
                 {
@@ -71,51 +142,58 @@ namespace Kerberos.NET.Transport
             }
         }
 
-        protected async Task<Uri> LocateKdc(string domain)
+        private void TryParseRequestId(HttpResponseMessage response)
+        {
+            if (response.Headers.TryGetValues(RequestIdHeader, out IEnumerable<string> values))
+            {
+                this.RequestId = values.FirstOrDefault();
+            }
+        }
+
+        private async Task<Uri> LocateKdc(string domain)
         {
             if (string.IsNullOrWhiteSpace(domain))
             {
                 throw new ArgumentNullException(nameof(domain));
             }
 
-            domain = domain.ToLowerInvariant();
-
-            if (this.DomainPaths.TryGetValue(domain, out Uri uri))
+            if (this.DomainPaths.TryGetValue(domain.ToLowerInvariant(), out Uri uri))
             {
                 return uri;
             }
 
-            if (this.TryResolvingServiceLocator)
-            {
-                uri = await this.ResolveByServiceLocator(domain);
-            }
-
-            if (uri == null)
-            {
-                uri = new Uri($"https://{domain}/");
-            }
-
-            var path = this.CustomVirtualPath ?? WellKnownKdcProxyPath;
-
-            uri = new Uri(uri, path);
-
-            this.DomainPaths[domain] = uri;
+            uri = await this.LocatePreferredKdc(domain);
 
             return uri;
         }
 
-        private async Task<Uri> ResolveByServiceLocator(string domain)
+        private async Task<Uri> LocatePreferredKdc(string domain)
         {
-            var lookup = string.Format(CultureInfo.InvariantCulture, HttpsServiceTemplate, domain);
+            var results = await this.LocateKdc(domain, HttpsServicePrefix);
 
-            var dnsRecord = await this.QueryDomain(lookup);
+            results = results.Where(r => r.Address.StartsWith("https://") || r.Address.StartsWith("http://"));
 
-            if (dnsRecord == null)
+            var rand = Random.Next(0, results?.Count() ?? 0);
+
+            var record = results?.ElementAtOrDefault(rand);
+
+            if (record == null)
             {
                 return null;
             }
 
-            return new Uri($"https://{dnsRecord.Target}:{dnsRecord.Port}/");
+            var uri = new Uri(record.Target);
+
+            if (record.Name.StartsWith(HttpsServicePrefix))
+            {
+                var path = this.CustomVirtualPath ?? WellKnownKdcProxyPath;
+
+                uri = new Uri(uri, path);
+            }
+
+            this.DomainPaths[domain] = uri;
+
+            return uri;
         }
     }
 }
