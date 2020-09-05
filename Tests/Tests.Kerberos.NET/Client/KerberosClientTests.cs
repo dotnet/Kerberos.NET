@@ -44,7 +44,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void TcpClientEnabledByDefault()
+        public void TcpTransportEnabledByDefault()
         {
             using (var client = new KerberosClient())
             {
@@ -57,7 +57,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void UdpClientDisabledByDefault()
+        public void UdpTransportEnabledByDefault()
         {
             using (var client = new KerberosClient())
             {
@@ -65,7 +65,20 @@ namespace Tests.Kerberos.NET
 
                 Assert.IsNotNull(udp);
 
-                Assert.IsFalse(udp.Enabled);
+                Assert.IsTrue(udp.Enabled);
+            }
+        }
+
+        [TestMethod]
+        public void HttpsTransportEnabledByDefault()
+        {
+            using (var client = new KerberosClient())
+            {
+                var udp = client.Transports.OfType<HttpsKerberosTransport>().FirstOrDefault();
+
+                Assert.IsNotNull(udp);
+
+                Assert.IsTrue(udp.Enabled);
             }
         }
 
