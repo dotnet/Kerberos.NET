@@ -82,10 +82,10 @@ namespace Tests.Kerberos.NET
         {
             public bool WasCalled { get; set; }
 
-            public Task<IEnumerable<DnsRecord>> Query(string query, DnsRecordType type)
+            public Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type)
             {
                 this.WasCalled = true;
-                return Task.FromResult<IEnumerable<DnsRecord>>(new List<DnsRecord> { new DnsRecord { Target = "blah" } });
+                return Task.FromResult<IReadOnlyCollection<DnsRecord>>(new List<DnsRecord> { new DnsRecord { Target = "blah" } });
             }
         }
     }

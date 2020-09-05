@@ -13,7 +13,7 @@ namespace Kerberos.NET.Dns
     {
         public bool Debug { get; set; }
 
-        public Task<IEnumerable<DnsRecord>> Query(string query, DnsRecordType type)
+        public Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type)
         {
             if (!OSPlatform.IsWindows)
             {

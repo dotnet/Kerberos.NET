@@ -19,6 +19,6 @@ namespace Kerberos.NET.Dns
         /// <param name="query">The query to send to the DNS server.</param>
         /// <param name="type">The requested record type of the query.</param>
         /// <returns>Returns zero or more results from the query.</returns>
-        Task<IEnumerable<DnsRecord>> Query(string query, DnsRecordType type);
+        Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type);
     }
 }

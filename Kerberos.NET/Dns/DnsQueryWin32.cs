@@ -41,7 +41,7 @@ namespace Kerberos.NET.Dns
             9003, // record not found
         };
 
-        public static IEnumerable<DnsRecord> QuerySrvRecord(string query, DnsRecordType type, DnsQueryOptions options = DefaultOptions)
+        public static IReadOnlyCollection<DnsRecord> QuerySrvRecord(string query, DnsRecordType type, DnsQueryOptions options = DefaultOptions)
         {
             var error = DnsQuery(
                 query,
