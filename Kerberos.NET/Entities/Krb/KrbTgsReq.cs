@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kerberos.NET.Asn1;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
@@ -71,9 +72,11 @@ namespace Kerberos.NET.Entities
                 additionalTickets.Add(rst.S4uTicket);
             }
 
+            var config = rst.Configuration ?? Krb5Config.Default();
+
             var body = new KrbKdcReqBody
             {
-                EType = KerberosConstants.ETypes.ToArray(),
+                EType = KerberosConstants.GetPreferredETypes(config.Defaults.DefaultTicketEncTypes).ToArray(),
                 KdcOptions = rst.KdcOptions,
                 Nonce = KerberosConstants.GetNonce(),
                 Realm = rst.Realm,

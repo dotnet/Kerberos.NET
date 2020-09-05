@@ -18,13 +18,14 @@ namespace Kerberos.NET.Configuration
         /// System defaults that will be used if the protocol or client do not provide explicit values.
         /// </summary>
         [DisplayName("libdefaults")]
-        public Krb5ConfigDefaults Defaults { get; set; }
+        public Krb5ConfigDefaults Defaults { get; private set; }
 
         /// <summary>
-        /// A mapping of realm names to their respective settings.
+        /// A mapping of realm names to their respective settings. Note that realm
+        /// names are case sensitive and most environments use UPPERCASE realm names.
         /// </summary>
         [DisplayName("realms")]
-        public IDictionary<string, Krb5RealmConfig> Realms { get; set; }
+        public IDictionary<string, Krb5RealmConfig> Realms { get; private set; }
 
         /// <summary>
         /// Provides a translation from a domain name or hostname to a Kerberos realm name. The key can be a host name
@@ -34,7 +35,7 @@ namespace Kerberos.NET.Configuration
         /// [hostname.domainname.com] = "KERBEROS.REALM.COM"
         /// </summary>
         [DisplayName("domain_realm")]
-        public IDictionary<string, string> DomainRealm { get; set; }
+        public IDictionary<string, string> DomainRealm { get; private set; }
 
         /// <summary>
         /// A client will use this section to find the authentication path between its realm and the realm of the server.
@@ -45,18 +46,28 @@ namespace Kerberos.NET.Configuration
         /// A value of "." means that the two realms share keys directly, and no intermediate realms should be allowed to participate.
         /// </summary>
         [DisplayName("capaths")]
-        public IDictionary<string, IDictionary<string, string>> CaPaths { get; set; }
+        public IDictionary<string, IDictionary<string, string>> CaPaths { get; private set; }
 
         /// <summary>
         /// Provides a collection of settings that can be applied to services.
         /// </summary>
         [DisplayName("appdefaults")]
-        public ConfigurationSectionList AppDefaults { get; set; }
+        public ConfigurationSectionList AppDefaults { get; private set; }
 
         /// <summary>
         /// Provides logging configuration settings.
         /// </summary>
         [DisplayName("logging")]
-        public Krb5Logging Logging { get; set; }
+        public Krb5Logging Logging { get; private set; }
+
+        public static Krb5Config Default()
+        {
+            return Krb5ConfigurationSerializer.Deserialize(string.Empty).ToConfigObject();
+        }
+
+        public string Serialize()
+        {
+            return Krb5ConfigurationSerializer.Serialize(this);
+        }
     }
 }

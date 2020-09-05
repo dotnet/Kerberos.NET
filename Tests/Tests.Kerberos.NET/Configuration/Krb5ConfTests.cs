@@ -115,11 +115,11 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void DefaultsAreHandled()
         {
-            var emptyObj = Krb5ConfigurationSerializer.Serialize(ConfigurationSectionList.FromConfigObject(new Krb5Config()));
+            var emptyObj = new Krb5Config().Serialize();
 
             var obj = Krb5ConfigurationSerializer.Deserialize(emptyObj).ToConfigObject();
 
-            Assert.AreEqual(2, obj.Defaults.DefaultTgsEncTypes.Count());
+            Assert.AreEqual(5, obj.Defaults.DefaultTgsEncTypes.Count());
         }
 
         [TestMethod]

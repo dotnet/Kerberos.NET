@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Kerberos.NET.Client;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 
 namespace Kerberos.NET.Entities
@@ -33,9 +33,9 @@ namespace Kerberos.NET.Entities
                 throw new ArgumentNullException(nameof(credential));
             }
 
-            var kdcOptions = (KdcOptions)(options & ~AuthenticationOptions.AllAuthentication);
+            var config = credential.Configuration ?? Krb5Config.Default();
 
-            var hostAddress = Environment.MachineName;
+            var kdcOptions = (KdcOptions)(options & ~AuthenticationOptions.AllAuthentication);
 
             var pacRequest = new KrbPaPacRequest
             {
@@ -55,26 +55,19 @@ namespace Kerberos.NET.Entities
             {
                 Body = new KrbKdcReqBody
                 {
-                    Addresses = new[]
-                    {
-                        new KrbHostAddress
-                        {
-                            AddressType = AddressType.NetBios,
-                            Address = Encoding.ASCII.GetBytes(hostAddress.PadRight(16, ' '))
-                        }
-                    },
+                    Addresses = IncludeAddresses(config),
                     CName = ExtractCName(credential),
-                    EType = KerberosConstants.ETypes.ToArray(),
+                    EType = KerberosConstants.GetPreferredETypes(config.Defaults.DefaultTicketEncTypes).ToArray(),
                     KdcOptions = kdcOptions,
                     Nonce = KerberosConstants.GetNonce(),
-                    RTime = KerberosConstants.EndOfTime,
+                    RTime = CalculateRenewTime(kdcOptions, config),
                     Realm = credential.Domain,
                     SName = new KrbPrincipalName
                     {
                         Type = PrincipalNameType.NT_SRV_INST,
                         Name = new[] { "krbtgt", credential.Domain }
                     },
-                    Till = KerberosConstants.EndOfTime
+                    Till = CalculateExpirationTime(config)
                 },
                 PaData = padata.ToArray()
             };
@@ -85,6 +78,55 @@ namespace Kerberos.NET.Entities
             }
 
             return asreq;
+        }
+
+        private static DateTimeOffset CalculateExpirationTime(Krb5Config config)
+        {
+            if (config.Defaults.TicketLifetime > TimeSpan.Zero)
+            {
+                return DateTimeOffset.UtcNow.Add(config.Defaults.TicketLifetime);
+            }
+            else
+            {
+                return KerberosConstants.EndOfTime;
+            }
+        }
+
+        private static DateTimeOffset? CalculateRenewTime(KdcOptions kdcOptions, Krb5Config config)
+        {
+            if (!kdcOptions.HasFlag(KdcOptions.Renewable))
+            {
+                return null;
+            }
+
+            if (config.Defaults.RenewLifetime > TimeSpan.Zero)
+            {
+                return DateTimeOffset.UtcNow.Add(config.Defaults.RenewLifetime);
+            }
+            else
+            {
+                return KerberosConstants.EndOfTime;
+            }
+        }
+
+        private static KrbHostAddress[] IncludeAddresses(Krb5Config config)
+        {
+            if (config.Defaults.NoAddresses)
+            {
+                return null;
+            }
+
+            var addresses = new List<KrbHostAddress>
+            {
+                KrbHostAddress.ParseAddress(Environment.MachineName.PadRight(16, ' '))
+            };
+
+            if (config.Defaults?.ExtraAddresses?.Any() ?? false)
+            {
+                addresses.AddRange(config.Defaults.ExtraAddresses.Select(a => KrbHostAddress.ParseAddress(a)));
+            }
+
+            return addresses.ToArray();
         }
 
         private static KrbPrincipalName ExtractCName(KerberosCredential credential)

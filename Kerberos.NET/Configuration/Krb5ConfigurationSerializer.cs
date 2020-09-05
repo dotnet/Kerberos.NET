@@ -60,6 +60,17 @@ namespace Kerberos.NET.Configuration
         }
 
         /// <summary>
+        /// Serialize a configuration object instance into a configuration file.
+        /// </summary>
+        /// <param name="configuration">The configuration to serialize.</param>
+        /// <param name="serializationConfig">Optional configuration that describes the format requested.</param>
+        /// <returns>Returns the configuration in string form.</returns>
+        public static string Serialize(Krb5Config configuration, Krb5ConfigurationSerializationConfig serializationConfig = null)
+        {
+            return Serialize(ConfigurationSectionList.FromConfigObject(configuration), serializationConfig);
+        }
+
+        /// <summary>
         /// Serialize a configuration list into a configuration file.
         /// </summary>
         /// <param name="configuration">The configuration to serialize.</param>

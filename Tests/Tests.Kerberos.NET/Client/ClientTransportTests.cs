@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -57,21 +57,24 @@ namespace Tests.Kerberos.NET
             {
             }
 
-            protected override DnsRecord QueryDomain(string lookup)
+            protected override Task<DnsRecord> LocatePreferredKdc(string domain, string servicePrefix)
             {
-                return new DnsRecord { Target = "127.0.0.1", Port = 12345 };
+                return Task.FromResult(new DnsRecord { Target = "127.0.0.1", Port = 12345 });
             }
         }
 
         private class NoopTransport : KerberosTransportBase
         {
             public NoopTransport()
+                : base(null)
             {
             }
 
+            public override ClientDomainService ClientRealmService { get; } = new NoopClientRealmService();
+
             public override Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
             {
-                var cached = this.QueryDomain(domain);
+                var cached = this.LocateKdc(domain, "_kerberos._foo");
 
                 Assert.IsNotNull(cached);
 
@@ -99,21 +102,29 @@ namespace Tests.Kerberos.NET
                 return Task.FromResult(Decode<T>(response));
             }
 
-            protected override IEnumerable<DnsRecord> Query(string lookup)
+            private class NoopClientRealmService : ClientDomainService
             {
-                return new List<DnsRecord>
+                public NoopClientRealmService()
+                    : base(null)
                 {
-                    new DnsRecord
+                }
+
+                protected override Task<IEnumerable<DnsRecord>> Query(string domain, string servicePrefix)
+                {
+                    return Task.FromResult<IEnumerable<DnsRecord>>(new List<DnsRecord>
                     {
-                        Name = "sdfd",
-                        Port = 0,
-                        Priority = 1,
-                        Target = "sdfsdfsdfsdf",
-                        TimeToLive = 11,
-                        Type = DnsRecordType.SRV,
-                        Weight = 1
-                    }
-                };
+                        new DnsRecord
+                        {
+                            Name = "sdfd",
+                            Port = 0,
+                            Priority = 1,
+                            Target = "sdfsdfsdfsdf",
+                            TimeToLive = 11,
+                            Type = DnsRecordType.SRV,
+                            Weight = 1
+                        }
+                    });
+                }
             }
         }
     }

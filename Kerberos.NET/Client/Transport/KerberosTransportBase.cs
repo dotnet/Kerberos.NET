@@ -1,39 +1,29 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Asn1;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Dns;
 using Kerberos.NET.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Transport
 {
     public abstract class KerberosTransportBase : IKerberosTransport, IDisposable
     {
-        private const int DefaultKerberosPort = 88;
-
-        private readonly string kdc;
-
         private static readonly Random Random = new Random();
 
-        private readonly ConcurrentDictionary<string, DnsRecord> negativeCache
-            = new ConcurrentDictionary<string, DnsRecord>();
-
-        protected KerberosTransportBase(string kdc = null)
+        protected KerberosTransportBase(ILoggerFactory logger)
         {
-            this.kdc = kdc;
+            this.ClientRealmService = new ClientDomainService(logger);
         }
-
-        private static readonly ConcurrentDictionary<string, DnsRecord> DomainCache
-            = new ConcurrentDictionary<string, DnsRecord>();
 
         private bool disposedValue;
 
@@ -51,6 +41,16 @@ namespace Kerberos.NET.Transport
 
         public int MaximumAttempts { get; set; } = 30;
 
+        public virtual ClientDomainService ClientRealmService { get; }
+
+        public Guid ScopeId { get; set; }
+
+        public Krb5Config Configuration
+        {
+            get => this.ClientRealmService.Configuration;
+            set => this.ClientRealmService.Configuration = value;
+        }
+
         protected static T Decode<T>(ReadOnlyMemory<byte> response)
             where T : IAsn1ApplicationEncoder<T>, new()
         {
@@ -59,6 +59,10 @@ namespace Kerberos.NET.Transport
                 var error = KrbError.DecodeApplication(response);
 
                 if (error.ErrorCode == KerberosErrorCode.KRB_ERR_RESPONSE_TOO_BIG)
+                {
+                    throw new KerberosTransportException(error);
+                }
+                else if (error.ErrorCode == KerberosErrorCode.KDC_ERR_WRONG_REALM)
                 {
                     throw new KerberosTransportException(error);
                 }
@@ -84,80 +88,17 @@ namespace Kerberos.NET.Transport
             return this.SendMessage<TResponse>(domain, req.EncodeApplication());
         }
 
+        protected virtual Task<IEnumerable<DnsRecord>> LocateKdc(string domain, string servicePrefix)
+        {
+            return this.ClientRealmService.LocateKdc(domain, servicePrefix);
+        }
+
         public abstract Task<T> SendMessage<T>(
             string domain,
             ReadOnlyMemory<byte> req,
             CancellationToken cancellation = default
         )
             where T : IAsn1ApplicationEncoder<T>, new();
-
-        protected virtual DnsRecord QueryDomain(string lookup)
-        {
-            return DomainCache.AddOrUpdate(
-                lookup, // find SRV by domain name in cache
-                dn => this.QueryDns(dn, null), // if it doesn't exist in cache just query and add
-                (dn, existing) => existing.Purge ? this.QueryDns(dn, existing) : existing // if it already exists check if its ignored and replace
-            );
-        }
-
-        private DnsRecord QueryDns(string lookup, DnsRecord ignored)
-        {
-            if (!string.IsNullOrWhiteSpace(this.kdc))
-            {
-                var split = this.kdc.Split(':');
-
-                var record = new DnsRecord
-                {
-                    Target = split[0]
-                };
-
-                if (split.Length > 1)
-                {
-                    record.Port = int.Parse(split[1], CultureInfo.InvariantCulture);
-                }
-                else
-                {
-                    record.Port = DefaultKerberosPort;
-                }
-
-                return record;
-            }
-
-            var results = this.Query(lookup).Where(r => r.Type == DnsRecordType.SRV);
-
-            if (ignored != null && ignored.Ignore)
-            {
-                // can get here through expiration, and we don't actually want to negative cache
-                // something that has just expired because it could still genuinely be good
-
-                this.negativeCache[ignored.Target] = ignored;
-            }
-
-            results = results.Where(s => !this.negativeCache.TryGetValue(s.Target, out DnsRecord record) || record.Expired);
-
-            var weighted = results.GroupBy(r => r.Weight).OrderBy(r => r.Key).OrderByDescending(r => r.Sum(a => a.Canonical.Count())).FirstOrDefault();
-
-            var rand = Random.Next(0, weighted?.Count() ?? 0);
-
-            var srv = weighted?.ElementAtOrDefault(rand);
-
-            if (srv == null)
-            {
-                throw new KerberosTransportException($"Cannot locate SRV record for {lookup}");
-            }
-
-            if (srv.Port <= 0)
-            {
-                srv.Port = DefaultKerberosPort;
-            }
-
-            return srv;
-        }
-
-        protected virtual IEnumerable<DnsRecord> Query(string lookup)
-        {
-            return DnsQuery.QuerySrv(lookup);
-        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -172,6 +113,29 @@ namespace Kerberos.NET.Transport
             this.Dispose(disposing: true);
 
             GC.SuppressFinalize(this);
+        }
+
+        protected virtual async Task<DnsRecord> LocatePreferredKdc(string domain, string servicePrefix)
+        {
+            var results = await this.LocateKdc(domain, servicePrefix);
+
+            results = results.Where(r => r.Name.StartsWith(servicePrefix));
+
+            var rand = Random.Next(0, results?.Count() ?? 0);
+
+            var srv = results?.ElementAtOrDefault(rand);
+
+            if (srv == null)
+            {
+                throw new KerberosTransportException($"Cannot locate SRV record for {domain}");
+            }
+
+            if (srv.Port <= 0)
+            {
+                srv.Port = ClientDomainService.DefaultKerberosPort;
+            }
+
+            return srv;
         }
     }
 }

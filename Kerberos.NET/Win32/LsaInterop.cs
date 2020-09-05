@@ -52,7 +52,7 @@ namespace Kerberos.NET.Win32
          * pool of memory to create a working for the current operation. On dispose it zeros the memory and returns it to the pool.
          */
 
-        internal unsafe LsaInterop(LsaSafeHandle lsaHandle, string packageName = KerberosPackageName)
+        private LsaInterop(LsaSafeHandle lsaHandle, string packageName = KerberosPackageName)
         {
             this.lsaHandle = lsaHandle;
 
@@ -84,7 +84,7 @@ namespace Kerberos.NET.Win32
         /// <param name="name">The optional logical name of the process as understood by LSA. Otherwise uses the default "KerberosNet".</param>
         /// <param name="package">The name of the LSA authentication package that will be interacted with.</param>
         /// <returns>Returns an instance of the <see cref="LsaInterop"/> class.</returns>
-        public static unsafe LsaInterop RegisterLogonProcess(string name = null, string package = KerberosPackageName)
+        public static LsaInterop RegisterLogonProcess(string name = null, string package = KerberosPackageName)
         {
             string processNameStr;
 

@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -40,16 +40,27 @@ namespace Tests.Kerberos.NET
 
         [TestMethod]
         [ExpectedException(typeof(KerberosTransportException))]
-        public async Task ClientConnectsToServer_Withtimeout()
+        public async Task ClientConnectsToServer_WithTimeout()
         {
             var port = NextPort();
 
-            using (var client = new KerberosClient($"127.0.0.1:{port}")
+            using (var client = new KerberosClient()
             {
                 ConnectTimeout = TimeSpan.FromMilliseconds(1)
             })
             {
-                await client.Authenticate(new KerberosPasswordCredential("test", "test", "test"));
+                client.Configuration.Defaults.DnsLookupKdc = false;
+
+                client.PinKdc("test", $"127.0.0.1:{port}");
+
+                try
+                {
+                    await client.Authenticate(new KerberosPasswordCredential("test", "test", "test"));
+                }
+                catch (AggregateException agg)
+                {
+                    throw agg.InnerExceptions.First();
+                }
             }
         }
 

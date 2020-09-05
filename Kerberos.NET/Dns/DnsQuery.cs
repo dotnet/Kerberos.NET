@@ -1,34 +1,28 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices;
-using Kerberos.NET.Crypto;
+using System.Threading.Tasks;
 
 namespace Kerberos.NET.Dns
 {
+    /// <summary>
+    /// Provides a mechanism to query for SRV DNS records.
+    /// </summary>
     public static class DnsQuery
     {
-        public static IEnumerable<DnsRecord> QuerySrv(string query)
+        private static readonly object SyncImpl = new object();
+        private static IKerberosDnsQuery QueryImplementation;
+
+        static DnsQuery()
         {
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            if (OSPlatform.IsWindows)
             {
-                throw new InvalidOperationException("DNS query is not supported on non-Win32 platforms yet");
+                QueryImplementation = new WindowsDnsQuery();
             }
-
-            if (Debug)
-            {
-                System.Diagnostics.Debug.WriteLine($"Trying to query for {query}");
-            }
-
-            return DnsQueryWin32.QuerySrvRecord(query);
         }
 
         public static bool Debug
@@ -37,209 +31,56 @@ namespace Kerberos.NET.Dns
             set => DnsQueryWin32.Debug = value;
         }
 
-        internal static unsafe class DnsQueryWin32
+        /// <summary>
+        /// Register a custom DNS implementation for outbound queries.
+        /// </summary>
+        /// <param name="dnsQuery">The query implementation to register.</param>
+        public static void RegisterImplementation(IKerberosDnsQuery dnsQuery)
         {
-            private const string DNSAPI = "dnsapi.dll";
-
-            [DllImport(DNSAPI, EntryPoint = "DnsQuery_W", CharSet = CharSet.Unicode, SetLastError = true)]
-            private static extern int DnsQuery(
-                [In] string pszName,
-                DnsRecordType wType,
-                DnsQueryOptions options,
-                IntPtr pExtra,
-                [Out] out IntPtr ppQueryResults,
-                IntPtr pReserved
-            );
-
-            [DllImport(DNSAPI, CharSet = CharSet.Auto, SetLastError = true)]
-            private static extern void DnsRecordListFree(IntPtr pRecordList, DnsFreeType FreeType);
-
-            internal const DnsQueryOptions DefaultOptions = DnsQueryOptions.BypassCache;
-
-            public static bool Debug { get; set; }
-
-            private static readonly HashSet<int> IgnoredErrors = new HashSet<int>()
+            if (dnsQuery == null)
             {
-                9002, // server not found
-                9003, // record not found
-            };
-
-            public static IEnumerable<DnsRecord> QuerySrvRecord(string query, DnsQueryOptions options = DefaultOptions)
-            {
-                var error = DnsQuery(
-                    query,
-                    DnsRecordType.SRV,
-                    options,
-                    IntPtr.Zero,
-                    out IntPtr ppQueryResults,
-                    IntPtr.Zero
-                );
-
-                if (Debug && ppQueryResults != IntPtr.Zero)
-                {
-                    // IntPtr.Size + 2 + 2 + 2 + 4 + 4 + 4;
-
-                    var dump = ppQueryResults.DumpHex((uint)Marshal.SizeOf<Win32DnsRecord>());
-
-                    System.Diagnostics.Debug.WriteLine(dump);
-                }
-
-                var records = new List<DnsRecord>();
-
-                try
-                {
-                    if (IgnoredErrors.Contains(error))
-                    {
-                        return records;
-                    }
-
-                    if (error != 0)
-                    {
-                        throw new Win32Exception(error);
-                    }
-
-                    Win32DnsRecord dnsRecord;
-
-                    for (var pNext = ppQueryResults; pNext != IntPtr.Zero; pNext = dnsRecord.PNext)
-                    {
-                        dnsRecord = Marshal.PtrToStructure<Win32DnsRecord>(pNext);
-
-                        switch (dnsRecord.WType)
-                        {
-                            case DnsRecordType.SRV:
-                                var srvRecord = Marshal.PtrToStructure<Win32SrvRecord>(pNext);
-
-                                records.Add(new DnsRecord
-                                {
-                                    Target = srvRecord.PNameTarget,
-                                    Name = srvRecord.PName,
-                                    Port = srvRecord.WPort,
-                                    Priority = srvRecord.WPriority,
-                                    TimeToLive = srvRecord.DwTtl,
-                                    Type = srvRecord.WType,
-                                    Weight = srvRecord.WWeight
-                                });
-                                break;
-                            case DnsRecordType.A:
-                                var aRecord = Marshal.PtrToStructure<Win32ARecord>(pNext);
-                                records.Add(new DnsRecord
-                                {
-                                    Type = aRecord.WType,
-                                    Name = aRecord.PName,
-                                    Target = new IPAddress(aRecord.IPAddress).ToString()
-                                });
-                                break;
-
-                            case DnsRecordType.AAAA:
-                                var aaaaRecord = Marshal.PtrToStructure<Win32AAAARecord>(pNext);
-
-                                records.Add(new DnsRecord
-                                {
-                                    Type = aaaaRecord.WType,
-                                    Name = aaaaRecord.PName,
-                                    Target = new IPAddress(aaaaRecord.IPAddress).ToString()
-                                });
-                                break;
-                        }
-                    }
-                }
-                finally
-                {
-                    DnsRecordListFree(ppQueryResults, DnsFreeType.DnsFreeRecordList);
-                }
-
-                var merged = records.Where(r => r.Type != DnsRecordType.SRV).GroupBy(r => r.Name);
-
-                foreach (var srv in records.Where(r => r.Type == DnsRecordType.SRV))
-                {
-                    var c1 = merged.Where(m => m.Key.Equals(srv.Target, StringComparison.InvariantCultureIgnoreCase));
-
-                    var canon = c1.SelectMany(r => r);
-
-                    srv.Canonical = canon.ToList();
-                }
-
-                return records;
+                throw new ArgumentNullException(nameof(dnsQuery));
             }
 
-            private enum DnsFreeType
+            lock (SyncImpl)
             {
-                DnsFreeFlat,
-                DnsFreeRecordList,
-                DnsFreeParsedMessageFields
+                QueryImplementation = dnsQuery;
+            }
+        }
+
+        /// <summary>
+        /// Contact a DNS server and request an SRV record for the provided query value.
+        /// SRV queries hold the form _service._proto.name.
+        /// </summary>
+        /// <param name="query">The query value to send to the server.</param>
+        /// <returns>Returns zero or more SRV records for requested query value.</returns>
+        public static async Task<IEnumerable<DnsRecord>> QuerySrv(string query)
+        {
+            IKerberosDnsQuery implementation = LoadImplementation();
+
+            if (implementation == null)
+            {
+                throw new InvalidOperationException("DNS Query implementation cannot be null");
             }
 
-            [DebuggerDisplay("{wType} {pName} {wDataLength}")]
-            [StructLayout(LayoutKind.Sequential)]
-            private struct Win32DnsRecord
+            if (Debug)
             {
-                public IntPtr PNext;
-                [MarshalAs(UnmanagedType.LPWStr)]
-                public string PName;
-                public DnsRecordType WType;
-                public ushort WDataLength;
-
-                public int Flags;
-                public int DwTtl;
-                public int DwReserved;
+                System.Diagnostics.Debug.WriteLine($"Trying to query for {query}");
             }
 
-            [DebuggerDisplay("{wType} {IPAddress}")]
-            [StructLayout(LayoutKind.Sequential)]
-            private struct Win32ARecord
+            return await implementation.Query(query, DnsRecordType.SRV);
+        }
+
+        private static IKerberosDnsQuery LoadImplementation()
+        {
+            IKerberosDnsQuery implementation;
+
+            lock (SyncImpl)
             {
-                public IntPtr PNext;
-                [MarshalAs(UnmanagedType.LPWStr)]
-                public string PName;
-                public DnsRecordType WType;
-                public ushort WDataLength;
-
-                public int Flags;
-                public int DwTtl;
-                public int DwReserved;
-
-                public long IPAddress;
+                implementation = QueryImplementation;
             }
 
-            [DebuggerDisplay("{wType} {IPAddress}")]
-            [StructLayout(LayoutKind.Sequential)]
-            private struct Win32AAAARecord
-            {
-                public IntPtr PNext;
-                [MarshalAs(UnmanagedType.LPWStr)]
-                public string PName;
-                public DnsRecordType WType;
-                public ushort WDataLength;
-
-                public int Flags;
-                public int DwTtl;
-                public int DwReserved;
-
-                [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-                public byte[] IPAddress;
-            }
-
-            [DebuggerDisplay("{wType} {pNameTarget}")]
-            [StructLayout(LayoutKind.Sequential)]
-            private struct Win32SrvRecord
-            {
-                public IntPtr PNext;
-                [MarshalAs(UnmanagedType.LPWStr)]
-                public string PName;
-                public DnsRecordType WType;
-                public ushort WDataLength;
-
-                public int Flags;
-                public int DwTtl;
-                public int DwReserved;
-
-                [MarshalAs(UnmanagedType.LPWStr)]
-                public string PNameTarget;
-                public ushort WPriority;
-                public ushort WWeight;
-                public ushort WPort;
-                public ushort Pad;
-            }
+            return implementation;
         }
     }
 }

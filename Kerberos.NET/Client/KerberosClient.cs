@@ -10,6 +10,7 @@ using System.Security;
 using System.Security.Cryptography.Asn1;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
@@ -52,40 +53,54 @@ namespace Kerberos.NET.Client
         private readonly object _syncTicketCache = new object();
 
         private readonly KerberosTransportSelector transport;
+        private readonly ILoggerFactory loggerFactory;
         private readonly ILogger<KerberosClient> logger;
         private readonly IDisposable clientLoggingScope;
 
         private ITicketCache ticketCache;
         private Guid? scopeId;
+        private bool cacheSet;
         private bool disposed = false;
 
         /// <summary>
-        /// Create a new KerberosClient instance
+        /// Create a new KerberosClient instance.
         /// </summary>
-        /// <param name="kdc">The pinned address of the KDC to communicate</param>
+        /// <param name="config">The custom configuration this client should use when making Kerberos requests.</param>
         /// <param name="logger">A logger instance for recording client logs</param>
-        public KerberosClient(string kdc = null, ILoggerFactory logger = null)
-            : this(logger, CreateTransports(kdc, logger))
+        public KerberosClient(Krb5Config config = null, ILoggerFactory logger = null)
+            : this(config, logger, CreateTransports(logger))
         {
         }
 
         /// <summary>
-        /// Create a KerberosClient instance
+        /// Create a KerberosClient instance.
         /// </summary>
+        /// <param name="config">The custom configuration this client should use when making Kerberos requests.</param>
         /// <param name="logger">A logger instance for recording client logs</param>
         /// <param name="transports">A collection of network transports that the client
         /// will attempt to use to communicate with the KDC</param>
-        public KerberosClient(ILoggerFactory logger = null, params IKerberosTransport[] transports)
+        public KerberosClient(Krb5Config config = null, ILoggerFactory logger = null, params IKerberosTransport[] transports)
         {
+            this.Configuration = config ?? Krb5ConfigurationSerializer.Deserialize(string.Empty).ToConfigObject();
+
+            this.loggerFactory = logger;
             this.logger = logger.CreateLoggerSafe<KerberosClient>();
             this.clientLoggingScope = this.logger.BeginScope("KerberosClient");
 
-            this.transport = new KerberosTransportSelector(transports);
+            this.transport = new KerberosTransportSelector(transports, this.Configuration, logger)
+            {
+                ScopeId = this.ScopeId
+            };
 
             this.Cache = new MemoryTicketCache(logger) { Refresh = this.Refresh };
 
             this.MaximumRetries = 10;
         }
+
+        /// <summary>
+        /// The custom configuration this client should use when making Kerberos requests.
+        /// </summary>
+        public Krb5Config Configuration { get; }
 
         /// <summary>
         /// The number of KDC's the client will retry before failing the call.
@@ -175,7 +190,11 @@ namespace Kerberos.NET.Client
         /// <summary>
         /// The realm of the currently authenticated user.
         /// </summary>
-        public string DefaultDomain { get; protected set; }
+        public string DefaultDomain
+        {
+            get => this.Configuration.Defaults.DefaultRealm;
+            protected set => this.Configuration.Defaults.DefaultRealm = value;
+        }
 
         /// <summary>
         /// The logging Id of this client instance.
@@ -184,6 +203,48 @@ namespace Kerberos.NET.Client
         {
             get => this.scopeId ?? (this.scopeId = KerberosConstants.GetRequestActivityId()).Value;
             set => this.scopeId = value;
+        }
+
+        /// <summary>
+        /// Prioritize the use of a specific KDC address for the provided realm. Note that calls to this
+        /// method are additive and do not overwrite previously pinned addresses. If you need to remove an address
+        /// you should call <see cref="ClearPinnedKdc(string)" />.
+        /// </summary>
+        /// <param name="realm">The realm that will have a prioritized KDC.</param>
+        /// <param name="kdc">The KDC to prioritize.</param>
+        public void PinKdc(string realm, string kdc)
+        {
+            if (string.IsNullOrWhiteSpace(realm))
+            {
+                throw new ArgumentNullException(nameof(realm));
+            }
+
+            if (string.IsNullOrWhiteSpace(kdc))
+            {
+                throw new ArgumentNullException(nameof(kdc));
+            }
+
+            foreach (var t in this.Transports.OfType<KerberosTransportBase>())
+            {
+                t.ClientRealmService.PinKdc(realm, kdc);
+            }
+        }
+
+        /// <summary>
+        /// Removes any previously pinned KDC addresses for the provided realm.
+        /// </summary>
+        /// <param name="realm">The realm to remove the pinned addresses.</param>
+        public void ClearPinnedKdc(string realm)
+        {
+            if (string.IsNullOrWhiteSpace(realm))
+            {
+                throw new ArgumentNullException(nameof(realm));
+            }
+
+            foreach (var t in this.Transports.OfType<KerberosTransportBase>())
+            {
+                t.ClientRealmService.ClearPinnedKdc(realm);
+            }
         }
 
         /// <summary>
@@ -200,7 +261,9 @@ namespace Kerberos.NET.Client
 
             credential.Validate();
 
-            int preauthAttempts = 0;
+            credential.Configuration = this.Configuration;
+
+            this.SetupCache();
 
             // The KDC may not require pre-auth so we shouldn't try it until the KDC indicates otherwise
 
@@ -209,7 +272,33 @@ namespace Kerberos.NET.Client
                 this.AuthenticationOptions &= ~AuthenticationOptions.PreAuthenticate;
             }
 
+            if (!this.Configuration.Defaults.Canonicalize)
+            {
+                this.AuthenticationOptions &= ~AuthenticationOptions.Canonicalize;
+            }
+
+            if (this.Configuration.Defaults.Proxiable)
+            {
+                this.AuthenticationOptions |= AuthenticationOptions.Proxiable;
+            }
+
+            if (this.Configuration.Defaults.Forwardable)
+            {
+                this.AuthenticationOptions |= AuthenticationOptions.Forwardable;
+            }
+
             using (this.logger.BeginRequestScope(this.ScopeId))
+            {
+                await AuthenticateCredential(credential);
+            }
+        }
+
+        private async Task AuthenticateCredential(KerberosCredential credential)
+        {
+            int preauthAttempts = 0;
+            bool tryPinned = false;
+
+            try
             {
                 do
                 {
@@ -226,31 +315,78 @@ namespace Kerberos.NET.Client
                         // Some errors like KDC_ERR_PREAUTH_REQUIRED are not fatal so we
                         // can correct the request and retry in the next loop iteration
 
-                        if (pex?.Error?.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
+                        if (pex?.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_PREAUTH_FAILED)
                         {
-                            // in this case we don't know what it was so bail
+                            // if pre-auth fails it might be because the KDC doesn't have the latest
+                            // copy of the password so we should try once more against a primary KDC
 
-                            this.logger.LogKerberosProtocolException(pex);
-                            throw;
+                            if (this.TryPinPrimaryKdc(credential.Domain))
+                            {
+                                tryPinned = true;
+                                continue;
+                            }
                         }
 
-                        // the usual case is KDC requires pre-auth and it's provided hints to what it's
-                        // willing to accept for this. Usually it's ETypes and Salt information for pwd
-
-                        credential.IncludePreAuthenticationHints(pex?.Error?.DecodePreAuthentication());
-
-                        foreach (var salt in credential.Salts)
+                        if (pex?.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
                         {
-                            this.logger.LogDebug("AS-REP PA-Data: EType = {Etype}; Salt = {Salt};", salt.Key, salt.Value);
+                            this.ConfigurePreAuth(credential, pex);
+                            continue;
                         }
 
-                        // now we try pre-auth
+                        // in this case we don't know what it was so bail
 
-                        this.AuthenticationOptions |= AuthenticationOptions.PreAuthenticate;
+                        this.logger.LogKerberosProtocolException(pex);
+                        throw;
                     }
                 }
-                while (++preauthAttempts <= 3);
+                while (++preauthAttempts <= 4);
             }
+            finally
+            {
+                if (tryPinned)
+                {
+                    this.ClearPinnedKdc(credential.Domain);
+                }
+            }
+        }
+
+        private bool TryPinPrimaryKdc(string realm)
+        {
+            bool pinned = false;
+
+            if (this.Configuration.Realms.TryGetValue(realm, out Krb5RealmConfig config) && config.PrimaryKdc != null)
+            {
+                foreach (var primaryKdc in config.PrimaryKdc)
+                {
+                    if (!pinned)
+                    {
+                        this.ClearPinnedKdc(realm);
+                    }
+
+                    this.PinKdc(realm, primaryKdc);
+
+                    pinned = true;
+                }
+            }
+
+            return pinned;
+        }
+
+        private void ConfigurePreAuth(KerberosCredential credential, KerberosProtocolException pex)
+        {
+            // the usual case is KDC requires pre-auth and it's provided hints to what it's
+            // willing to accept for this. Usually it's ETypes and Salt information for pwd
+
+            credential.IncludePreAuthenticationHints(pex?.Error?.DecodePreAuthentication());
+
+            foreach (var salt in credential.Salts)
+            {
+                this.logger.LogDebug("AS-REP PA-Data: EType = {Etype}; Salt = {Salt};", salt.Key, salt.Value);
+            }
+
+            // now we try pre-auth
+
+            this.AuthenticationOptions |= AuthenticationOptions.PreAuthenticate;
         }
 
         /// <summary>
@@ -279,6 +415,8 @@ namespace Kerberos.NET.Client
                 rst.GssContextFlags |= GssContextEstablishmentFlag.GSS_C_MUTUAL_FLAG;
             }
 
+            this.SetupCache();
+
             // attempt to normalize the SPN we're trying to get a ticket to
             // holding it here because the request may need intermediate tickets
             // if we have to cross realms
@@ -294,6 +432,11 @@ namespace Kerberos.NET.Client
                 KrbEncryptionKey sessionKey;
                 KerberosClientCacheEntry serviceTicketCacheEntry;
 
+                if (this.KdcOptions == 0)
+                {
+                    this.AuthenticationOptions |= (AuthenticationOptions)this.Configuration.Defaults.KdcDefaultOptions;
+                }
+
                 if (rst.KdcOptions == 0)
                 {
                     rst.KdcOptions = this.KdcOptions;
@@ -307,6 +450,11 @@ namespace Kerberos.NET.Client
                 if (!string.IsNullOrWhiteSpace(rst.S4uTarget))
                 {
                     rst.KdcOptions |= KdcOptions.Forwardable;
+                }
+
+                if (rst.Configuration == null)
+                {
+                    rst.Configuration = this.Configuration;
                 }
 
                 do
@@ -388,7 +536,15 @@ namespace Kerberos.NET.Client
                         receivedRequestedTicket = false;
 
                         tgtCacheName = respondedSName.FullyQualifiedName;
+
+                        var usage = serviceTicketCacheEntry.SessionKey.Usage;
+
                         serviceTicketCacheEntry.SessionKey = encKdcRepPart.Key;
+
+                        if (serviceTicketCacheEntry.SessionKey.Usage == KeyUsage.Unknown)
+                        {
+                            serviceTicketCacheEntry.SessionKey.Usage = usage;
+                        }
                     }
                     else
                     {
@@ -432,6 +588,23 @@ namespace Kerberos.NET.Client
                     CuSec = authenticator.CuSec,
                     SequenceNumber = authenticator.SequenceNumber
                 };
+            }
+        }
+
+        private void SetupCache()
+        {
+            if (this.cacheSet)
+            {
+                return;
+            }
+
+            var cachePath = Environment.ExpandEnvironmentVariables(this.Configuration.Defaults.DefaultCCacheName);
+
+            if (!string.IsNullOrWhiteSpace(cachePath) && this.CacheServiceTickets)
+            {
+                this.Cache = new Krb5TicketCache(cachePath, this.loggerFactory);
+
+                this.cacheSet = true;
             }
         }
 
@@ -819,12 +992,13 @@ namespace Kerberos.NET.Client
             }
         }
 
-        private static IKerberosTransport[] CreateTransports(string kdc, ILoggerFactory logger)
+        private static IKerberosTransport[] CreateTransports(ILoggerFactory logger)
         {
             return new IKerberosTransport[]
             {
-                new UdpKerberosTransport(kdc),
-                new TcpKerberosTransport(logger, kdc)
+                new TcpKerberosTransport(logger),
+                new UdpKerberosTransport(logger),
+                new HttpsKerberosTransport(logger)
             };
         }
 

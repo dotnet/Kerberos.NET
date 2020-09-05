@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Asn1;
+using Kerberos.NET.Configuration;
 
 namespace Kerberos.NET.Transport
 {
@@ -25,6 +26,8 @@ namespace Kerberos.NET.Transport
         TimeSpan ReceiveTimeout { get; set; }
 
         int MaximumAttempts { get; set; }
+
+        Krb5Config Configuration { get; set; }
 
         Task<TResponse> SendMessage<TRequest, TResponse>(
             string domain,

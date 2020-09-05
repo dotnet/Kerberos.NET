@@ -441,7 +441,7 @@ namespace Kerberos.NET.Configuration
             return baseName;
         }
 
-        private object CreateProperty(Type propertyType, string baseName)
+        internal object CreateProperty(Type propertyType, string baseName)
         {
             if (propertyType == typeof(ConfigurationSectionList))
             {
@@ -468,7 +468,7 @@ namespace Kerberos.NET.Configuration
             }
         }
 
-        private object CreateInstance(Type propertyType, string baseName)
+        internal object CreateInstance(Type propertyType, string baseName)
         {
             var obj = Activator.CreateInstance(propertyType);
 
@@ -495,7 +495,7 @@ namespace Kerberos.NET.Configuration
 
         private object CreatePropertyAsDictionary(Type propertyType, string baseName)
         {
-            var dictType = typeof(Dictionary<,>);
+            var dictType = typeof(ConfigurationDictionary<,>);
 
             var genericArgs = propertyType.GetGenericArguments();
 
@@ -555,6 +555,13 @@ namespace Kerberos.NET.Configuration
         {
             var keys = key.Split(new[] { '.' }, 2, StringSplitOptions.RemoveEmptyEntries);
 
+            if (keys.Length == 0)
+            {
+                keyName = null;
+                downStreamKey = null;
+                return;
+            }
+
             keyName = keys[0];
             downStreamKey = keys.Length > 1 ? keys[1] : null;
 
@@ -578,19 +585,24 @@ namespace Kerberos.NET.Configuration
 
         private static object FormatResult(object found, Type type, IEnumerable<Attribute> attributes)
         {
+            if (!(found is string) &&
+                type != typeof(string) &&
+                type != typeof(ConfigurationSectionList) &&
+                typeof(IEnumerable).IsAssignableFrom(type))
+            {
+                return ParseAsList((IEnumerable)found, type);
+            }
+
             if (found == null)
             {
                 return null;
             }
 
-            if (!(found is string) && found is IEnumerable list)
-            {
-                return ParseAsList(list, type);
-            }
-
             var stringValue = found.ToString();
 
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            if (type.IsGenericType &&
+               (type.GetGenericTypeDefinition() == typeof(ICollection<>) ||
+                type.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
             {
                 return ParseAsList(stringValue, type);
             }
@@ -630,9 +642,12 @@ namespace Kerberos.NET.Configuration
 
             var add = concreteType.GetMethod("Add");
 
-            foreach (var val in stringValues)
+            if (stringValues != null)
             {
-                add.Invoke(list, new[] { Parse(val.ToString(), genericParamType) });
+                foreach (var val in stringValues)
+                {
+                    add.Invoke(list, new[] { Parse(val.ToString(), genericParamType) });
+                }
             }
 
             return list;
@@ -711,13 +726,15 @@ namespace Kerberos.NET.Configuration
         {
             return propertyType.IsGenericType && (
                 propertyType.GetGenericTypeDefinition() == typeof(IDictionary<,>) ||
-                propertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>)
+                propertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>) ||
+                propertyType.GetGenericTypeDefinition() == typeof(ConfigurationDictionary<,>)
             );
         }
 
         private static bool IsEnumerable(Type propertyType)
         {
             return propertyType.IsGenericType && (
+                propertyType.GetGenericTypeDefinition() == typeof(ICollection<>) ||
                 propertyType.GetGenericTypeDefinition() == typeof(IEnumerable<>) ||
                 propertyType.GetGenericTypeDefinition() == typeof(List<>)
             );

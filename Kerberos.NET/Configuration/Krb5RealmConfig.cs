@@ -15,21 +15,21 @@ namespace Kerberos.NET.Configuration
         /// This tag must be given a value in order to communicate with the kadmind server for the realm.
         /// </summary>
         [DisplayName("admin_server")]
-        public IEnumerable<string> AdminServer { get; set; }
+        public ICollection<string> AdminServer { get; private set; }
 
         /// <summary>
         /// This tag allows you to set a general rule for mapping principal names to local user names.
         /// It will be used if there is not an explicit mapping for the principal name that is being translated.
         /// </summary>
         [DisplayName("auth_to_local")]
-        public IEnumerable<string> AuthToLocal { get; set; }
+        public ICollection<string> AuthToLocal { get; private set; }
 
         /// <summary>
         /// This subsection allows you to set explicit mappings from principal names to local user names.
         /// The tag is the mapping name, and the value is the corresponding local user name.
         /// </summary>
         [DisplayName("auth_to_local_names")]
-        public IDictionary<string, string> AuthToLocalNames { get; set; }
+        public IDictionary<string, string> AuthToLocalNames { get; private set; }
 
         /// <summary>
         /// This tag specifies the domain used to expand hostnames when translating Kerberos 4 service principals
@@ -53,6 +53,7 @@ namespace Kerberos.NET.Configuration
         /// of the CA certificate which should be trusted to issue the certificate for a proxy server. If left unspecified,
         /// the system-wide default set of CA certificates is used.
         /// </summary>
+        [DisplayName("http_anchors")]
         public string HttpAnchors { get; set; }
 
         /// <summary>
@@ -62,21 +63,21 @@ namespace Kerberos.NET.Configuration
         /// specifying the KDCs.
         /// </summary>
         [DisplayName("kdc")]
-        public IEnumerable<string> Kdc { get; set; }
+        public ICollection<string> Kdc { get; private set; }
 
         /// <summary>
         /// Points to the server where all the password changes are performed. If there is no such entry, DNS will be
         /// queried (unless forbidden by dns_lookup_kdc). Finally, port 464 on the admin_server host will be tried.
         /// </summary>
         [DisplayName("kpasswd_server")]
-        public IEnumerable<string> KPasswdServer { get; set; }
+        public ICollection<string> KPasswdServer { get; private set; }
 
         /// <summary>
         /// Specifies the location of trusted anchor (root) certificates which the client trusts to sign KDC certificates.
         /// This option may be specified multiple times.
         /// </summary>
         [DisplayName("pkinit_anchors")]
-        public IEnumerable<string> PkInitAnchors { get; set; }
+        public ICollection<string> PkInitAnchors { get; private set; }
 
         /// <summary>
         /// Specifies matching rules that the client certificate must match before it is used to attempt PKINIT authentication.
@@ -85,7 +86,7 @@ namespace Kerberos.NET.Configuration
         /// are checked against each rule in order until there is a match of exactly one certificate.
         /// </summary>
         [DisplayName("pkinit_cert_match")]
-        public IEnumerable<string> PkInitCertificateMatch { get; set; }
+        public ICollection<string> PkInitCertificateMatch { get; private set; }
 
         /// <summary>
         /// This option specifies what Extended Key Usage value the KDC certificate presented to the client must contain.
@@ -94,7 +95,7 @@ namespace Kerberos.NET.Configuration
         public PkInitEkuCheck PkInitEkuChecking { get; set; }
 
         /// <summary>
-        /// Specifies the size of the Diffie-Hellman key the client will attempt to use. The acceptable values are 1024, 2048, and 4096.
+        /// Specifies the size of the Diffie-Hellman key the client will attempt to use. The acceptable values are 2048 and 4096.
         /// The default is 2048.
         /// </summary>
         [DefaultValue(2048)]
@@ -106,7 +107,7 @@ namespace Kerberos.NET.Configuration
         /// the first valid value is used; this can be used to specify an environment variable (with ENV:envvar) followed by a default value.
         /// </summary>
         [DisplayName("pkinit_identities")]
-        public IEnumerable<string> PkInitIdentities { get; set; }
+        public ICollection<string> PkInitIdentities { get; private set; }
 
         /// <summary>
         /// The presence of this option indicates that the client is willing to accept a KDC certificate with a dNSName SAN (Subject Alternative Name)
@@ -114,14 +115,14 @@ namespace Kerberos.NET.Configuration
         /// acceptable hostname for the KDC (as contained in its certificate).
         /// </summary>
         [DisplayName("pkinit_kdc_hostname")]
-        public IEnumerable<string> PkInitKdcHostname { get; set; }
+        public ICollection<string> PkInitKdcHostname { get; private set; }
 
         /// <summary>
         /// Specifies the location of intermediate certificates which may be used by the client to complete the trust chain between a KDC certificate
         /// and a trusted anchor. This option may be specified multiple times.
         /// </summary>
         [DisplayName("pkinit_pool")]
-        public IEnumerable<string> PkInitPool { get; set; }
+        public ICollection<string> PkInitPool { get; private set; }
 
         /// <summary>
         /// If a match is found for the certificate in a CRL, verification fails. If the certificate being verified is not listed in a CRL,
@@ -135,15 +136,15 @@ namespace Kerberos.NET.Configuration
         /// validity of the KDC certificate presented.
         /// </summary>
         [DisplayName("pkinit_revoke")]
-        public IEnumerable<string> PkInitRevoke { get; set; }
+        public ICollection<string> PkInitRevoke { get; private set; }
 
         /// <summary>
         /// Identifies the primary KDC(s). Currently, this tag is used in only one case: If an attempt to get credentials
-        /// fails because of an invalid password, the client software will attempt to contact the master KDC, in case the
+        /// fails because of an invalid password, the client software will attempt to contact the primary KDC, in case the
         /// user’s password has just been changed, and the updated database has not been propagated to the replica servers yet.
         /// </summary>
         [DisplayName("master_kdc")]
-        public IEnumerable<string> PrimaryKdc { get; set; }
+        public ICollection<string> PrimaryKdc { get; private set; }
 
         /// <summary>
         /// This subsection allows the administrator to configure exceptions to the default_domain mapping rule. It contains V4
@@ -151,16 +152,16 @@ namespace Kerberos.NET.Configuration
         /// in a Kerberos V5 principal name.
         /// </summary>
         [DisplayName("v4_instance_convert")]
-        public IDictionary<string, string> V4InstanceConvert { get; set; }
+        public IDictionary<string, string> V4InstanceConvert { get; private set; }
 
         [DisplayName("v4_name_convert")]
-        public IDictionary<string, IDictionary<string, string>> V4NameConvert { get; set; }
+        public IDictionary<string, IDictionary<string, string>> V4NameConvert { get; private set; }
 
         /// <summary>
         /// This relation is used when converting a V5 principal name to a V4 principal name. It is used when the V4 realm name and the
         /// V5 realm name are not the same, but still share the same principal names and passwords. The tag value is the Kerberos V4 realm name.
         /// </summary>
         [DisplayName("v4_realm")]
-        public IDictionary<string, string> V4Realm { get; set; }
+        public IDictionary<string, string> V4Realm { get; private set; }
     }
 }

@@ -25,6 +25,7 @@ namespace Tests.Kerberos.NET
         public async Task HttpsTransportReceivesSuccess()
         {
             var transport = new HandledHttpsKerberosTransport(new SuccessKdcMessageDelegatingHandler());
+            transport.DomainPaths["adasdf"] = new Uri("https://test.internal/fake");
 
             var asReq = KrbAsReq.CreateAsReq(new KerberosPasswordCredential(UserUpn, "P@ssw0rd!"), AuthenticationOptions.Forwardable);
 
@@ -40,6 +41,7 @@ namespace Tests.Kerberos.NET
         public async Task HttpsTransportReceivesFailure()
         {
             var transport = new HandledHttpsKerberosTransport(new FailureKdcMessageDelegatingHandler());
+            transport.DomainPaths["adasdf"] = new Uri("https://test.internal/fake");
 
             var asReq = KrbAsReq.CreateAsReq(new KerberosPasswordCredential(UserUpn, "P@ssw0rd!"), AuthenticationOptions.Forwardable);
 

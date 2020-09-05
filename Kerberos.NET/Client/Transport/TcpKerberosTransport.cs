@@ -1,29 +1,27 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
-using System.Globalization;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
-using Kerberos.NET.Dns;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Transport
 {
     public class TcpKerberosTransport : KerberosTransportBase
     {
-        private const string TcpServiceTemplate = "_kerberos._tcp.{0}";
+        private const string TcpServiceTemplate = "_kerberos._tcp";
 
         private static readonly ISocketPool Pool = CreateSocketPool();
 
         private readonly ILogger<TcpKerberosTransport> logger;
 
-        public TcpKerberosTransport(ILoggerFactory logger, string kdc = null)
-            : base(kdc)
+        public TcpKerberosTransport(ILoggerFactory logger)
+            : base(logger)
         {
             this.logger = logger.CreateLoggerSafe<TcpKerberosTransport>();
 
@@ -76,7 +74,7 @@ namespace Kerberos.NET.Transport
 
             do
             {
-                var target = this.LocateKdc(domain);
+                var target = await this.LocatePreferredKdc(domain, TcpServiceTemplate);
 
                 this.logger.LogTrace("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
 
@@ -102,7 +100,8 @@ namespace Kerberos.NET.Transport
                 {
                     lastThrown = lastThrown ?? new SocketException((int)SocketError.TimedOut);
 
-                    target.Ignore = true;
+                    this.ClientRealmService.NegativeCache(target);
+
                     continue;
                 }
 
@@ -135,13 +134,6 @@ namespace Kerberos.NET.Transport
             encoded = Tcp.FormatKerberosMessageStream(encoded);
 
             await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation).ConfigureAwait(true);
-        }
-
-        protected DnsRecord LocateKdc(string domain)
-        {
-            var lookup = string.Format(CultureInfo.InvariantCulture, TcpServiceTemplate, domain);
-
-            return this.QueryDomain(lookup);
         }
     }
 }

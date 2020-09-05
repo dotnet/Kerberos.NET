@@ -1,25 +1,23 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
     internal static class KerberosConstants
     {
-        private static readonly int Pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+        private const int TickUSec = 1000000;
 
-        private static long requestCounter = 0;
-
-        private static long nonceCounter = DateTimeOffset.UtcNow.Ticks / 1_000_000_000L;
-
+        private static readonly RandomNumberGenerator Rng = RandomNumberGenerator.Create();
         public static readonly DateTimeOffset EndOfTime = new DateTimeOffset(642720196850000000, TimeSpan.Zero);
 
         public static IEnumerable<EncryptionType> ETypes = new[]
@@ -30,6 +28,22 @@ namespace Kerberos.NET.Entities
             EncryptionType.RC4_HMAC_NT_EXP,
             EncryptionType.RC4_HMAC_OLD_EXP
         };
+
+        internal static IEnumerable<EncryptionType> GetPreferredETypes(IEnumerable<EncryptionType> etypes = null)
+        {
+            if (etypes == null)
+            {
+                etypes = ETypes;
+            }
+
+            foreach (var etype in etypes)
+            {
+                if (CryptoService.SupportsEType(etype))
+                {
+                    yield return etype;
+                }
+            }
+        }
 
         internal static EncryptionType? GetPreferredEType(IEnumerable<EncryptionType> etypes)
         {
@@ -46,25 +60,14 @@ namespace Kerberos.NET.Entities
             return null;
         }
 
-        internal static Guid GetRequestActivityId()
-        {
-            var counter = Interlocked.Increment(ref requestCounter);
-
-            var b = BitConverter.GetBytes(counter);
-
-            return new Guid(Pid, 0, 0, b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]);
-        }
+        internal static Guid GetRequestActivityId() => Guid.NewGuid();
 
         internal static int GetNonce()
         {
-            // .NET Runtime guarantees operations on variables up to the natural
-            // processor pointer size are intrinsically atomic, but there's no
-            // guarantee we'll be running in a 64 bit process on a 64 bit processor
-            // so maybe let's not give the system an opportunity to corrupt this
+            var bytes = new byte[4];
+            Rng.GetBytes(bytes);
 
-            var counter = Interlocked.Increment(ref nonceCounter);
-
-            return (int)counter;
+            return BinaryPrimitives.ReadInt32BigEndian(bytes);
         }
 
         public static bool WithinSkew(DateTimeOffset now, DateTimeOffset ctime, int usec, TimeSpan skew)
@@ -75,8 +78,6 @@ namespace Kerberos.NET.Entities
 
             return skewed <= skew;
         }
-
-        private const int TickUSec = 1000000;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TimeEquals(DateTimeOffset left, DateTimeOffset right)

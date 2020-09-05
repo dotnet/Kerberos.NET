@@ -27,7 +27,7 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         [DefaultValue(true)]
         [DisplayName("canonicalize")]
-        public bool Canonicalize { get; set; }
+        public bool Canonicalize { get; set; } = true;
 
         /// <summary>
         /// This parameter determines the format of credential cache types created by kinit or other programs.
@@ -41,7 +41,7 @@ namespace Kerberos.NET.Configuration
         /// <summary>
         /// Sets the maximum allowable amount of clockskew in seconds that the library will tolerate before assuming that
         /// a Kerberos message is invalid. The default value is 300 seconds, or five minutes. The clockskew setting is also
-        /// used when evaluating ticket start and expiration times.For example, tickets that have reached their expiration
+        /// used when evaluating ticket start and expiration times. For example, tickets that have reached their expiration
         /// time can still be used if they have been expired for a shorter duration than the clockskew setting.
         /// </summary>
         [DefaultValue(300)]
@@ -51,7 +51,7 @@ namespace Kerberos.NET.Configuration
         /// <summary>
         /// This relation specifies the name of the default credential cache. The default is %DEFCCNAME%.
         /// </summary>
-        [DefaultValue("%DEFCCNAME%")]
+        [DefaultValue("")]
         [DisplayName("default_ccache_name")]
         public string DefaultCCacheName { get; set; }
 
@@ -88,26 +88,26 @@ namespace Kerberos.NET.Configuration
         /// request when making a TGS-REQ, in order of preference from highest to lowest. The
         /// list may be delimited with commas or whitespace.
         /// </summary>
-        [DefaultValue("aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96")]
+        [DefaultValue("aes128-cts-hmac-sha256-128 aes256-cts-hmac-sha384-192 aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 rc4-hmac-nt")]
         [DisplayName("default_tgs_enctypes")]
-        public IEnumerable<EncryptionType> DefaultTgsEncTypes { get; set; }
+        public ICollection<EncryptionType> DefaultTgsEncTypes { get; private set; }
 
         /// <summary>
         /// Identifies the supported list of session key encryption types that the client should
         /// request when making an AS-REQ, in order of preference from highest to lowest. The format
         /// is the same as for default_tgs_enctypes.
         /// </summary>
-        [DefaultValue("aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96")]
+        [DefaultValue("aes128-cts-hmac-sha256-128 aes256-cts-hmac-sha384-192 aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 rc4-hmac-nt")]
         [DisplayName("default_tkt_enctypes")]
-        public IEnumerable<EncryptionType> DefaultTicketEncTypes { get; set; }
+        public ICollection<EncryptionType> DefaultTicketEncTypes { get; private set;  }
 
         /// <summary>
         /// Indicate whether name lookups will be used to canonicalize hostnames for use in service
         /// principal names. Setting this flag to false can improve security by reducing reliance on
         /// DNS, but means that short hostnames will not be canonicalized to fully-qualified hostnames.
-        /// The default value is true.
+        /// The default value is false.
         /// </summary>
-        [DefaultValue(true)]
+        [DefaultValue(false)]
         [DisplayName("dns_canonicalize_hostname")]
         public bool DnsCanonicalizeHostname { get; set; }
 
@@ -142,8 +142,9 @@ namespace Kerberos.NET.Configuration
         /// while still using address-restricted tickets. The addresses should be in a comma-separated list. This option has no
         /// effect if noaddresses is true.
         /// </summary>
+        [CommaSeparatedList]
         [DisplayName("extra_addresses")]
-        public IEnumerable<string> ExtraAddresses { get; set; }
+        public ICollection<string> ExtraAddresses { get; private set;  }
 
         /// <summary>
         /// If this flag is true, initial tickets will be forwardable by default, if allowed by the KDC. The default value is false.
@@ -222,9 +223,9 @@ namespace Kerberos.NET.Configuration
         /// ordered by preference from highest to lowest. Starting in release 1.18, this tag also acts as the default value for
         /// default_tgs_enctypes and default_tkt_enctypes.
         /// </summary>
-        [DefaultValue("aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96")]
+        [DefaultValue("aes128-cts-hmac-sha256-128 aes256-cts-hmac-sha384-192 aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 rc4-hmac-nt")]
         [DisplayName("permitted_enctypes")]
-        public IEnumerable<EncryptionType> PermittedEncryptionTypes { get; set; }
+        public ICollection<EncryptionType> PermittedEncryptionTypes { get; private set;  }
 
         /// <summary>
         /// If set, determines the base directory where krb5 plugins are located.
@@ -240,7 +241,7 @@ namespace Kerberos.NET.Configuration
         [CommaSeparatedList]
         [DefaultValue("17,16,2")]
         [DisplayName("preferred_preauth_types")]
-        public IEnumerable<PaDataType> PreferredPreAuthTypes { get; set; }
+        public ICollection<PaDataType> PreferredPreAuthTypes { get; private set;  }
 
         /// <summary>
         /// If this flag is true, initial tickets will be proxiable by default, if allowed by the KDC. The default value is false.
@@ -259,13 +260,13 @@ namespace Kerberos.NET.Configuration
         /// <summary>
         /// If this flag is true, reverse name lookup will be used in addition to forward name lookup to canonicalizing
         /// hostnames for use in service principal names. If dns_canonicalize_hostname is set to false, this flag has no
-        /// effect. The default value is true.
+        /// effect. The default value is false.
         /// </summary>
         [DisplayName("rdns")]
         public bool RDNS { get; set; }
 
         /// <summary>
-        /// ndicate whether a host’s domain components should be used to determine the Kerberos realm of the host. The value
+        /// Indicate whether a host’s domain components should be used to determine the Kerberos realm of the host. The value
         /// of this variable is an integer: -1 means not to search, 0 means to try the host’s domain itself, 1 means to also
         /// try the domain’s immediate parent, and so forth. The library’s usual mechanism for locating Kerberos realms is used
         /// to determine whether a domain is a valid realm, which may involve consulting DNS if dns_lookup_kdc is set. The default
@@ -286,7 +287,7 @@ namespace Kerberos.NET.Configuration
         /// A whitespace or comma-separated list of words which specifies the groups allowed for SPAKE preauthentication.
         /// </summary>
         [DisplayName("spake_preauth_groups")]
-        public IEnumerable<string> SpakePreAuthGroups { get; set; }
+        public ICollection<string> SpakePreAuthGroups { get; private set;  }
 
         /// <summary>
         /// Sets the default lifetime for initial ticket requests. The default value is 1 day.

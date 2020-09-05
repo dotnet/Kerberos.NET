@@ -97,7 +97,9 @@ namespace Benchmark.Kerberos.NET
 
             Task.WaitAll(Enumerable.Range(0, ConcurrentRequests).Select(taskNum => Task.Run(async () =>
             {
-                var client = new KerberosClient($"{overrideKdc}:{Port}");
+                var client = new KerberosClient();
+
+                client.PinKdc(credential.Domain, $"{overrideKdc}:{Port}");
 
                 for (var i = 0; i < AuthenticationAttempts; i++)
                 {

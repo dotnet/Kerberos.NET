@@ -62,8 +62,10 @@ namespace Benchmark.Kerberos.NET
         {
             var kerbCred = new KerberosPasswordCredential(algo + user, password);
 
-            using (var client = new KerberosClient($"{overrideKdc}:{port}"))
+            using (var client = new KerberosClient())
             {
+                client.PinKdc(kerbCred.Domain, $"{overrideKdc}:{port}");
+
                 await client.Authenticate(kerbCred);
 
                 for (var i = 0; i < AuthenticationAttempts; i++)

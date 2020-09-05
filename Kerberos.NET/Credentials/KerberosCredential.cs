@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 
@@ -22,6 +23,8 @@ namespace Kerberos.NET.Credentials
         public abstract KerberosKey CreateKey();
 
         public abstract bool SupportsOptimisticPreAuthentication { get; }
+
+        public Krb5Config Configuration { get; set; }
 
         public virtual void TransformKdcReq(KrbKdcReq req)
         {

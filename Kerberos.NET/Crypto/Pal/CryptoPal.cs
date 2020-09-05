@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -9,14 +9,11 @@ namespace Kerberos.NET.Crypto
 {
     public abstract class CryptoPal
     {
-        protected static readonly bool IsWindows = (Environment.OSVersion.Platform == PlatformID.Win32S)
-            || (Environment.OSVersion.Platform == PlatformID.Win32Windows)
-            || (Environment.OSVersion.Platform == PlatformID.Win32NT)
-            || (Environment.OSVersion.Platform == PlatformID.WinCE);
+        protected static bool IsWindows => OSPlatform.IsWindows;
 
-        protected static readonly bool IsLinux = (Environment.OSVersion.Platform == PlatformID.Unix);
+        protected static bool IsLinux => OSPlatform.IsLinux;
 
-        protected static readonly bool IsOsX = (Environment.OSVersion.Platform == PlatformID.MacOSX);
+        protected static bool IsOsX => OSPlatform.IsOsX;
 
         public static CryptoPal Platform => LazyPlatform.Value;
 
