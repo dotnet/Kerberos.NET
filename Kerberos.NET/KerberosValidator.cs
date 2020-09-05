@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -59,14 +59,24 @@ namespace Kerberos.NET
 
             this.logger.LogTrace("Validating Kerberos request {Request}", kerberosRequest);
 
-            var decryptedToken = kerberosRequest.DecryptApReq(this.keytab);
+            DecryptedKrbApReq decryptedToken;
+
+            try
+            {
+                decryptedToken = kerberosRequest.DecryptApReq(this.keytab);
+            }
+            catch(Exception ex)
+            {
+                this.logger.WarnCryptographicException(ex, this.keytab);
+                throw;
+            }
 
             if (decryptedToken == null)
             {
                 return null;
             }
 
-            this.logger.LogTrace("Kerberos request decrypted {Request}", decryptedToken);
+            this.logger.LogTrace("Kerberos request decrypted {SName}", decryptedToken.SName.FullyQualifiedName);
 
             decryptedToken.Now = this.Now;
 

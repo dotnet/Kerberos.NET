@@ -388,7 +388,7 @@ namespace KerberosClientApp
                 {
                     try
                     {
-                        await TryValidate(spn, session.ApReq, servicePassword, serviceSalt);
+                        await TryValidate(spn, session.ApReq, servicePassword, serviceSalt, factory);
                     }
                     catch (Exception ex)
                     {
@@ -416,7 +416,7 @@ namespace KerberosClientApp
             ResetColor();
         }
 
-        private static async Task TryValidate(string spn, KrbApReq ticket, string servicePassword, string serviceSalt)
+        private static async Task TryValidate(string spn, KrbApReq ticket, string servicePassword, string serviceSalt, ILoggerFactory logger)
         {
             var encoded = ticket.EncodeApplication().ToArray();
 
@@ -431,6 +431,7 @@ namespace KerberosClientApp
                         ticket.Ticket.Realm,
                         new[] { spn }
                     ),
+                    etype: EncryptionType.RC4_HMAC_NT,
                     saltType: SaltType.ActiveDirectoryUser
                 );
             }
@@ -444,7 +445,7 @@ namespace KerberosClientApp
                 );
             }
 
-            var authenticator = new KerberosAuthenticator(new KeyTable(kerbKey));
+            var authenticator = new KerberosAuthenticator(new KeyTable(kerbKey), logger);
 
             var validated = (KerberosIdentity)await authenticator.Authenticate(encoded);
 

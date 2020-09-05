@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
@@ -39,6 +40,24 @@ namespace Kerberos.NET.Entities
             }
 
             return apReq.DecryptApReq(keys);
+        }
+
+        public override string ToString()
+        {
+            if (this.token.InitialToken != null)
+            {
+                var init = this.token.InitialToken;
+                return $"NegTokenInit Oid: {init.MechTypes?.FirstOrDefault()?.FriendlyName};";
+            }
+
+            if (this.token.ResponseToken != null)
+            {
+                var resp = this.token.ResponseToken;
+
+                return $"NegTokenResp Oid: {resp.SupportedMech.FriendlyName};";
+            }
+
+            return base.ToString();
         }
     }
 }
