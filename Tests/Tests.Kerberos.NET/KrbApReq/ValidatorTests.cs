@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -6,6 +6,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Security;
 using System.Threading.Tasks;
 using Kerberos.NET;
 using Kerberos.NET.Crypto;
@@ -28,6 +29,34 @@ namespace Tests.Kerberos.NET
             var result = await validator.Validate(data);
 
             Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public async Task LogsKeyTableDataOnFailure()
+        {
+            FakeExceptionLoggerFactory logger = new FakeExceptionLoggerFactory();
+
+            var data = ReadDataFile("rc4-kerberos-data");
+            var key = ReadDataFile("aes128-key-data");
+
+            var validator = new KerberosValidator(new KerberosKey(key, etype: EncryptionType.RC4_HMAC_NT), logger) { ValidateAfterDecrypt = DefaultActions };
+
+            bool throws = false;
+
+            try
+            {
+                await validator.Validate(data);
+            }
+            catch (SecurityException ex)
+            {
+                throws = true;
+
+                Assert.AreEqual(ex, logger.Exceptions.First());
+            }
+
+            Assert.IsTrue(throws);
+
+            Assert.IsTrue(logger.Logs.Any(l => l.ToLowerInvariant().Contains("keytab")));
         }
 
         [TestMethod]

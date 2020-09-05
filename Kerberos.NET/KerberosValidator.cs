@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using Kerberos.NET.Crypto;
@@ -65,7 +66,7 @@ namespace Kerberos.NET
             {
                 decryptedToken = kerberosRequest.DecryptApReq(this.keytab);
             }
-            catch(Exception ex)
+            catch(SecurityException ex)
             {
                 this.logger.WarnCryptographicException(ex, this.keytab);
                 throw;
