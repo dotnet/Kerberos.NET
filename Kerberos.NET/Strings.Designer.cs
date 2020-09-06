@@ -124,6 +124,393 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cache:.
+        /// </summary>
+        internal static string CommandLine_CachePath {
+            get {
+                return ResourceManager.GetString("CommandLine_CachePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Commands.
+        /// </summary>
+        internal static string CommandLine_Commands {
+            get {
+                return ResourceManager.GetString("CommandLine_Commands", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration:.
+        /// </summary>
+        internal static string CommandLine_ConfigPath {
+            get {
+                return ResourceManager.GetString("CommandLine_ConfigPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User Default Values.
+        /// </summary>
+        internal static string CommandLine_Defaults {
+            get {
+                return ResourceManager.GetString("CommandLine_Defaults", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provides help information about commands. Pass the name of a command to help for more details..
+        /// </summary>
+        internal static string CommandLine_KerberosHelp {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosHelp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide the name of the command to list helpful information about the command..
+        /// </summary>
+        internal static string CommandLine_KerberosHelpCommand_HelpCommand {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosHelpCommand_HelpCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Obtain a cache a Kerberos Ticket-Granting-Ticket..
+        /// </summary>
+        internal static string CommandLine_KerberosInit {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Request an anonymous ticket..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Anonymous {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Anonymous", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide the name of a cache used to armor the current request..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_ArmorCache {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_ArmorCache", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide the name of a cache to store and retrieve tickets..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Cache {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Cache", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Requests canonicalization of the ticket principal name..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Canonicalize {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Canonicalize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Treat the principal name as an enterprise name..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Enterprise {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Enterprise", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Request a forwardable ticket..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Forward {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Forward", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Request a ticket with addresses..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_IncludeAddresses {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_IncludeAddresses", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Obtain a ticket using the provided keytab..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Keytab {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Keytab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Request a ticket with the provided lifetime..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_LifeTime {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_LifeTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not request a forwardable ticket..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_NoForward {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_NoForward", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not request a forwardable ticket..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_NoProxy {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_NoProxy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Request a proxiable ticket..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Proxy {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Proxy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Renew the requested TGT..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Renew {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Renew", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Request a ticket that is renewable up to renewable-lifetime or infinite lifetime..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Renewable {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Renewable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Request a ticket that is renewable up to the requested lifetime..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_RenewLifetime {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_RenewLifetime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Specify a service name to to use when getting tickets..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Servicename {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Servicename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Request a ticket starting from the provided time..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_StartTime {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_StartTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Obtain a ticket using the keytab located in the default location..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Usekeytab {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Usekeytab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Specifies the principal name to use otherwise uses the currently logged on username..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_UserPrincipalName {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_UserPrincipalName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Request the TGT be sent to the KDC for validation..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Validate {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Validate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display verbose output..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Verbose {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Verbose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays the current list of tickets in the cache..
+        /// </summary>
+        internal static string CommandLine_KerberosList {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display the contents of the provided cache name..
+        /// </summary>
+        internal static string CommandLine_KerberosListCommand_Cache {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosListCommand_Cache", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Get a service ticket for the provided SPN..
+        /// </summary>
+        internal static string CommandLine_KerberosListCommand_Get {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosListCommand_Get", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to List all the caches for the current user..
+        /// </summary>
+        internal static string CommandLine_KerberosListCommand_ListCaches {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosListCommand_ListCaches", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display ticket flags in short-form..
+        /// </summary>
+        internal static string CommandLine_KerberosListCommand_ShortFlags {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosListCommand_ShortFlags", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verify a Ticket-Granting-Ticket is present and valid in the cache..
+        /// </summary>
+        internal static string CommandLine_KerberosListCommand_Test {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosListCommand_Test", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displays all data about the cache..
+        /// </summary>
+        internal static string CommandLine_KerberosListCommand_Verbose {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosListCommand_Verbose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password for {0}: .
+        /// </summary>
+        internal static string CommandLine_KInit_PassPrompt {
+            get {
+                return ResourceManager.GetString("CommandLine_KInit_PassPrompt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Client.
+        /// </summary>
+        internal static string CommandLine_KList_Client {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_Client", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to End Time (local).
+        /// </summary>
+        internal static string CommandLine_KList_End {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_End", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Flags.
+        /// </summary>
+        internal static string CommandLine_KList_Flags {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_Flags", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Renew Until (local).
+        /// </summary>
+        internal static string CommandLine_KList_RenewTime {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_RenewTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Server.
+        /// </summary>
+        internal static string CommandLine_KList_Server {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_Server", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start Time (local).
+        /// </summary>
+        internal static string CommandLine_KList_Start {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_Start", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The command &apos;{0}&apos; could not be found..
+        /// </summary>
+        internal static string CommandLine_UnknownCommand {
+            get {
+                return ResourceManager.GetString("CommandLine_UnknownCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to ASN.1 Enumerated values only apply to enum types without the [Flags] attribute..
         /// </summary>
         internal static string Cryptography_Asn_EnumeratedValueRequiresNonFlagsEnum {

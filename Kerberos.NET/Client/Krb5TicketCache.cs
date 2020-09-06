@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace Kerberos.NET.Client
         public Krb5TicketCache(string filePath, ILoggerFactory logger = null)
             : this(logger)
         {
-            this.filePath = filePath;
+            this.filePath = Environment.ExpandEnvironmentVariables(filePath);
             this.ReadCache();
         }
 
@@ -38,6 +39,14 @@ namespace Kerberos.NET.Client
             this.cache = new Krb5CredentialCache();
             this.cache.Header[Krb5CredentialCacheTag.KdcClientOffset] = new byte[8];
         }
+
+        public override string DefaultDomain
+        {
+            get => this.cache?.DefaultPrincipalName?.Realm;
+            set { }
+        }
+
+        internal IEnumerable<Krb5CredentialCache.Krb5Credential> CacheInternals => this.cache.Credentials;
 
         private void ReadCache(byte[] cache)
         {

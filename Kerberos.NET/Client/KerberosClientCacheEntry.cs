@@ -18,6 +18,8 @@ namespace Kerberos.NET.Client
 
         public KrbPrincipalName SName { get; set; }
 
+        public TicketFlags Flags { get; set; }
+
         public override bool Equals(object obj)
         {
             if (obj is KerberosClientCacheEntry entry)

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography.Asn1;
@@ -423,6 +424,12 @@ namespace Kerberos.NET.Client
 
             var originalServicePrincipalName = KrbPrincipalName.FromString(rst.ServicePrincipalName);
 
+            if (string.IsNullOrWhiteSpace(this.DefaultDomain) &&
+                !string.IsNullOrWhiteSpace(this.ticketCache.DefaultDomain))
+            {
+                this.DefaultDomain = this.ticketCache.DefaultDomain;
+            }
+
             var tgtCacheName = $"krbtgt/{this.DefaultDomain}";
             var receivedRequestedTicket = false;
 
@@ -496,6 +503,8 @@ namespace Kerberos.NET.Client
                         );
 
                         VerifyNonces(serviceTicketCacheEntry.Nonce, encKdcRepPart.Nonce);
+
+                        serviceTicketCacheEntry.Flags = encKdcRepPart.Flags;
 
                         sessionKey = encKdcRepPart.Key;
                         respondedSName = encKdcRepPart.SName;
@@ -602,10 +611,24 @@ namespace Kerberos.NET.Client
 
             if (!string.IsNullOrWhiteSpace(cachePath) && this.CacheServiceTickets)
             {
+                CreateFilePath(cachePath);
+
                 this.Cache = new Krb5TicketCache(cachePath, this.loggerFactory);
 
                 this.cacheSet = true;
             }
+        }
+
+        private static void CreateFilePath(string cachePath)
+        {
+            var path = Path.GetDirectoryName(cachePath);
+
+            if (Directory.Exists(path))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(path);
         }
 
         private static string TryFindReferralShortcut(KrbEncTgsRepPart encKdcRepPart)
@@ -908,6 +931,7 @@ namespace Kerberos.NET.Client
                 Value = new KerberosClientCacheEntry
                 {
                     SessionKey = encKdcRepPart.Key,
+                    Flags = encKdcRepPart.Flags,
                     KdcResponse = kdcRep
                 }
             });

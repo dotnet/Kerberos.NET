@@ -29,6 +29,8 @@ namespace Kerberos.NET
 
         public TimeSpan RefreshInterval { get; set; } = TimeSpan.FromSeconds(30);
 
+        public virtual string DefaultDomain { get; set; }
+
         internal Func<CacheEntry, Task> Refresh { get; set; }
 
         protected CancellationTokenSource Cancellation { get; }

@@ -21,6 +21,8 @@ namespace Kerberos.NET.Configuration
     /// </summary>
     public class ConfigurationSectionList : List<KeyValuePair<string, object>>
     {
+        private const BindingFlags PublicInstancePropertyFlags = BindingFlags.Public | BindingFlags.Instance;
+
         private static readonly Dictionary<string, string> Aliases = new Dictionary<string, string>()
         {
             { "arcfour_hmac_md5", EncryptionType.RC4_HMAC_NT.ToString() },
@@ -49,7 +51,7 @@ namespace Kerberos.NET.Configuration
 
             var list = new ConfigurationSectionList();
 
-            foreach (var property in config.GetType().GetProperties())
+            foreach (var property in config.GetType().GetProperties(PublicInstancePropertyFlags))
             {
                 var section = property.GetValue(config);
 
@@ -221,7 +223,7 @@ namespace Kerberos.NET.Configuration
         {
             var config = new Krb5Config();
 
-            var properties = config.GetType().GetProperties();
+            var properties = config.GetType().GetProperties(PublicInstancePropertyFlags);
 
             foreach (var property in properties)
             {
@@ -258,7 +260,7 @@ namespace Kerberos.NET.Configuration
 
         private static void AddInstance(ConfigurationSectionList value, object config, Type property)
         {
-            foreach (var prop in property.GetProperties())
+            foreach (var prop in property.GetProperties(PublicInstancePropertyFlags))
             {
                 var propertyName = GetName(prop);
                 var propertyObject = prop.GetValue(config);
@@ -472,7 +474,7 @@ namespace Kerberos.NET.Configuration
         {
             var obj = Activator.CreateInstance(propertyType);
 
-            foreach (var property in propertyType.GetProperties())
+            foreach (var property in propertyType.GetProperties(PublicInstancePropertyFlags))
             {
                 var name = $"{baseName}.{GetName(property)}";
 

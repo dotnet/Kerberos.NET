@@ -49,9 +49,9 @@ namespace Kerberos.NET.Configuration
         public int ClockSkew { get; set; }
 
         /// <summary>
-        /// This relation specifies the name of the default credential cache. The default is %DEFCCNAME%.
+        /// This relation specifies the name of the default credential cache. The default is "%APPDATA%\Kerberos.NET\.krb5cc".
         /// </summary>
-        [DefaultValue("")]
+        [DefaultValue("%APPDATA%\\Kerberos.NET\\.krb5cc")]
         [DisplayName("default_ccache_name")]
         public string DefaultCCacheName { get; set; }
 
