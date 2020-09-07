@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -24,6 +24,23 @@ namespace Kerberos.NET.Entities
         public override DecryptedKrbApReq DecryptApReq(KeyTable keys)
         {
             return DecryptApReq(this.KrbApReq, keys);
+        }
+
+        public override string ToString()
+        {
+            if (this.KrbApReq != null)
+            {
+                var ap = this.KrbApReq;
+
+                return $"{ap.Ticket.SName.FullyQualifiedName}@{ap.Ticket.Realm}";
+            }
+
+            if (this.KrbApRep != null)
+            {
+                return this.KrbApRep.ToString();
+            }
+
+            return base.ToString();
         }
     }
 }
