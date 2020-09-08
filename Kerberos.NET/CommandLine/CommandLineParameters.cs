@@ -89,7 +89,7 @@ namespace Kerberos.NET.CommandLine
 
         public string[] Parameters { get; set; }
 
-        public ICommand CreateCommandExecutor(CommandControl io)
+        public ICommand CreateCommandExecutor(InputControl io)
         {
             string commandValue = this.Command;
 

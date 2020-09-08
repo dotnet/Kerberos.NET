@@ -4,20 +4,21 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.Asn1;
 using System.Text;
 using System.Threading.Tasks;
+using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
 
 namespace Kerberos.NET.CommandLine
 {
     public abstract class BaseCommand : ICommand
     {
-        private static readonly IEnumerable<string> ParameterDesignators = new[] { "/", "-", "--" };
+        private static readonly IEnumerable<string> ParameterDesignators = new[] { "/", "--", "-" };
 
         protected BaseCommand(CommandLineParameters parameters)
         {
@@ -26,12 +27,19 @@ namespace Kerberos.NET.CommandLine
             this.ParseParameters();
         }
 
-        public CommandControl IO { get; set; }
+        public InputControl IO { get; set; }
 
         public CommandLineParameters Parameters { get; }
 
-        [CommandLineParameter("h|help", Description = "Help")]
+        [CommandLineParameter("h|help|?", Description = "Help")]
         public bool Help { get; protected set; }
+
+        protected virtual KerberosClient CreateClient()
+        {
+            var config = Krb5Config.CurrentUser();
+
+            return new KerberosClient(config) { CacheInMemory = false };
+        }
 
         public virtual Task<bool> Execute()
         {
@@ -77,7 +85,10 @@ namespace Kerberos.NET.CommandLine
                 WriteProperty(prop, attr);
             }
 
-            var max = props.Max(p => p.Item2.Name.Length) + 20;
+            var max = props.Select(p => p.Item2.Name).Max(p =>
+                p.Length + 7 +
+               (p.Count(c => c == '|') * 9)
+            ) + 5;
 
             this.IO.Writer.WriteLine();
             this.IO.Writer.WriteLine();
@@ -97,7 +108,8 @@ namespace Kerberos.NET.CommandLine
         {
             var names = attr.Name.Split('|');
 
-            var hasValue = prop.PropertyType != typeof(bool);
+            var hasValue = prop.PropertyType != typeof(bool) &&
+                           prop.PropertyType != typeof(bool?);
 
             for (var i = 0; i < names.Length; i++)
             {
@@ -151,7 +163,8 @@ namespace Kerberos.NET.CommandLine
         {
             var names = attr.Name.Split('|');
 
-            var hasValue = prop.PropertyType != typeof(bool);
+            var hasValue = prop.PropertyType != typeof(bool) &&
+                           prop.PropertyType != typeof(bool?);
 
             bool last = false;
 
@@ -318,9 +331,29 @@ namespace Kerberos.NET.CommandLine
 
         private static bool SetValue(object instance, PropertyInfo prop, string param, string nextValue)
         {
-            bool usedValue = true;
+            var type = prop.PropertyType;
+            var existingValue = prop.GetValue(instance);
 
-            if (prop.PropertyType == typeof(bool))
+            var value = ParseValue(type, existingValue, param, nextValue, out bool usedValue);
+
+            prop.SetValue(instance, value);
+
+            return usedValue;
+        }
+
+        private static object ParseValue(Type type, object existingValue, string param, string nextValue, out bool usedValue)
+        {
+            usedValue = true;
+
+            object value;
+
+            if (type.IsGenericType &&
+               (type.GetGenericTypeDefinition() == typeof(ICollection<>) ||
+                type.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
+            {
+                value = SetOrAddCollectionValue(type, existingValue, nextValue);
+            }
+            else if (type == typeof(bool) || type == typeof(bool?))
             {
                 if (!bool.TryParse(nextValue, out bool result))
                 {
@@ -328,19 +361,53 @@ namespace Kerberos.NET.CommandLine
                     usedValue = false;
                 }
 
-                prop.SetValue(instance, result);
+                value = result;
             }
-            else if (prop.PropertyType == typeof(TimeSpan) || prop.PropertyType == typeof(TimeSpan?))
+            else if (type == typeof(TimeSpan) || type == typeof(TimeSpan?))
             {
                 var ts = TimeSpanDurationSerializer.Parse(nextValue);
-                prop.SetValue(instance, ts);
+                value = ts;
+            }
+            else if (type.BaseType == typeof(Enum))
+            {
+                value = ConfigurationSectionList.ParseEnum(nextValue, type);
             }
             else
             {
-                prop.SetValue(instance, nextValue);
+                value = nextValue;
             }
 
-            return usedValue;
+            return value;
+        }
+
+        private static object SetOrAddCollectionValue(Type type, object list, string nextValue)
+        {
+            var listType = typeof(List<>);
+
+            var genericParamType = type.GetGenericArguments()[0];
+
+            var concreteType = listType.MakeGenericType(genericParamType);
+
+            if (list == null)
+            {
+                list = Activator.CreateInstance(concreteType);
+            }
+
+            var add = concreteType.GetMethod("Add");
+            var addRange = concreteType.GetMethod("AddRange");
+
+            var value = ParseValue(genericParamType, null, null, nextValue, out _);
+
+            if (value is IEnumerable || value is ICollection)
+            {
+                addRange.Invoke(list, new[] { value });
+            }
+            else
+            {
+                add.Invoke(list, new[] { value });
+            }
+
+            return list;
         }
 
         private static bool IsParameter(string parameter, out string designator)

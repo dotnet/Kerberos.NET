@@ -26,8 +26,17 @@ namespace Kerberos.NET.Configuration
         private static readonly Dictionary<string, string> Aliases = new Dictionary<string, string>()
         {
             { "arcfour_hmac_md5", EncryptionType.RC4_HMAC_NT.ToString() },
+            { "arcfour_hmac", EncryptionType.RC4_HMAC_NT.ToString() },
+            { "rc4_hmac", EncryptionType.RC4_HMAC_NT.ToString() },
+            { "rc4", EncryptionType.RC4_HMAC_NT.ToString() },
             { "aes256_cts", EncryptionType.AES256_CTS_HMAC_SHA1_96.ToString() },
             { "aes128_cts", EncryptionType.AES256_CTS_HMAC_SHA1_96.ToString() },
+            { "aes256_sha2", EncryptionType.AES256_CTS_HMAC_SHA384_192.ToString() },
+            { "aes128_sha2", EncryptionType.AES128_CTS_HMAC_SHA256_128.ToString() },
+            { "aes", string.Join(" ", EncryptionType.AES128_CTS_HMAC_SHA256_128,
+                                      EncryptionType.AES128_CTS_HMAC_SHA1_96,
+                                      EncryptionType.AES256_CTS_HMAC_SHA384_192,
+                                      EncryptionType.AES256_CTS_HMAC_SHA1_96) },
         };
 
         private readonly List<string> finalizedKeys = new List<string>();
@@ -643,12 +652,22 @@ namespace Kerberos.NET.Configuration
             var list = Activator.CreateInstance(concreteType);
 
             var add = concreteType.GetMethod("Add");
+            var addRange = concreteType.GetMethod("AddRange");
 
             if (stringValues != null)
             {
                 foreach (var val in stringValues)
                 {
-                    add.Invoke(list, new[] { Parse(val.ToString(), genericParamType) });
+                    var parsed = Parse(val.ToString(), genericParamType);
+
+                    if (parsed is IEnumerable || parsed is ICollection)
+                    {
+                        addRange.Invoke(list, new[] { parsed });
+                    }
+                    else
+                    {
+                        add.Invoke(list, new[] { parsed });
+                    }
                 }
             }
 
@@ -694,7 +713,7 @@ namespace Kerberos.NET.Configuration
             return bool.Parse(stringValue);
         }
 
-        private static object ParseEnum(string stringValue, Type type)
+        internal static object ParseEnum(string stringValue, Type type)
         {
             var val = stringValue.Replace("-", "_");
 
@@ -703,7 +722,18 @@ namespace Kerberos.NET.Configuration
                 val = aliased;
             }
 
-            return Enum.Parse(type, val, true);
+            var split = val.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (split.Length > 1)
+            {
+                var concreteType = typeof(List<>).MakeGenericType(type);
+
+                return ParseAsList(split, concreteType);
+            }
+            else
+            {
+                return Enum.Parse(type, val, true);
+            }
         }
 
         private static string AppendName(string basePath, string name)

@@ -76,7 +76,12 @@ namespace Kerberos.NET.Transport
 
                 error.EText = this.GetErrorText(kex.Message);
 
-                throw new KerberosProtocolException(kex.Error);
+                if (error.ErrorCode == KerberosErrorCode.KDC_ERR_NONE)
+                {
+                    error.ErrorCode = KerberosErrorCode.KDC_ERR_SVC_UNAVAILABLE;
+                }
+
+                throw new KerberosProtocolException(error);
             }
             catch (HttpRequestException hex)
             {

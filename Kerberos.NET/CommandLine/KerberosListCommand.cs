@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
@@ -24,28 +23,28 @@ namespace Kerberos.NET.CommandLine
         }
 
         [CommandLineParameter("p|purge|clear", Description = "Purge")]
-        public bool Purge { get; private set; }
+        public bool Purge { get; set; }
 
         [CommandLineParameter("c|cache", Description = "Cache")]
-        public string Cache { get; private set; }
+        public string Cache { get; set; }
 
         [CommandLineParameter("config", Description = "Config")]
-        public bool ListConfig { get; private set; }
+        public bool ListConfig { get; set; }
 
         [CommandLineParameter("s|t|test", Description = "Test")]
-        public bool Test { get; private set; }
+        public bool Test { get; set; }
 
         [CommandLineParameter("f", Description = "ShortFlags")]
-        public bool ShortFormFlags { get; private set; }
+        public bool ShortFormFlags { get; set; }
 
         [CommandLineParameter("v|verbose", EnforceCasing = false, Description = "Verbose")]
-        public bool Verbose { get; private set; }
+        public bool Verbose { get; set; }
 
         [CommandLineParameter("l|list-caches", Description = "ListCaches")]
-        public bool ListCaches { get; private set; }
+        public bool ListCaches { get; set; }
 
         [CommandLineParameter("get", Description = "Get")]
-        public string ServicePrincipalName { get; private set; }
+        public string ServicePrincipalName { get; set; }
 
         public override async Task<bool> Execute()
         {
@@ -54,49 +53,67 @@ namespace Kerberos.NET.CommandLine
                 return true;
             }
 
-            var config = Krb5Config.CurrentUser();
-
-            var cache = config.Defaults.DefaultCCacheName;
+            var client = this.CreateClient();
 
             if (!string.IsNullOrWhiteSpace(this.Cache))
             {
-                cache = this.Cache;
+                client.Configuration.Defaults.DefaultCCacheName = this.Cache;
             }
 
             if (this.Purge)
             {
-                this.PurgeTickets(cache);
+                await this.PurgeTickets();
             }
 
             if (!string.IsNullOrWhiteSpace(this.ServicePrincipalName))
             {
-                config.Defaults.DefaultCCacheName = cache;
-
-                await GetServiceTicket(config);
+                await GetServiceTicket(client.Configuration);
             }
 
-            this.ListTickets(cache);
+            this.ListTickets(client.Configuration.Defaults.DefaultCCacheName);
 
             if (this.ListConfig)
             {
-                var configStr = config.Serialize();
-
-                this.IO.Writer.WriteLine(configStr);
+                this.ListConfiguration(client.Configuration);
             }
 
             return true;
         }
 
+        private void ListConfiguration(Krb5Config config)
+        {
+            var configStr = config.Serialize();
+
+            this.IO.Writer.WriteLine(configStr);
+        }
+
         private async Task GetServiceTicket(Krb5Config config)
         {
-            var client = new KerberosClient(config);
+            var client = this.CreateClient();
 
-            await client.GetServiceTicket(this.ServicePrincipalName);
+            try
+            {
+                await client.GetServiceTicket(this.ServicePrincipalName);
+            }
+            catch (AggregateException aex)
+            {
+                foreach (var kex in aex.InnerExceptions.OfType<KerberosProtocolException>())
+                {
+                    if (kex.Error.ErrorCode == Entities.KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
+                    {
+                        await PurgeTickets();
+                        await client.GetServiceTicket(this.ServicePrincipalName);
+                        break;
+                    }
+                }
+            }
         }
 
         private void ListTickets(string cache)
         {
-            var ticketCache = new Krb5TicketCache(cache);
+            TicketCacheBase.TryParseCacheType(cache, out _, out string path);
+
+            var ticketCache = new Krb5TicketCache(path);
 
             var tickets = ticketCache.CacheInternals.ToArray();
 
@@ -118,13 +135,24 @@ namespace Kerberos.NET.CommandLine
                     ("CommandLine_KList_RenewTime", ticket.RenewTill.ToLocalTime().ToString(CultureInfo.CurrentCulture))
                 };
 
-                this.IO.Writer.WriteLine("#{0}>", i);
+                var ticketEntryNumber = string.Format("#{0}>", i);
 
                 var max = properties.Max(p => p.Item1.Length);
 
+                bool first = true;
+
                 foreach (var prop in properties)
                 {
-                    this.IO.Writer.Write(string.Format("{0}: ", SR.Resource(prop.Item1)).PadLeft(max).PadRight(max));
+                    var key = string.Format("{0}: ", SR.Resource(prop.Item1)).PadLeft(max - 1).PadRight(max);
+
+                    if (first)
+                    {
+                        key = ticketEntryNumber + key.Substring(ticketEntryNumber.Length);
+
+                        first = false;
+                    }
+
+                    this.IO.Writer.Write(key);
                     this.IO.Writer.WriteLine(prop.Item2);
                 }
 
@@ -132,16 +160,11 @@ namespace Kerberos.NET.CommandLine
             }
         }
 
-        private void PurgeTickets(string cache)
+        private async Task PurgeTickets()
         {
-            try
-            {
-                File.Delete(Environment.ExpandEnvironmentVariables(cache));
-            }
-            catch (Exception ex)
-            {
-                this.IO.Writer.WriteLine(ex.Message);
-            }
+            KerberosDestroyCommand destroy = new KerberosDestroyCommand(this.Parameters);
+
+            await destroy.Execute();
         }
     }
 }

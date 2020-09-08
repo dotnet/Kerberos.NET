@@ -439,7 +439,7 @@
     <value>Do not request a forwardable ticket.</value>
   </data>
   <data name="CommandLine_KerberosInitCommand_NoProxy" xml:space="preserve">
-    <value>Do not request a forwardable ticket.</value>
+    <value>Do not request a proxiable ticket.</value>
   </data>
   <data name="CommandLine_KerberosInitCommand_Proxy" xml:space="preserve">
     <value>Request a proxiable ticket.</value>
@@ -463,7 +463,7 @@
     <value>Obtain a ticket using the keytab located in the default location.</value>
   </data>
   <data name="CommandLine_KerberosInitCommand_UserPrincipalName" xml:space="preserve">
-    <value>Specifies the principal name to use otherwise uses the currently logged on username.</value>
+    <value>The principal name to use otherwise uses the current system user.</value>
   </data>
   <data name="CommandLine_KerberosInitCommand_Validate" xml:space="preserve">
     <value>Request the TGT be sent to the KDC for validation.</value>
@@ -472,19 +472,19 @@
     <value>Display verbose output.</value>
   </data>
   <data name="CommandLine_CachePath" xml:space="preserve">
-    <value>Cache:</value>
+    <value>Cache</value>
   </data>
   <data name="CommandLine_Commands" xml:space="preserve">
     <value>Commands</value>
   </data>
   <data name="CommandLine_ConfigPath" xml:space="preserve">
-    <value>Configuration:</value>
+    <value>Configuration</value>
   </data>
   <data name="CommandLine_Defaults" xml:space="preserve">
     <value>User Default Values</value>
   </data>
   <data name="CommandLine_KerberosHelp" xml:space="preserve">
-    <value>Provides help information about commands. Pass the name of a command to help for more details.</value>
+    <value>Provides help information about commands.</value>
   </data>
   <data name="CommandLine_KerberosInit" xml:space="preserve">
     <value>Obtain a cache a Kerberos Ticket-Granting-Ticket.</value>
@@ -514,24 +514,48 @@
     <value>Client</value>
   </data>
   <data name="CommandLine_KList_End" xml:space="preserve">
-    <value>End Time (local)</value>
+    <value>End Time</value>
   </data>
   <data name="CommandLine_KList_Flags" xml:space="preserve">
     <value>Flags</value>
   </data>
   <data name="CommandLine_KList_RenewTime" xml:space="preserve">
-    <value>Renew Until (local)</value>
+    <value>Renew Until</value>
   </data>
   <data name="CommandLine_KList_Server" xml:space="preserve">
     <value>Server</value>
   </data>
   <data name="CommandLine_KList_Start" xml:space="preserve">
-    <value>Start Time (local)</value>
+    <value>Start Time</value>
   </data>
   <data name="CommandLine_UnknownCommand" xml:space="preserve">
     <value>The command '{0}' could not be found.</value>
   </data>
   <data name="CommandLine_KerberosListCommand_Get" xml:space="preserve">
     <value>Get a service ticket for the provided SPN.</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_Certificate" xml:space="preserve">
+    <value>Locate a certificate and use PKINIT to authenticate the user.</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_CredNotFound" xml:space="preserve">
+    <value>Error: Credential not found</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_Extension" xml:space="preserve">
+    <value>Pass values to Kerberos extensions.</value>
+  </data>
+  <data name="CommandLine_KerberosDestroy" xml:space="preserve">
+    <value>Delete the ticket cache.</value>
+  </data>
+  <data name="CommandLine_KerberosDestroy_Deleted" xml:space="preserve">
+    <value>Cache file has been deleted.</value>
+  </data>
+  <data name="CommandLine_KerberosDestroy_Error" xml:space="preserve">
+    <value>Failed to delete cache file</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_KdcHostname" xml:space="preserve">
+    <value>Specify the KDC that should process this request.</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_RequestPac" xml:space="preserve">
+    <value>Indicate whether a PAC should be requested during authentication.</value>
   </data>
 </root>

@@ -37,6 +37,20 @@ namespace Kerberos.NET
 
         protected ILogger Logger { get; }
 
+        public static void TryParseCacheType(string cachePath, out string cacheType, out string path)
+        {
+            cacheType = null;
+            path = cachePath;
+
+            var indexOf = cachePath.IndexOf(':');
+
+            if (indexOf > 0)
+            {
+                cacheType = cachePath.Substring(0, indexOf).ToUpperInvariant();
+                path = cachePath.Substring(indexOf + 1);
+            }
+        }
+
         private async Task RunBackground()
         {
             while (!this.Cancellation.IsCancellationRequested)

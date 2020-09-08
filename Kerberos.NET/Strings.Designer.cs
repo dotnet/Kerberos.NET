@@ -124,7 +124,7 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cache:.
+        ///   Looks up a localized string similar to Cache.
         /// </summary>
         internal static string CommandLine_CachePath {
             get {
@@ -142,7 +142,7 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Configuration:.
+        ///   Looks up a localized string similar to Configuration.
         /// </summary>
         internal static string CommandLine_ConfigPath {
             get {
@@ -160,7 +160,34 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Provides help information about commands. Pass the name of a command to help for more details..
+        ///   Looks up a localized string similar to Delete the ticket cache..
+        /// </summary>
+        internal static string CommandLine_KerberosDestroy {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosDestroy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache file has been deleted..
+        /// </summary>
+        internal static string CommandLine_KerberosDestroy_Deleted {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosDestroy_Deleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to delete cache file.
+        /// </summary>
+        internal static string CommandLine_KerberosDestroy_Error {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosDestroy_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provides help information about commands..
         /// </summary>
         internal static string CommandLine_KerberosHelp {
             get {
@@ -223,11 +250,38 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Locate a certificate and use PKINIT to authenticate the user..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Certificate {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Certificate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error: Credential not found.
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_CredNotFound {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_CredNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Treat the principal name as an enterprise name..
         /// </summary>
         internal static string CommandLine_KerberosInitCommand_Enterprise {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosInitCommand_Enterprise", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pass values to Kerberos extensions..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Extension {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Extension", resourceCulture);
             }
         }
         
@@ -246,6 +300,15 @@ namespace Kerberos.NET {
         internal static string CommandLine_KerberosInitCommand_IncludeAddresses {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosInitCommand_IncludeAddresses", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Specify the KDC that should process this request..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_KdcHostname {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_KdcHostname", resourceCulture);
             }
         }
         
@@ -277,7 +340,7 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Do not request a forwardable ticket..
+        ///   Looks up a localized string similar to Do not request a proxiable ticket..
         /// </summary>
         internal static string CommandLine_KerberosInitCommand_NoProxy {
             get {
@@ -322,6 +385,15 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Indicate whether a PAC should be requested during authentication..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_RequestPac {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_RequestPac", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Specify a service name to to use when getting tickets..
         /// </summary>
         internal static string CommandLine_KerberosInitCommand_Servicename {
@@ -349,7 +421,7 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Specifies the principal name to use otherwise uses the currently logged on username..
+        ///   Looks up a localized string similar to The principal name to use otherwise uses the current system user..
         /// </summary>
         internal static string CommandLine_KerberosInitCommand_UserPrincipalName {
             get {
@@ -457,7 +529,7 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to End Time (local).
+        ///   Looks up a localized string similar to End Time.
         /// </summary>
         internal static string CommandLine_KList_End {
             get {
@@ -475,7 +547,7 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Renew Until (local).
+        ///   Looks up a localized string similar to Renew Until.
         /// </summary>
         internal static string CommandLine_KList_RenewTime {
             get {
@@ -493,7 +565,7 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Start Time (local).
+        ///   Looks up a localized string similar to Start Time.
         /// </summary>
         internal static string CommandLine_KList_Start {
             get {

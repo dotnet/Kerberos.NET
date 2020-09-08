@@ -28,20 +28,23 @@ namespace Kerberos.NET.CommandLine
 ";
 
         private readonly Stack<string> shellCommandPath = new Stack<string>();
-        private readonly CommandControl io;
+        private readonly InputControl io;
 
-        public BruceConsoleShell(CommandControl io = null)
+        public BruceConsoleShell(InputControl io = null)
         {
-            this.io = io ?? new CommandControl
+            this.io = io ?? new InputControl
             {
                 Writer = Console.Out,
                 Reader = Console.In,
                 Clear = Console.Clear,
-                ReadKey = () => Console.ReadKey(true)
+                ReadKey = () => Console.ReadKey(true),
+                HookCtrlC = hooked => Console.TreatControlCAsInput = hooked
             };
 
             this.shellCommandPath.Push("bruce");
         }
+
+        public bool Verbose { get; set; }
 
         public string ShellPrefix
         {
@@ -65,18 +68,26 @@ namespace Kerberos.NET.CommandLine
             }
         }
 
+        public string LoadingModule { get; set; }
+
         public string CommandLine { get; set; }
+
+        public bool Silent { get; set; }
 
         public async Task Start()
         {
-            this.PrintBanner();
+            if (!this.Silent)
+            {
+                this.PrintBanner();
+            }
 
             await this.StartLoop();
         }
 
         private async Task StartLoop()
         {
-            bool attemptExternal = true;
+            bool attemptExternal = !string.IsNullOrWhiteSpace(this.CommandLine) || !string.IsNullOrWhiteSpace(this.LoadingModule);
+            bool singleRun = false;
 
             while (true)
             {
@@ -86,15 +97,18 @@ namespace Kerberos.NET.CommandLine
                 {
                     commandLine = this.CommandLine;
                     attemptExternal = false;
-
-                    this.io.Writer.Write(this.ShellPrefix);
-                    this.io.Writer.WriteLine(commandLine.Trim());
                 }
 
-                if (string.IsNullOrWhiteSpace(commandLine))
+                if (string.IsNullOrWhiteSpace(commandLine) && string.IsNullOrWhiteSpace(this.LoadingModule))
                 {
                     this.io.Writer.Write(this.ShellPrefix);
                     commandLine = this.io.Reader.ReadLine();
+                }
+
+                if (!string.IsNullOrWhiteSpace(this.LoadingModule))
+                {
+                    commandLine = $"{this.LoadingModule} {commandLine}".Trim();
+                    singleRun = true;
                 }
 
                 var parameters = CommandLineParameters.Parse(commandLine);
@@ -118,9 +132,34 @@ namespace Kerberos.NET.CommandLine
                 {
                     await ExecuteCommand(parameters);
                 }
+                catch (AggregateException agg)
+                {
+                    this.io.Writer.WriteLine();
+
+                    foreach (var ex in agg.InnerExceptions)
+                    {
+                        this.io.Writer.WriteLine(ex.Message);
+                    }
+                }
                 catch (Exception ex)
                 {
-                    this.io.Writer.WriteLine(ex.Message);
+                    this.io.Writer.WriteLine();
+
+                    if (this.Verbose)
+                    {
+                        this.io.Writer.WriteLine(ex);
+                    }
+                    else
+                    {
+                        this.io.Writer.WriteLine(ex.Message);
+                    }
+
+                    this.io.Writer.WriteLine();
+                }
+
+                if (singleRun)
+                {
+                    break;
                 }
             }
         }

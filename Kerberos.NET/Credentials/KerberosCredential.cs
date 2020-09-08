@@ -87,14 +87,10 @@ namespace Kerberos.NET.Credentials
 
             var index = original.IndexOf('@');
 
-            if (index > 0)
+            if (index > 0 && string.IsNullOrWhiteSpace(domain))
             {
                 username = original.Substring(0, index);
-
-                if (string.IsNullOrWhiteSpace(domain))
-                {
-                    domain = original.Substring(index + 1, original.Length - username.Length - 1);
-                }
+                domain = original.Substring(index + 1, original.Length - username.Length - 1);
             }
         }
 

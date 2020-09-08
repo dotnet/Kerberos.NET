@@ -15,6 +15,7 @@ namespace Kerberos.NET.Client
     [DebuggerDisplay("{cache}")]
     public class Krb5TicketCache : TicketCacheBase
     {
+        private const int E_SHARINGVIOLATION = unchecked((int)0x80070020);
         private readonly string filePath;
         private readonly Krb5CredentialCache cache;
 
@@ -127,14 +128,36 @@ namespace Kerberos.NET.Client
 
         private FileStream OpenFile(bool write = false)
         {
-            if (write)
+            var max = 10;
+
+            for (var i = 1; i <= max; i++)
             {
-                return File.Open(this.filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                try
+                {
+                    if (write)
+                    {
+                        return File.Open(this.filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    }
+                    else
+                    {
+                        return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.None);
+                    }
+                }
+                catch (IOException ioex)
+                {
+                    if (i == max)
+                    {
+                        throw;
+                    }
+
+                    if (ioex.HResult == E_SHARINGVIOLATION)
+                    {
+                        continue;
+                    }
+                }
             }
-            else
-            {
-                return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.None);
-            }
+
+            throw null;
         }
 
         public override object GetCacheItem(string key, string container = null)

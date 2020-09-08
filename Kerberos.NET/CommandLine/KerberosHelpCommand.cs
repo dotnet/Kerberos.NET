@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.Asn1;
@@ -53,10 +54,24 @@ namespace Kerberos.NET.CommandLine
             this.IO.Writer.WriteLine("   {0}", SR.Resource("CommandLine_Defaults"));
             this.IO.Writer.WriteLine();
 
-            this.IO.Writer.WriteLine("   {0}{1}",
-                SR.Resource("CommandLine_ConfigPath").PadRight(22), Krb5Config.UserConfiguration);
-            this.IO.Writer.WriteLine("   {0}{1}",
-                SR.Resource("CommandLine_CachePath").PadRight(22), Krb5Config.UserCredentialCache);
+            var props = new List<(string, string)>()
+            {
+                (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfiguration),
+                (SR.Resource("CommandLine_CachePath"), Krb5Config.DefaultUserCredentialCache),
+            };
+
+            var max = props.Max(p => p.Item1.Length) + 3;
+
+            foreach (var prop in props)
+            {
+                this.WriteProperty(prop.Item1, prop.Item2, max);
+            }
+        }
+
+        private void WriteProperty(string key, string value, int padding)
+        {
+            this.IO.Writer.WriteLine("{0}: {1}",
+                key.PadLeft(padding).PadRight(padding), value);
         }
 
         private void ListCommands()
@@ -67,7 +82,7 @@ namespace Kerberos.NET.CommandLine
             this.IO.Writer.WriteLine("   {0}", SR.Resource("CommandLine_Commands"));
             this.IO.Writer.WriteLine();
 
-            var max = types.Max(t => t.GetCustomAttribute<CommandLineCommandAttribute>().Command.Length) + 20;
+            var max = types.Max(t => t.GetCustomAttribute<CommandLineCommandAttribute>().Command.Length) + 10;
 
             foreach (var type in types)
             {

@@ -9,7 +9,7 @@ namespace Kerberos.NET.CommandLine
 {
     public interface ICommand
     {
-        CommandControl IO { get; set; }
+        InputControl IO { get; set; }
 
         Task<bool> Execute();
 

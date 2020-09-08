@@ -179,6 +179,12 @@ namespace Kerberos.NET.Client
         public bool CacheServiceTickets { get; set; } = true;
 
         /// <summary>
+        /// Indicates that the cache should override configuration and always store in memory only.
+        /// Defaults to true for backwards compatibility.
+        /// </summary>
+        public bool CacheInMemory { get; set; } = true;
+
+        /// <summary>
         /// The Kerberos options used during the AS-REQ flow.
         /// </summary>
         public AuthenticationOptions AuthenticationOptions { get; set; } = DefaultAuthentication;
@@ -288,6 +294,11 @@ namespace Kerberos.NET.Client
                 this.AuthenticationOptions |= AuthenticationOptions.Forwardable;
             }
 
+            if (!this.Configuration.Defaults.RequestPac)
+            {
+                this.AuthenticationOptions &= ~AuthenticationOptions.IncludePacRequest;
+            }
+
             using (this.logger.BeginRequestScope(this.ScopeId))
             {
                 await AuthenticateCredential(credential);
@@ -297,58 +308,58 @@ namespace Kerberos.NET.Client
         private async Task AuthenticateCredential(KerberosCredential credential)
         {
             int preauthAttempts = 0;
+
+            bool succeeded = false;
             bool tryPinned = false;
 
-            try
+            do
             {
-                do
+                try
                 {
-                    try
+                    // Authenticate to the KDC and if it succeeds break out of the retry loop
+
+                    await this.RequestTgt(credential).ConfigureAwait(true);
+                    succeeded = true;
+                    break;
+                }
+                catch (KerberosProtocolException pex)
+                {
+                    // the attempt didn't succeed because the KDC returned a KRB-ERROR
+                    // Some errors like KDC_ERR_PREAUTH_REQUIRED are not fatal so we
+                    // can correct the request and retry in the next loop iteration
+
+                    if (pex?.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_PREAUTH_FAILED)
                     {
-                        // Authenticate to the KDC and if it succeeds break out of the retry loop
+                        // if pre-auth fails it might be because the KDC doesn't have the latest
+                        // copy of the password so we should try once more against a primary KDC
 
-                        await this.RequestTgt(credential).ConfigureAwait(true);
-                        break;
-                    }
-                    catch (KerberosProtocolException pex)
-                    {
-                        // the attempt didn't succeed because the KDC returned a KRB-ERROR
-                        // Some errors like KDC_ERR_PREAUTH_REQUIRED are not fatal so we
-                        // can correct the request and retry in the next loop iteration
-
-                        if (pex?.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_PREAUTH_FAILED)
+                        if (this.TryPinPrimaryKdc(credential.Domain))
                         {
-                            // if pre-auth fails it might be because the KDC doesn't have the latest
-                            // copy of the password so we should try once more against a primary KDC
-
-                            if (this.TryPinPrimaryKdc(credential.Domain))
-                            {
-                                tryPinned = true;
-                                continue;
-                            }
-                        }
-
-                        if (pex?.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
-                        {
-                            this.ConfigurePreAuth(credential, pex);
+                            tryPinned = true;
                             continue;
                         }
+                    }
 
-                        // in this case we don't know what it was so bail
+                    if (pex?.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
+                    {
+                        this.ConfigurePreAuth(credential, pex);
+                        continue;
+                    }
 
-                        this.logger.LogKerberosProtocolException(pex);
-                        throw;
+                    // in this case we don't know what it was so bail
+
+                    this.logger.LogKerberosProtocolException(pex);
+                    throw;
+                }
+                finally
+                {
+                    if (succeeded && tryPinned)
+                    {
+                        this.ClearPinnedKdc(credential.Domain);
                     }
                 }
-                while (++preauthAttempts <= 4);
             }
-            finally
-            {
-                if (tryPinned)
-                {
-                    this.ClearPinnedKdc(credential.Domain);
-                }
-            }
+            while (++preauthAttempts <= 4);
         }
 
         private bool TryPinPrimaryKdc(string realm)
@@ -602,7 +613,7 @@ namespace Kerberos.NET.Client
 
         private void SetupCache()
         {
-            if (this.cacheSet)
+            if (this.cacheSet || this.CacheInMemory)
             {
                 return;
             }
@@ -611,19 +622,42 @@ namespace Kerberos.NET.Client
 
             if (!string.IsNullOrWhiteSpace(cachePath) && this.CacheServiceTickets)
             {
-                CreateFilePath(cachePath);
+                TicketCacheBase.TryParseCacheType(cachePath, out string cacheType, out string path);
 
-                this.Cache = new Krb5TicketCache(cachePath, this.loggerFactory);
+                switch (cacheType)
+                {
+                    case null:
+                    case "MEMORY":
+                    case "API":
+                    case "DIR":
+                    case "KEYRING":
+                    case "MSLSA":
+                        // treat as memory
+                        this.cacheSet = true;
+                        break;
 
-                this.cacheSet = true;
+                    case "FILE":
+                    default:
+                        this.SetFileCache(path);
+                        break;
+                }
             }
+        }
+
+        private void SetFileCache(string cachePath)
+        {
+            CreateFilePath(cachePath);
+
+            this.Cache = new Krb5TicketCache(cachePath, this.loggerFactory);
+
+            this.cacheSet = true;
         }
 
         private static void CreateFilePath(string cachePath)
         {
             var path = Path.GetDirectoryName(cachePath);
 
-            if (Directory.Exists(path))
+            if (string.IsNullOrWhiteSpace(path) || Directory.Exists(path))
             {
                 return;
             }

@@ -65,15 +65,15 @@ namespace Kerberos.NET.Configuration
         public static string UserConfigurationPath
             => Environment.ExpandEnvironmentVariables("%APPDATA%\\Kerberos.NET\\");
 
-        public static string UserConfiguration => Path.Combine(UserConfigurationPath, "krb5.conf");
+        public static string DefaultUserConfiguration => Path.Combine(UserConfigurationPath, "krb5.conf");
 
-        public static string UserCredentialCache => Path.Combine(UserConfigurationPath, ".krb5cc");
+        public static string DefaultUserCredentialCache => Path.Combine(UserConfigurationPath, ".krb5cc");
 
         public static Krb5Config CurrentUser(string path = null)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = UserConfiguration;
+                path = DefaultUserConfiguration;
             }
 
             if (File.Exists(path))

@@ -49,9 +49,9 @@ namespace Kerberos.NET.Configuration
         public int ClockSkew { get; set; }
 
         /// <summary>
-        /// This relation specifies the name of the default credential cache. The default is "%APPDATA%\Kerberos.NET\.krb5cc".
+        /// This relation specifies the name of the default credential cache. The default is "FILE:%APPDATA%\Kerberos.NET\.krb5cc".
         /// </summary>
-        [DefaultValue("%APPDATA%\\Kerberos.NET\\.krb5cc")]
+        [DefaultValue("FILE:%APPDATA%\\Kerberos.NET\\.krb5cc")]
         [DisplayName("default_ccache_name")]
         public string DefaultCCacheName { get; set; }
 
@@ -310,5 +310,12 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         [DisplayName("verify_ap_req_nofail")]
         public bool VerifyApReqNoFail { get; set; }
+
+        /// <summary>
+        /// Indicates whether the client should request a PAC during AS-REQ. Default is true.
+        /// </summary>
+        [DefaultValue(true)]
+        [DisplayName("request_pac")]
+        public bool RequestPac { get; set; }
     }
 }

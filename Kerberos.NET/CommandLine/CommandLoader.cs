@@ -17,7 +17,7 @@ namespace Kerberos.NET.CommandLine
         public static ICommand CreateCommandExecutor(
             string commandValue,
             CommandLineParameters instance,
-            CommandControl io
+            InputControl io
         )
         {
             var types = LoadTypes();
