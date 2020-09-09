@@ -31,7 +31,7 @@ What is generally not considered trivial:
 Normal .NET coding guidelines apply.
 See the [Framework Design Guidelines](https://msdn.microsoft.com/en-us/library/ms229042%28v=vs.110%29.aspx) for more information.
 
-Note that the coding style does diverge from the above guidelines and the current up-to-date ruleset can be found here: [CodeAnalysisRules.ruleset](/dotnet/Kerberos.NET/blob/develop/CodeAnalysisRules.ruleset);
+Note that the coding style does diverge from the above guidelines and the current up-to-date ruleset can be found here: [CodeAnalysisRules.ruleset](https://github.com/dotnet/Kerberos.NET/blob/develop/CodeAnalysisRules.ruleset).
 
 ### Dependencies
 
