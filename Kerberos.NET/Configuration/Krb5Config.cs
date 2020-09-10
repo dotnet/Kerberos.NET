@@ -69,6 +69,8 @@ namespace Kerberos.NET.Configuration
 
         public static string DefaultUserCredentialCache => Path.Combine(UserConfigurationPath, ".krb5cc");
 
+        public static Krb5Config Parse(string config) => Krb5ConfigurationSerializer.Deserialize(config).ToConfigObject();
+
         public static Krb5Config CurrentUser(string path = null)
         {
             if (string.IsNullOrWhiteSpace(path))

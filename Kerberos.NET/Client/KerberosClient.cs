@@ -213,6 +213,17 @@ namespace Kerberos.NET.Client
         }
 
         /// <summary>
+        /// Reset any connection state that may be cached from previous attempts.
+        /// </summary>
+        public void ResetConnections()
+        {
+            foreach (var t in this.Transports.OfType<KerberosTransportBase>())
+            {
+                t.ClientRealmService.ResetConnections();
+            }
+        }
+
+        /// <summary>
         /// Prioritize the use of a specific KDC address for the provided realm. Note that calls to this
         /// method are additive and do not overwrite previously pinned addresses. If you need to remove an address
         /// you should call <see cref="ClearPinnedKdc(string)" />.

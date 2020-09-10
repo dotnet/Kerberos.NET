@@ -44,8 +44,10 @@ namespace Kerberos.NET
 
             var indexOf = cachePath.IndexOf(':');
 
-            if (indexOf > 0)
+            if (indexOf > 1)
             {
+                // not a drive letter
+
                 cacheType = cachePath.Substring(0, indexOf).ToUpperInvariant();
                 path = cachePath.Substring(indexOf + 1);
             }

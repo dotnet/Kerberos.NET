@@ -37,5 +37,18 @@ namespace Kerberos.NET.CommandLine
         /// Controls whether the console should pass the Ctrl+C key press to a reader instead of closing the process.
         /// </summary>
         public Action<bool> HookCtrlC { get; set; }
+
+        /// <summary>
+        /// Create a default input control based on Console.
+        /// </summary>
+        /// <returns>Returns default input control based on Console</returns>
+        public static InputControl Default() => new InputControl
+        {
+            Writer = Console.Out,
+            Reader = Console.In,
+            Clear = Console.Clear,
+            ReadKey = () => Console.ReadKey(true),
+            HookCtrlC = hooked => Console.TreatControlCAsInput = hooked
+        };
     }
 }

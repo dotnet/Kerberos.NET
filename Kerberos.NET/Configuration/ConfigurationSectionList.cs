@@ -120,6 +120,17 @@ namespace Kerberos.NET.Configuration
                     return result;
                 }
             }
+            set
+            {
+                var found = this.FirstOrDefault(e => e.Key == key);
+
+                if (found.Value != null)
+                {
+                    this.Remove(key);
+                }
+
+                this.Add(key, value);
+            }
         }
 
         /// <summary>
@@ -143,6 +154,61 @@ namespace Kerberos.NET.Configuration
             foreach (var val in values)
             {
                 this.Remove(val);
+            }
+        }
+
+        public bool Set(string name, string value, bool append)
+        {
+            ParseName(name, out string keyName, out string downStreamKey);
+
+            var found = this[keyName];
+
+            if (found is ConfigurationSectionList list && !string.IsNullOrWhiteSpace(downStreamKey))
+            {
+                var set = list.Set(downStreamKey, value, append);
+
+                if (!set && list.Count == 0)
+                {
+                    this.Remove(keyName);
+                }
+
+                return set;
+            }
+            else if (found is null && !string.IsNullOrWhiteSpace(downStreamKey))
+            {
+                found = new ConfigurationSectionList();
+
+                this.Add(keyName, found);
+
+                var set = ((ConfigurationSectionList)found).Set(downStreamKey, value, append);
+
+                if (!set)
+                {
+                    this.Remove(keyName);
+                }
+
+                return set;
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    if (append)
+                    {
+                        this.Add(keyName, value);
+                    }
+                    else
+                    {
+                        this[keyName] = value;
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    this.Remove(keyName);
+                    return false;
+                }
             }
         }
 
@@ -301,7 +367,11 @@ namespace Kerberos.NET.Configuration
             }
             else if (propertyType == typeof(ConfigurationSectionList))
             {
-                config.Add(new KeyValuePair<string, object>(name, value));
+                foreach (var val in ((ConfigurationSectionList)value))
+                {
+                    config.Add(val);
+                    //config.Add(new KeyValuePair<string, object>(name, value));
+                }
             }
             else
             {
@@ -487,18 +557,25 @@ namespace Kerberos.NET.Configuration
             {
                 var name = $"{baseName}.{GetName(property)}";
 
-                object value;
+                object value = null;
 
-                if (IsDictionary(property.PropertyType))
+                try
                 {
-                    value = this.CreateProperty(property.PropertyType, name);
-                }
-                else
-                {
-                    value = this.Get(name, property.PropertyType, property.GetCustomAttributes());
-                }
+                    if (IsDictionary(property.PropertyType))
+                    {
+                        value = this.CreateProperty(property.PropertyType, name);
+                    }
+                    else
+                    {
+                        value = this.Get(name, property.PropertyType, property.GetCustomAttributes());
+                    }
 
-                property.SetValue(obj, value);
+                    property.SetValue(obj, value);
+                }
+                catch (Exception ex)
+                {
+                    throw new ArgumentException($"Property {name} could not be set", ex);
+                }
             }
 
             return obj;
@@ -660,7 +737,7 @@ namespace Kerberos.NET.Configuration
                 {
                     var parsed = Parse(val.ToString(), genericParamType);
 
-                    if (parsed is IEnumerable || parsed is ICollection)
+                    if ((parsed is IEnumerable || parsed is ICollection) && !(parsed is string))
                     {
                         addRange.Invoke(list, new[] { parsed });
                     }

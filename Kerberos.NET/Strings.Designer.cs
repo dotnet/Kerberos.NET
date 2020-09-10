@@ -142,6 +142,87 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Properties of configuration sections can be accessed through the dot operator..
+        /// </summary>
+        internal static string CommandLine_Config_DotHelp {
+            get {
+                return ResourceManager.GetString("CommandLine_Config_DotHelp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Properties that would contain dots can be escaped with quotes..
+        /// </summary>
+        internal static string CommandLine_Config_DotHelpEscaped {
+            get {
+                return ResourceManager.GetString("CommandLine_Config_DotHelpEscaped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration could not be processed.
+        /// </summary>
+        internal static string CommandLine_Config_Invalid {
+            get {
+                return ResourceManager.GetString("CommandLine_Config_Invalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Set a configuration value..
+        /// </summary>
+        internal static string CommandLine_Config_SetEquals {
+            get {
+                return ResourceManager.GetString("CommandLine_Config_SetEquals", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove a configuration value..
+        /// </summary>
+        internal static string CommandLine_Config_SetEqualsNull {
+            get {
+                return ResourceManager.GetString("CommandLine_Config_SetEqualsNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Append a new value or make the property into a list of values..
+        /// </summary>
+        internal static string CommandLine_Config_SetEqualsPlus {
+            get {
+                return ResourceManager.GetString("CommandLine_Config_SetEqualsPlus", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Set a configuration value..
+        /// </summary>
+        internal static string CommandLine_Config_SetEqualsSpace {
+            get {
+                return ResourceManager.GetString("CommandLine_Config_SetEqualsSpace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Append a new value or make the property into a list of values..
+        /// </summary>
+        internal static string CommandLine_Config_SetEqualsSpacePlus {
+            get {
+                return ResourceManager.GetString("CommandLine_Config_SetEqualsSpacePlus", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove a configuration value..
+        /// </summary>
+        internal static string CommandLine_Config_SetSpaceNull {
+            get {
+                return ResourceManager.GetString("CommandLine_Config_SetSpaceNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Configuration.
         /// </summary>
         internal static string CommandLine_ConfigPath {
@@ -156,6 +237,33 @@ namespace Kerberos.NET {
         internal static string CommandLine_Defaults {
             get {
                 return ResourceManager.GetString("CommandLine_Defaults", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Example.
+        /// </summary>
+        internal static string CommandLine_Example {
+            get {
+                return ResourceManager.GetString("CommandLine_Example", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Set or review configuration settings at the default path..
+        /// </summary>
+        internal static string CommandLine_KerberosConfig {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConfig", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide a path to a particular configuration file..
+        /// </summary>
+        internal static string CommandLine_KerberosConfigCommand_Config {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConfigCommand_Config", resourceCulture);
             }
         }
         
@@ -183,6 +291,15 @@ namespace Kerberos.NET {
         internal static string CommandLine_KerberosDestroy_Error {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosDestroy_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide a path to a particular cache file..
+        /// </summary>
+        internal static string CommandLine_KerberosDestroyCommand_Cache {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosDestroyCommand_Cache", resourceCulture);
             }
         }
         
@@ -277,11 +394,29 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Specify the encryption types that should be used in preferred order..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_ETypes {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_ETypes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Pass values to Kerberos extensions..
         /// </summary>
         internal static string CommandLine_KerberosInitCommand_Extension {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosInitCommand_Extension", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Include additional addresses in the ticket request..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_ExtraAddr {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_ExtraAddr", resourceCulture);
             }
         }
         
@@ -358,6 +493,15 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Provide the realm name to authenticate against..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_RealmName {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_RealmName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Renew the requested TGT..
         /// </summary>
         internal static string CommandLine_KerberosInitCommand_Renew {
@@ -390,6 +534,15 @@ namespace Kerberos.NET {
         internal static string CommandLine_KerberosInitCommand_RequestPac {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosInitCommand_RequestPac", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset the connection cache..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Reset {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Reset", resourceCulture);
             }
         }
         
@@ -484,6 +637,15 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Remove all cached tickets..
+        /// </summary>
+        internal static string CommandLine_KerberosListCommand_Purge {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosListCommand_Purge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Display ticket flags in short-form..
         /// </summary>
         internal static string CommandLine_KerberosListCommand_ShortFlags {
@@ -525,6 +687,15 @@ namespace Kerberos.NET {
         internal static string CommandLine_KList_Client {
             get {
                 return ResourceManager.GetString("CommandLine_KList_Client", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ticket Count.
+        /// </summary>
+        internal static string CommandLine_KList_Count {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_Count", resourceCulture);
             }
         }
         
@@ -574,11 +745,29 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Ticket EType.
+        /// </summary>
+        internal static string CommandLine_KList_TicketEType {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_TicketEType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The command &apos;{0}&apos; could not be found..
         /// </summary>
         internal static string CommandLine_UnknownCommand {
             get {
                 return ResourceManager.GetString("CommandLine_UnknownCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Usage.
+        /// </summary>
+        internal static string CommandLine_Usage {
+            get {
+                return ResourceManager.GetString("CommandLine_Usage", resourceCulture);
             }
         }
         

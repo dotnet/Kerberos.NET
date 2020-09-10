@@ -32,6 +32,9 @@ namespace Kerberos.NET.CommandLine
             Description = "UserPrincipalName")]
         public string UserPrincipalName { get; set; }
 
+        [CommandLineParameter("realm", Description = "RealmName")]
+        public string Realm { get; set; }
+
         [CommandLineParameter("V", Description = "Verbose")]
         public bool Verbose { get; set; }
 
@@ -110,6 +113,9 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("request-pac", Description = "RequestPac")]
         public bool? RequestPac { get; set; }
 
+        [CommandLineParameter("rst|reset", Description = "Reset")]
+        public bool Reset { get; set; }
+
         public override async Task<bool> Execute()
         {
             if (await base.Execute())
@@ -117,7 +123,14 @@ namespace Kerberos.NET.CommandLine
                 return true;
             }
 
-            var client = this.CreateClient();
+            this.IO.Writer.WriteLine();
+
+            var client = this.CreateClient(verbose: this.Verbose);
+
+            if (this.Reset)
+            {
+                client.ResetConnections();
+            }
 
             if (!string.IsNullOrWhiteSpace(this.Cache))
             {
@@ -147,7 +160,7 @@ namespace Kerberos.NET.CommandLine
                 await client.GetServiceTicket(this.ServiceName);
             }
 
-            var klist = new KerberosListCommand(this.Parameters) { IO = this.IO };
+            var klist = this.CreateCommand<KerberosListCommand>();
 
             await klist.Execute();
 
@@ -217,6 +230,13 @@ namespace Kerberos.NET.CommandLine
 
         private KerberosCredential ParseCredential(Krb5Config config)
         {
+            var domain = this.DefaultDomain;
+
+            if (!string.IsNullOrWhiteSpace(this.Realm))
+            {
+                domain = this.Realm;
+            }
+
             if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
             {
                 this.UserPrincipalName = Environment.UserName;
@@ -224,12 +244,12 @@ namespace Kerberos.NET.CommandLine
 
             if (!this.UserPrincipalName.Contains("@"))
             {
-                this.UserPrincipalName = $"{this.UserPrincipalName}@{this.DefaultDomain}";
+                this.UserPrincipalName = $"{this.UserPrincipalName}@{domain}";
             }
 
             if (!string.IsNullOrWhiteSpace(this.Certificate))
             {
-                return KerberosAsymmetricCredential.Get(this.Certificate, this.DefaultDomain);
+                return KerberosAsymmetricCredential.Get(this.Certificate, domain);
             }
             else if (this.UseKeytab || !string.IsNullOrWhiteSpace(this.Keytab))
             {
@@ -242,7 +262,7 @@ namespace Kerberos.NET.CommandLine
 
                 var kt = new KeyTable(File.ReadAllBytes(Environment.ExpandEnvironmentVariables(keytab)));
 
-                return new KeytabCredential(this.UserPrincipalName, kt, this.DefaultDomain);
+                return new KeytabCredential(this.UserPrincipalName, kt, domain);
             }
             else
             {
@@ -259,7 +279,7 @@ namespace Kerberos.NET.CommandLine
                     return null;
                 }
 
-                var cred = new KerberosPasswordCredential(this.UserPrincipalName, password, this.DefaultDomain);
+                var cred = new KerberosPasswordCredential(this.UserPrincipalName, password, domain);
 
                 return cred;
             }

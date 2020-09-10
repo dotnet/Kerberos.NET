@@ -558,4 +558,67 @@
   <data name="CommandLine_KerberosInitCommand_RequestPac" xml:space="preserve">
     <value>Indicate whether a PAC should be requested during authentication.</value>
   </data>
+  <data name="CommandLine_KList_TicketEType" xml:space="preserve">
+    <value>Ticket EType</value>
+  </data>
+  <data name="CommandLine_Config_DotHelp" xml:space="preserve">
+    <value>Properties of configuration sections can be accessed through the dot operator.</value>
+  </data>
+  <data name="CommandLine_Config_DotHelpEscaped" xml:space="preserve">
+    <value>Properties that would contain dots can be escaped with quotes.</value>
+  </data>
+  <data name="CommandLine_Config_Invalid" xml:space="preserve">
+    <value>Configuration could not be processed</value>
+  </data>
+  <data name="CommandLine_Config_SetEquals" xml:space="preserve">
+    <value>Set a configuration value.</value>
+  </data>
+  <data name="CommandLine_Config_SetEqualsNull" xml:space="preserve">
+    <value>Remove a configuration value.</value>
+  </data>
+  <data name="CommandLine_Config_SetEqualsPlus" xml:space="preserve">
+    <value>Append a new value or make the property into a list of values.</value>
+  </data>
+  <data name="CommandLine_Config_SetEqualsSpace" xml:space="preserve">
+    <value>Set a configuration value.</value>
+  </data>
+  <data name="CommandLine_Config_SetEqualsSpacePlus" xml:space="preserve">
+    <value>Append a new value or make the property into a list of values.</value>
+  </data>
+  <data name="CommandLine_Config_SetSpaceNull" xml:space="preserve">
+    <value>Remove a configuration value.</value>
+  </data>
+  <data name="CommandLine_Example" xml:space="preserve">
+    <value>Example</value>
+  </data>
+  <data name="CommandLine_KerberosConfig" xml:space="preserve">
+    <value>Set or review configuration settings at the default path.</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_ETypes" xml:space="preserve">
+    <value>Specify the encryption types that should be used in preferred order.</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_ExtraAddr" xml:space="preserve">
+    <value>Include additional addresses in the ticket request.</value>
+  </data>
+  <data name="CommandLine_KList_Count" xml:space="preserve">
+    <value>Ticket Count</value>
+  </data>
+  <data name="CommandLine_Usage" xml:space="preserve">
+    <value>Usage</value>
+  </data>
+  <data name="CommandLine_KerberosConfigCommand_Config" xml:space="preserve">
+    <value>Provide a path to a particular configuration file.</value>
+  </data>
+  <data name="CommandLine_KerberosDestroyCommand_Cache" xml:space="preserve">
+    <value>Provide a path to a particular cache file.</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_RealmName" xml:space="preserve">
+    <value>Provide the realm name to authenticate against.</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_Reset" xml:space="preserve">
+    <value>Reset the connection cache.</value>
+  </data>
+  <data name="CommandLine_KerberosListCommand_Purge" xml:space="preserve">
+    <value>Remove all cached tickets.</value>
+  </data>
 </root>

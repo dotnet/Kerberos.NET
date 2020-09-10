@@ -76,7 +76,7 @@ namespace Kerberos.NET.CommandLine
 
         private void ListCommands()
         {
-            var types = CommandLoader.LoadTypes();
+            var types = CommandLoader.LoadTypes().OrderBy(t => t.GetCustomAttribute<CommandLineCommandAttribute>().Command);
 
             this.IO.Writer.WriteLine();
             this.IO.Writer.WriteLine("   {0}", SR.Resource("CommandLine_Commands"));

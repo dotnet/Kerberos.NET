@@ -18,6 +18,8 @@ namespace Kerberos.NET.CommandLine
         {
         }
 
+        [CommandLineParameter("c|cache", Description = "Cache")]
+        public string Cache { get; set; }
 
         public override async Task<bool> Execute()
         {
@@ -27,6 +29,11 @@ namespace Kerberos.NET.CommandLine
             }
 
             var client = this.CreateClient();
+
+            if (!string.IsNullOrWhiteSpace(this.Cache))
+            {
+                client.Configuration.Defaults.DefaultCCacheName = this.Cache;
+            }
 
             this.PurgeTickets(client.Configuration.Defaults.DefaultCCacheName);
 
@@ -47,8 +54,6 @@ namespace Kerberos.NET.CommandLine
                 this.IO.Writer.Write("{0}: ", SR.Resource("CommandLine_KerberosDestroy_Error"));
                 this.IO.Writer.WriteLine(ex.Message);
             }
-
-            this.IO.Writer.WriteLine();
         }
     }
 }

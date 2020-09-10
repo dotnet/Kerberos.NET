@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,14 +33,7 @@ namespace Kerberos.NET.CommandLine
 
         public BruceConsoleShell(InputControl io = null)
         {
-            this.io = io ?? new InputControl
-            {
-                Writer = Console.Out,
-                Reader = Console.In,
-                Clear = Console.Clear,
-                ReadKey = () => Console.ReadKey(true),
-                HookCtrlC = hooked => Console.TreatControlCAsInput = hooked
-            };
+            this.io = io ?? InputControl.Default();
 
             this.shellCommandPath.Push("bruce");
         }
@@ -143,6 +137,11 @@ namespace Kerberos.NET.CommandLine
                 }
                 catch (Exception ex)
                 {
+                    if (ex is TargetInvocationException tex)
+                    {
+                        ex = tex.InnerException;
+                    }
+
                     this.io.Writer.WriteLine();
 
                     if (this.Verbose)

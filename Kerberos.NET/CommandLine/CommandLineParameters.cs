@@ -5,10 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace Kerberos.NET.CommandLine
@@ -47,9 +44,17 @@ namespace Kerberos.NET.CommandLine
 
             var args = new List<string>();
 
+            char lastChar = default;
+            char nextChar = default;
+
             for (var i = 0; i < argv.Length; i++)
             {
-                if (argv[i] == '"')
+                if (i < argv.Length - 1)
+                {
+                    nextChar = argv[i + 1];
+                }
+
+                if (argv[i] == '"' && (lastChar == ' '|| nextChar == ' '))
                 {
                     wasInQuote = inQuote;
                     inQuote = !inQuote;
@@ -66,7 +71,7 @@ namespace Kerberos.NET.CommandLine
                 {
                     var length = i + 1 - start;
 
-                    if (wasInQuote)
+                    if (wasInQuote || inQuote)
                     {
                         length--;
                         wasInQuote = false;
@@ -80,6 +85,8 @@ namespace Kerberos.NET.CommandLine
                     args.Add(argv.Substring(start, length));
                     start = i + 1;
                 }
+
+                lastChar = argv[i];
             }
 
             return args.ToArray();
@@ -93,7 +100,7 @@ namespace Kerberos.NET.CommandLine
         {
             string commandValue = this.Command;
 
-            return  CommandLoader.CreateCommandExecutor(commandValue, this, io);
+            return CommandLoader.CreateCommandExecutor(commandValue, this, io);
         }
 
         public override string ToString()

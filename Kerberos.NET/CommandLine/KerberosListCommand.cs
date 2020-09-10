@@ -7,10 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
-using Kerberos.NET.Configuration;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -27,9 +28,6 @@ namespace Kerberos.NET.CommandLine
 
         [CommandLineParameter("c|cache", Description = "Cache")]
         public string Cache { get; set; }
-
-        [CommandLineParameter("config", Description = "Config")]
-        public bool ListConfig { get; set; }
 
         [CommandLineParameter("s|t|test", Description = "Test")]
         public bool Test { get; set; }
@@ -53,7 +51,9 @@ namespace Kerberos.NET.CommandLine
                 return true;
             }
 
-            var client = this.CreateClient();
+            this.IO.Writer.WriteLine();
+
+            var client = this.CreateClient(verbose: this.Verbose);
 
             if (!string.IsNullOrWhiteSpace(this.Cache))
             {
@@ -67,30 +67,16 @@ namespace Kerberos.NET.CommandLine
 
             if (!string.IsNullOrWhiteSpace(this.ServicePrincipalName))
             {
-                await GetServiceTicket(client.Configuration);
+                await GetServiceTicket(client);
             }
 
             this.ListTickets(client.Configuration.Defaults.DefaultCCacheName);
 
-            if (this.ListConfig)
-            {
-                this.ListConfiguration(client.Configuration);
-            }
-
             return true;
         }
 
-        private void ListConfiguration(Krb5Config config)
+        private async Task GetServiceTicket(KerberosClient client)
         {
-            var configStr = config.Serialize();
-
-            this.IO.Writer.WriteLine(configStr);
-        }
-
-        private async Task GetServiceTicket(Krb5Config config)
-        {
-            var client = this.CreateClient();
-
             try
             {
                 await client.GetServiceTicket(this.ServicePrincipalName);
@@ -99,7 +85,7 @@ namespace Kerberos.NET.CommandLine
             {
                 foreach (var kex in aex.InnerExceptions.OfType<KerberosProtocolException>())
                 {
-                    if (kex.Error.ErrorCode == Entities.KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
+                    if (kex.Error.ErrorCode == KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
                     {
                         await PurgeTickets();
                         await client.GetServiceTicket(this.ServicePrincipalName);
@@ -117,18 +103,20 @@ namespace Kerberos.NET.CommandLine
 
             var tickets = ticketCache.CacheInternals.ToArray();
 
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine("Ticket Count: {0}", tickets.Length);
+            this.IO.Writer.WriteLine("{0}: {1}", SR.Resource("CommandLine_KList_Count"), tickets.Length);
             this.IO.Writer.WriteLine();
 
             for (var i = 0; i < tickets.Length; i++)
             {
                 var ticket = tickets[i];
 
+                KrbTicket decodedTicket = TryParseTicket(ticket.Ticket);
+
                 var properties = new List<(string, string)>
                 {
                     ("CommandLine_KList_Client", $"{ticket.Client.FullyQualifiedName} @ {ticket.Client.Realm}"),
                     ("CommandLine_KList_Server", $"{ticket.Server.FullyQualifiedName} @ {ticket.Server.Realm}"),
+                    ("CommandLine_KList_TicketEType", $"{decodedTicket?.EncryptedPart?.EType.ToString()}"),
                     ("CommandLine_KList_Flags", ticket.Flags.ToString()),
                     ("CommandLine_KList_Start", ticket.AuthTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)),
                     ("CommandLine_KList_End", ticket.EndTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)),
@@ -160,9 +148,27 @@ namespace Kerberos.NET.CommandLine
             }
         }
 
+        private static KrbTicket TryParseTicket(ReadOnlyMemory<byte> ticket)
+        {
+            if (ticket.Length <= 0)
+            {
+                return null;
+            }
+
+            try
+            {
+                return KrbTicket.DecodeApplication(ticket);
+            }
+            catch (CryptographicException)
+            {
+            }
+
+            return null;
+        }
+
         private async Task PurgeTickets()
         {
-            KerberosDestroyCommand destroy = new KerberosDestroyCommand(this.Parameters);
+            var destroy = this.CreateCommand<KerberosDestroyCommand>();
 
             await destroy.Execute();
         }

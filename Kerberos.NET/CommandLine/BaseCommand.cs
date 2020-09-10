@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.Asn1;
@@ -13,6 +14,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
+using Kerberos.NET.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -34,11 +37,54 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("h|help|?", Description = "Help")]
         public bool Help { get; protected set; }
 
-        protected virtual KerberosClient CreateClient()
+        protected virtual KerberosClient CreateClient(string configValue = null, bool verbose = false)
         {
-            var config = Krb5Config.CurrentUser();
+            Krb5Config config;
 
-            return new KerberosClient(config) { CacheInMemory = false };
+            if (!string.IsNullOrWhiteSpace(configValue))
+            {
+                config = Krb5Config.Parse(configValue);
+            }
+            else
+            {
+                config = Krb5Config.CurrentUser();
+            }
+
+            ILoggerFactory logger = null;
+
+            if (verbose)
+            {
+                logger = this.CreateVerboseLogger();
+            }
+
+            return new KerberosClient(config, logger) { CacheInMemory = false };
+        }
+
+        private ILoggerFactory CreateVerboseLogger()
+        {
+            return new KerberosDelegateLogger(
+                (level, cateogry, id, scopeState, logState, exception, log)
+                    => this.LogImpl(level, exception, log)
+            );
+        }
+
+        private void LogImpl(
+            TraceLevel level,
+            Exception exception,
+            string log
+        )
+        {
+            this.IO.Writer.WriteLine($"[{level}] {log} {exception}");
+        }
+
+        protected virtual T CreateCommand<T>()
+            where T : ICommand
+        {
+            var command = (ICommand)Activator.CreateInstance(typeof(T), this.Parameters);
+
+            command.IO = this.IO;
+
+            return (T)command;
         }
 
         public virtual Task<bool> Execute()
@@ -53,9 +99,9 @@ namespace Kerberos.NET.CommandLine
             return Task.FromResult(false);
         }
 
-        public void DisplayHelp()
+        public virtual void DisplayHelp()
         {
-            this.IO.Writer.Write("Usage: {0} ", this.Parameters.Command);
+            this.IO.Writer.Write("{0}: {1} ", SR.Resource("CommandLine_Usage"), this.Parameters.Command);
 
             var typeProperties = this.GetType().GetProperties();
 
@@ -95,7 +141,7 @@ namespace Kerberos.NET.CommandLine
 
             foreach (var prop in props)
             {
-                WritePropertyDescription(prop.Item1, prop.Item2, this.GetType().Name, padding: max);
+                WritePropertyDescription(prop.Item1.PropertyType, prop.Item2, this.GetType().Name, padding: max);
                 this.IO.Writer.WriteLine();
             }
 
@@ -159,12 +205,12 @@ namespace Kerberos.NET.CommandLine
             sb.Clear();
         }
 
-        private void WritePropertyDescription(PropertyInfo prop, CommandLineParameterAttribute attr, string commandPrefix, int padding)
+        private void WritePropertyDescription(Type propertyType, CommandLineParameterAttribute attr, string commandPrefix, int padding)
         {
             var names = attr.Name.Split('|');
 
-            var hasValue = prop.PropertyType != typeof(bool) &&
-                           prop.PropertyType != typeof(bool?);
+            var hasValue = propertyType != typeof(bool) &&
+                           propertyType != typeof(bool?);
 
             bool last = false;
 
@@ -357,7 +403,7 @@ namespace Kerberos.NET.CommandLine
             {
                 if (!bool.TryParse(nextValue, out bool result))
                 {
-                    result = !char.IsUpper(param[0]);
+                    result = true;
                     usedValue = false;
                 }
 
@@ -370,6 +416,11 @@ namespace Kerberos.NET.CommandLine
             }
             else if (type.BaseType == typeof(Enum))
             {
+                if (string.IsNullOrWhiteSpace(nextValue))
+                {
+                    return null;
+                }
+
                 value = ConfigurationSectionList.ParseEnum(nextValue, type);
             }
             else
@@ -410,7 +461,7 @@ namespace Kerberos.NET.CommandLine
             return list;
         }
 
-        private static bool IsParameter(string parameter, out string designator)
+        protected static bool IsParameter(string parameter, out string designator)
         {
             designator = null;
 
