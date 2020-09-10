@@ -134,6 +134,11 @@ namespace Kerberos.NET.CommandLine
 
             if (!string.IsNullOrWhiteSpace(this.Cache))
             {
+                if (!this.Cache.StartsWith("FILE:", StringComparison.OrdinalIgnoreCase))
+                {
+                    this.Cache = "FILE:" + this.Cache;
+                }
+
                 client.Configuration.Defaults.DefaultCCacheName = this.Cache;
             }
 
@@ -161,6 +166,8 @@ namespace Kerberos.NET.CommandLine
             }
 
             var klist = this.CreateCommand<KerberosListCommand>();
+
+            klist.Cache = this.Cache;
 
             await klist.Execute();
 

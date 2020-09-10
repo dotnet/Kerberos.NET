@@ -57,7 +57,7 @@ namespace Tests.Kerberos.NET
                     var output = io.Writer.ToString();
 
                     Assert.IsTrue(output.Contains("Ticket Count: 1"));
-                    Assert.IsTrue(output.Contains("administrator@corp.identityintervention.com @ CORP.IDENTITYINTERVENTION.COM"));
+                    Assert.IsTrue(output.Contains("administrator@corp.identityintervention.com @ CORP.IDENTITYINTERVENTION.COM"), output);
                 }
             }
             finally
