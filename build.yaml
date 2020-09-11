@@ -51,6 +51,12 @@ steps:
     packagesToPack: './Bruce/Bruce.csproj'
     nobuild: true
   displayName: Pack Bruce tool
+  
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'Bruce.*.nupkg'
+    publishLocation: 'Container'
 
 - task: DotNetCoreCLI@2
   inputs:
