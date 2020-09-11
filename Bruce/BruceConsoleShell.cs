@@ -23,7 +23,7 @@ namespace Kerberos.NET.CommandLine
  |____/|_|   \__,_|\___\___|
 
 
-{BannerDescription}
+{BannerDescription} (v{Version})
 
 (C) Copyright {BannerYear} .NET Foundation
 ";
@@ -221,7 +221,13 @@ namespace Kerberos.NET.CommandLine
 
         private void PrintBanner()
         {
+            var versionString = Assembly.GetEntryAssembly()
+                                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                                .InformationalVersion
+                                .ToString();
+
             var banner = Banner
+                            .Replace("{Version}", versionString)
                             .Replace("{BannerDescription}", BR.BannerDescription)
                             .Replace("{BannerYear}", DateTimeOffset.UtcNow.Year.ToString(CultureInfo.InvariantCulture));
 

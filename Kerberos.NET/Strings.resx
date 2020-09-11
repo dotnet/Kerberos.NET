@@ -621,4 +621,7 @@
   <data name="CommandLine_KerberosListCommand_Purge" xml:space="preserve">
     <value>Remove all cached tickets.</value>
   </data>
+  <data name="CommandLine_Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
 </root>

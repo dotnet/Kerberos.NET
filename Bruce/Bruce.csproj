@@ -4,6 +4,10 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Kerberos.NET.CommandLine</RootNamespace>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>bruce</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

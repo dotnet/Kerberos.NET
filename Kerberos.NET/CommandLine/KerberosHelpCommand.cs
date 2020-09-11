@@ -21,6 +21,17 @@ namespace Kerberos.NET.CommandLine
         {
         }
 
+        public static string Version
+        {
+            get
+            {
+                return Assembly.GetEntryAssembly()
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                    .InformationalVersion
+                    .ToString();
+            }
+        }
+
         [CommandLineParameter("command", Description = "HelpCommand", EnforceCasing = false, FormalParameter = true)]
         public string Command { get; set; }
 
@@ -56,6 +67,7 @@ namespace Kerberos.NET.CommandLine
 
             var props = new List<(string, string)>()
             {
+                (SR.Resource("CommandLine_Version"), Version),
                 (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfiguration),
                 (SR.Resource("CommandLine_CachePath"), Krb5Config.DefaultUserCredentialCache),
             };
