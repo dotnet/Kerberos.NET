@@ -3,8 +3,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 
 namespace Kerberos.NET.Configuration
 {
@@ -59,6 +61,30 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         [DisplayName("logging")]
         public Krb5Logging Logging { get; private set; }
+
+        public static string UserConfigurationPath
+            => Environment.ExpandEnvironmentVariables("%APPDATA%\\Kerberos.NET\\");
+
+        public static string DefaultUserConfiguration => Path.Combine(UserConfigurationPath, "krb5.conf");
+
+        public static string DefaultUserCredentialCache => Path.Combine(UserConfigurationPath, ".krb5cc");
+
+        public static Krb5Config Parse(string config) => Krb5ConfigurationSerializer.Deserialize(config).ToConfigObject();
+
+        public static Krb5Config CurrentUser(string path = null)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = DefaultUserConfiguration;
+            }
+
+            if (File.Exists(path))
+            {
+                return Krb5ConfigurationSerializer.Deserialize(File.ReadAllText(path)).ToConfigObject();
+            }
+
+            return Default();
+        }
 
         public static Krb5Config Default()
         {

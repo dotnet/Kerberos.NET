@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -265,7 +265,7 @@ namespace Kerberos.NET.Server
 
         protected virtual void ValidateNonce(int nonce)
         {
-            Debug.Assert(nonce > 0);
+            Debug.Assert(nonce != 0);
         }
 
         private static KrbAuthPack ValidateAuthPack(PreAuthenticationContext preauth, PkInitState state)

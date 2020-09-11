@@ -193,7 +193,8 @@ namespace Kerberos.NET.Client
                     EndTime = entry.Expires,
                     RenewTill = entry.RenewUntil ?? DateTimeOffset.MinValue,
                     Addresses = new List<KrbHostAddress>(),
-                    SecondTicket = Array.Empty<byte>()
+                    SecondTicket = Array.Empty<byte>(),
+                    Flags = entryValue.Flags
                 });
             }
         }
@@ -226,6 +227,7 @@ namespace Kerberos.NET.Client
                     EType = cred.KeyBlock.Key,
                     KeyValue = cred.KeyBlock.Value
                 },
+                Flags = cred.Flags,
                 SName = KrbPrincipalName.FromString(cred.Server.FullyQualifiedName)
             };
         }

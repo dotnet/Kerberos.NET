@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -31,9 +31,11 @@ namespace Kerberos.NET.Credentials
         /// <param name="cert">The certificate used to authenticate the client.</param>
         /// <param name="username">Optionally an NT_PRINCIPAL name can be supplied as a
         /// hint otherwise the username will be pulled from the certificate.</param>
+        /// <param name="domain">Optionally provide a realm hint.</param>
         public KerberosAsymmetricCredential(
             X509Certificate2 cert,
-            string username = null
+            string username = null,
+            string domain = null
         )
         {
             if (cert == null)
@@ -50,8 +52,6 @@ namespace Kerberos.NET.Credentials
             {
                 username = TryExtractPrincipalName(cert);
             }
-
-            string domain = null;
 
             TrySplitUserNameDomain(username, out username, ref domain);
 
@@ -137,6 +137,34 @@ namespace Kerberos.NET.Credentials
             }
 
             return null;
+        }
+
+        public static KerberosCredential Get(string query, string realmHint)
+        {
+            X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+
+            try
+            {
+                store.Open(OpenFlags.ReadOnly);
+
+                foreach (var cert in store.Certificates)
+                {
+                    if (string.Equals(query, cert.Subject, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        return new KerberosAsymmetricCredential(cert, query, realmHint);
+                    }
+                    else if (string.Equals(query, cert.Thumbprint, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        return new KerberosAsymmetricCredential(cert, domain: realmHint);
+                    }
+                }
+
+                return null;
+            }
+            finally
+            {
+                store.Close();
+            }
         }
 
         /// <summary>
@@ -361,6 +389,13 @@ namespace Kerberos.NET.Credentials
 
         private static string TryExtractPrincipalName(X509Certificate2 cert)
         {
+            var nameInfo = cert.GetNameInfo(X509NameType.UpnName, false);
+
+            if (nameInfo != null)
+            {
+                return nameInfo;
+            }
+
             return cert.Subject;
         }
 

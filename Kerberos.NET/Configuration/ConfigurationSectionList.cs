@@ -21,11 +21,22 @@ namespace Kerberos.NET.Configuration
     /// </summary>
     public class ConfigurationSectionList : List<KeyValuePair<string, object>>
     {
+        private const BindingFlags PublicInstancePropertyFlags = BindingFlags.Public | BindingFlags.Instance;
+
         private static readonly Dictionary<string, string> Aliases = new Dictionary<string, string>()
         {
             { "arcfour_hmac_md5", EncryptionType.RC4_HMAC_NT.ToString() },
+            { "arcfour_hmac", EncryptionType.RC4_HMAC_NT.ToString() },
+            { "rc4_hmac", EncryptionType.RC4_HMAC_NT.ToString() },
+            { "rc4", EncryptionType.RC4_HMAC_NT.ToString() },
             { "aes256_cts", EncryptionType.AES256_CTS_HMAC_SHA1_96.ToString() },
             { "aes128_cts", EncryptionType.AES256_CTS_HMAC_SHA1_96.ToString() },
+            { "aes256_sha2", EncryptionType.AES256_CTS_HMAC_SHA384_192.ToString() },
+            { "aes128_sha2", EncryptionType.AES128_CTS_HMAC_SHA256_128.ToString() },
+            { "aes", string.Join(" ", EncryptionType.AES128_CTS_HMAC_SHA256_128,
+                                      EncryptionType.AES128_CTS_HMAC_SHA1_96,
+                                      EncryptionType.AES256_CTS_HMAC_SHA384_192,
+                                      EncryptionType.AES256_CTS_HMAC_SHA1_96) },
         };
 
         private readonly List<string> finalizedKeys = new List<string>();
@@ -49,7 +60,7 @@ namespace Kerberos.NET.Configuration
 
             var list = new ConfigurationSectionList();
 
-            foreach (var property in config.GetType().GetProperties())
+            foreach (var property in config.GetType().GetProperties(PublicInstancePropertyFlags))
             {
                 var section = property.GetValue(config);
 
@@ -109,6 +120,17 @@ namespace Kerberos.NET.Configuration
                     return result;
                 }
             }
+            set
+            {
+                var found = this.FirstOrDefault(e => e.Key == key);
+
+                if (found.Value != null)
+                {
+                    this.Remove(key);
+                }
+
+                this.Add(key, value);
+            }
         }
 
         /// <summary>
@@ -132,6 +154,61 @@ namespace Kerberos.NET.Configuration
             foreach (var val in values)
             {
                 this.Remove(val);
+            }
+        }
+
+        public bool Set(string name, string value, bool append)
+        {
+            ParseName(name, out string keyName, out string downStreamKey);
+
+            var found = this[keyName];
+
+            if (found is ConfigurationSectionList list && !string.IsNullOrWhiteSpace(downStreamKey))
+            {
+                var set = list.Set(downStreamKey, value, append);
+
+                if (!set && list.Count == 0)
+                {
+                    this.Remove(keyName);
+                }
+
+                return set;
+            }
+            else if (found is null && !string.IsNullOrWhiteSpace(downStreamKey))
+            {
+                found = new ConfigurationSectionList();
+
+                this.Add(keyName, found);
+
+                var set = ((ConfigurationSectionList)found).Set(downStreamKey, value, append);
+
+                if (!set)
+                {
+                    this.Remove(keyName);
+                }
+
+                return set;
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    if (append)
+                    {
+                        this.Add(keyName, value);
+                    }
+                    else
+                    {
+                        this[keyName] = value;
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    this.Remove(keyName);
+                    return false;
+                }
             }
         }
 
@@ -221,7 +298,7 @@ namespace Kerberos.NET.Configuration
         {
             var config = new Krb5Config();
 
-            var properties = config.GetType().GetProperties();
+            var properties = config.GetType().GetProperties(PublicInstancePropertyFlags);
 
             foreach (var property in properties)
             {
@@ -258,7 +335,7 @@ namespace Kerberos.NET.Configuration
 
         private static void AddInstance(ConfigurationSectionList value, object config, Type property)
         {
-            foreach (var prop in property.GetProperties())
+            foreach (var prop in property.GetProperties(PublicInstancePropertyFlags))
             {
                 var propertyName = GetName(prop);
                 var propertyObject = prop.GetValue(config);
@@ -290,7 +367,11 @@ namespace Kerberos.NET.Configuration
             }
             else if (propertyType == typeof(ConfigurationSectionList))
             {
-                config.Add(new KeyValuePair<string, object>(name, value));
+                foreach (var val in ((ConfigurationSectionList)value))
+                {
+                    config.Add(val);
+                    //config.Add(new KeyValuePair<string, object>(name, value));
+                }
             }
             else
             {
@@ -472,22 +553,29 @@ namespace Kerberos.NET.Configuration
         {
             var obj = Activator.CreateInstance(propertyType);
 
-            foreach (var property in propertyType.GetProperties())
+            foreach (var property in propertyType.GetProperties(PublicInstancePropertyFlags))
             {
                 var name = $"{baseName}.{GetName(property)}";
 
-                object value;
+                object value = null;
 
-                if (IsDictionary(property.PropertyType))
+                try
                 {
-                    value = this.CreateProperty(property.PropertyType, name);
-                }
-                else
-                {
-                    value = this.Get(name, property.PropertyType, property.GetCustomAttributes());
-                }
+                    if (IsDictionary(property.PropertyType))
+                    {
+                        value = this.CreateProperty(property.PropertyType, name);
+                    }
+                    else
+                    {
+                        value = this.Get(name, property.PropertyType, property.GetCustomAttributes());
+                    }
 
-                property.SetValue(obj, value);
+                    property.SetValue(obj, value);
+                }
+                catch (Exception ex)
+                {
+                    throw new ArgumentException($"Property {name} could not be set", ex);
+                }
             }
 
             return obj;
@@ -641,12 +729,22 @@ namespace Kerberos.NET.Configuration
             var list = Activator.CreateInstance(concreteType);
 
             var add = concreteType.GetMethod("Add");
+            var addRange = concreteType.GetMethod("AddRange");
 
             if (stringValues != null)
             {
                 foreach (var val in stringValues)
                 {
-                    add.Invoke(list, new[] { Parse(val.ToString(), genericParamType) });
+                    var parsed = Parse(val.ToString(), genericParamType);
+
+                    if ((parsed is IEnumerable || parsed is ICollection) && !(parsed is string))
+                    {
+                        addRange.Invoke(list, new[] { parsed });
+                    }
+                    else
+                    {
+                        add.Invoke(list, new[] { parsed });
+                    }
                 }
             }
 
@@ -692,7 +790,7 @@ namespace Kerberos.NET.Configuration
             return bool.Parse(stringValue);
         }
 
-        private static object ParseEnum(string stringValue, Type type)
+        internal static object ParseEnum(string stringValue, Type type)
         {
             var val = stringValue.Replace("-", "_");
 
@@ -701,7 +799,18 @@ namespace Kerberos.NET.Configuration
                 val = aliased;
             }
 
-            return Enum.Parse(type, val, true);
+            var split = val.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (split.Length > 1)
+            {
+                var concreteType = typeof(List<>).MakeGenericType(type);
+
+                return ParseAsList(split, concreteType);
+            }
+            else
+            {
+                return Enum.Parse(type, val, true);
+            }
         }
 
         private static string AppendName(string basePath, string name)

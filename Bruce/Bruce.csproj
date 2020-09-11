@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>Kerberos.NET.CommandLine</RootNamespace>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>bruce</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Update="BR.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>BR.resx</DependentUpon>
+    </Compile>
+
+    <EmbeddedResource Update="BR.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>BR.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kerberos.NET\Kerberos.NET.csproj" />
+  </ItemGroup>
+
+</Project>

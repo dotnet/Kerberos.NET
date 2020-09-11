@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -35,7 +35,7 @@ namespace Tests.Kerberos.NET
         {
             var cred = new KerberosPasswordCredential("username@domain.com", "password", "domain2.com");
 
-            Assert.AreEqual("username", cred.UserName);
+            Assert.AreEqual("username@domain.com", cred.UserName);
             Assert.AreEqual("DOMAIN2.COM", cred.Domain);
         }
 

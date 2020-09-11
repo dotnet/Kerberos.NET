@@ -38,13 +38,19 @@ steps:
     msbuildArguments: /restore /p:CreatePackage=true
     maximumCpuCount: true
 
-
 - task: DotNetCoreCLI@2
   inputs:
     command: test
     projects: Tests/**/*.csproj
     arguments: -c $(BuildConfiguration) --no-build --no-restore --settings CodeCoverage.runsettings --collect:"XPlat Code Coverage" 
   displayName: Run Unit Tests
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'pack'
+    packagesToPack: './Bruce/Bruce.csproj'
+    nobuild: true
+  displayName: Pack Bruce tool
 
 - task: DotNetCoreCLI@2
   inputs:

@@ -14,6 +14,8 @@ namespace Kerberos.NET
 
         TimeSpan RefreshInterval { get; set; }
 
+        string DefaultDomain { get; set; }
+
         ValueTask<bool> AddAsync(TicketCacheEntry entry);
 
         bool Add(TicketCacheEntry entry);

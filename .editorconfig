@@ -69,3 +69,88 @@ csharp_style_var_when_type_is_apparent = false:none
 
 # IDE0008: Use explicit type
 csharp_style_var_for_built_in_types = false:none
+
+
+dotnet_diagnostic.CA1028.severity = none
+
+dotnet_diagnostic.CA1031.severity = none
+
+dotnet_diagnostic.CA1034.severity = none
+
+dotnet_diagnostic.CA1303.severity = none
+
+dotnet_diagnostic.CA1308.severity = none
+
+dotnet_diagnostic.CA1707.severity = none
+
+dotnet_diagnostic.CA2225.severity = none
+
+dotnet_diagnostic.IDE0008.severity = none
+
+dotnet_diagnostic.IDE0012.severity = none
+
+dotnet_diagnostic.IDE0049.severity = none
+
+dotnet_diagnostic.SA0001.severity = none
+
+dotnet_diagnostic.SA1009.severity = none
+
+dotnet_diagnostic.SA1025.severity = none
+
+dotnet_diagnostic.SA1111.severity = none
+
+dotnet_diagnostic.SA1117.severity = none
+
+dotnet_diagnostic.SA1118.severity = none
+
+dotnet_diagnostic.SA1119.severity = none
+
+dotnet_diagnostic.SA1121.severity = none
+
+dotnet_diagnostic.SA1124.severity = none
+
+dotnet_diagnostic.SA1132.severity = none
+
+dotnet_diagnostic.SA1201.severity = none
+
+dotnet_diagnostic.SA1202.severity = none
+
+dotnet_diagnostic.SA1204.severity = none
+
+dotnet_diagnostic.SA1309.severity = none
+
+dotnet_diagnostic.SA1310.severity = none
+
+dotnet_diagnostic.SA1313.severity = none
+
+dotnet_diagnostic.SA1401.severity = none
+
+dotnet_diagnostic.SA1405.severity = none
+
+dotnet_diagnostic.SA1413.severity = none
+
+dotnet_diagnostic.SA1512.severity = none
+
+dotnet_diagnostic.SA1600.severity = none
+
+dotnet_diagnostic.SA1601.severity = none
+
+dotnet_diagnostic.SA1602.severity = none
+
+dotnet_diagnostic.SA1611.severity = none
+
+dotnet_diagnostic.SA1615.severity = none
+
+dotnet_diagnostic.SA1618.severity = none
+
+dotnet_diagnostic.SA1623.severity = none
+
+dotnet_diagnostic.SA1629.severity = none
+
+dotnet_diagnostic.SA1636.severity = none
+
+dotnet_diagnostic.SA1642.severity = none
+
+dotnet_diagnostic.SA1649.severity = none
+
+dotnet_diagnostic.SA1652.severity = none

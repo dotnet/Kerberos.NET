@@ -45,6 +45,14 @@ namespace Kerberos.NET.Transport
 
         public Krb5Config Configuration { get; set; }
 
+        public void ResetConnections()
+        {
+            DomainCache.Clear();
+            DomainServiceNegativeCache.Clear();
+            this.pinnedKdcs.Clear();
+            this.negativeCache.Clear();
+        }
+
         public virtual async Task<IEnumerable<DnsRecord>> LocateKdc(string domain, string servicePrefix)
         {
             var results = (await this.Query(domain, servicePrefix)).Where(r => r.Type == DnsRecordType.SRV);

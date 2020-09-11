@@ -29,11 +29,29 @@ namespace Kerberos.NET
 
         public TimeSpan RefreshInterval { get; set; } = TimeSpan.FromSeconds(30);
 
+        public virtual string DefaultDomain { get; set; }
+
         internal Func<CacheEntry, Task> Refresh { get; set; }
 
         protected CancellationTokenSource Cancellation { get; }
 
         protected ILogger Logger { get; }
+
+        public static void TryParseCacheType(string cachePath, out string cacheType, out string path)
+        {
+            cacheType = null;
+            path = cachePath;
+
+            var indexOf = cachePath.IndexOf(':');
+
+            if (indexOf > 1)
+            {
+                // not a drive letter
+
+                cacheType = cachePath.Substring(0, indexOf).ToUpperInvariant();
+                path = cachePath.Substring(indexOf + 1);
+            }
+        }
 
         private async Task RunBackground()
         {
