@@ -10,7 +10,7 @@
     <PackageOutputPath>./nupkg</PackageOutputPath>
 
     <Product>Kerberos.NET Command Line Tool</Product>
-    <Description>A cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
+    <Description>A command line tool that manages the cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library Kerberos.NET.</Description>
     <PackageTags>security kerberos</PackageTags>
   </PropertyGroup>
 
