@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.CommandLine
@@ -10,7 +10,7 @@ namespace Kerberos.NET.CommandLine
     {
         static async Task Main(string[] args)
         {
-            var assembly = Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location);
+            var assembly = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName);
 
             string loadingModule = null;
 
@@ -31,7 +31,8 @@ namespace Kerberos.NET.CommandLine
             {
                 CommandLine = argv,
                 LoadingModule = loadingModule,
-                Verbose = args.Any(a => string.Equals("--verbose", a, StringComparison.InvariantCultureIgnoreCase))
+                Verbose = args.Any(a => string.Equals("--verbose", a, StringComparison.InvariantCultureIgnoreCase)),
+                Silent = args.Any(a => string.Equals("--silent", a, StringComparison.InvariantCultureIgnoreCase))
             };
 
             await shell.Start();

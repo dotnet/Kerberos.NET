@@ -12,6 +12,8 @@ namespace Kerberos.NET.CommandLine
 {
     public class CommandLineParameters
     {
+        private static HashSet<string> IgnoredParameters = new HashSet<string>() { "--silent" };
+
         public static CommandLineParameters Parse(string commandLine)
         {
             if (string.IsNullOrWhiteSpace(commandLine))
@@ -54,7 +56,7 @@ namespace Kerberos.NET.CommandLine
                     nextChar = argv[i + 1];
                 }
 
-                if (argv[i] == '"' && (lastChar == ' '|| nextChar == ' '))
+                if (argv[i] == '"' && (lastChar == ' ' || nextChar == ' '))
                 {
                     wasInQuote = inQuote;
                     inQuote = !inQuote;
@@ -89,7 +91,7 @@ namespace Kerberos.NET.CommandLine
                 lastChar = argv[i];
             }
 
-            return args.ToArray();
+            return args.Where(a => !IgnoredParameters.Contains(a)).ToArray();
         }
 
         public string Command { get; set; }
