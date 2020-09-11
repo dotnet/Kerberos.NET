@@ -88,7 +88,19 @@ namespace Kerberos.NET.CommandLine
             }
             catch (AggregateException aex)
             {
-                foreach (var kex in aex.InnerExceptions.OfType<KerberosProtocolException>())
+                ICollection<Exception> exceptions = aex.InnerExceptions;
+
+                if (exceptions == null)
+                {
+                    exceptions = new List<Exception>();
+
+                    if (aex.InnerException != null)
+                    {
+                        exceptions.Add(aex.InnerException);
+                    }
+                }
+
+                foreach (var kex in exceptions.OfType<KerberosProtocolException>())
                 {
                     if (kex.Error.ErrorCode == KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
                     {
@@ -96,6 +108,8 @@ namespace Kerberos.NET.CommandLine
                         await client.GetServiceTicket(this.ServicePrincipalName);
                         break;
                     }
+
+                    this.IO.Writer.WriteLine(kex.Message);
                 }
             }
         }
