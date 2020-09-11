@@ -88,7 +88,7 @@ namespace Kerberos.NET.CommandLine
             }
             catch (AggregateException aex)
             {
-                ICollection<Exception> exceptions = aex.InnerExceptions;
+                ICollection<Exception> exceptions = aex.InnerExceptions?.Where(e => e != null)?.ToList();
 
                 if (exceptions == null)
                 {
