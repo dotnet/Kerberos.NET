@@ -63,7 +63,31 @@ namespace Kerberos.NET.Configuration
         public Krb5Logging Logging { get; private set; }
 
         public static string UserConfigurationPath
-            => Environment.ExpandEnvironmentVariables("%APPDATA%\\Kerberos.NET\\");
+        {
+            get
+            {
+                var config = Environment.ExpandEnvironmentVariables("%KRB5_CONFIG%");
+
+                if (!string.IsNullOrWhiteSpace(config) && !"%KRB5_CONFIG%".Equals(config, StringComparison.Ordinal))
+                {
+                    return config;
+                }
+                else if (OSPlatform.IsWindows)
+                {
+                    return Environment.ExpandEnvironmentVariables("%APPDATA%\\Kerberos.NET\\");
+                }
+                else if (OSPlatform.IsOsX)
+                {
+                    return "Library/Preferences/Kerberos.NET/";
+                }
+                else if (OSPlatform.IsLinux)
+                {
+                    return "/etc/";
+                }
+
+                return string.Empty;
+            }
+        }
 
         public static string DefaultUserConfiguration => Path.Combine(UserConfigurationPath, "krb5.conf");
 

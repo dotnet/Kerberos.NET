@@ -60,7 +60,7 @@ namespace Kerberos.NET.Dns
 
             if (implementation == null)
             {
-                throw new InvalidOperationException("DNS Query implementation cannot be null");
+                throw new DnsNotSupportedException("DNS Query implementation cannot be null");
             }
 
             if (Debug)

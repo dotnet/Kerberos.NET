@@ -124,7 +124,14 @@ namespace Kerberos.NET.Transport
 
             if (this.Configuration.Defaults.DnsLookupKdc)
             {
-                await QueryDns(domain, servicePrefix, records);
+                try
+                {
+                    await QueryDns(domain, servicePrefix, records);
+                }
+                catch (DnsNotSupportedException ex)
+                {
+                    this.logger.LogDebug(ex, "DNS isn't supported on this platform");
+                }
             }
 
             return records;
