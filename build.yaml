@@ -52,7 +52,7 @@ steps:
     arguments: install --tool-path . dotnet-reportgenerator-globaltool
   displayName: Install ReportGenerator tool
 
-  task: DotNetCoreCLI@2
+- task: DotNetCoreCLI@2
   inputs:
     command: pack
     projects: bruce\bruce.csproj
