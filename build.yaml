@@ -55,7 +55,7 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: pack
-    projects: bruce/bruce.csproj
+    projects: Bruce/Bruce.csproj
     arguments: -c $(BuildConfiguration) --no-build --no-restore
   displayName: Pack Bruce tool
 
