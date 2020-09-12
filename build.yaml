@@ -75,6 +75,15 @@ steps:
     codeCoverageTool: Cobertura
     summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml
 
+- task: NuGetAuthenticate@0
+  displayName: 'NuGet Authenticate'
+- task: NuGetCommand@2
+  displayName: 'NuGet push'
+  inputs:
+    command: push
+    publishVstsFeed: 'Kerberos.NET/kerberos.net'
+    allowPackageConflicts: true
+
 - publish: artifacts
   displayName: Publish build packages
   artifact: BuildPackages
