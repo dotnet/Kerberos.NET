@@ -102,14 +102,14 @@ namespace Kerberos.NET.CommandLine
 
                 foreach (var ex in exceptions.Where(e => e != null))
                 {
-                    if (ex is KerberosProtocolException kex && kex.Error.ErrorCode == KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
+                    if (ex is KerberosProtocolException kex && kex?.Error.ErrorCode == KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
                     {
                         await PurgeTickets();
                         await client.GetServiceTicket(this.ServicePrincipalName);
                         break;
                     }
 
-                    this.IO.Writer.WriteLine(ex.Message);
+                    this.IO.Writer.WriteLine(ex?.Message ?? SR.Resource("Unknown Error"));
                 }
             }
         }
