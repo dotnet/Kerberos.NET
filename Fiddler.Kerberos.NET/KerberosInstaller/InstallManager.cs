@@ -73,6 +73,13 @@ namespace Fiddler.Kerberos.NET
 
         private static void CopyFiles()
         {
+            var inspectorFolderPath = GetInspectorPath("");
+
+            if(!Directory.Exists(inspectorFolderPath))
+            {
+                Directory.CreateDirectory(inspectorFolderPath);
+            }
+
             string[] files = GetPluginFiles();
 
             foreach (var file in files)

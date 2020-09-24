@@ -37,9 +37,6 @@
     <Reference Include="Fiddler">
       <HintPath>$(LocalAppData)\Programs\Fiddler\Fiddler.exe</HintPath>
     </Reference>
-    <Reference Include="Kerberos.NET, Version=4.0.0.0, Culture=neutral, PublicKeyToken=10b231fbfc8c4b4d, processorArchitecture=MSIL">
-      <HintPath>..\packages\Kerberos.NET.4.0.16\lib\netstandard2.0\Kerberos.NET.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=3.1.2.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Extensions.Logging.Abstractions.3.1.2\lib\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
     </Reference>
@@ -118,6 +115,14 @@
       <Project>{9686f73f-5526-4c9a-b603-c7acbfcb1976}</Project>
       <Name>KerberosInstaller</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Kerberos.NET">
+      <Version>4.5.13</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>12.0.3</Version>
+    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
