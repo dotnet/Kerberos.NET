@@ -54,6 +54,9 @@ namespace Kerberos.NET
         }
 
         public virtual async Task<ClaimsIdentity> Authenticate(byte[] token)
+            => await this.Authenticate((ReadOnlyMemory<byte>)token);
+
+        public virtual async Task<ClaimsIdentity> Authenticate(ReadOnlyMemory<byte> token)
         {
             var data = await this.validator.Validate(token).ConfigureAwait(true);
 

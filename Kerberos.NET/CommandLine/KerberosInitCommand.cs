@@ -35,7 +35,7 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("realm", Description = "RealmName")]
         public string Realm { get; set; }
 
-        [CommandLineParameter("V", Description = "Verbose")]
+        [CommandLineParameter("V|verbose", Description = "Verbose")]
         public bool Verbose { get; set; }
 
         [CommandLineParameter("l|lifetime", Description = "LifeTime")]

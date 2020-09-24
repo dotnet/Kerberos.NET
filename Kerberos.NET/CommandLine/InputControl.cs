@@ -39,16 +39,33 @@ namespace Kerberos.NET.CommandLine
         public Action<bool> HookCtrlC { get; set; }
 
         /// <summary>
+        /// Set the output text color for the console.
+        /// </summary>
+        public Action<ConsoleColor> SetColor { get; set; }
+
+        /// <summary>
+        /// Reset the output color to default.
+        /// </summary>
+        public Action ResetColor { get; set; }
+
+        /// <summary>
         /// Create a default input control based on Console.
         /// </summary>
         /// <returns>Returns default input control based on Console</returns>
-        public static InputControl Default() => new InputControl
+        public static InputControl Default()
         {
-            Writer = Console.Out,
-            Reader = Console.In,
-            Clear = Console.Clear,
-            ReadKey = () => Console.ReadKey(true),
-            HookCtrlC = hooked => Console.TreatControlCAsInput = hooked
-        };
+            Console.ResetColor();
+
+            return new InputControl
+            {
+                Writer = Console.Out,
+                Reader = Console.In,
+                Clear = Console.Clear,
+                ReadKey = () => Console.ReadKey(true),
+                HookCtrlC = hooked => Console.TreatControlCAsInput = hooked,
+                SetColor = color => Console.ForegroundColor = color,
+                ResetColor = () => Console.ResetColor()
+            };
+        }
     }
 }

@@ -673,6 +673,15 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Displays details about the current authenticated user..
+        /// </summary>
+        internal static string CommandLine_KerberosWhoAmI {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosWhoAmI", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Password for {0}: .
         /// </summary>
         internal static string CommandLine_KInit_PassPrompt {
@@ -777,6 +786,33 @@ namespace Kerberos.NET {
         internal static string CommandLine_Version {
             get {
                 return ResourceManager.GetString("CommandLine_Version", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Authenticator Claims.
+        /// </summary>
+        internal static string CommandLine_WhoAmI_Claims {
+            get {
+                return ResourceManager.GetString("CommandLine_WhoAmI_Claims", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Groups.
+        /// </summary>
+        internal static string CommandLine_WhoAmI_Groups {
+            get {
+                return ResourceManager.GetString("CommandLine_WhoAmI_Groups", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UserName.
+        /// </summary>
+        internal static string CommandLine_WhoAmI_UserName {
+            get {
+                return ResourceManager.GetString("CommandLine_WhoAmI_UserName", resourceCulture);
             }
         }
         

@@ -55,6 +55,9 @@ namespace Kerberos.NET
         }
 
         public async Task<DecryptedKrbApReq> Validate(byte[] requestBytes)
+            => await this.Validate((ReadOnlyMemory<byte>)requestBytes);
+
+        public async Task<DecryptedKrbApReq> Validate(ReadOnlyMemory<byte> requestBytes)
         {
             var kerberosRequest = MessageParser.ParseContext(requestBytes);
 
