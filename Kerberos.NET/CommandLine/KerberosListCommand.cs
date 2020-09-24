@@ -88,7 +88,7 @@ namespace Kerberos.NET.CommandLine
             }
             catch (AggregateException aex)
             {
-                ICollection<Exception> exceptions = aex.InnerExceptions;
+                ICollection<Exception> exceptions = aex.InnerExceptions?.Where(e => e != null)?.ToList();
 
                 if (exceptions == null)
                 {
@@ -100,16 +100,16 @@ namespace Kerberos.NET.CommandLine
                     }
                 }
 
-                foreach (var kex in exceptions.OfType<KerberosProtocolException>())
+                foreach (var ex in exceptions.Where(e => e != null))
                 {
-                    if (kex.Error.ErrorCode == KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
+                    if (ex is KerberosProtocolException kex && kex?.Error.ErrorCode == KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
                     {
                         await PurgeTickets();
                         await client.GetServiceTicket(this.ServicePrincipalName);
                         break;
                     }
 
-                    this.IO.Writer.WriteLine(kex.Message);
+                    this.IO.Writer.WriteLine(ex?.Message ?? SR.Resource("Unknown Error"));
                 }
             }
         }
