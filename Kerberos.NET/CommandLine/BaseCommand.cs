@@ -132,7 +132,11 @@ namespace Kerberos.NET.CommandLine
 
             if (exception != null)
             {
-                this.IO.Writer.WriteLine(exception);
+                this.IO.SetColor(ConsoleColor.Red);
+                this.IO.Writer.WriteLine(exception.Message);
+                this.IO.SetColor(ConsoleColor.DarkYellow);
+                this.IO.Writer.WriteLine(exception.StackTrace);
+                this.IO.ResetColor();
             }
         }
 
