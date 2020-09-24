@@ -11,8 +11,6 @@ namespace Kerberos.NET.Entities
 {
     public sealed class NegotiateContextToken : ContextToken
     {
-        private readonly NegotiationToken token;
-
         public NegotiateContextToken(GssApiToken gssToken)
         {
             if (gssToken == null)
@@ -23,12 +21,14 @@ namespace Kerberos.NET.Entities
             // SPNego tokens optimistically include a token of the first MechType
             // so if mechType[0] == Ntlm process as ntlm, == kerb process as kerb, etc.
 
-            this.token = NegotiationToken.Decode(gssToken.Token);
+            this.Token = NegotiationToken.Decode(gssToken.Token);
         }
+
+        public NegotiationToken Token { get; }
 
         public override DecryptedKrbApReq DecryptApReq(KeyTable keys)
         {
-            var mechToken = this.token.InitialToken.MechToken;
+            var mechToken = this.Token.InitialToken.MechToken;
 
             var apReq = MessageParser.Parse<ContextToken>(mechToken.Value);
 
@@ -44,15 +44,15 @@ namespace Kerberos.NET.Entities
 
         public override string ToString()
         {
-            if (this.token.InitialToken != null)
+            if (this.Token.InitialToken != null)
             {
-                var init = this.token.InitialToken;
+                var init = this.Token.InitialToken;
                 return $"NegTokenInit Oid: {init.MechTypes?.FirstOrDefault()?.FriendlyName};";
             }
 
-            if (this.token.ResponseToken != null)
+            if (this.Token.ResponseToken != null)
             {
-                var resp = this.token.ResponseToken;
+                var resp = this.Token.ResponseToken;
 
                 return $"NegTokenResp Oid: {resp.SupportedMech.FriendlyName};";
             }
