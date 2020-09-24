@@ -147,7 +147,11 @@ namespace Kerberos.NET.Client
         /// </summary>
         public ITicketCache Cache
         {
-            get => this.ticketCache;
+            get
+            {
+                SetupCache();
+                return this.ticketCache;
+            }
             set => this.ticketCache = value ?? throw new InvalidOperationException("Cache cannot be null");
         }
 
@@ -210,6 +214,16 @@ namespace Kerberos.NET.Client
         {
             get => this.scopeId ?? (this.scopeId = KerberosConstants.GetRequestActivityId()).Value;
             set => this.scopeId = value;
+        }
+
+        public string UserPrincipalName
+        {
+            get
+            {
+                var tgt = this.CopyTicket($"krbtgt/{this.DefaultDomain}");
+
+                return tgt.KdcResponse.CName.FullyQualifiedName;
+            }
         }
 
         /// <summary>
@@ -900,6 +914,8 @@ namespace Kerberos.NET.Client
 
         private KerberosClientCacheEntry CopyTicket(string spn)
         {
+            this.SetupCache();
+
             var entry = this.Cache.GetCacheItem<KerberosClientCacheEntry>(spn);
 
             lock (this._syncTicketCache)
