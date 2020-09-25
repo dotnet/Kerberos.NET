@@ -67,6 +67,11 @@ namespace Kerberos.NET
         /// </summary>
         public Krb5Config Configuration { get; set; }
 
+        /// <summary>
+        /// Indicates whether the client should cache the ticket. Default null indicates the client should decide.
+        /// </summary>
+        public bool? CacheTicket { get; set; }
+
         public override bool Equals(object obj)
         {
             if (obj is RequestServiceTicket rst)

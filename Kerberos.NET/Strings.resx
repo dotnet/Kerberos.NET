@@ -624,4 +624,16 @@
   <data name="CommandLine_Version" xml:space="preserve">
     <value>Version</value>
   </data>
+  <data name="CommandLine_KerberosWhoAmI" xml:space="preserve">
+    <value>Displays details about the current authenticated user.</value>
+  </data>
+  <data name="CommandLine_WhoAmI_Claims" xml:space="preserve">
+    <value>Authenticator Claims</value>
+  </data>
+  <data name="CommandLine_WhoAmI_Groups" xml:space="preserve">
+    <value>Groups</value>
+  </data>
+  <data name="CommandLine_WhoAmI_UserName" xml:space="preserve">
+    <value>UserName</value>
+  </data>
 </root>

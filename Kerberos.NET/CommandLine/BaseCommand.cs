@@ -64,17 +64,105 @@ namespace Kerberos.NET.CommandLine
         {
             return new KerberosDelegateLogger(
                 (level, cateogry, id, scopeState, logState, exception, log)
-                    => this.LogImpl(level, exception, log)
+                    => this.LogImpl(level, exception, logState as IReadOnlyList<KeyValuePair<string, object>>)
             );
         }
 
         private void LogImpl(
             TraceLevel level,
             Exception exception,
-            string log
+            IReadOnlyList<KeyValuePair<string, object>> logState
         )
         {
-            this.IO.Writer.WriteLine($"[{level}] {log} {exception}");
+            var line = logState.FirstOrDefault(f => f.Key == "{OriginalFormat}").Value?.ToString() ?? "";
+
+            WriteLine(level, line, logState, exception);
+
+        }
+
+        protected void WriteLine(TraceLevel level, string line, IReadOnlyList<KeyValuePair<string, object>> logState = null, Exception exception = null)
+        {
+            if (level != TraceLevel.Off)
+            {
+                var color = level switch
+                {
+                    TraceLevel.Warning => ConsoleColor.Yellow,
+                    TraceLevel.Error => ConsoleColor.Red,
+                    _ => ConsoleColor.Green,
+                };
+
+                this.IO.Writer.Write("[");
+                this.IO.SetColor(color);
+                this.IO.Writer.Write(level);
+                this.IO.ResetColor();
+                this.IO.Writer.Write("] ");
+            }
+
+            var index = -1;
+
+            for (var i = 0; i < line.Length; i++)
+            {
+                if (line[i] == '{')
+                {
+                    index = i;
+                    continue;
+                }
+
+                if (line[i] == '}')
+                {
+                    var substr = line.Substring(index, i - index).Replace("{", "").Replace("}", "");
+
+                    var val = logState?.FirstOrDefault(l => l.Key == substr) ?? default;
+
+                    WriteValue(val);
+
+                    this.IO.ResetColor();
+                    index = -1;
+
+                    continue;
+                }
+
+                if (index < 0)
+                {
+                    this.IO.Writer.Write(line[i]);
+                }
+            }
+
+            this.IO.Writer.WriteLine();
+
+            if (exception != null)
+            {
+                this.IO.SetColor(ConsoleColor.Red);
+                this.IO.Writer.WriteLine(exception.Message);
+                this.IO.SetColor(ConsoleColor.DarkYellow);
+                this.IO.Writer.WriteLine(exception.StackTrace);
+                this.IO.ResetColor();
+            }
+        }
+
+        private void WriteValue(KeyValuePair<string, object> val)
+        {
+            if (val.Value is null)
+            {
+                return;
+            }
+
+            var type = val.Value.GetType();
+
+            if (type.IsPrimitive)
+            {
+                this.IO.SetColor(ConsoleColor.DarkYellow);
+            }
+            else if (type.IsEnum)
+            {
+                this.IO.SetColor(ConsoleColor.Yellow);
+            }
+            else
+            {
+                this.IO.SetColor(ConsoleColor.DarkCyan);
+            }
+
+            this.IO.Writer.Write(val.Value);
         }
 
         protected virtual T CreateCommand<T>()

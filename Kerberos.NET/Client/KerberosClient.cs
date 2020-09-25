@@ -147,7 +147,12 @@ namespace Kerberos.NET.Client
         /// </summary>
         public ITicketCache Cache
         {
-            get => this.ticketCache;
+            get
+            {
+                this.SetupCache();
+
+                return this.ticketCache;
+            }
             set => this.ticketCache = value ?? throw new InvalidOperationException("Cache cannot be null");
         }
 
@@ -210,6 +215,16 @@ namespace Kerberos.NET.Client
         {
             get => this.scopeId ?? (this.scopeId = KerberosConstants.GetRequestActivityId()).Value;
             set => this.scopeId = value;
+        }
+
+        public string UserPrincipalName
+        {
+            get
+            {
+                var tgt = this.CopyTicket($"krbtgt/{this.DefaultDomain}");
+
+                return tgt.KdcResponse.CName.FullyQualifiedName;
+            }
         }
 
         /// <summary>
@@ -280,8 +295,6 @@ namespace Kerberos.NET.Client
             credential.Validate();
 
             credential.Configuration = this.Configuration;
-
-            this.SetupCache();
 
             // The KDC may not require pre-auth so we shouldn't try it until the KDC indicates otherwise
 
@@ -438,8 +451,6 @@ namespace Kerberos.NET.Client
                 rst.GssContextFlags |= GssContextEstablishmentFlag.GSS_C_MUTUAL_FLAG;
             }
 
-            this.SetupCache();
-
             // attempt to normalize the SPN we're trying to get a ticket to
             // holding it here because the request may need intermediate tickets
             // if we have to cross realms
@@ -509,7 +520,7 @@ namespace Kerberos.NET.Client
 
                         serviceTicketCacheEntry = await this.RequestTgs(rst, tgtEntry, cancellation).ConfigureAwait(true);
 
-                        cacheResult = true;
+                        cacheResult = rst.CacheTicket ?? true;
                     }
 
                     // we got a ticket of some sort from the cache or the KDC
