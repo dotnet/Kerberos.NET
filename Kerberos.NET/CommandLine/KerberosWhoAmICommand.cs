@@ -55,7 +55,6 @@ namespace Kerberos.NET.CommandLine
             var result = await client.GetServiceTicket(
                 new RequestServiceTicket
                 {
-                    //S4uTarget = client.UserPrincipalName,
                     ServicePrincipalName = client.UserPrincipalName,
                     UserToUserTicket = myTgt,
                     CacheTicket = false,
@@ -66,7 +65,7 @@ namespace Kerberos.NET.CommandLine
 
             var identity = await authenticator.Authenticate(result.ApReq.EncodeApplication());
 
-            DescribeTicket(identity as KerberosIdentity);
+            this.DescribeTicket(identity as KerberosIdentity);
         }
 
         private void DescribeTicket(KerberosIdentity identity)
