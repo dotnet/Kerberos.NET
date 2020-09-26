@@ -41,11 +41,11 @@ namespace Kerberos.NET.Entities
 
             for (var i = 0; i < userName.Name.Length; i++)
             {
-                Concat(checksumData, ref position, ref userName.Name[i]);
+                Concat(checksumData, userName.Name[i], ref position);
             }
 
-            Concat(checksumData, ref position, ref userRealm);
-            Concat(checksumData, ref position, ref authPackage);
+            Concat(checksumData, userRealm, ref position);
+            Concat(checksumData, authPackage, ref position);
 
             return KrbChecksum.Create(checksumData, key, KeyUsage.PaForUserChecksum, PaForUserChecksumType);
         }
@@ -60,7 +60,7 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        private static void Concat(Memory<byte> checksumData, ref int position, ref string value)
+        private static void Concat(Memory<byte> checksumData, string value, ref int position)
         {
             KerberosConstants.UnicodeStringToUtf8(value).CopyTo(checksumData.Slice(position, value.Length));
 

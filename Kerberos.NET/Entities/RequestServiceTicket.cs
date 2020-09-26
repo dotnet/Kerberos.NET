@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Entities;
 
@@ -28,6 +29,8 @@ namespace Kerberos.NET
         /// The username a service ticket is requested on-behalf-of
         /// </summary>
         public string S4uTarget { get; set; }
+
+        public X509Certificate2 S4uTargetCertificate { get; set; }
 
         /// <summary>
         /// The evidence ticket used to prove the requestor is allowed to

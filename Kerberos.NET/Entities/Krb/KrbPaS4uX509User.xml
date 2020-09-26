@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbPaS4uX509User"
+  namespace="Kerberos.NET.Entities">
+  <!--
+
+    PA-S4U-X509-USER::= SEQUENCE {
+      user-id[0] S4UUserID,
+      checksum[1] Checksum              
+    }
+  
+     S4UUserID ::= SEQUENCE {
+        nonce [0] UInt32, - - the nonce in KDC-REQ-BODY
+        cname [1] PrincipalName OPTIONAL, 
+        - - Certificate mapping hints
+        crealm [2] Realm,
+        subject-certificate [3] OCTET STRING OPTIONAL, 
+        options [4] BIT STRING OPTIONAL,
+        ...
+     }
+   
+  -->
+
+  <asn:AsnType name="UserId" explicitTag="0" typeName="KrbS4uUserId" />
+  <asn:AsnType name="Checksum" explicitTag="1" typeName="KrbChecksum" />
+</asn:Sequence>
