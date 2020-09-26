@@ -50,7 +50,13 @@ namespace Kerberos.NET.CommandLine
         {
             var myTgtEntry = client.Cache.GetCacheItem<KerberosClientCacheEntry>($"krbtgt/{client.DefaultDomain}");
 
-            var myTgt = myTgtEntry.KdcResponse.Ticket;
+            var myTgt = myTgtEntry.KdcResponse?.Ticket;
+
+            if (myTgt == null)
+            {
+                this.IO.Writer.WriteLine(SR.Resource("CommandLine_WhoAmI_NoTgt"));
+                return;
+            }
 
             var result = await client.GetServiceTicket(
                 new RequestServiceTicket
