@@ -826,15 +826,6 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Provide the realm name..
-        /// </summary>
-        internal static string CommandLine_WhoAmICommand_Realm {
-            get {
-                return ResourceManager.GetString("CommandLine_WhoAmICommand_Realm", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to ASN.1 Enumerated values only apply to enum types without the [Flags] attribute..
         /// </summary>
         internal static string Cryptography_Asn_EnumeratedValueRequiresNonFlagsEnum {

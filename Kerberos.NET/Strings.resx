@@ -639,7 +639,4 @@
   <data name="CommandLine_WhoAmI_NoTgt" xml:space="preserve">
     <value>User is not logged on. Try kinit first.</value>
   </data>
-  <data name="CommandLine_WhoAmICommand_Realm" xml:space="preserve">
-    <value>Provide the realm name.</value>
-  </data>
 </root>
