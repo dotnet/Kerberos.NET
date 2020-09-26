@@ -808,6 +808,15 @@ namespace Kerberos.NET {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to User is not logged on. Try kinit first..
+        /// </summary>
+        internal static string CommandLine_WhoAmI_NoTgt {
+            get {
+                return ResourceManager.GetString("CommandLine_WhoAmI_NoTgt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to UserName.
         /// </summary>
         internal static string CommandLine_WhoAmI_UserName {
