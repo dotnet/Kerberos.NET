@@ -24,7 +24,7 @@
   </ItemGroup>
     
   <ItemGroup>
-    <ProjectReference Include="..\Kerberos.NET\Kerberos.NET.csproj" />
+    <ProjectReference Include="..\..\Kerberos.NET\Kerberos.NET.csproj" />
   </ItemGroup>
 
 </Project>

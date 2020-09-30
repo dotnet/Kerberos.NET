@@ -97,7 +97,7 @@ Note that the constructor parameter for the authenticator is a `KeyTable`. The `
 
 This library comes with an optional utility to decode service tickets. It's easy to use. Just copy the Base64 encoded copy of the ticket into the left textbox. It will decode the unencrypted message if you don't provide a key. It will attempt to decrypt the message if you provide a key. You won't need to provide a host value if the ticket was encrypted using RC4, but it will need a host value if it's encrypted with AES (to derive the salt). Alternatively you could also include a keytab file if you happen to have that too.
 
-![](kerbDump.png?raw=true)
+![](docs/kerbDump.png?raw=true)
 
 Here's a sample of what a sample ticket looks like:
 
