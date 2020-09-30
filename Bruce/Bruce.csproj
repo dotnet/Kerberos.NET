@@ -15,15 +15,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Update="BR.Designer.cs">
+    <Compile Update="Strings.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
-      <DependentUpon>BR.resx</DependentUpon>
+      <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
 
-    <EmbeddedResource Update="BR.resx">
+    <EmbeddedResource Update="Strings.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>BR.Designer.cs</LastGenOutput>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

@@ -17,7 +17,7 @@ using Kerberos.NET.Ndr;
 namespace Kerberos.NET.Client
 {
     [DebuggerDisplay("{Credentials}")]
-    internal class Krb5CredentialCache
+    public class Krb5CredentialCache
     {
         private const byte Magic = 5;
         private const byte ExpectedVersion = 4;
@@ -591,7 +591,7 @@ namespace Kerberos.NET.Client
         }
     }
 
-    internal enum Krb5CredentialCacheTag : short
+    public enum Krb5CredentialCacheTag : short
     {
         KdcClientOffset = 1
     }

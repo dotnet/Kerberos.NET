@@ -790,7 +790,7 @@ namespace Kerberos.NET.Configuration
             return bool.Parse(stringValue);
         }
 
-        internal static object ParseEnum(string stringValue, Type type)
+        public static object ParseEnum(string stringValue, Type type)
         {
             var val = stringValue.Replace("-", "_");
 

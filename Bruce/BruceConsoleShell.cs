@@ -209,7 +209,7 @@ namespace Kerberos.NET.CommandLine
 
         private void PrintUnknownCommand(CommandLineParameters parameters)
         {
-            this.io.Writer.WriteLine(string.Format(BR.UnknownCommand, parameters.Command));
+            this.io.Writer.WriteLine(string.Format(Strings.UnknownCommand, parameters.Command));
         }
 
         private bool TryPopShell()
@@ -228,7 +228,7 @@ namespace Kerberos.NET.CommandLine
 
             var banner = Banner
                             .Replace("{Version}", versionString)
-                            .Replace("{BannerDescription}", BR.BannerDescription)
+                            .Replace("{BannerDescription}", Strings.BannerDescription)
                             .Replace("{BannerYear}", DateTimeOffset.UtcNow.Year.ToString(CultureInfo.InvariantCulture));
 
             this.io.Writer.WriteLine(banner);

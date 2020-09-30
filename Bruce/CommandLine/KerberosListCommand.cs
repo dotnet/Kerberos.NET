@@ -120,7 +120,7 @@ namespace Kerberos.NET.CommandLine
 
             var ticketCache = new Krb5TicketCache(path);
 
-            var tickets = ticketCache.CacheInternals.ToArray();
+            var tickets = ticketCache.Krb5Cache.Credentials.ToArray();
 
             this.IO.Writer.WriteLine("{0}: {1}", SR.Resource("CommandLine_KList_Count"), tickets.Length);
             this.IO.Writer.WriteLine();

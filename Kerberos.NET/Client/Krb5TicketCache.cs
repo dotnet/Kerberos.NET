@@ -4,7 +4,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -47,7 +46,7 @@ namespace Kerberos.NET.Client
             set { }
         }
 
-        internal IEnumerable<Krb5CredentialCache.Krb5Credential> CacheInternals => this.cache.Credentials;
+        public Krb5CredentialCache Krb5Cache => this.cache;
 
         private void ReadCache(byte[] cache)
         {

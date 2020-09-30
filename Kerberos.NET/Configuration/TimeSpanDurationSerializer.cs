@@ -13,7 +13,7 @@ namespace Kerberos.NET.Configuration
     /// <summary>
     /// A parser that converts the linux duration form into TimeSpan and back.
     /// </summary>
-    internal static class TimeSpanDurationSerializer
+    public static class TimeSpanDurationSerializer
     {
         private enum TimeComponent
         {
@@ -70,7 +70,7 @@ namespace Kerberos.NET.Configuration
             return string.Join(" ", fields);
         }
 
-        internal static TimeSpan Parse(string val)
+        public static TimeSpan Parse(string val)
         {
             if (val is null)
             {
