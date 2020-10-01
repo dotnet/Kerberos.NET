@@ -547,6 +547,96 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Encryption Type.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_EType {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_EType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File Version.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_FileVersion {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_FileVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kerberos Version.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_KerbVersion {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_KerbVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Encoded Key Value.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_Key {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_Key", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Key Length.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_KeyLength {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_KeyLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Key List.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_Keys {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_Keys", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Key Version.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_KeyVersion {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_KeyVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Principal Name.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_PrincipalName {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_PrincipalName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Timestamp.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_TimeStamp {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_TimeStamp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File not found.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_UnknownFile {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_UnknownFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Displays the current list of tickets in the cache..
         /// </summary>
         internal static string CommandLine_KerberosList {
