@@ -563,5 +563,51 @@ namespace Kerberos.NET.CommandLine
 
             return false;
         }
+
+        protected string ReadMasked()
+        {
+            var masked = "";
+
+            try
+            {
+                this.IO.HookCtrlC(true);
+
+                do
+                {
+                    ConsoleKeyInfo key = this.IO.ReadKey();
+
+                    if (key.Modifiers.HasFlag(ConsoleModifiers.Control) && key.Key == ConsoleKey.C)
+                    {
+                        this.IO.Writer.WriteLine();
+                        return null;
+                    }
+                    else if (key.Key != ConsoleKey.Backspace &&
+                        key.Key != ConsoleKey.Enter &&
+                        !char.IsControl(key.KeyChar))
+                    {
+                        masked += key.KeyChar;
+
+                        this.IO.Writer.Write("*");
+                    }
+                    else if (key.Key == ConsoleKey.Backspace && masked.Length > 0)
+                    {
+                        this.IO.Writer.Write("\b \b");
+                        masked = masked.Substring(0, masked.Length - 1);
+                    }
+                    else if (key.Key == ConsoleKey.Enter)
+                    {
+                        this.IO.Writer.WriteLine();
+                        break;
+                    }
+                }
+                while (true);
+
+                return masked;
+            }
+            finally
+            {
+                this.IO.HookCtrlC(false);
+            }
+        }
     }
 }

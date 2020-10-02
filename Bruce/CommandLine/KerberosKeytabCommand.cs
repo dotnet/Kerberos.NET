@@ -7,8 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -23,6 +25,30 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("f|file", FormalParameter = true, Required = true, Description = "File")]
         public string KeytabFile { get; set; }
 
+        [CommandLineParameter("a|add", Description = "Add")]
+        public bool AddKey { get; set; }
+
+        [CommandLineParameter("p|principal", Description = "Principal")]
+        public string PrincipalName { get; set; }
+
+        [CommandLineParameter("password", Description = "Password")]
+        public string Password { get; set; }
+
+        [CommandLineParameter("key", Description = "Key")]
+        public string Key { get; set; }
+
+        [CommandLineParameter("realm", Description = "Realm")]
+        public string Realm { get; set; }
+
+        [CommandLineParameter("h|host", Description = "Host")]
+        public string Host { get; set; }
+
+        [CommandLineParameter("e|etype", Description = "EType")]
+        public IEnumerable<EncryptionType> EncryptionTypes { get; private set; } = new List<EncryptionType>();
+
+        [CommandLineParameter("ptype", Description = "PType")]
+        public PrincipalNameType PrincipalNameType { get; set; } = PrincipalNameType.NT_SRV_INST;
+
         public override async Task<bool> Execute()
         {
             if (await base.Execute())
@@ -32,25 +58,118 @@ namespace Kerberos.NET.CommandLine
 
             this.IO.Writer.WriteLine();
 
+            if (this.AddKey)
+            {
+                await this.AppendKeyToFile();
+            }
+            else
+            {
+                await this.DisplayKey();
+            }
+
+            return true;
+        }
+
+        private async Task DisplayKey()
+        {
             if (File.Exists(this.KeytabFile))
             {
                 var bytes = await File.ReadAllBytesAsync(this.KeytabFile);
 
-                this.DumpKeytab(bytes);
+                this.DumpKeytab(new KeyTable(bytes));
             }
             else
             {
                 this.IO.Writer.WriteLine(SR.Resource("CommandLine_KerberosKeytab_UnknownFile"));
                 this.IO.Writer.WriteLine();
             }
-
-            return true;
         }
 
-        private void DumpKeytab(byte[] bytes)
+        private async Task AppendKeyToFile()
         {
-            var kt = new KeyTable(bytes);
+            KeyTable keytab = null;
 
+            if (File.Exists(this.KeytabFile))
+            {
+                try
+                {
+                    var bytes = await File.ReadAllBytesAsync(this.KeytabFile);
+
+                    keytab = new KeyTable(bytes);
+                }
+                catch
+                {
+                    keytab = null;
+                }
+            }
+
+            if (keytab == null)
+            {
+                keytab = new KeyTable();
+            }
+
+            var etypes = this.EncryptionTypes;
+
+            if (!(etypes?.Any() ?? false))
+            {
+                var clientForConfig = this.CreateClient();
+
+                etypes = clientForConfig.Configuration.Defaults.DefaultTgsEncTypes;
+            }
+
+            foreach (var etype in etypes)
+            {
+                var existing = keytab.Entries.FirstOrDefault(e => e.EncryptionType == etype);
+
+                if (existing != null)
+                {
+                    keytab.Entries.Remove(existing);
+                }
+
+                if (!CryptoService.SupportsEType(etype))
+                {
+                    continue;
+                }
+
+                byte[] key = null;
+
+                if (!string.IsNullOrWhiteSpace(this.Key))
+                {
+                    key = Convert.FromBase64String(this.Key);
+                }
+
+                byte[] passwordBytes = null;
+
+                if (!string.IsNullOrWhiteSpace(this.Password))
+                {
+                    passwordBytes = Encoding.Unicode.GetBytes(this.Password);
+                }
+
+                var principal = KrbPrincipalName.FromString(this.PrincipalName, this.PrincipalNameType);
+
+                keytab.Entries.Add(
+                    new KeyEntry(
+                        new KerberosKey(
+                            key: key,
+                            password: passwordBytes,
+                            etype: etype,
+                            principal: Entities.PrincipalName.FromKrbPrincipalName(principal),
+                            host: this.Host
+                        )
+                    )
+                );
+            }
+
+            using (var fs = new FileStream(this.KeytabFile, FileMode.Create))
+            using (var writer = new BinaryWriter(fs))
+            {
+                keytab.Write(writer);
+                writer.Flush();
+            }
+        }
+
+        private void DumpKeytab(KeyTable kt)
+        {
             var props = new List<(string key, object value)>
             {
                 ( SR.Resource("CommandLine_KerberosKeytab_FileVersion"), kt.FileVersion ),
