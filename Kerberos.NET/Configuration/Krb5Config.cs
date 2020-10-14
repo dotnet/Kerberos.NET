@@ -16,6 +16,11 @@ namespace Kerberos.NET.Configuration
     /// </summary>
     public class Krb5Config
     {
+        public Krb5Config()
+        {
+            ConfigurationSectionList.Default.ToConfigObject(this);
+        }
+
         /// <summary>
         /// System defaults that will be used if the protocol or client do not provide explicit values.
         /// </summary>
@@ -112,7 +117,7 @@ namespace Kerberos.NET.Configuration
 
         public static Krb5Config Default()
         {
-            return Krb5ConfigurationSerializer.Deserialize(string.Empty).ToConfigObject();
+            return new Krb5Config();
         }
 
         public string Serialize()
