@@ -123,6 +123,14 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public void DefaultWithNewCtor()
+        {
+            var config = new Krb5Config();
+
+            Assert.AreEqual(5, config.Defaults.DefaultTgsEncTypes.Count());
+        }
+
+        [TestMethod]
         public void TraverseQuotedSettings()
         {
             var conf = ParseConfiguration();

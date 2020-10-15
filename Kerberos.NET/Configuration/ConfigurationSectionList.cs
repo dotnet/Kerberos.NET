@@ -39,6 +39,8 @@ namespace Kerberos.NET.Configuration
                                       EncryptionType.AES256_CTS_HMAC_SHA1_96) },
         };
 
+        internal static readonly ConfigurationSectionList Default = Krb5ConfigurationSerializer.Deserialize(string.Empty);
+
         private readonly List<string> finalizedKeys = new List<string>();
 
         /// <summary>
@@ -294,9 +296,12 @@ namespace Kerberos.NET.Configuration
         /// Converts the list of values into a structured <see cref="Krb5Config" /> configuration instance.
         /// </summary>
         /// <returns>Returns a configuration instance.</returns>
-        public Krb5Config ToConfigObject()
+        public Krb5Config ToConfigObject(Krb5Config config = null)
         {
-            var config = new Krb5Config();
+            if (config is null)
+            {
+                config = new Krb5Config();
+            }
 
             var properties = config.GetType().GetProperties(PublicInstancePropertyFlags);
 
