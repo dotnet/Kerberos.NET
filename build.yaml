@@ -92,6 +92,10 @@ stages:
       displayName: Publish build packages
       artifact: BuildPackages
 
+    - publish: config
+      displayName: Publish Signing Scripts
+      artifact: config
+
 - stage: CodeSign
   condition: and(succeeded('Build'), not(eq(variables['build.reason'], 'PullRequest')))
   jobs:
