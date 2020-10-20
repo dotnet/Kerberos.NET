@@ -13,7 +13,7 @@ stages:
   jobs:
   - job: Build
     pool:
-    vmImage: windows-latest
+      vmImage: windows-latest
 
     variables:
       BuildConfiguration: Release
