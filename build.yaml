@@ -41,7 +41,7 @@ stages:
       inputs:
         solution: Kerberos.NET.sln
         configuration: $(BuildConfiguration)
-        msbuildArguments: /restore /p:CreatePackage=true /p:OutputPath=$(Build.ArtifactStagingDirectory)
+        msbuildArguments: /restore /p:CreatePackage=true
         maximumCpuCount: true
 
     #- task: DotNetCoreCLI@2
@@ -62,7 +62,6 @@ stages:
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        artifactName: drop
         publishLocation: 'Container'
 
     #- task: DotNetCoreCLI@2
@@ -137,8 +136,25 @@ stages:
               --name "Kerberos.NET" `
               --description "Kerberos.NET" `
               --descriptionUrl "https://github.com/dotnet/Kerberos.NET"
-            displayName: Sign packages
+            displayName: Sign Kerberos.NET
+
+          - pwsh: |
+              .\SignClient "Sign" `
+              --baseDirectory "$(Pipeline.Workspace)\drop" `
+              --input "**/*.nupkg" `
+              --config "$(Pipeline.Workspace)\config\SignClient.json" `
+              --filelist "$(Pipeline.Workspace)\config\filelist.txt" `
+              --user "$(SignClientUser)" `
+              --secret '$(SignClientSecret)' `
+              --name "Bruce" `
+              --description "Commandline tool for Kerberos.NET" `
+              --descriptionUrl "https://github.com/dotnet/Kerberos.NET"
+            displayName: Sign Bruce
               
           - publish: $(Pipeline.Workspace)/BuildPackages
+            displayName: Publish Signed Packages
+            artifact: SignedPackages
+
+          - publish: $(Pipeline.Workspace)/drop
             displayName: Publish Signed Packages
             artifact: SignedPackages
