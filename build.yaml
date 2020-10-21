@@ -41,7 +41,7 @@ stages:
       inputs:
         solution: Kerberos.NET.sln
         configuration: $(BuildConfiguration)
-        msbuildArguments: /restore /p:CreatePackage=true /p:OutputDir=$(Build.ArtifactStagingDirectory)
+        msbuildArguments: /restore /p:CreatePackage=true
         maximumCpuCount: true
 
     #- task: DotNetCoreCLI@2
@@ -51,21 +51,13 @@ stages:
     #    arguments: -c $(BuildConfiguration) --no-build --no-restore --settings CodeCoverage.runsettings --collect:"XPlat Code Coverage" 
     #  displayName: Run Unit Tests
 
-    - task: MSBuild@1
-      displayName: 'Build Bruce'
+    - task: DotNetCoreCLI@2
       inputs:
-        solution: bruce/bruce.csproj
-        configuration: $(BuildConfiguration)
-        msbuildArguments: /restore /p:CreatePackage=true /p:OutputDir=$(Build.ArtifactStagingDirectory)
-        maximumCpuCount: true
-
-    #- task: DotNetCoreCLI@2
-    #  inputs:
-    #    command: 'pack'
-    #    packagesToPack: './Bruce/Bruce.csproj'
-    #    nobuild: true
-    #    outputDir: $(Build.ArtifactStagingDirectory)
-    #  displayName: Pack Bruce tool
+        command: 'pack'
+        packagesToPack: './Bruce/Bruce.csproj'
+        nobuild: true
+        outputDir: $(Build.ArtifactStagingDirectory)
+      displayName: Pack Bruce tool
   
     - task: PublishBuildArtifacts@1
       inputs:
@@ -145,7 +137,24 @@ stages:
               --description "Kerberos.NET" `
               --descriptionUrl "https://github.com/dotnet/Kerberos.NET"
             displayName: Sign Kerberos.NET
+            
+          - pwsh: |
+              .\SignClient "Sign" `
+              --baseDirectory "$(Pipeline.Workspace)\drop" `
+              --input "**/*.nupkg" `
+              --config "$(Pipeline.Workspace)\config\SignClient.json" `
+              --filelist "$(Pipeline.Workspace)\config\filelist.txt" `
+              --user "$(SignClientUser)" `
+              --secret '$(SignClientSecret)' `
+              --name "Bruce" `
+              --description "Commandline client for Kerberos.NET" `
+              --descriptionUrl "https://github.com/dotnet/Kerberos.NET"
+            displayName: Sign Bruce
               
           - publish: $(Pipeline.Workspace)/BuildPackages
             displayName: Publish Signed Packages
             artifact: SignedPackages
+              
+          - publish: $(Pipeline.Workspace)/BuildPackages
+            displayName: Publish Signed Drop
+            artifact: SignedDrop
