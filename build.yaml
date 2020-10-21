@@ -131,7 +131,7 @@ stages:
               --config "$(Pipeline.Workspace)\config\SignClient.json" `
               --filelist "$(Pipeline.Workspace)\config\filelist.txt" `
               --user "$(SignClientUser)" `
-              --secret "$(SignClientSecret)" `
+              --secret '$(SignClientSecret)' `
               --name "Kerberos.NET" `
               --description "Kerberos.NET" `
               --descriptionUrl "https://github.com/dotnet/Kerberos.NET"
