@@ -41,7 +41,7 @@ stages:
       inputs:
         solution: Kerberos.NET.sln
         configuration: $(BuildConfiguration)
-        msbuildArguments: /restore /p:CreatePackage=true
+        msbuildArguments: /restore /p:CreatePackage=true /p:OutputPath=$(Build.ArtifactStagingDirectory)
         maximumCpuCount: true
 
     #- task: DotNetCoreCLI@2
@@ -56,12 +56,13 @@ stages:
         command: 'pack'
         packagesToPack: './Bruce/Bruce.csproj'
         nobuild: true
-        outputDir: $(Build.ArtifactStagingDirectory)/../BuildPackages
+        outputDir: $(Build.ArtifactStagingDirectory)
       displayName: Pack Bruce tool
   
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: drop
         publishLocation: 'Container'
 
     #- task: DotNetCoreCLI@2
