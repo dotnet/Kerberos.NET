@@ -93,6 +93,10 @@ stages:
       displayName: Publish build packages
       artifact: BuildPackages
 
+    - publish: artifacts
+      displayName: Publish build packages
+      artifact: drop
+
     - publish: config
       displayName: Publish Signing Scripts
       artifact: config
