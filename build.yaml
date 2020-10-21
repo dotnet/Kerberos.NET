@@ -56,7 +56,7 @@ stages:
         command: 'pack'
         packagesToPack: './Bruce/Bruce.csproj'
         nobuild: true
-        outputDir: $(Build.ArtifactStagingDirectory)
+        outputDir: $(Build.ArtifactStagingDirectory)/BuildPackages
       displayName: Pack Bruce tool
   
     - task: PublishBuildArtifacts@1
@@ -92,10 +92,6 @@ stages:
     - publish: artifacts
       displayName: Publish build packages
       artifact: BuildPackages
-
-    - publish: artifacts
-      displayName: Publish build packages
-      artifact: drop
 
     - publish: config
       displayName: Publish Signing Scripts
