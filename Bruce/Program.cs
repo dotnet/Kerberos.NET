@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.CommandLine.Dns;
+using Kerberos.NET.Dns;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -10,6 +12,8 @@ namespace Kerberos.NET.CommandLine
     {
         static async Task Main(string[] args)
         {
+            DnsQuery.RegisterImplementation(new PlatformIndependentDnsClient());
+
             var assembly = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName);
 
             string loadingModule = null;
