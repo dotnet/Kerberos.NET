@@ -5,9 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Asn1;
+using Kerberos.NET.Client;
+using Kerberos.NET.Configuration;
+using Kerberos.NET.Credentials;
 using Kerberos.NET.Dns;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
@@ -48,6 +52,41 @@ namespace Tests.Kerberos.NET
 
                 tcp.Dispose();
             }
+        }
+
+        [TestMethod]
+        public async Task ClientResolverTreatsKdcPortAsNotUri()
+        {
+            var server = "aaa-bbb-ccc-dc01.test.com:88";
+
+            await ClientResolverProcessesEndpoint(server);
+        }
+
+        [TestMethod]
+        public async Task ClientResolverTreatsHttpsKdcPortAsUri()
+        {
+            var server = "https://aaa-bbb-ccc-dc01.test.com:443/kdcproxy";
+
+            await ClientResolverProcessesEndpoint(server);
+        }
+
+        private static async Task ClientResolverProcessesEndpoint(string server)
+        {
+            var client = new ClientDomainService(null)
+            {
+                Configuration = Krb5Config.Default()
+            };
+
+            client.Configuration.Realms["TEST.COM"].Kdc.Add(server);
+
+            client.Configuration.Defaults.DefaultRealm = "TEST.COM";
+            client.Configuration.DomainRealm.Add("TEST.COM", "TEST.COM");
+            client.Configuration.Defaults.DnsLookupKdc = false;
+
+            var result = await client.LocateKdc("TEST.COM", "_kerberos._http");
+
+            Assert.AreEqual(1, result.Count());
+            Assert.AreEqual(server, result.First().Address);
         }
 
         private class NoDnsTcpTransport : TcpKerberosTransport
