@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kerberos.NET\Kerberos.NET.csproj" />
+    <ProjectReference Include="..\Samples\KerbDumpCore\KerbDumpCore.csproj" />
   </ItemGroup>
 
 </Project>

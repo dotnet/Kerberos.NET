@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -98,6 +98,7 @@ namespace Kerberos.NET.Entities
             KnownTypes[pacType] = type;
         }
 
+        [KerberosIgnore]
         public IDictionary<PacType, PacObject> Attributes => this.attributes;
 
         private static readonly Dictionary<PacType, Type> KnownTypes = new Dictionary<PacType, Type>

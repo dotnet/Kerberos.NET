@@ -214,6 +214,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Launch a GUI to decode Kerberos tickets..
+        /// </summary>
+        internal static string CommandLine_KerberosDecode {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosDecode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Delete the ticket cache..
         /// </summary>
         internal static string CommandLine_KerberosDestroy {

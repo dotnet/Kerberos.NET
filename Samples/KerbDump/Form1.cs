@@ -1,14 +1,8 @@
-﻿using KerbDump.Properties;
-using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Win32;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
+using System.Buffers;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -16,6 +10,15 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using KerbDump.Properties;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Win32;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -27,6 +30,10 @@ namespace KerbDump
 
         private readonly ContextMenuStrip exportMenu = new ContextMenuStrip();
 
+        private readonly Font DefaultTreeFont;
+        private readonly int splitter1Default;
+        private readonly int splitter2Default;
+
         public Form1()
         {
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
@@ -34,10 +41,43 @@ namespace KerbDump
 
             InitializeComponent();
 
+            DefaultTreeFont = new Font(treeView1.Font.FontFamily, treeView1.Font.Size, FontStyle.Italic);
+            txtDump.ReadOnly = true;
+
             exportMenu.Items.Add("Export to WireShark", null, ExportWireshark);
             exportMenu.Items.Add("Export to Keytab", null, ExportKeytab);
 
-            btnExport.Click += (s, e) => { exportMenu.Show(btnExport, new System.Drawing.Point()); };
+            btnExport.Click += (s, e) =>
+            {
+                exportMenu.Show(btnExport, new Point());
+            };
+
+            splitter1Default = splitContainer1.SplitterDistance;
+            splitter2Default = splitContainer2.SplitterDistance;
+
+            splitContainer1.DoubleClick += (s, e) =>
+            {
+                if (splitContainer1.SplitterDistance >= splitter1Default)
+                {
+                    splitContainer1.SplitterDistance = 5;
+                }
+                else
+                {
+                    splitContainer1.SplitterDistance = splitter1Default;
+                }
+            };
+
+            splitContainer2.DoubleClick += (s, e) =>
+            {
+                if (splitContainer2.SplitterDistance >= splitter2Default)
+                {
+                    splitContainer2.SplitterDistance = 5;
+                }
+                else
+                {
+                    splitContainer2.SplitterDistance = splitter2Default;
+                }
+            };
 
             CryptoService.RegisterCryptographicAlgorithm(EncryptionType.NULL, () => new NoopTransform());
 
@@ -48,6 +88,61 @@ namespace KerbDump
             txtHost.Text = hostName;
 
             TryLoadPersistedSettings();
+        }
+
+        private void CopyNodeValue(object sender, EventArgs e)
+        {
+            if (sender is ToolStripMenuItem item &&
+                item.GetCurrentParent() is ToolStrip menu)
+            {
+                if (menu.Tag is TreeNode node)
+                {
+                    string text = StripEquals(node);
+
+                    Clipboard.SetText(text);
+                }
+                else if (menu.Tag is TreeView tree)
+                {
+                    string text = StripEquals(tree.SelectedNode);
+
+                    Clipboard.SetText(text);
+                }
+            }
+        }
+
+        private static string StripEquals(TreeNode node)
+        {
+            if (string.IsNullOrWhiteSpace(node?.Text))
+            {
+                return null;
+            }
+
+            var text = node.Text;
+
+            var index = text.IndexOf('=');
+
+            if (index > 0)
+            {
+                text = text.Substring(index + 1);
+            }
+
+            return text.Trim();
+        }
+
+        private void CopyNodeText(object sender, EventArgs e)
+        {
+            if (sender is ToolStripMenuItem item &&
+                item.GetCurrentParent() is ToolStrip menu)
+            {
+                if (menu.Tag is TreeNode node)
+                {
+                    Clipboard.SetText(node.Text);
+                }
+                else if (menu.Tag is TreeView tree)
+                {
+                    Clipboard.SetText(tree.SelectedNode?.Text);
+                }
+            }
         }
 
         private void TryLoadPersistedSettings()
@@ -129,14 +224,14 @@ namespace KerbDump
                 ticket = await Decode(txtTicket.Text, key);
             }
 
-            DisplayDeconstructed(ticket, "Decoded Ticket");
+            DisplayDeconstructed(ticket, "Decoded Message");
         }
 
         private KeyTable CreateKeytab()
         {
             var key = table;
 
-            var domain = Environment.GetEnvironmentVariable("USERDNSDOMAIN");
+            var domain = Environment.GetEnvironmentVariable("USERDNSDOMAIN") ?? "";
 
             var host = txtHost.Text;
 
@@ -262,7 +357,7 @@ namespace KerbDump
             {
                 Request = request,
                 Decrypted = decrypted,
-                Identity = new
+                Computed = new
                 {
                     authenticated.Name,
                     authenticated.Restrictions,
@@ -324,11 +419,49 @@ namespace KerbDump
             var settings = new JsonSerializerSettings
             {
                 Formatting = Formatting.Indented,
-                Converters = new JsonConverter[] { new StringEnumArrayConverter(), new BinaryConverter() },
+                Converters = new JsonConverter[] { new StringEnumArrayConverter(), new BinaryConverter(), new PacConverter() },
                 ContractResolver = new KerberosIgnoreResolver()
             };
 
             return JsonConvert.SerializeObject(obj, settings);
+        }
+
+        private class PacConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(RpcFileTime) ||
+                       objectType == typeof(RpcString) ||
+                       objectType == typeof(RpcSid);
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                if (value.GetType() == typeof(RpcFileTime))
+                {
+                    var rpc = (RpcFileTime)value;
+                    var dt = (DateTimeOffset)rpc;
+
+                    var dtConverter = new IsoDateTimeConverter();
+
+                    dtConverter.WriteJson(writer, dt, serializer);
+                }
+                else if (value.GetType() == typeof(RpcString))
+                {
+                    writer.WriteValue(value?.ToString());
+                }
+                else if (value.GetType() == typeof(RpcSid))
+                {
+                    var rpcSid = (RpcSid)value;
+
+                    writer.WriteValue(rpcSid.ToSecurityIdentifier().Value);
+                }
+            }
         }
 
         private class BinaryConverter : JsonConverter
@@ -337,7 +470,11 @@ namespace KerbDump
             {
                 Debug.WriteLine(objectType.Name);
 
-                return objectType == typeof(ReadOnlyMemory<byte>) || objectType == typeof(ReadOnlyMemory<byte>?);
+                return objectType == typeof(ReadOnlyMemory<byte>) ||
+                       objectType == typeof(ReadOnlyMemory<byte>?) ||
+                       objectType == typeof(ReadOnlySequence<byte>) ||
+                       objectType == typeof(ReadOnlyMemory<int>) ||
+                       objectType == typeof(Memory<byte>);
             }
 
             public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
@@ -353,6 +490,10 @@ namespace KerbDump
                 {
                     mem = (ReadOnlyMemory<byte>)value;
                 }
+                else if (value.GetType() == typeof(Memory<byte>))
+                {
+                    mem = (Memory<byte>)value;
+                }
                 else if (value.GetType() == typeof(ReadOnlyMemory<byte>?))
                 {
                     var val = (ReadOnlyMemory<byte>?)value;
@@ -361,6 +502,16 @@ namespace KerbDump
                     {
                         mem = val.Value;
                     }
+                }
+                else if (value.GetType() == typeof(ReadOnlySequence<byte>))
+                {
+                    var val = (ReadOnlySequence<byte>)value;
+
+                    mem = val.ToArray();
+                }
+                else if (value.GetType() == typeof(ReadOnlyMemory<int>))
+                {
+                    mem = MemoryMarshal.Cast<int, byte>(((ReadOnlyMemory<int>)value).Span).ToArray();
                 }
 
                 writer.WriteValue(Convert.ToBase64String(mem.ToArray()));
@@ -381,14 +532,25 @@ namespace KerbDump
 
                 var enumVal = e.ToString().Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
 
-                writer.WriteStartArray();
-
-                foreach (var en in enumVal)
+                if (enumVal.Length == 0)
                 {
-                    writer.WriteValue(en);
+                    writer.WriteNull();
                 }
+                else if (enumVal.Length == 1)
+                {
+                    writer.WriteValue(enumVal.First());
+                }
+                else
+                {
+                    writer.WriteStartArray();
 
-                writer.WriteEndArray();
+                    foreach (var en in enumVal)
+                    {
+                        writer.WriteValue(en);
+                    }
+
+                    writer.WriteEndArray();
+                }
             }
         }
 
@@ -488,32 +650,81 @@ namespace KerbDump
             if (treeView1.Nodes.Count > 0)
             {
                 treeView1.Nodes[0].EnsureVisible();
+                treeView1.Nodes[0].NodeFont = new Font(treeView1.Font, FontStyle.Regular);
             }
 
             treeView1.EndUpdate();
         }
 
-        private void AddNode(JToken token, TreeNode inTreeNode)
+        private TreeNode MakeNode(string display)
+        {
+            var node = new TreeNode(display);
+
+            node.ContextMenuStrip = new ContextMenuStrip { Tag = node };
+
+            if (display.IndexOf(" = ") > 0)
+            {
+                node.ContextMenuStrip.Items.Add("Copy", null, CopyNodeText);
+            }
+
+            node.ContextMenuStrip.Items.Add("Copy Value", null, CopyNodeValue);
+
+            return node;
+        }
+
+        private int AddNode(JToken token, TreeNode inTreeNode)
         {
             if (token == null)
             {
-                return;
+                return 0;
+            }
+
+            if (token.Path.Split('.').Length == 1)
+            {
+                inTreeNode.NodeFont = new Font(this.DefaultTreeFont, FontStyle.Bold);
             }
 
             if (token is JValue)
             {
-                inTreeNode.Nodes.Add(new TreeNode(token.ToString()));
+                inTreeNode.Nodes.Add(MakeNode(token.ToString()));
+
+                return 0;
             }
             else if (token is JObject obj)
             {
+                int children = 0;
+
                 foreach (var property in obj.Properties())
                 {
-                    var childNode = new TreeNode(property.Name);
+                    children++;
 
-                    AddNode(property.Value, childNode);
+                    if (property.Value is JValue)
+                    {
+                        var childNode = MakeNode($"{property.Name} = {property.Value}");
 
-                    inTreeNode.Nodes.Add(childNode);
+                        if (string.IsNullOrWhiteSpace(property.Value.ToString()))
+                        {
+                            childNode.NodeFont = DefaultTreeFont;
+                        }
+
+                        inTreeNode.Nodes.Add(childNode);
+                    }
+                    else
+                    {
+                        var childNode = MakeNode(property.Name);
+
+                        var childrenAdded = AddNode(property.Value, childNode);
+
+                        inTreeNode.Nodes.Add(childNode);
+
+                        if (childrenAdded == 0)
+                        {
+                            childNode.NodeFont = DefaultTreeFont;
+                        }
+                    }
                 }
+
+                return children;
             }
             else if (token is JArray array)
             {
@@ -523,7 +734,14 @@ namespace KerbDump
 
                     if (value.Type == JTokenType.String)
                     {
-                        AddNode(value, inTreeNode);
+                        if (array.Count == 1)
+                        {
+                            inTreeNode.Text += $" = {value}";
+                        }
+                        else
+                        {
+                            AddNode(value, inTreeNode);
+                        }
                     }
                     else
                     {
@@ -544,12 +762,16 @@ namespace KerbDump
                             typeName = i.ToString();
                         }
 
-                        var childNode = inTreeNode.Nodes[inTreeNode.Nodes.Add(new TreeNode(typeName))];
+                        var childNode = inTreeNode.Nodes[inTreeNode.Nodes.Add(MakeNode(typeName))];
 
                         AddNode(value, childNode);
                     }
                 }
+
+                return array.Count;
             }
+
+            return 0;
         }
 
         private static bool TryExtractPropertyForName(JToken value, string type, out string typeName)
@@ -615,6 +837,9 @@ namespace KerbDump
 
         private void btnClear_Click(object sender, EventArgs e)
         {
+            splitContainer1.SplitterDistance = splitter1Default;
+            splitContainer2.SplitterDistance = splitter2Default;
+
             txtTicket.Text = "";
             txtDump.Text = "";
             txtHost.Text = "";
