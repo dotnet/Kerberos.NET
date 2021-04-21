@@ -168,6 +168,9 @@
   <data name="CommandLine_KerberosConfigCommand_Config" xml:space="preserve">
     <value>Provide a path to a particular configuration file.</value>
   </data>
+  <data name="CommandLine_KerberosDecode" xml:space="preserve">
+    <value>Launch a GUI to decode Kerberos tickets.</value>
+  </data>
   <data name="CommandLine_KerberosDestroy" xml:space="preserve">
     <value>Delete the ticket cache.</value>
   </data>

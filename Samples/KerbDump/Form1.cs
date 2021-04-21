@@ -42,6 +42,7 @@ namespace KerbDump
             InitializeComponent();
 
             DefaultTreeFont = new Font(treeView1.Font.FontFamily, treeView1.Font.Size, FontStyle.Italic);
+            txtDump.ReadOnly = true;
 
             exportMenu.Items.Add("Export to WireShark", null, ExportWireshark);
             exportMenu.Items.Add("Export to Keytab", null, ExportKeytab);
