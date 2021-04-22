@@ -22,6 +22,8 @@ You can find the Fiddler extension installer under [releases](https://github.com
 
 The Bruce command line tool is a collection of utilities that let you interact with the Kerberos.NET library components and is available via `dotnet tool install bruce -g`. It includes useful tools for things like ticket cache and keytab management. It also includes the Ticket Decoder utility mentioned below. The tool more or less follows the MIT and Heimdal command line standards, but for more information on all  the tools in the suite type `help` from the Bruce command line.
 
+See this [blog post on how to use the tool](https://syfuhs.net/bruce-a-command-line-kerberos-net-management-tool).
+
 ![](docs/bruce.png?raw=true)
 
 # Cross Platform Support
