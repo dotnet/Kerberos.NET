@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -18,6 +18,16 @@ namespace Kerberos.NET.Crypto
         public static string DumpHex(this ReadOnlyMemory<byte> bytes, int bytesPerLine = 16)
         {
             return HexDump(bytes.ToArray(), bytesPerLine);
+        }
+
+        public static void DumpHex(this ReadOnlyMemory<byte> bytes, Action<string> writeLine, int bytesPerLine = 16)
+        {
+            var lines = HexDump(bytes.ToArray(), bytesPerLine).Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var line in lines)
+            {
+                writeLine(line);
+            }
         }
 
         public static unsafe string DumpHex(this IntPtr pThing, uint length)

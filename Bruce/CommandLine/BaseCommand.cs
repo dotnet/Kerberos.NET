@@ -59,7 +59,7 @@ namespace Kerberos.NET.CommandLine
             return new KerberosClient(config, logger) { CacheInMemory = false };
         }
 
-        private ILoggerFactory CreateVerboseLogger()
+        protected ILoggerFactory CreateVerboseLogger()
         {
             return new KerberosDelegateLogger(
                 (level, cateogry, id, scopeState, logState, exception, log)
