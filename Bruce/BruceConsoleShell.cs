@@ -181,8 +181,12 @@ namespace Kerberos.NET.CommandLine
 
             if (!executed)
             {
+                this.io.Writer.WriteLine();
+
                 command?.DisplayHelp();
             }
+
+            this.io.Writer.WriteLine();
         }
 
         private bool TryProcessSystemCommand(CommandLineParameters parameters, out bool exiting)

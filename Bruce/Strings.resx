@@ -306,6 +306,9 @@
   <data name="CommandLine_KerberosListCommand_Verbose" xml:space="preserve">
     <value>Displays all data about the cache.</value>
   </data>
+  <data name="CommandLine_KerberosPing" xml:space="preserve">
+    <value>Locate and ping a KDC for the provided user to get pre-auth details.</value>
+  </data>
   <data name="CommandLine_KerberosWhoAmI" xml:space="preserve">
     <value>Displays details about the current authenticated user.</value>
   </data>
