@@ -43,6 +43,8 @@ namespace Tests.Kerberos.NET
                     {
                         Clear = () => { },
                         HookCtrlC = hook => { },
+                        ResetColor = () => { },
+                        SetColor = c => { },
                         Reader = reader,
                         Writer = new StringWriter(),
                         ReadKey = () => ReadKey(reader)
