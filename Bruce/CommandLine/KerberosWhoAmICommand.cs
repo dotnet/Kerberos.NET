@@ -3,13 +3,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
-using Kerberos.NET.Client;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
-using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
+using Kerberos.NET.Client;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -54,7 +54,7 @@ namespace Kerberos.NET.CommandLine
 
             if (myTgt == null)
             {
-                this.IO.Writer.WriteLine(SR.Resource("CommandLine_WhoAmI_NoTgt"));
+                this.WriteHeader(SR.Resource("CommandLine_WhoAmI_NoTgt"));
                 return;
             }
 
@@ -76,7 +76,7 @@ namespace Kerberos.NET.CommandLine
 
         private void DescribeTicket(KerberosIdentity identity)
         {
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
 
             var properties = new List<(string, string)>
             {
@@ -116,7 +116,7 @@ namespace Kerberos.NET.CommandLine
                 properties.Add((group.Value, ""));
             }
 
-            var max = properties.Where(p => !string.IsNullOrWhiteSpace(p.Item2)).Max(p => p.Item1.Length) + 5;
+            var max = properties.Where(p => !string.IsNullOrWhiteSpace(p.Item2)).Max(p => p.Item1.Length);
 
             if (max > 50)
             {
@@ -127,9 +127,9 @@ namespace Kerberos.NET.CommandLine
             {
                 if (string.IsNullOrWhiteSpace(prop.Item1))
                 {
-                    this.IO.Writer.WriteLine();
-                    this.IO.Writer.WriteLine(prop.Item2);
-                    this.IO.Writer.WriteLine();
+                    this.WriteLine();
+                    this.WriteHeader(prop.Item2);
+                    this.WriteLine();
                     continue;
                 }
 
@@ -141,14 +141,13 @@ namespace Kerberos.NET.CommandLine
                 }
                 else
                 {
-                    key = string.Format("{0}: ", SR.Resource(prop.Item1)).PadLeft(max).PadRight(max);
+                    key = string.Format("{0}: ", SR.Resource(prop.Item1).PadLeft(max));
                 }
 
-                this.IO.Writer.Write(key);
-                this.IO.Writer.WriteLine(prop.Item2);
+                this.WriteLine(string.Format("  {0}{{Value}}", key), prop.Item2);
             }
 
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
         }
 
         private static string CollapseSchemaUrl(string url)

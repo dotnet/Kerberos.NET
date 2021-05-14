@@ -309,6 +309,9 @@
   <data name="CommandLine_KerberosPing" xml:space="preserve">
     <value>Locate and ping a KDC for the provided user to get pre-auth details.</value>
   </data>
+  <data name="CommandLine_KerberosPing_UserPrincipalName" xml:space="preserve">
+    <value>The User Principal Name used to ping the KDC</value>
+  </data>
   <data name="CommandLine_KerberosWhoAmI" xml:space="preserve">
     <value>Displays details about the current authenticated user.</value>
   </data>

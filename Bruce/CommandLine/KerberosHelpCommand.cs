@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
 using Kerberos.NET.Configuration;
 
@@ -37,14 +36,14 @@ namespace Kerberos.NET.CommandLine
 
         public override Task<bool> Execute()
         {
-            var comm = CommandLoader.CreateCommandExecutor(this.Command, null, this.IO);
+            var comm = CommandLoader.CreateCommandExecutor(this.Command, null, ((ICommand)this).IO);
 
             if (comm == null)
             {
                 if (!string.IsNullOrWhiteSpace(this.Command))
                 {
-                    this.IO.Writer.WriteLine();
-                    this.IO.Writer.WriteLine(SR.Resource("CommandLine_UnknownCommand", this.Command));
+                    this.WriteLine();
+                    this.WriteLine(SR.Resource("CommandLine_UnknownCommand", this.Command));
                 }
 
                 this.DisplayUserDefaults();
@@ -61,9 +60,9 @@ namespace Kerberos.NET.CommandLine
 
         private void DisplayUserDefaults()
         {
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine("   {0}", SR.Resource("CommandLine_Defaults"));
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
+            this.WriteHeader(string.Format("{0}", SR.Resource("CommandLine_Defaults")));
+            this.WriteLine();
 
             var props = new List<(string, string)>()
             {
@@ -82,17 +81,17 @@ namespace Kerberos.NET.CommandLine
 
         private void WriteProperty(string key, string value, int padding)
         {
-            this.IO.Writer.WriteLine("{0}: {1}",
-                key.PadLeft(padding).PadRight(padding), value);
+            this.WriteLine(string.Format("{0}: {{Value}}",
+                key.PadLeft(padding).PadRight(padding)), value);
         }
 
         private void ListCommands()
         {
             var types = CommandLoader.LoadTypes().OrderBy(t => t.GetCustomAttribute<CommandLineCommandAttribute>().Command);
 
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine("   {0}", SR.Resource("CommandLine_Commands"));
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
+            this.WriteHeader(string.Format("{0}", SR.Resource("CommandLine_Commands")));
+            this.WriteLine();
 
             var max = types.Max(t => t.GetCustomAttribute<CommandLineCommandAttribute>().Command.Length) + 10;
 
@@ -100,22 +99,22 @@ namespace Kerberos.NET.CommandLine
             {
                 var attr = type.GetCustomAttribute<CommandLineCommandAttribute>();
 
-                this.IO.Writer.Write(attr.Command.PadLeft(attr.Command.Length + 3).PadRight(max));
+                var label = attr.Command.PadLeft(attr.Command.Length + 3).PadRight(max);
 
                 var descName = "CommandLine_" + attr.Description;
                 var desc = SR.Resource(descName);
 
                 if (string.Equals(descName, desc, StringComparison.OrdinalIgnoreCase))
                 {
-                    this.IO.Writer.WriteLine(attr.Description);
+                    this.WriteLine(string.Format("{0}{{Label}}", label), attr.Description);
                 }
                 else
                 {
-                    this.IO.Writer.WriteLine(desc);
+                    this.WriteLine(string.Format("{0}{{Label}}", label), desc);
                 }
             }
 
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
         }
     }
 }

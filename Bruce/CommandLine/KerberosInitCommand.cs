@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
@@ -123,7 +122,7 @@ namespace Kerberos.NET.CommandLine
                 return true;
             }
 
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
 
             var client = this.CreateClient(verbose: this.Verbose);
 
@@ -148,8 +147,8 @@ namespace Kerberos.NET.CommandLine
 
             if (cred == null)
             {
-                this.IO.Writer.WriteLine(SR.Resource("CommandLine_KerberosInitCommand_CredNotFound"));
-                this.IO.Writer.WriteLine();
+                this.WriteLine(SR.Resource("CommandLine_KerberosInitCommand_CredNotFound"));
+                this.WriteLine();
                 return true;
             }
 
@@ -273,7 +272,7 @@ namespace Kerberos.NET.CommandLine
             }
             else
             {
-                this.IO.Writer.Write(
+                ((ICommand)this).IO.Writer.Write(
                     SR.Resource("CommandLine_KInit_PassPrompt",
                         this.UserPrincipalName
                     )
@@ -298,15 +297,15 @@ namespace Kerberos.NET.CommandLine
 
             try
             {
-                this.IO.HookCtrlC(true);
+                ((ICommand)this).IO.HookCtrlC(true);
 
                 do
                 {
-                    ConsoleKeyInfo key = this.IO.ReadKey();
+                    ConsoleKeyInfo key = ((ICommand)this).IO.ReadKey();
 
                     if (key.Modifiers.HasFlag(ConsoleModifiers.Control) && key.Key == ConsoleKey.C)
                     {
-                        this.IO.Writer.WriteLine();
+                        this.WriteLine();
                         return null;
                     }
                     else if (key.Key != ConsoleKey.Backspace &&
@@ -315,16 +314,16 @@ namespace Kerberos.NET.CommandLine
                     {
                         masked += key.KeyChar;
 
-                        this.IO.Writer.Write("*");
+                        ((ICommand)this).IO.Writer.Write("*");
                     }
                     else if (key.Key == ConsoleKey.Backspace && masked.Length > 0)
                     {
-                        this.IO.Writer.Write("\b \b");
+                        ((ICommand)this).IO.Writer.Write("\b \b");
                         masked = masked.Substring(0, masked.Length - 1);
                     }
                     else if (key.Key == ConsoleKey.Enter)
                     {
-                        this.IO.Writer.WriteLine();
+                        ((ICommand)this).IO.Writer.WriteLine();
                         break;
                     }
                 }
@@ -334,7 +333,7 @@ namespace Kerberos.NET.CommandLine
             }
             finally
             {
-                this.IO.HookCtrlC(false);
+                ((ICommand)this).IO.HookCtrlC(false);
             }
         }
     }

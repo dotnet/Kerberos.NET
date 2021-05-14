@@ -637,6 +637,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The User Principal Name used to ping the KDC.
+        /// </summary>
+        internal static string CommandLine_KerberosPing_UserPrincipalName {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPing_UserPrincipalName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Displays details about the current authenticated user..
         /// </summary>
         internal static string CommandLine_KerberosWhoAmI {

@@ -43,25 +43,25 @@ namespace Kerberos.NET.CommandLine
                 this.WriteUsage(use.Item1, use.Item2, max);
             }
 
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine(SR.Resource("CommandLine_Config_DotHelp"));
-            this.IO.Writer.WriteLine(SR.Resource("CommandLine_Config_DotHelpEscaped"));
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine(SR.Resource("CommandLine_Example"));
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine("libdefaults.default_tgs_enctypes=aes");
-            this.IO.Writer.WriteLine("realms.\"EXAMPLE.COM\".kdc=server.example.com");
-            this.IO.Writer.WriteLine("+realms.\"EXAMPLE.COM\".kdc=server.example.com");
+            this.WriteLine();
+            this.WriteLine("   " + SR.Resource("CommandLine_Config_DotHelp"));
+            this.WriteLine("   " + SR.Resource("CommandLine_Config_DotHelpEscaped"));
+            this.WriteLine();
+            this.WriteHeader(SR.Resource("CommandLine_Example"));
+            this.WriteLine();
+            this.WriteLine("   libdefaults.default_tgs_enctypes=aes");
+            this.WriteLine("   realms.\"EXAMPLE.COM\".kdc=server.example.com");
+            this.WriteLine("   +realms.\"EXAMPLE.COM\".kdc=server.example.com");
 
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
         }
 
         private void WriteUsage(string use, string desc, int padding)
         {
             var command = string.Format("{0} {1}", this.Parameters.Command, use);
 
-            this.IO.Writer.Write(command.PadLeft(10).PadRight(padding + 10));
-            this.IO.Writer.WriteLine(SR.Resource(desc));
+            var label = command.PadLeft(10).PadRight(padding + 10);
+            this.WriteLine(string.Format("   {0}{{Label}}", label), SR.Resource(desc));
         }
 
         public override async Task<bool> Execute()
@@ -169,7 +169,7 @@ namespace Kerberos.NET.CommandLine
         {
             if (IsParameter(param, out string designator))
             {
-                param = param.Substring(designator.Length);
+                param = param[designator.Length..];
             }
 
             return "c".Equals(param, StringComparison.OrdinalIgnoreCase) ||
@@ -180,9 +180,9 @@ namespace Kerberos.NET.CommandLine
         {
             var configStr = config.Serialize();
 
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
 
-            this.IO.Writer.WriteLine(configStr);
+            this.WriteLineRaw(configStr);
         }
     }
 }
