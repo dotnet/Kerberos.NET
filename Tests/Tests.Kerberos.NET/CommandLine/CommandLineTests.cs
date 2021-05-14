@@ -81,7 +81,7 @@ namespace Tests.Kerberos.NET
             textWriter.Flush();
             var str = textWriter.ToString();
 
-            Assert.IsTrue(str.StartsWith("Usage: kinit principal", System.StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(str.Trim().StartsWith("Usage: kinit principal", System.StringComparison.OrdinalIgnoreCase));
         }
 
         [TestMethod]

@@ -104,6 +104,8 @@ namespace Tests.Kerberos.NET
             {
                 Clear = () => { },
                 HookCtrlC = hook => { },
+                ResetColor = () => { },
+                SetColor = c => { },
                 Writer = new StringWriter()
             };
 

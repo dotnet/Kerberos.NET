@@ -44,25 +44,22 @@ namespace Kerberos.NET.CommandLine
                 return false;
             }
 
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
 
             var client = this.CreateClient(verbose: this.Verbose);
-            var logger = this.Verbose ? CreateVerboseLogger() : NullLoggerFactory.Instance;
-
-            ILogger infoLogger = this.Verbose ? logger.CreateLogger("Information") : CreateVerboseLogger().CreateLogger("Information");
-            ILogger errorLogger = this.Verbose ? logger.CreateLogger("Error") : CreateVerboseLogger().CreateLogger("Error");
+            var logger = this.Verbose ? CreateVerboseLogger(labels: true) : NullLoggerFactory.Instance;
 
             var credential = new KerberosPasswordCredential(this.UserPrincipalName, "password not required for this");
 
             if (string.IsNullOrWhiteSpace(credential.UserName))
             {
-                errorLogger.LogWarning("UserPrincipalName is required");
+                this.WriteLineWarning("UserPrincipalName is required");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(credential.Domain))
             {
-                errorLogger.LogWarning("Domain could not be determined from username '{UserName}'", credential.UserName);
+                this.WriteLineWarning("Domain could not be determined from username '{UserName}'", credential.UserName);
                 return false;
             }
 
@@ -90,13 +87,13 @@ namespace Kerberos.NET.CommandLine
 
                 if (asRep?.Ticket != null)
                 {
-                    errorLogger.LogError("Danger: The principal {PrincipalName} does not require pre-authentication", asRep.CName.FullyQualifiedName);
-                    errorLogger.LogError("Pre-authentication should be enabled ASAP");
+                    this.WriteLineError("Danger: The principal {PrincipalName} does not require pre-authentication", asRep.CName.FullyQualifiedName);
+                    this.WriteLineError("Pre-authentication should be enabled ASAP");
                 }
             }
             catch (KerberosProtocolException pex)
             {
-                WritePreAuthRequirement(infoLogger, credential, pex);
+                WritePreAuthRequirement(credential, pex);
             }
             catch (AggregateException gex)
             {
@@ -110,7 +107,7 @@ namespace Kerberos.NET.CommandLine
         {
             if (this.Verbose)
             {
-                this.IO.Writer.WriteLine();
+                this.WriteLine();
             }
 
             ILogger errorLog;
@@ -130,34 +127,34 @@ namespace Kerberos.NET.CommandLine
             }
         }
 
-        private void WritePreAuthRequirement(ILogger infoLogger, KerberosPasswordCredential credential, KerberosProtocolException pex)
+        private void WritePreAuthRequirement(KerberosPasswordCredential credential, KerberosProtocolException pex)
         {
             if (this.Verbose)
             {
-                this.IO.Writer.WriteLine();
+                this.WriteLine();
             }
 
             var errorCode = pex.Error.ErrorCode;
 
-            infoLogger.LogInformation("{ErrorCode}: {ErrorText}", pex.Error.ErrorCode, pex.Error.EText.Replace(pex.Error.ErrorCode.ToString() + ": ", ""));
-            infoLogger.LogInformation("");
+            this.WriteLine("   {ErrorCode}: {ErrorText}", pex.Error.ErrorCode, pex.Error.EText.Replace(pex.Error.ErrorCode.ToString() + ": ", ""));
+            this.WriteLine("");
 
             if (!string.IsNullOrWhiteSpace(pex.Error.Realm))
             {
-                infoLogger.LogInformation("\tRealm: {Realm}", pex.Error.Realm);
+                this.WriteLine("   Realm: {Realm}", pex.Error.Realm);
             }
 
             if (pex.Error.CName != null)
             {
-                infoLogger.LogInformation("\tClient: {CName}", pex.Error.CName.FullyQualifiedName);
+                this.WriteLine("   Client: {CName}", pex.Error.CName.FullyQualifiedName);
             }
 
             if (pex.Error.SName != null)
             {
-                infoLogger.LogInformation("\tServer: {SName}", pex.Error.SName.FullyQualifiedName);
+                this.WriteLine("   Server: {SName}", pex.Error.SName.FullyQualifiedName);
             }
 
-            infoLogger.LogInformation("");
+            this.WriteLine("");
 
             if (pex.Error.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
             {
@@ -170,29 +167,30 @@ namespace Kerberos.NET.CommandLine
             {
                 foreach (var pa in paData)
                 {
-                    infoLogger.LogInformation("- PA-Data Type: {PAType} ({PATypeValue})", pa.Type, (int)pa.Type);
+                    this.WriteLine("   - PA-Data Type: {PAType} ({PATypeValue})", pa.Type, (int)pa.Type);
 
                     if (pa.Type != PaDataType.PA_ETYPE_INFO2)
                     {
                         if (pa.Value.Length > 0)
                         {
-                            Hex.DumpHex(pa.Value, str => infoLogger.LogInformation("\t {Value}", str), bytesPerLine: pa.Value.Length > 16 ? 16 : 8);
+                            this.WriteLine();
+                            Hex.DumpHex(pa.Value, str => this.WriteLine("      {Value}", str), bytesPerLine: pa.Value.Length > 16 ? 16 : 8);
                         }
                         else
                         {
-                            infoLogger.LogInformation("\t {PaValue}", (string)null);
+                            this.WriteLine("      {PaValue}", (string)null);
                         }
 
-                        infoLogger.LogInformation("");
+                        this.WriteLine("");
 
                         continue;
                     }
 
                     var etypeData = pa.DecodeETypeInfo2();
 
-                    infoLogger.LogInformation("");
-                    infoLogger.LogInformation("\t - KDC Supported ETypes for principal {PrincipalName}", credential.UserName);
-                    infoLogger.LogInformation("");
+                    this.WriteLine("");
+                    this.WriteLine("    - KDC Supported ETypes for principal {PrincipalName}", credential.UserName);
+                    this.WriteLine("");
 
                     foreach (var etype in etypeData)
                     {
@@ -203,10 +201,10 @@ namespace Kerberos.NET.CommandLine
                             s2k = Hex.DumpHex(etype.S2kParams.Value);
                         }
 
-                        infoLogger.LogInformation("\t   Etype: {EType}", etype.EType);
-                        infoLogger.LogInformation("\t    Salt: {Salt}", etype.Salt);
-                        infoLogger.LogInformation("\t     S2K: {S2kParams}", s2k);
-                        infoLogger.LogInformation("");
+                        this.WriteLine("       Etype: {EType}", etype.EType);
+                        this.WriteLine("        Salt: {Salt}", etype.Salt);
+                        this.WriteLine("         S2K: {S2kParams}", s2k);
+                        this.WriteLine("");
                     }
                 }
             }
