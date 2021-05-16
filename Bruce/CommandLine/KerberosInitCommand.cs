@@ -23,19 +23,17 @@ namespace Kerberos.NET.CommandLine
         {
         }
 
-        public string DefaultDomain => Environment.GetEnvironmentVariable("USERDNSDOMAIN");
-
         [CommandLineParameter("principal",
             FormalParameter = true,
             Required = true,
             Description = "UserPrincipalName")]
-        public string UserPrincipalName { get; set; }
+        public override string UserPrincipalName { get; set; }
 
         [CommandLineParameter("realm", Description = "RealmName")]
-        public string Realm { get; set; }
+        public override string Realm { get; set; }
 
         [CommandLineParameter("V|verbose", Description = "Verbose")]
-        public bool Verbose { get; set; }
+        public override bool Verbose { get; protected set; }
 
         [CommandLineParameter("l|lifetime", Description = "LifeTime")]
         public TimeSpan? Lifetime { get; set; }
@@ -103,7 +101,7 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("extra-addresses", Description = "ExtraAddr")]
         public ICollection<string> ExtraAddresses { get; private set; } = new List<string>();
 
-        [CommandLineParameter("C|cert|pk-user", Description = "Certificate")]
+        [CommandLineParameter("cert|pk-user", Description = "Certificate")]
         public string Certificate { get; set; }
 
         [CommandLineParameter("kdc|kdc-hostname", Description = "KdcHostname")]
@@ -236,26 +234,14 @@ namespace Kerberos.NET.CommandLine
 
         private KerberosCredential ParseCredential(Krb5Config config)
         {
-            var domain = this.DefaultDomain;
-
-            if (!string.IsNullOrWhiteSpace(this.Realm))
+            if (this.Certificate != null)
             {
-                domain = this.Realm;
-            }
+                if (this.Certificate == string.Empty)
+                {
+                    this.Certificate = this.UserPrincipalName;
+                }
 
-            if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
-            {
-                this.UserPrincipalName = Environment.UserName;
-            }
-
-            if (!this.UserPrincipalName.Contains("@"))
-            {
-                this.UserPrincipalName = $"{this.UserPrincipalName}@{domain}";
-            }
-
-            if (!string.IsNullOrWhiteSpace(this.Certificate))
-            {
-                return KerberosAsymmetricCredential.Get(this.Certificate, domain);
+                return KerberosAsymmetricCredential.Get(this.Certificate, this.Realm);
             }
             else if (this.UseKeytab || !string.IsNullOrWhiteSpace(this.Keytab))
             {
@@ -268,7 +254,7 @@ namespace Kerberos.NET.CommandLine
 
                 var kt = new KeyTable(File.ReadAllBytes(Environment.ExpandEnvironmentVariables(keytab)));
 
-                return new KeytabCredential(this.UserPrincipalName, kt, domain);
+                return new KeytabCredential(this.UserPrincipalName, kt, this.Realm);
             }
             else
             {
@@ -285,7 +271,7 @@ namespace Kerberos.NET.CommandLine
                     return null;
                 }
 
-                var cred = new KerberosPasswordCredential(this.UserPrincipalName, password, domain);
+                var cred = new KerberosPasswordCredential(this.UserPrincipalName, password, this.Realm);
 
                 return cred;
             }

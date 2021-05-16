@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -243,7 +243,7 @@ namespace Kerberos.NET.Entities.Pac
             => this.GroupIds?.Select(g => SecurityIdentifier.FromRpcSid(this.DomainId, g.RelativeId, g.Attributes)) ?? EmptySid;
 
         public IEnumerable<SecurityIdentifier> ExtraSids
-            => this.ExtraIds?.Select(g => g.Sid.ToSecurityIdentifier()) ?? EmptySid;
+            => this.ExtraIds?.Select(g => g.ToSecurityIdentifier()) ?? EmptySid;
 
         public SecurityIdentifier ResourceDomainSid
             => this.ResourceDomainId?.ToSecurityIdentifier();

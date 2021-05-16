@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -44,14 +45,14 @@ namespace Kerberos.NET.CommandLine
             }
 
             this.WriteLine();
-            this.WriteLine("   " + SR.Resource("CommandLine_Config_DotHelp"));
-            this.WriteLine("   " + SR.Resource("CommandLine_Config_DotHelpEscaped"));
+            this.WriteLine(2, SR.Resource("CommandLine_Config_DotHelp"));
+            this.WriteLine(2, SR.Resource("CommandLine_Config_DotHelpEscaped"));
             this.WriteLine();
             this.WriteHeader(SR.Resource("CommandLine_Example"));
             this.WriteLine();
-            this.WriteLine("   libdefaults.default_tgs_enctypes=aes");
-            this.WriteLine("   realms.\"EXAMPLE.COM\".kdc=server.example.com");
-            this.WriteLine("   +realms.\"EXAMPLE.COM\".kdc=server.example.com");
+            this.WriteLine(2, "libdefaults.default_tgs_enctypes=aes");
+            this.WriteLine(2, "realms.\"EXAMPLE.COM\".kdc=server.example.com");
+            this.WriteLine(2, "+realms.\"EXAMPLE.COM\".kdc=server.example.com");
 
             this.WriteLine();
         }
@@ -76,9 +77,7 @@ namespace Kerberos.NET.CommandLine
                 this.WriteConfiguration();
             }
 
-            var client = this.CreateClient();
-
-            this.ListConfiguration(client.Configuration);
+            this.ListConfiguration();
 
             return true;
         }
@@ -167,7 +166,7 @@ namespace Kerberos.NET.CommandLine
 
         private static bool IsConfigParam(string param)
         {
-            if (IsParameter(param, out string designator))
+            if (CommandLineParameters.IsParameter(param, out string designator))
             {
                 param = param[designator.Length..];
             }
@@ -176,13 +175,24 @@ namespace Kerberos.NET.CommandLine
                    "config".Equals(param, StringComparison.OrdinalIgnoreCase);
         }
 
-        private void ListConfiguration(Krb5Config config)
+        private void ListConfiguration()
         {
-            var configStr = config.Serialize();
+            var client = this.CreateClient();
+
+            var props = new List<(string, string)>()
+            {
+                (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfiguration),
+            };
+
+            WriteLine();
+
+            WriteProperties(props);
+
+            var configStr = client.Configuration.Serialize();
 
             this.WriteLine();
 
-            this.WriteLineRaw(configStr);
+            this.WriteLineRaw("   " + configStr.Replace(Environment.NewLine, Environment.NewLine + "   "));
         }
     }
 }

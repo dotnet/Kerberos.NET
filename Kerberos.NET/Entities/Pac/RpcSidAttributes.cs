@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -45,6 +45,11 @@ namespace Kerberos.NET.Entities.Pac
 
         public void UnmarshalConformance(NdrBuffer buffer)
         {
+        }
+
+        public SecurityIdentifier ToSecurityIdentifier()
+        {
+            return SecurityIdentifier.FromRpcSid(this.Sid, attributes: this.Attributes);
         }
     }
 }

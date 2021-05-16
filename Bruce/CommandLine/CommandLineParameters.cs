@@ -14,6 +14,17 @@ namespace Kerberos.NET.CommandLine
     {
         private static HashSet<string> IgnoredParameters = new HashSet<string>() { "--silent" };
 
+        public static readonly IEnumerable<string> ParameterDesignators = new[] { "/", "--", "-" };
+
+        public CommandLineParameters WithCommand(string command)
+        {
+            return new CommandLineParameters
+            {
+                Command = command,
+                Parameters = this.Parameters
+            };
+        }
+
         public static CommandLineParameters Parse(string commandLine)
         {
             if (string.IsNullOrWhiteSpace(commandLine))
@@ -30,9 +41,25 @@ namespace Kerberos.NET.CommandLine
 
             return new CommandLineParameters
             {
-                Command = split[0],
+                Command = IsParameter(split[0], out _) ? "" : split[0],
                 Parameters = split.Length > 1 ? ParseArguments(split[1]) : Array.Empty<string>()
             };
+        }
+
+        public static bool IsParameter(string parameter, out string designator)
+        {
+            designator = null;
+
+            foreach (var des in ParameterDesignators)
+            {
+                if (parameter.StartsWith(des))
+                {
+                    designator = des;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static string[] ParseArguments(string argv)

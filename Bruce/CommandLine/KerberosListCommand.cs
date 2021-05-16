@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -35,13 +34,16 @@ namespace Kerberos.NET.CommandLine
         public bool ShortFormFlags { get; set; }
 
         [CommandLineParameter("v|verbose", EnforceCasing = false, Description = "Verbose")]
-        public bool Verbose { get; set; }
+        public override bool Verbose { get; protected set; }
 
         [CommandLineParameter("l|list-caches", Description = "ListCaches")]
         public bool ListCaches { get; set; }
 
         [CommandLineParameter("get", Description = "Get")]
         public string ServicePrincipalName { get; set; }
+
+        [CommandLineParameter("d|debug", Description = "DescribeClient")]
+        public bool DescribeClient { get; set; }
 
         public override async Task<bool> Execute()
         {
@@ -76,7 +78,22 @@ namespace Kerberos.NET.CommandLine
 
             this.ListTickets(client.Configuration.Defaults.DefaultCCacheName);
 
+            if (this.DescribeClient)
+            {
+                this.DescribeClientDetails(client);
+            }
+
             return true;
+        }
+
+        private void DescribeClientDetails(KerberosClient client)
+        {
+            this.WriteLine();
+            this.WriteHeader(SR.Resource("CommandLine_KList_ClientDetails"));
+
+            this.WriteLine();
+
+            this.IO.ListProperties(client);
         }
 
         private async Task GetServiceTicket(KerberosClient client)
@@ -139,8 +156,8 @@ namespace Kerberos.NET.CommandLine
                 {
                     (SR.Resource("CommandLine_KList_Client"), ("{CName} @ {Realm}", new[] { ticket.Client.FullyQualifiedName, ticket.Client.Realm })),
                     (SR.Resource("CommandLine_KList_Server"), ("{SName} @ {Realm}", new[] { ticket.Server.FullyQualifiedName, ticket.Server.Realm })),
-                    (SR.Resource("CommandLine_KList_TicketEType"), ("{EType}", new object[] { decodedTicket?.EncryptedPart?.EType })),  
-                    (SR.Resource("CommandLine_KList_Flags"), ("{Flags}", new object[] { ticket.Flags })),
+                    (SR.Resource("CommandLine_KList_TicketEType"), ("{EType} ({ETypeInt})", new object[] { decodedTicket?.EncryptedPart?.EType, (int)decodedTicket?.EncryptedPart?.EType })),
+                    (SR.Resource("CommandLine_KList_Flags"), ("{FlagsHex:x} -> {Flags}", new object[] { (uint)ticket.Flags, ticket.Flags })),
                     (SR.Resource("CommandLine_KList_Start"), ("{StartTime}", new object[] { ticket.AuthTime.ToLocalTime() })),
                     (SR.Resource("CommandLine_KList_End"), ("{EndTime}", new object[] { ticket.EndTime.ToLocalTime() })),
                     (SR.Resource("CommandLine_KList_RenewTime"), ("{RenewTime}", new object[] { ticket.RenewTill.ToLocalTime() }))

@@ -10,7 +10,8 @@ namespace Kerberos.NET.CommandLine
 {
     class Program
     {
-        static async Task Main(string[] args)
+        [STAThread]
+        static void Main(string[] args)
         {
             DnsQuery.RegisterImplementation(new PlatformIndependentDnsClient());
 
@@ -39,7 +40,7 @@ namespace Kerberos.NET.CommandLine
                 Silent = args.Any(a => string.Equals("--silent", a, StringComparison.InvariantCultureIgnoreCase))
             };
 
-            await shell.Start();
+            shell.Start().Wait();
         }
     }
 }

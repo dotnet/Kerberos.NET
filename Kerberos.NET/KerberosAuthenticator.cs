@@ -351,6 +351,11 @@ namespace Kerberos.NET
                 throw new ArgumentNullException(nameof(claims));
             }
 
+            if (pac?.CredentialType != null)
+            {
+                claims.Add(new Claim(ClaimTypes.GroupSid, "S-1-5-65-1"));
+            }
+
             var domainSid = logonInfo.DomainSid.Value;
 
             AddSids(claims, domainSid, logonInfo.GroupSids);
@@ -378,7 +383,7 @@ namespace Kerberos.NET
                 {
                     var friendly = SecurityIdentifierNames.GetFriendlyName(sid, domainSid);
 
-                    if (!sid.Equals(friendly, StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(friendly))
                     {
                         claims.Add(new Claim(ClaimTypes.Role, friendly));
                     }

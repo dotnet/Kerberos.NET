@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <PackageReference Include="DnsClient" Version="1.4.0" />
+    <PackageReference Include="Humanizer.Core" Version="2.10.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 
@@ -11,6 +12,12 @@ namespace Kerberos.NET.Entities.Pac
 {
     public class SecurityIdentifier
     {
+        public static class WellKnown
+        {
+            public static readonly SecurityIdentifier ThisOrganizationCertificate
+                = new SecurityIdentifier(IdentifierAuthority.NTAuthority, new uint[] { 65, 1 }, SidAttributes.SE_GROUP_ENABLED);
+        }
+
         private readonly IdentifierAuthority authority;
         private readonly uint[] subAuthorities;
 
@@ -126,14 +133,31 @@ namespace Kerberos.NET.Entities.Pac
     [Flags]
     public enum SidAttributes : uint
     {
+        [Description("Mandatory Group")]
         SE_GROUP_MANDATORY = 0x00000001,
+
+        [Description("Enabled by Default")]
         SE_GROUP_ENABLED_BY_DEFAULT = 0x00000002,
+
+        [Description("Group Enabled")]
         SE_GROUP_ENABLED = 0x00000004,
+
+        [Description("Owner")]
         SE_GROUP_OWNER = 0x00000008,
+
+        [Description("Deny Only")]
         SE_GROUP_USE_FOR_DENY_ONLY = 0x00000010,
+
+        [Description("Integrity")]
         SE_GROUP_INTEGRITY = 0x00000020,
+
+        [Description("Integrity Enabled")]
         SE_GROUP_INTEGRITY_ENABLED = 0x00000040,
+
+        [Description("Group Resource")]
         SE_GROUP_RESOURCE = 0x20000000,
+
+        [Description("Logon Id")]
         SE_GROUP_LOGON_ID = 0xC0000000
     }
 

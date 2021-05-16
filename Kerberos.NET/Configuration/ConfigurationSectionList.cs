@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Reflection;
 
 namespace Kerberos.NET.Configuration
 {
@@ -358,15 +359,15 @@ namespace Kerberos.NET.Configuration
 
             var propertyType = value.GetType();
 
-            if (IsDictionary(propertyType))
+            if (Reflect.IsDictionary(propertyType))
             {
                 AddDictionary(config, value);
             }
-            else if (IsEnumerable(propertyType))
+            else if (Reflect.IsEnumerable(propertyType))
             {
                 AddList(config, name, value, propertyType, attributes);
             }
-            else if (IsPrimitive(propertyType))
+            else if (Reflect.IsPrimitive(propertyType))
             {
                 AddPrimitive(config, name, value, attributes);
             }
@@ -483,7 +484,7 @@ namespace Kerberos.NET.Configuration
                 {
                     var val = dict[key];
 
-                    if (IsPrimitive(val.GetType()))
+                    if (Reflect.IsPrimitive(val.GetType()))
                     {
                         AddValue(config, val, key.ToString(), null);
                     }
@@ -534,17 +535,17 @@ namespace Kerberos.NET.Configuration
                 return this.Get(baseName, propertyType);
             }
 
-            if (IsDictionary(propertyType))
+            if (Reflect.IsDictionary(propertyType))
             {
                 return this.CreatePropertyAsDictionary(propertyType, baseName);
             }
 
-            if (IsEnumerable(propertyType))
+            if (Reflect.IsEnumerable(propertyType))
             {
                 return this.CreatePropertyAsList(propertyType, baseName);
             }
 
-            if (IsPrimitive(propertyType))
+            if (Reflect.IsPrimitive(propertyType))
             {
                 return this.Get(baseName, propertyType);
             }
@@ -566,7 +567,7 @@ namespace Kerberos.NET.Configuration
 
                 try
                 {
-                    if (IsDictionary(property.PropertyType))
+                    if (Reflect.IsDictionary(property.PropertyType))
                     {
                         value = this.CreateProperty(property.PropertyType, name);
                     }
@@ -826,32 +827,6 @@ namespace Kerberos.NET.Configuration
             }
 
             return $"{basePath}.{name}";
-        }
-
-        private static bool IsPrimitive(Type propertyType)
-        {
-            return propertyType.IsPrimitive ||
-                   propertyType == typeof(string) ||
-                   propertyType == typeof(TimeSpan) ||
-                   propertyType.BaseType == typeof(Enum);
-        }
-
-        private static bool IsDictionary(Type propertyType)
-        {
-            return propertyType.IsGenericType && (
-                propertyType.GetGenericTypeDefinition() == typeof(IDictionary<,>) ||
-                propertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>) ||
-                propertyType.GetGenericTypeDefinition() == typeof(ConfigurationDictionary<,>)
-            );
-        }
-
-        private static bool IsEnumerable(Type propertyType)
-        {
-            return propertyType.IsGenericType && (
-                propertyType.GetGenericTypeDefinition() == typeof(ICollection<>) ||
-                propertyType.GetGenericTypeDefinition() == typeof(IEnumerable<>) ||
-                propertyType.GetGenericTypeDefinition() == typeof(List<>)
-            );
         }
     }
 }
