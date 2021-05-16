@@ -65,6 +65,8 @@ namespace Kerberos.NET.Credentials
             }
         }
 
+        public static bool CanPrompt { get; set; } = Environment.UserInteractive;
+
         /// <summary>
         /// The certificate used during client authentication.
         /// </summary>
@@ -149,7 +151,10 @@ namespace Kerberos.NET.Credentials
 
                 foreach (var cert in store.Certificates)
                 {
-                    if (string.Equals(query, cert.Subject, StringComparison.InvariantCultureIgnoreCase))
+                    if (string.Equals(query, cert.GetNameInfo(X509NameType.UpnName, false), StringComparison.InvariantCultureIgnoreCase) ||
+                        string.Equals(query, cert.GetNameInfo(X509NameType.DnsName, false), StringComparison.InvariantCultureIgnoreCase) ||
+                        string.Equals(query, cert.GetNameInfo(X509NameType.DnsFromAlternativeName, false), StringComparison.InvariantCultureIgnoreCase) ||
+                        string.Equals(query, cert.GetNameInfo(X509NameType.SimpleName, false), StringComparison.InvariantCultureIgnoreCase))
                     {
                         return new KerberosAsymmetricCredential(cert, query, realmHint);
                     }
@@ -227,8 +232,8 @@ namespace Kerberos.NET.Credentials
             );
 
             var signer = new CmsSigner(this.Certificate) { IncludeOption = this.IncludeOption };
-
-            signed.ComputeSignature(signer, silent: true);
+ 
+            signed.ComputeSignature(signer, silent: !CanPrompt);
 
             var pk = new KrbPaPkAsReq { SignedAuthPack = signed.Encode() };
 

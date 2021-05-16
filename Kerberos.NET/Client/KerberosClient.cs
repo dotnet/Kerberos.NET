@@ -101,6 +101,7 @@ namespace Kerberos.NET.Client
         /// <summary>
         /// The custom configuration this client should use when making Kerberos requests.
         /// </summary>
+        [KerberosIgnore]
         public Krb5Config Configuration { get; }
 
         /// <summary>
@@ -145,6 +146,7 @@ namespace Kerberos.NET.Client
         /// <summary>
         /// The cache that stores tickets for this client instance
         /// </summary>
+        [KerberosIgnore]
         public ITicketCache Cache
         {
             get
@@ -204,7 +206,7 @@ namespace Kerberos.NET.Client
         /// </summary>
         public string DefaultDomain
         {
-            get => this.Configuration.Defaults.DefaultRealm;
+            get => this.Configuration.Defaults.DefaultRealm ?? this.Cache.DefaultDomain;
             protected set => this.Configuration.Defaults.DefaultRealm = value;
         }
 
@@ -221,9 +223,16 @@ namespace Kerberos.NET.Client
         {
             get
             {
-                var tgt = this.CopyTicket($"krbtgt/{this.DefaultDomain}");
+                try
+                {
+                    var tgt = this.CopyTicket($"krbtgt/{this.DefaultDomain}");
 
-                return tgt.KdcResponse.CName.FullyQualifiedName;
+                    return tgt.KdcResponse.CName.FullyQualifiedName;
+                }
+                catch (InvalidOperationException)
+                {
+                    return null;
+                }
             }
         }
 

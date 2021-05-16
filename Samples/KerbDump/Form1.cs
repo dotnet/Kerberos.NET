@@ -15,6 +15,7 @@ using Kerberos.NET;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Reflection;
 using Kerberos.NET.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -484,35 +485,7 @@ namespace KerbDump
 
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
             {
-                ReadOnlyMemory<byte> mem = default;
-
-                if (value.GetType() == typeof(ReadOnlyMemory<byte>))
-                {
-                    mem = (ReadOnlyMemory<byte>)value;
-                }
-                else if (value.GetType() == typeof(Memory<byte>))
-                {
-                    mem = (Memory<byte>)value;
-                }
-                else if (value.GetType() == typeof(ReadOnlyMemory<byte>?))
-                {
-                    var val = (ReadOnlyMemory<byte>?)value;
-
-                    if (val != null)
-                    {
-                        mem = val.Value;
-                    }
-                }
-                else if (value.GetType() == typeof(ReadOnlySequence<byte>))
-                {
-                    var val = (ReadOnlySequence<byte>)value;
-
-                    mem = val.ToArray();
-                }
-                else if (value.GetType() == typeof(ReadOnlyMemory<int>))
-                {
-                    mem = MemoryMarshal.Cast<int, byte>(((ReadOnlyMemory<int>)value).Span).ToArray();
-                }
+                Reflect.IsBytes(value, out ReadOnlyMemory<byte> mem);
 
                 writer.WriteValue(Convert.ToBase64String(mem.ToArray()));
             }

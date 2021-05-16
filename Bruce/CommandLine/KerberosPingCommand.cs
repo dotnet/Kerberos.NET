@@ -4,10 +4,10 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
-using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
 using Microsoft.Extensions.Logging;
@@ -27,10 +27,13 @@ namespace Kerberos.NET.CommandLine
             FormalParameter = true,
             Required = true,
             Description = "UserPrincipalName")]
-        public string UserPrincipalName { get; set; }
+        public override string UserPrincipalName { get; set; }
+
+        [CommandLineParameter("realm", Description = "Realm")]
+        public override string Realm { get; set; }
 
         [CommandLineParameter("verbose", Description = "Verbose")]
-        public bool Verbose { get; protected set; }
+        public override bool Verbose { get; protected set; }
 
         public override async Task<bool> Execute()
         {
@@ -39,15 +42,23 @@ namespace Kerberos.NET.CommandLine
                 return true;
             }
 
+            this.WriteLine();
+
+            var client = this.CreateClient(verbose: this.Verbose);
+            var logger = this.Verbose ? this.IO.CreateVerboseLogger(labels: true) : NullLoggerFactory.Instance;
+
+            var implicitUsername = false;
+
+            if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
+            {
+                this.UserPrincipalName = client.UserPrincipalName;
+                implicitUsername = true;
+            }
+
             if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
             {
                 return false;
             }
-
-            this.WriteLine();
-
-            var client = this.CreateClient(verbose: this.Verbose);
-            var logger = this.Verbose ? CreateVerboseLogger(labels: true) : NullLoggerFactory.Instance;
 
             var credential = new KerberosPasswordCredential(this.UserPrincipalName, "password not required for this");
 
@@ -59,8 +70,16 @@ namespace Kerberos.NET.CommandLine
 
             if (string.IsNullOrWhiteSpace(credential.Domain))
             {
-                this.WriteLineWarning("Domain could not be determined from username '{UserName}'", credential.UserName);
-                return false;
+                if (implicitUsername)
+                {
+                    credential = new KerberosPasswordCredential(this.UserPrincipalName, "password not required for this", this.Realm ?? this.DefaultRealm);
+                }
+
+                if (string.IsNullOrWhiteSpace(credential.Domain))
+                {
+                    this.WriteLineWarning("Domain could not be determined from username '{UserName}'", credential.UserName);
+                    return false;
+                }
             }
 
             var asReqMessage = KrbAsReq.CreateAsReq(credential, AuthenticationOptions.Renewable);
@@ -99,6 +118,10 @@ namespace Kerberos.NET.CommandLine
             {
                 WriteFailure(logger, gex);
             }
+            catch (Exception ex)
+            {
+                logger.CreateLogger("exception").LogCritical(ex.ToString());
+            }
 
             return true;
         }
@@ -118,7 +141,7 @@ namespace Kerberos.NET.CommandLine
             }
             else
             {
-                errorLog = CreateVerboseLogger().CreateLogger("Error");
+                errorLog = this.IO.CreateVerboseLogger().CreateLogger("Error");
             }
 
             foreach (var ex in gex.InnerExceptions)
@@ -134,27 +157,25 @@ namespace Kerberos.NET.CommandLine
                 this.WriteLine();
             }
 
-            var errorCode = pex.Error.ErrorCode;
-
-            this.WriteLine("   {ErrorCode}: {ErrorText}", pex.Error.ErrorCode, pex.Error.EText.Replace(pex.Error.ErrorCode.ToString() + ": ", ""));
-            this.WriteLine("");
+            this.WriteLine(1, "{ErrorCode}: {ErrorText}", pex.Error.ErrorCode, pex.Error.EText?.Replace(pex.Error.ErrorCode.ToString() + ": ", ""));
+            this.WriteLine();
 
             if (!string.IsNullOrWhiteSpace(pex.Error.Realm))
             {
-                this.WriteLine("   Realm: {Realm}", pex.Error.Realm);
+                this.WriteLine(1, "Realm: {Realm}", pex.Error.Realm);
             }
 
             if (pex.Error.CName != null)
             {
-                this.WriteLine("   Client: {CName}", pex.Error.CName.FullyQualifiedName);
+                this.WriteLine(1, "Client: {CName}", pex.Error.CName.FullyQualifiedName);
             }
 
             if (pex.Error.SName != null)
             {
-                this.WriteLine("   Server: {SName}", pex.Error.SName.FullyQualifiedName);
+                this.WriteLine(1, "Server: {SName}", pex.Error.SName.FullyQualifiedName);
             }
 
-            this.WriteLine("");
+            this.WriteLine();
 
             if (pex.Error.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
             {
@@ -165,46 +186,52 @@ namespace Kerberos.NET.CommandLine
 
             if (paData != null)
             {
-                foreach (var pa in paData)
-                {
-                    this.WriteLine("   - PA-Data Type: {PAType} ({PATypeValue})", pa.Type, (int)pa.Type);
+                int index = 0;
 
-                    if (pa.Type != PaDataType.PA_ETYPE_INFO2)
+                foreach (var pa in paData.OrderBy(p => p.Type != PaDataType.PA_ETYPE_INFO2).ThenBy(p => p.Type))
+                {
+                    index++;
+
+                    this.WriteLine(2, "- PA-Data Type: {PAType} ({PATypeValue})", pa.Type, (int)pa.Type);
+
+                    var isEtype = pa.Type == PaDataType.PA_ETYPE_INFO2;
+
+                    if (isEtype)
+                    {
+                        var etypeData = pa.DecodeETypeInfo2();
+
+                        this.WriteLine(3, "KDC Supported ETypes for principal {PrincipalName}", credential.UserName);
+                        this.WriteLine();
+
+                        foreach (var etype in etypeData)
+                        {
+                            this.WriteLine(4, "Etype: {EType}", etype.EType);
+                            this.WriteLine(4, " Salt: {Salt}", etype.Salt);
+                            this.WriteLine(4, "  S2K: {S2kParams}", etype.S2kParams ?? Array.Empty<byte>());
+                            this.WriteLine();
+                        }
+                    }
+
+                    if (!isEtype || this.Verbose)
                     {
                         if (pa.Value.Length > 0)
                         {
-                            this.WriteLine();
-                            Hex.DumpHex(pa.Value, str => this.WriteLine("      {Value}", str), bytesPerLine: pa.Value.Length > 16 ? 16 : 8);
+                            if (!isEtype)
+                            {
+                                this.WriteLine();
+                            }
+
+                            this.WriteLine(3, "{Value}", pa.Value);
                         }
                         else
                         {
-                            this.WriteLine("      {PaValue}", (string)null);
+                            this.WriteLine(3, "{PaValue}", (string)null);
+
+                            if (index < paData.Count())
+                            {
+                                this.WriteLine();
+                            }
                         }
-
-                        this.WriteLine("");
-
-                        continue;
-                    }
-
-                    var etypeData = pa.DecodeETypeInfo2();
-
-                    this.WriteLine("");
-                    this.WriteLine("    - KDC Supported ETypes for principal {PrincipalName}", credential.UserName);
-                    this.WriteLine("");
-
-                    foreach (var etype in etypeData)
-                    {
-                        string s2k = null;
-
-                        if (etype.S2kParams.HasValue)
-                        {
-                            s2k = Hex.DumpHex(etype.S2kParams.Value);
-                        }
-
-                        this.WriteLine("       Etype: {EType}", etype.EType);
-                        this.WriteLine("        Salt: {Salt}", etype.Salt);
-                        this.WriteLine("         S2K: {S2kParams}", s2k);
-                        this.WriteLine("");
                     }
                 }
             }

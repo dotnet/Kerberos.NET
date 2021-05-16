@@ -3,6 +3,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using KerbDump;
@@ -12,6 +13,12 @@ namespace Kerberos.NET.CommandLine
     [CommandLineCommand("kdecode", Description = "KerberosDecode")]
     public class KerberosDumpCommand : BaseCommand
     {
+        static KerberosDumpCommand()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+        }
+
         public KerberosDumpCommand(CommandLineParameters parameters)
             : base(parameters)
         {
@@ -19,11 +26,15 @@ namespace Kerberos.NET.CommandLine
 
         public override Task<bool> Execute()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            if (!OSPlatform.IsWindows)
+            {
+                return Task.FromResult(false);
+            }
 
-            Application.Run(new Form1());
-
+            using (var form = new Form1())
+            {
+                Application.Run(form);
+            }
 
             return Task.FromResult(true);
         }

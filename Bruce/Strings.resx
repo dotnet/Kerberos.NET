@@ -288,6 +288,9 @@
   <data name="CommandLine_KerberosListCommand_Cache" xml:space="preserve">
     <value>Display the contents of the provided cache name.</value>
   </data>
+  <data name="CommandLine_KerberosListCommand_DescribeClient" xml:space="preserve">
+    <value>Show client debug information</value>
+  </data>
   <data name="CommandLine_KerberosListCommand_Get" xml:space="preserve">
     <value>Get a service ticket for the provided SPN.</value>
   </data>
@@ -320,6 +323,9 @@
   </data>
   <data name="CommandLine_KList_Client" xml:space="preserve">
     <value>Client</value>
+  </data>
+  <data name="CommandLine_KList_ClientDetails" xml:space="preserve">
+    <value>Internal Client Details</value>
   </data>
   <data name="CommandLine_KList_Count" xml:space="preserve">
     <value>Ticket Count</value>

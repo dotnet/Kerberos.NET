@@ -574,6 +574,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show client debug information.
+        /// </summary>
+        internal static string CommandLine_KerberosListCommand_DescribeClient {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosListCommand_DescribeClient", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Get a service ticket for the provided SPN..
         /// </summary>
         internal static string CommandLine_KerberosListCommand_Get {
@@ -669,6 +678,15 @@ namespace Kerberos.NET.CommandLine {
         internal static string CommandLine_KList_Client {
             get {
                 return ResourceManager.GetString("CommandLine_KList_Client", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Internal Client Details.
+        /// </summary>
+        internal static string CommandLine_KList_ClientDetails {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_ClientDetails", resourceCulture);
             }
         }
         

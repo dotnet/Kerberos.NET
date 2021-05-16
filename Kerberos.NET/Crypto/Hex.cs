@@ -20,13 +20,13 @@ namespace Kerberos.NET.Crypto
             return HexDump(bytes.ToArray(), bytesPerLine);
         }
 
-        public static void DumpHex(this ReadOnlyMemory<byte> bytes, Action<string> writeLine, int bytesPerLine = 16)
+        public static void DumpHex(this ReadOnlyMemory<byte> bytes, Action<string, int> writeLine, int bytesPerLine = 16)
         {
             var lines = HexDump(bytes.ToArray(), bytesPerLine).Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (var line in lines)
+            for (var i = 0; i < lines.Length; i++)
             {
-                writeLine(line);
+                writeLine(lines[i], i);
             }
         }
 

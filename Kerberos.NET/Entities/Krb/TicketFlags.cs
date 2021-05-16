@@ -79,7 +79,7 @@ namespace Kerberos.NET.Entities
         /// This flag usually indicates the presence of an authenticator in the ticket.
         /// It can also flag the presence of credentials taken from a smart card logon.
         /// </summary>
-        [Description("Pre-authenticated")]
+        [Description("Pre-Authenticated")]
         PreAuthenticated = 1 << 21,
 
         /// <summary>
@@ -100,13 +100,13 @@ namespace Kerberos.NET.Entities
         /// <summary>
         /// The KDC MUST set the OK-AS-DELEGATE flag if the service account is trusted for delegation.
         /// </summary>
-        [Description("Ok-as-delegate")]
+        [Description("Ok as Delegate")]
         OkAsDelegate = 1 << 18,
 
         /// <summary>
         /// Indicates the client supports FAST negotiation.
         /// </summary>
-        [Description("Encrypted Pre-authentication")]
+        [Description("Encrypted Pre-Authentication")]
         EncryptedPreAuthentication = 1 << 16,
 
         /// <summary>

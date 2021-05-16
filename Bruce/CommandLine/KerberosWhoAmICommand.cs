@@ -3,13 +3,17 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Humanizer;
 using Kerberos.NET.Client;
-using Microsoft.Extensions.Logging;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Reflection;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -25,7 +29,19 @@ namespace Kerberos.NET.CommandLine
         public string Cache { get; set; }
 
         [CommandLineParameter("verbose", Description = "Verbose")]
-        public bool Verbose { get; protected set; }
+        public override bool Verbose { get; protected set; }
+
+        [CommandLineParameter("all", Description = "All")]
+        public bool All { get; set; }
+
+        [CommandLineParameter("groups", Description = "Groups")]
+        public bool Groups { get; set; }
+
+        [CommandLineParameter("logon", Description = "Logon")]
+        public bool Logon { get; set; }
+
+        [CommandLineParameter("claims", Description = "claims")]
+        public bool Claims { get; set; }
 
         public override async Task<bool> Execute()
         {
@@ -74,80 +90,161 @@ namespace Kerberos.NET.CommandLine
             this.DescribeTicket(identity as KerberosIdentity);
         }
 
+        private readonly HashSet<string> IgnoredProperties = new HashSet<string>
+        {
+            "PacType",
+            "Reserved3",
+            "NameLength",
+            "UpnLength",
+            "UpnOffset",
+            "DnsDomainNameLength",
+            "DnsDomainNameOffset",
+        };
+
         private void DescribeTicket(KerberosIdentity identity)
         {
             this.WriteLine();
 
-            var properties = new List<(string, string)>
+            var adpac = identity.Restrictions.FirstOrDefault(r => r.Key == AuthorizationDataType.AdWin2kPac);
+
+            var pac = (PrivilegedAttributeCertificate)adpac.Value?.FirstOrDefault();
+
+            var properties = new List<(string, object)>()
             {
-                ("CommandLine_WhoAmI_UserName", $"{identity.Name}"),
+                (SR.Resource("CommandLine_WhoAmI_UserName"), $"{identity.Name}"),
             };
 
-            var groups = new List<Claim>();
-            var others = new List<Claim>();
-
-            foreach (var claim in identity.Claims)
+            if (this.All || this.Logon)
             {
-                if (claim.Type == ClaimTypes.Role)
+                var objects = new object[]
                 {
-                    continue;
-                }
-                else if (claim.Type == ClaimTypes.GroupSid)
+                    pac.LogonInfo,
+                    pac.ClientInformation,
+                    pac.DelegationInformation,
+                    pac.UpnDomainInformation,
+                    pac.CredentialType
+                };
+
+                foreach (var obj in objects)
                 {
-                    groups.Add(claim);
-                }
-                else
-                {
-                    others.Add(claim);
+                    if (obj == null)
+                    {
+                        continue;
+                    }
+
+                    properties.Add(("", obj.GetType().Name.Humanize(LetterCasing.Title)));
+
+                    var props = obj.GetType().GetProperties();
+
+                    foreach (var prop in props)
+                    {
+                        if (!Reflect.IsEnumerable(prop.PropertyType) &&
+                            !Reflect.IsBytes(prop.PropertyType) &&
+                            prop.PropertyType != typeof(RpcSid) &&
+                            !IgnoredProperties.Contains(prop.Name))
+                        {
+                            object value = prop.GetValue(obj);
+
+                            if (value is RpcFileTime ft)
+                            {
+                                value = (DateTimeOffset)ft;
+                            }
+
+                            properties.Add((prop.Name.Humanize(LetterCasing.Title), value));
+                        }
+                    }
                 }
             }
 
-            properties.Add(("", SR.Resource("CommandLine_WhoAmI_Claims")));
-
-            foreach (var claim in others)
+            if (this.All || this.Claims)
             {
-                properties.Add((CollapseSchemaUrl(claim.Type), claim.Value));
-            }
+                var others = new List<Claim>();
 
-            properties.Add(("", SR.Resource("CommandLine_WhoAmI_Groups")));
-
-            foreach (var group in groups.OrderBy(c => c.Value.Length))
-            {
-                properties.Add((group.Value, ""));
-            }
-
-            var max = properties.Where(p => !string.IsNullOrWhiteSpace(p.Item2)).Max(p => p.Item1.Length);
-
-            if (max > 50)
-            {
-                max = 50;
-            }
-
-            foreach (var prop in properties)
-            {
-                if (string.IsNullOrWhiteSpace(prop.Item1))
+                foreach (var claim in identity.Claims)
                 {
-                    this.WriteLine();
-                    this.WriteHeader(prop.Item2);
-                    this.WriteLine();
-                    continue;
+                    if (claim.Type == ClaimTypes.Role || claim.Type == ClaimTypes.GroupSid)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        others.Add(claim);
+                    }
                 }
 
-                string key;
+                properties.Add(("", SR.Resource("CommandLine_WhoAmI_Claims")));
 
-                if (string.IsNullOrWhiteSpace(prop.Item2))
+                foreach (var claim in others)
                 {
-                    key = SR.Resource(prop.Item1);
+                    properties.Add((CollapseSchemaUrl(claim.Type), claim.Value));
                 }
-                else
-                {
-                    key = string.Format("{0}: ", SR.Resource(prop.Item1).PadLeft(max));
-                }
-
-                this.WriteLine(string.Format("  {0}{{Value}}", key), prop.Item2);
             }
 
-            this.WriteLine();
+            int max = 0;
+
+            var propsMax = properties.Where(p => p.Item2 != null);
+
+            if (propsMax.Any())
+            {
+                max = propsMax.Max(p => p.Item1.Length);
+
+                if (max > 50)
+                {
+                    max = 50;
+                }
+
+                foreach (var prop in properties)
+                {
+                    if (string.IsNullOrWhiteSpace(prop.Item1))
+                    {
+                        this.WriteLine();
+                        this.WriteHeader(prop.Item2.ToString());
+                        this.WriteLine();
+                        continue;
+                    }
+
+                    string key;
+
+                    if (prop.Item2 == null)
+                    {
+                        key = SR.Resource(prop.Item1);
+                    }
+                    else
+                    {
+                        key = string.Format("{0}: ", SR.Resource(prop.Item1).PadLeft(max));
+                    }
+
+                    this.WriteLine(string.Format("  {0}{{Value}}", key), prop.Item2);
+                }
+            }
+
+            if (this.All || this.Groups)
+            {
+                this.WriteLine();
+                this.WriteHeader(SR.Resource("CommandLine_WhoAmI_Groups"));
+                this.WriteLine();
+
+                var certSids = new List<SecurityIdentifier>();
+
+                if (pac.CredentialType != null)
+                {
+                    certSids.Add(SecurityIdentifier.WellKnown.ThisOrganizationCertificate);
+                }
+
+                var sids = certSids.Union(pac.LogonInfo.ExtraSids).Union(pac.LogonInfo.GroupSids).Union(pac.LogonInfo.ResourceGroups).Select(s => new
+                {
+                    Sid = s,
+                    Name = SecurityIdentifierNames.GetFriendlyName(s.Value, pac.LogonInfo.DomainSid.Value)
+                });
+
+                max = sids.Max(s => s.Sid.Value.Length);
+                var maxName = sids.Max(s => s.Name?.Length ?? 0);
+
+                foreach (var group in sids.OrderBy(c => c.Sid.Value))
+                {
+                    this.WriteLine(1, string.Format("{0} {1} {{Attr}}", (group.Name ?? "").PadRight(maxName), group.Sid.Value.PadRight(max)), group.Sid.Attributes);
+                }
+            }
         }
 
         private static string CollapseSchemaUrl(string url)
