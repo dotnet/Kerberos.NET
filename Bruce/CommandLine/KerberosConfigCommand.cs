@@ -21,7 +21,10 @@ namespace Kerberos.NET.CommandLine
         }
 
         [CommandLineParameter("c|config", Description = "Config")]
-        public string Configuration { get; set; }
+        public override string ConfigurationPath { get; set; }
+
+        [CommandLineParameter("all", Description = "All")]
+        public bool All { get; set; }
 
         public override void DisplayHelp()
         {
@@ -87,9 +90,9 @@ namespace Kerberos.NET.CommandLine
             string configValue = null;
             bool configSet = false;
 
-            if (!string.IsNullOrWhiteSpace(this.Configuration))
+            if (!string.IsNullOrWhiteSpace(this.ConfigurationPath))
             {
-                configValue = File.ReadAllText(this.Configuration);
+                configValue = File.ReadAllText(this.ConfigurationPath);
                 configSet = true;
             }
 
@@ -154,7 +157,7 @@ namespace Kerberos.NET.CommandLine
 
             if (configSet)
             {
-                path = this.Configuration;
+                path = this.ConfigurationPath;
             }
             else
             {
@@ -184,15 +187,38 @@ namespace Kerberos.NET.CommandLine
                 (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfiguration),
             };
 
-            WriteLine();
-
-            WriteProperties(props);
-
-            var configStr = client.Configuration.Serialize();
+            if (!Krb5Config.DefaultUserConfiguration.Equals(this.ConfigurationPath, StringComparison.OrdinalIgnoreCase))
+            {
+                props.Add((SR.Resource("CommandLine_ConfigPath_Actual"), this.ConfigurationPath));
+            }
 
             this.WriteLine();
 
-            this.WriteLineRaw("   " + configStr.Replace(Environment.NewLine, Environment.NewLine + "   "));
+            this.WriteProperties(props);
+
+            var configStr = client.Configuration.Serialize(new Krb5ConfigurationSerializationConfig { SerializeDefaultValues = this.All });
+
+            this.WriteLine();
+            this.WriteHeader(SR.Resource("ComandLine_KConfig_Config"));
+            this.WriteLine();
+
+            this.WriteLine("# ---------------- Configuration ----------------");
+            this.WriteLine();
+
+            foreach (var line in configStr.Split(Environment.NewLine))
+            {
+                if (line.Trim().StartsWith("["))
+                {
+                    this.WriteLineRaw(line + Environment.NewLine);
+                }
+                else
+                {
+                    this.WriteLineRaw("  " + line + Environment.NewLine);
+                }
+            }
+
+            this.WriteLine();
+            this.WriteLine("# -------------- End Configuration --------------");
         }
     }
 }

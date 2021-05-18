@@ -54,11 +54,24 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         /// <param name="config">The configuration instance to load</param>
         /// <returns>Returns a sectioned version of the configuration</returns>
-        public static ConfigurationSectionList FromConfigObject(Krb5Config config)
+        public static ConfigurationSectionList FromConfigObject(Krb5Config config) => FromConfigObject(config, null);
+
+        /// <summary>
+        /// Converts a <see cref="Krb5Config"/> instance into a <see cref="ConfigurationSectionList" /> for possible future serialization.
+        /// </summary>
+        /// <param name="config">The configuration instance to load</param>
+        /// <param name="serializationConfig">Serializer configuration options</param>
+        /// <returns>Returns a sectioned version of the configuration</returns>
+        public static ConfigurationSectionList FromConfigObject(Krb5Config config, Krb5ConfigurationSerializationConfig serializationConfig)
         {
             if (config is null)
             {
                 throw new ArgumentNullException(nameof(config));
+            }
+
+            if (serializationConfig == null)
+            {
+                serializationConfig = new Krb5ConfigurationSerializationConfig();
             }
 
             var list = new ConfigurationSectionList();
@@ -67,7 +80,7 @@ namespace Kerberos.NET.Configuration
             {
                 var section = property.GetValue(config);
 
-                list.Add(AddSection(section, property));
+                list.Add(AddSection(section, property, serializationConfig));
             }
 
             return list;
@@ -267,7 +280,7 @@ namespace Kerberos.NET.Configuration
 
             if (found is null)
             {
-                found = DefaultValue(attributes);
+                found = DefaultValue(attributes, null);
             }
 
             if (found is ConfigurationSectionList list && !string.IsNullOrWhiteSpace(downStreamKey))
@@ -314,19 +327,24 @@ namespace Kerberos.NET.Configuration
             return config;
         }
 
-        private static object DefaultValue(IEnumerable<Attribute> attributes)
+        private static object DefaultValue(IEnumerable<Attribute> attributes, Type expectedType)
         {
             var defaultAttr = attributes?.OfType<DefaultValueAttribute>()?.FirstOrDefault();
 
             if (defaultAttr == null)
             {
-                return default;
+                if (expectedType?.IsValueType ?? false)
+                {
+                    return Activator.CreateInstance(expectedType);
+                }
+
+                return null;
             }
 
             return defaultAttr.Value;
         }
 
-        private static KeyValuePair<string, object> AddSection(object value, PropertyInfo property)
+        private static KeyValuePair<string, object> AddSection(object value, PropertyInfo property, Krb5ConfigurationSerializationConfig serializationConfig)
         {
             var name = GetName(property);
 
@@ -334,23 +352,28 @@ namespace Kerberos.NET.Configuration
 
             var attributes = property.GetCustomAttributes();
 
-            AddValue(config, value, name, attributes);
+            AddValue(config, value, name, attributes, serializationConfig);
+
+            if (config.Count <= 0)
+            {
+                config = null;
+            }
 
             return new KeyValuePair<string, object>(name, config);
         }
 
-        private static void AddInstance(ConfigurationSectionList value, object config, Type property)
+        private static void AddInstance(ConfigurationSectionList value, object config, Type property, Krb5ConfigurationSerializationConfig serializationConfig)
         {
             foreach (var prop in property.GetProperties(PublicInstancePropertyFlags))
             {
                 var propertyName = GetName(prop);
                 var propertyObject = prop.GetValue(config);
 
-                AddValue(value, propertyObject, propertyName, prop.GetCustomAttributes());
+                AddValue(value, propertyObject, propertyName, prop.GetCustomAttributes(), serializationConfig);
             }
         }
 
-        private static void AddValue(ConfigurationSectionList config, object value, string name, IEnumerable<Attribute> attributes)
+        private static void AddValue(ConfigurationSectionList config, object value, string name, IEnumerable<Attribute> attributes, Krb5ConfigurationSerializationConfig serializationConfig)
         {
             if (value == null)
             {
@@ -361,35 +384,34 @@ namespace Kerberos.NET.Configuration
 
             if (Reflect.IsDictionary(propertyType))
             {
-                AddDictionary(config, value);
+                AddDictionary(config, value, serializationConfig);
             }
             else if (Reflect.IsEnumerable(propertyType))
             {
-                AddList(config, name, value, propertyType, attributes);
+                AddList(config, name, value, propertyType, attributes, serializationConfig);
             }
             else if (Reflect.IsPrimitive(propertyType))
             {
-                AddPrimitive(config, name, value, attributes);
+                AddPrimitive(config, name, value, attributes, serializationConfig);
             }
             else if (propertyType == typeof(ConfigurationSectionList))
             {
                 foreach (var val in ((ConfigurationSectionList)value))
                 {
                     config.Add(val);
-                    //config.Add(new KeyValuePair<string, object>(name, value));
                 }
             }
             else
             {
-                AddInstance(config, value, propertyType);
+                AddInstance(config, value, propertyType, serializationConfig);
             }
         }
 
-        private static void AddPrimitive(ConfigurationSectionList config, string name, object value, IEnumerable<Attribute> attributes)
+        private static void AddPrimitive(ConfigurationSectionList config, string name, object value, IEnumerable<Attribute> attributes, Krb5ConfigurationSerializationConfig serializerConfig)
         {
-            var defaultValue = DefaultValue(attributes);
+            var defaultValue = DefaultValue(attributes, value?.GetType());
 
-            if (defaultValue == value)
+            if (AreEqual(defaultValue, value) && !serializerConfig.SerializeDefaultValues)
             {
                 return;
             }
@@ -397,6 +419,14 @@ namespace Kerberos.NET.Configuration
             if (value is TimeSpan ts)
             {
                 config.Add(new KeyValuePair<string, object>(name, TimeSpanDurationSerializer.ToString(ts)));
+            }
+            else if (value is DateTimeOffset dt)
+            {
+                config.Add(new KeyValuePair<string, object>(name, DateTimeAbsoluteSerializer.ToString(dt)));
+            }
+            else if (typeof(ICanParseMyself).IsAssignableFrom(value.GetType()))
+            {
+                config.Add(new KeyValuePair<string, object>(name, ((ICanParseMyself)value).Serialize()));
             }
             else if (value is Enum en)
             {
@@ -421,7 +451,7 @@ namespace Kerberos.NET.Configuration
             }
         }
 
-        private static void AddList(ConfigurationSectionList config, string name, object v, Type propertyType, IEnumerable<Attribute> attributes)
+        private static void AddList(ConfigurationSectionList config, string name, object v, Type propertyType, IEnumerable<Attribute> attributes, Krb5ConfigurationSerializationConfig serializerConfig)
         {
             if (v is null)
             {
@@ -432,11 +462,11 @@ namespace Kerberos.NET.Configuration
 
             if (genericProp.BaseType == typeof(Enum))
             {
-                var defaultValue = DefaultValue(attributes);
+                var defaultValue = DefaultValue(attributes, genericProp);
 
                 var value = AddEnum(name, v, attributes);
 
-                if (defaultValue != value.Value)
+                if (!AreEqual(defaultValue, value.Value) || serializerConfig.SerializeDefaultValues)
                 {
                     config.Add(value);
                 }
@@ -445,9 +475,44 @@ namespace Kerberos.NET.Configuration
             {
                 foreach (var obj in v as IEnumerable)
                 {
-                    AddValue(config, obj, name, attributes);
+                    AddValue(config, obj, name, attributes, serializerConfig);
                 }
             }
+        }
+
+        private static bool AreEqual(object defaultValue, object value)
+        {
+            if (defaultValue == null && value == null)
+            {
+                return true;
+            }
+
+            if (defaultValue == null && value != null)
+            {
+                return false;
+            }
+
+            if (defaultValue != null && value == null)
+            {
+                return false;
+            }
+
+            if (defaultValue.GetType() == typeof(string) && value.GetType() == typeof(string))
+            {
+                return string.Equals((string)defaultValue, (string)value, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (defaultValue.GetType() == typeof(string) && value.GetType() == typeof(TimeSpan))
+            {
+                return TimeSpanDurationSerializer.Parse((string)defaultValue) == (TimeSpan)value;
+            }
+
+            if (defaultValue.GetType() == typeof(string) && value.GetType() == typeof(DateTimeOffset))
+            {
+                return DateTimeAbsoluteSerializer.Parse((string)defaultValue) == (DateTimeOffset)value;
+            }
+
+            return defaultValue.Equals(value);
         }
 
         private static KeyValuePair<string, object> AddEnum(string name, object list, IEnumerable<Attribute> attributes)
@@ -476,7 +541,7 @@ namespace Kerberos.NET.Configuration
             return new KeyValuePair<string, object>(name, sb.ToString().Trim(' ', ','));
         }
 
-        private static void AddDictionary(ConfigurationSectionList config, object value)
+        private static void AddDictionary(ConfigurationSectionList config, object value, Krb5ConfigurationSerializationConfig serializationConfig)
         {
             if (value is IDictionary dict)
             {
@@ -486,7 +551,7 @@ namespace Kerberos.NET.Configuration
 
                     if (Reflect.IsPrimitive(val.GetType()))
                     {
-                        AddValue(config, val, key.ToString(), null);
+                        AddValue(config, val, key.ToString(), null, serializationConfig);
                     }
                     else
                     {
@@ -494,7 +559,7 @@ namespace Kerberos.NET.Configuration
 
                         config.Add(new KeyValuePair<string, object>(key.ToString(), dictConfig));
 
-                        AddValue(dictConfig, val, key.ToString(), null);
+                        AddValue(dictConfig, val, key.ToString(), null, serializationConfig);
                     }
                 }
             }
@@ -559,8 +624,17 @@ namespace Kerberos.NET.Configuration
         {
             var obj = Activator.CreateInstance(propertyType);
 
+            var configuredProperties = new HashSet<string>();
+
+            var optionalProperty = propertyType.GetProperty(nameof(Krb5ConfigObject.OptionalProperties));
+
             foreach (var property in propertyType.GetProperties(PublicInstancePropertyFlags))
             {
+                if (property.Name == optionalProperty?.Name)
+                {
+                    continue;
+                }
+
                 var name = $"{baseName}.{GetName(property)}";
 
                 object value = null;
@@ -581,6 +655,23 @@ namespace Kerberos.NET.Configuration
                 catch (Exception ex)
                 {
                     throw new ArgumentException($"Property {name} could not be set", ex);
+                }
+
+                configuredProperties.Add(name);
+            }
+
+            if (optionalProperty != null)
+            {
+                var allConfiguredValues = (ConfigurationSectionList)this.Get(baseName, typeof(ConfigurationSectionList)) ?? Array.Empty<KeyValuePair<string, object>>().ToList();
+
+                var optional = (ConfigurationSectionList)optionalProperty.GetValue(obj);
+
+                foreach (var leftover in allConfiguredValues)
+                {
+                    if (!configuredProperties.Contains($"{baseName}.{leftover.Key}"))
+                    {
+                        optional.Add(leftover.Key, leftover.Value);
+                    }
                 }
             }
 
@@ -769,6 +860,11 @@ namespace Kerberos.NET.Configuration
                 return TimeSpanDurationSerializer.Parse(stringValue);
             }
 
+            if (type == typeof(DateTimeOffset))
+            {
+                return DateTimeAbsoluteSerializer.Parse(stringValue);
+            }
+
             if (type.BaseType == typeof(Enum))
             {
                 return ParseEnum(stringValue, type);
@@ -777,6 +873,15 @@ namespace Kerberos.NET.Configuration
             if (type == typeof(bool))
             {
                 return ParseBool(stringValue);
+            }
+
+            if (typeof(ICanParseMyself).IsAssignableFrom(type))
+            {
+                var instance = (ICanParseMyself)Activator.CreateInstance(type);
+
+                instance.Parse(stringValue);
+
+                return instance;
             }
 
             return Convert.ChangeType(stringValue, type, CultureInfo.InvariantCulture);

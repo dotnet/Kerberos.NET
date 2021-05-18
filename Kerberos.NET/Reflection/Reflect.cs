@@ -25,6 +25,7 @@ namespace Kerberos.NET.Reflection
             return propertyType.IsPrimitive ||
                    propertyType == typeof(string) ||
                    propertyType == typeof(TimeSpan) ||
+                   propertyType == typeof(DateTimeOffset) ||
                    propertyType.BaseType == typeof(Enum);
         }
 

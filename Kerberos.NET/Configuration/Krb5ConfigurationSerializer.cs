@@ -67,7 +67,7 @@ namespace Kerberos.NET.Configuration
         /// <returns>Returns the configuration in string form.</returns>
         public static string Serialize(Krb5Config configuration, Krb5ConfigurationSerializationConfig serializationConfig = null)
         {
-            return Serialize(ConfigurationSectionList.FromConfigObject(configuration), serializationConfig);
+            return Serialize(ConfigurationSectionList.FromConfigObject(configuration, serializationConfig), serializationConfig);
         }
 
         /// <summary>
@@ -92,9 +92,10 @@ namespace Kerberos.NET.Configuration
 
             foreach (var config in configuration)
             {
-                var section = config.Value as ConfigurationSectionList;
-
-                SerializeSection(sb, section, serializerConfig);
+                if (config.Value is ConfigurationSectionList section)
+                {
+                    SerializeSection(sb, section, serializerConfig);
+                }
             }
 
             return sb.ToString();

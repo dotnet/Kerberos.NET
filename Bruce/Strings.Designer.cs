@@ -70,6 +70,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Kerberos Configuration File.
+        /// </summary>
+        internal static string ComandLine_KConfig_Config {
+            get {
+                return ResourceManager.GetString("ComandLine_KConfig_Config", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cache.
         /// </summary>
         internal static string CommandLine_CachePath {
@@ -88,7 +97,7 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Properties of configuration sections can be accessed through the dot operator..
+        ///   Looks up a localized string similar to Properties of configuration sections can be accessed through the dot operator (e.g. section.property)..
         /// </summary>
         internal static string CommandLine_Config_DotHelp {
             get {
@@ -97,7 +106,7 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Properties that would contain dots can be escaped with quotes..
+        ///   Looks up a localized string similar to Properties that would contain dots can be escaped with quotes (e.g. section.&quot;realm.name&quot;.property)..
         /// </summary>
         internal static string CommandLine_Config_DotHelpEscaped {
             get {
@@ -169,11 +178,20 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Configuration.
+        ///   Looks up a localized string similar to Default Configuration Path.
         /// </summary>
         internal static string CommandLine_ConfigPath {
             get {
                 return ResourceManager.GetString("CommandLine_ConfigPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Runtime Configuration Path.
+        /// </summary>
+        internal static string CommandLine_ConfigPath_Actual {
+            get {
+                return ResourceManager.GetString("CommandLine_ConfigPath_Actual", resourceCulture);
             }
         }
         
@@ -201,6 +219,15 @@ namespace Kerberos.NET.CommandLine {
         internal static string CommandLine_KerberosConfig {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosConfig", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show all configuration options including default values..
+        /// </summary>
+        internal static string CommandLine_KerberosConfigCommand_All {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConfigCommand_All", resourceCulture);
             }
         }
         
