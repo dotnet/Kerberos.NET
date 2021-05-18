@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -265,6 +265,38 @@ namespace Tests.Kerberos.NET
             var kerbKey = key.Key;
 
             AssertKeyMatchesGuid(key.EncryptionType.Value, kerbKey);
+        }
+
+        [TestMethod]
+        public void MultipleVersionsInSameKeytab()
+        {
+            var keys = new[] {
+                new KerberosKey(
+                    "password",
+                    new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "REALM.COM", new[] { "host/appservice" }),
+                    host: "appservice",
+                    etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
+                    kvno: 1
+                ),
+                new KerberosKey(
+                    "password",
+                    new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "REALM.COM", new[] { "host/appservice" }),
+                    host: "appservice",
+                    etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
+                    kvno: 2
+                ),
+                new KerberosKey(
+                    "password",
+                    new PrincipalName(PrincipalNameType.NT_PRINCIPAL, "REALM.COM", new[] { "host/appservice" }),
+                    host: "appservice",
+                    etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
+                    kvno: 12
+                )
+            };
+
+            var keytable = new KeyTable(keys);
+            var key = keytable.GetKey(EncryptionType.AES256_CTS_HMAC_SHA1_96, KrbPrincipalName.FromString("host/appservice"));
+            Assert.AreEqual(12, key.Version);
         }
 
         private static void AssertKeyMatchesGuid(EncryptionType etype, KerberosKey kerbKey)
