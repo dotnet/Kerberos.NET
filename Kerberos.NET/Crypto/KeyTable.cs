@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -97,13 +97,19 @@ namespace Kerberos.NET.Crypto
         {
             // Match on type (e.g. RC4_HMAC_NT) and name (Realm + Name)
 
-            var entry = this.Entries.FirstOrDefault(e => e.EncryptionType == type && sname.Matches(e.Principal));
+            var entry = this.Entries
+                .Where(e => e.EncryptionType == type && sname.Matches(e.Principal))
+                .OrderByDescending(x => x.Version)
+                .FirstOrDefault();
 
             // Fall back to first entry with matching type (RC4_HMAC_NT)
 
             if (entry == null)
             {
-                entry = this.Entries.FirstOrDefault(e => e.EncryptionType == type);
+                entry = this.Entries
+                    .Where(e => e.EncryptionType == type)
+                    .OrderByDescending(x => x.Version)
+                    .FirstOrDefault();
             }
 
             // Fall back to first entry
