@@ -5,12 +5,8 @@
 
 namespace Kerberos.NET.Configuration
 {
-    public class Krb5ConfigurationSerializationConfig
+    public abstract class Krb5ConfigObject
     {
-        public int IndentWidth { get; set; } = 3;
-
-        public int CurrentIndent { get; set; }
-
-        public bool SerializeDefaultValues { get; set; }
+        public virtual ConfigurationSectionList OptionalProperties { get; } = new ConfigurationSectionList();
     }
 }

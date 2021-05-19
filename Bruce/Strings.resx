@@ -120,6 +120,9 @@
   <data name="BannerDescription" xml:space="preserve">
     <value>Command Line tooling for the Kerberos.NET library.</value>
   </data>
+  <data name="ComandLine_KConfig_Config" xml:space="preserve">
+    <value>Kerberos Configuration File</value>
+  </data>
   <data name="CommandLine_CachePath" xml:space="preserve">
     <value>Cache</value>
   </data>
@@ -127,13 +130,16 @@
     <value>Commands</value>
   </data>
   <data name="CommandLine_ConfigPath" xml:space="preserve">
-    <value>Configuration</value>
+    <value>Default Configuration Path</value>
+  </data>
+  <data name="CommandLine_ConfigPath_Actual" xml:space="preserve">
+    <value>Runtime Configuration Path</value>
   </data>
   <data name="CommandLine_Config_DotHelp" xml:space="preserve">
-    <value>Properties of configuration sections can be accessed through the dot operator.</value>
+    <value>Properties of configuration sections can be accessed through the dot operator (e.g. section.property).</value>
   </data>
   <data name="CommandLine_Config_DotHelpEscaped" xml:space="preserve">
-    <value>Properties that would contain dots can be escaped with quotes.</value>
+    <value>Properties that would contain dots can be escaped with quotes (e.g. section."realm.name".property).</value>
   </data>
   <data name="CommandLine_Config_Invalid" xml:space="preserve">
     <value>Configuration could not be processed</value>
@@ -164,6 +170,9 @@
   </data>
   <data name="CommandLine_KerberosConfig" xml:space="preserve">
     <value>Set or review configuration settings at the default path.</value>
+  </data>
+  <data name="CommandLine_KerberosConfigCommand_All" xml:space="preserve">
+    <value>Show all configuration options including default values.</value>
   </data>
   <data name="CommandLine_KerberosConfigCommand_Config" xml:space="preserve">
     <value>Provide a path to a particular configuration file.</value>

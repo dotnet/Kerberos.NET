@@ -42,6 +42,8 @@ namespace Kerberos.NET.CommandLine
 
         public virtual string UserPrincipalName { get; set; }
 
+        public virtual string ConfigurationPath { get; set; }
+
         public virtual bool Verbose { get; protected set; }
 
         [CommandLineParameter("h|help|?", Description = "Help")]
@@ -57,7 +59,7 @@ namespace Kerberos.NET.CommandLine
             }
             else
             {
-                config = Krb5Config.CurrentUser();
+                config = Krb5Config.CurrentUser(this.ConfigurationPath);
             }
 
             ILoggerFactory logger = null;
@@ -95,7 +97,7 @@ namespace Kerberos.NET.CommandLine
         public virtual void DisplayHelp()
         {
             var sb = new StringBuilder();
-            
+
             sb.AppendFormat("{0}: {1} ", SR.Resource("CommandLine_Usage"), this.Parameters.Command);
 
             var typeProperties = this.GetType().GetProperties();
@@ -504,6 +506,11 @@ namespace Kerberos.NET.CommandLine
             {
                 var ts = TimeSpanDurationSerializer.Parse(nextValue);
                 value = ts;
+            }
+            else if (type == typeof(DateTimeOffset) || type == typeof(DateTimeOffset?))
+            {
+                var dt = DateTimeAbsoluteSerializer.Parse(nextValue);
+                value = dt;
             }
             else if (type.BaseType == typeof(Enum))
             {

@@ -5,12 +5,10 @@
 
 namespace Kerberos.NET.Configuration
 {
-    public class Krb5ConfigurationSerializationConfig
+    public interface ICanParseMyself
     {
-        public int IndentWidth { get; set; } = 3;
+        void Parse(string value);
 
-        public int CurrentIndent { get; set; }
-
-        public bool SerializeDefaultValues { get; set; }
+        string Serialize();
     }
 }
