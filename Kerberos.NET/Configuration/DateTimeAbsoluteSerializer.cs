@@ -28,6 +28,11 @@ namespace Kerberos.NET.Configuration
 
         public static DateTimeOffset Parse(string stringValue)
         {
+            if (string.Equals("0", stringValue, StringComparison.OrdinalIgnoreCase))
+            {
+                return DateTimeOffset.MaxValue;
+            }
+
             foreach (var format in AbsoluteTimeFormats)
             {
                 if (DateTime.TryParseExact(stringValue, format, CultureInfo.InvariantCulture, Styles, out DateTime result))
@@ -39,8 +44,13 @@ namespace Kerberos.NET.Configuration
             throw new FormatException("Unknown absolute time format");
         }
 
-        internal static object ToString(DateTimeOffset dt)
+        public static string ToString(DateTimeOffset dt)
         {
+            if (dt == DateTimeOffset.MinValue || dt == DateTimeOffset.MaxValue)
+            {
+                return "0";
+            }
+
             return dt.ToString(AbsoluteTimeFormats.First(), CultureInfo.InvariantCulture);
         }
     }

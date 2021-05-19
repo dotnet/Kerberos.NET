@@ -4,8 +4,9 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text;
+using System.Diagnostics;
 
 namespace Kerberos.NET.Configuration
 {
@@ -85,8 +86,7 @@ namespace Kerberos.NET.Configuration
         public string Serialize()
         {
             var names = Enum.GetValues(typeof(T));
-
-            var sb = new StringBuilder();
+            var flags = new List<string>();
 
             for (var i = 0; i < names.Length; i++)
             {
@@ -96,11 +96,34 @@ namespace Kerberos.NET.Configuration
                 {
                     var descAttr = GetAttribute<DescriptionAttribute>(name);
 
-                    sb.AppendFormat("+{0}", descAttr.Description);
+                    if (descAttr != null)
+                    {
+                        flags.Add(string.Format("+{0}", descAttr.Description));
+                    }
                 }
             }
 
-            return sb.ToString();
+            return string.Join(",", flags);
+        }
+
+        public override string ToString()
+        {
+            return this.Flags.ToString();
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Flags.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is FlagString<T> flags)
+            {
+                return flags.Flags.Equals(this.Flags);
+            }
+
+            return false;
         }
     }
 }

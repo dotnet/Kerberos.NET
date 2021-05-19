@@ -40,6 +40,16 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public void DefaultSerializesAsEmpty()
+        {
+            var conf = Krb5Config.Default();
+
+            var ds = conf.Serialize();
+
+            Assert.IsTrue(string.IsNullOrWhiteSpace(ds));
+        }
+
+        [TestMethod]
         public void ParseBasicConfiguration()
         {
             var conf = ParseConfiguration();

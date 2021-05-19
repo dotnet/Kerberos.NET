@@ -354,11 +354,6 @@ namespace Kerberos.NET.Configuration
 
             AddValue(config, value, name, attributes, serializationConfig);
 
-            if (config.Count <= 0)
-            {
-                config = null;
-            }
-
             return new KeyValuePair<string, object>(name, config);
         }
 
@@ -382,7 +377,19 @@ namespace Kerberos.NET.Configuration
 
             var propertyType = value.GetType();
 
-            if (Reflect.IsDictionary(propertyType))
+            if (typeof(ICanParseMyself).IsAssignableFrom(propertyType))
+            {
+                var defaultValue = (ICanParseMyself)Activator.CreateInstance(propertyType);
+                defaultValue.Parse(DefaultValue(attributes, null).ToString());
+
+                var serialized = ((ICanParseMyself)value).Serialize();
+
+                if (!AreEqual(serialized, defaultValue.Serialize()))
+                {
+                    config.Add(new KeyValuePair<string, object>(name, serialized));
+                }
+            }
+            else if (Reflect.IsDictionary(propertyType))
             {
                 AddDictionary(config, value, serializationConfig);
             }
@@ -471,6 +478,17 @@ namespace Kerberos.NET.Configuration
                     config.Add(value);
                 }
             }
+            else if (typeof(ICanParseMyself).IsAssignableFrom(genericProp))
+            {
+                var sb = new StringBuilder();
+
+                foreach (var obj in v as IEnumerable)
+                {
+                    sb.AppendFormat("{0} ", ((ICanParseMyself)obj).Serialize());
+                }
+
+                config.Add(new KeyValuePair<string, object>(name, sb.ToString()));
+            }
             else
             {
                 foreach (var obj in v as IEnumerable)
@@ -517,7 +535,7 @@ namespace Kerberos.NET.Configuration
 
         private static KeyValuePair<string, object> AddEnum(string name, object list, IEnumerable<Attribute> attributes)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             if (list is IEnumerable enums)
             {

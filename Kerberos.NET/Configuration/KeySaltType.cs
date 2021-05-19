@@ -1,6 +1,6 @@
 ﻿namespace Kerberos.NET.Configuration
 {
-    public enum SaltType
+    public enum KeySaltType
     {
         Normal,
         NoRealm,

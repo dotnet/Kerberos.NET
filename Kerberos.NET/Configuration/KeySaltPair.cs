@@ -5,6 +5,7 @@
 
 using System;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Configuration
 {
@@ -12,9 +13,9 @@ namespace Kerberos.NET.Configuration
     {
         private static readonly char[] SplitOn = new[] { ':' };
 
-        public EncryptionType Etype { get; set; }
+        public EncryptionType EType { get; set; }
 
-        public SaltType SaltType { get; set; }
+        public KeySaltType SaltType { get; set; }
 
         public void Parse(string value)
         {
@@ -30,13 +31,33 @@ namespace Kerberos.NET.Configuration
                 return;
             }
 
-            this.Etype = (EncryptionType)ConfigurationSectionList.ParseEnum(split[0], typeof(EncryptionType));
-            this.SaltType = (SaltType)ConfigurationSectionList.ParseEnum(split[1], typeof(SaltType));
+            this.EType = (EncryptionType)ConfigurationSectionList.ParseEnum(split[0], typeof(EncryptionType));
+            this.SaltType = (KeySaltType)ConfigurationSectionList.ParseEnum(split[1], typeof(KeySaltType));
         }
 
         public string Serialize()
         {
-            return $"{this.Etype}:{this.SaltType}";
+            return this.ToString();
+        }
+
+        public override string ToString()
+        {
+            return $"{this.EType}:{this.SaltType}";
+        }
+
+        public override int GetHashCode()
+        {
+            return EntityHashCode.GetHashCode(this.EType, this.SaltType);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is KeySaltPair pair)
+            {
+                return pair.EType == this.EType && pair.SaltType == this.SaltType;
+            }
+
+            return false;
         }
     }
 }

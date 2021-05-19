@@ -13,7 +13,7 @@ namespace Kerberos.NET.Configuration
     {
         /// <summary>
         /// Identifies the host where the administration server is running. Typically, this is the primary Kerberos server.
-        /// This tag must be given a value in order to communicate with the kadmind server for the realm.
+        /// This tag must be given a value in order to communicate with the the admin service server for the realm.
         /// </summary>
         [DisplayName("admin_server")]
         public ICollection<string> AdminServer { get; private set; }
@@ -168,9 +168,7 @@ namespace Kerberos.NET.Configuration
         ////////////////////// KDC Configuration /////////////////////////
 
         /// <summary>
-        /// Location of the access control list file that kadmind uses to determine which principals are allowed which permissions on the Kerberos database.
-        /// To operate without an ACL file, set this relation to the empty string with acl_file = "".
-        /// The default value is LOCALSTATEDIR/krb5kdc/kadm5.acl. For more information on Kerberos ACL file see kadm5.acl.
+        /// Location of the access control list file that the admin service uses to determine which principals are allowed which permissions on the Kerberos database.
         /// </summary>
         [DisplayName("acl_file")]
         public string AclFile { get; set; }
@@ -185,6 +183,7 @@ namespace Kerberos.NET.Configuration
         /// <summary>
         /// Specifies the default expiration date of principals created in this realm. The default value is 0, which means no expiration date.
         /// </summary>
+        [DefaultValue(0)]
         [DisplayName("default_principal_expiration")]
         public DateTimeOffset DefaultPrincipalExpiration { get; set; }
 
@@ -238,20 +237,13 @@ namespace Kerberos.NET.Configuration
         public TimeSpan IncrementalPropagationReplicaPoll { get; set; }
 
         /// <summary>
-        /// Specifies the iprop RPC listening addresses and/or ports for the kadmind daemon. Each entry may be an interface address,
+        /// Specifies the iprop RPC listening addresses and/or ports for the the admin service. Each entry may be an interface address,
         /// a port number, or an address and port number separated by a colon. If the address contains colons, enclose it in square brackets.
-        /// If no address is specified, the wildcard address is used. If kadmind fails to bind to any of the specified addresses, it will fail to start.
+        /// If no address is specified, the wildcard address is used.
         /// </summary>
+        [DefaultValue("127.0.0.1:754")]
         [DisplayName("iprop_listen")]
         public ICollection<string> IncrementalPropagationListenEndpoints { get; private set; }
-
-        /// <summary>
-        /// Specifies the port number to be used for incremental propagation. When iprop_enable is true, this relation is required in the replica
-        /// KDC configuration file, and this relation or iprop_listen is required in the primary configuration file, as there is no default port number.
-        /// Port numbers specified in iprop_listen entries will override this port number for the kadmind daemon.
-        /// </summary>
-        [DisplayName("iprop_port")]
-        public int IncrementalPropagationPort { get; set; }
 
         /// <summary>
         /// Specifies the amount of time to wait for a full propagation to complete. This is optional in configuration files, and is used by replica KDCs only.
@@ -261,49 +253,43 @@ namespace Kerberos.NET.Configuration
         public TimeSpan IncrementalPropagationResyncTimeout { get; set; }
 
         /// <summary>
-        /// Specifies the kadmin RPC listening addresses and/or ports for the kadmind daemon. Each entry may be an interface address, a port number, or an address
+        /// Specifies the admin service RPC listening addresses and/or ports for the the admin service. Each entry may be an interface address, a port number, or an address
         /// and port number separated by a colon. If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address
-        /// is used. If kadmind fails to bind to any of the specified addresses, it will fail to start. The default is to bind to the wildcard address at the port
-        /// specified in kadmind_port, or the standard kadmin port (749).
+        /// is used.
         /// </summary>
+        [DefaultValue("127.0.0.1:749")]
         [DisplayName("kadmind_listen")]
-        public ICollection<string> KAdminDListenEndpoints { get; private set; }
+        public ICollection<string> AdminServiceListenEndpoints { get; private set; }
 
         /// <summary>
-        /// Specifies the port on which the kadmind daemon is to listen for this realm. Port numbers specified in kadmind_listen entries will override this port number.
-        /// The assigned port for kadmind is 749, which is used by default.
-        /// </summary>
-        [DisplayName("kadmind_port")]
-        public int KAdminDPort { get; set; }
-
-        /// <summary>
-        /// Specifies the location where the master key has been stored.
+        /// Specifies the location where the system key has been stored.
         /// </summary>
         [DisplayName("key_stash_file")]
         public string KeyStashFile { get; set; }
 
         /// <summary>
-        /// Specifies the UDP listening addresses and/or ports for the krb5kdc daemon. Each entry may be an interface address, a port number, or an address and port number separated by a colon.
+        /// Specifies the UDP listening addresses and/or ports for the KDC service. Each entry may be an interface address, a port number, or an address and port number separated by a colon.
         /// If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address is used. If no port is specified, the standard port (88) is used.
-        /// If the KDC daemon fails to bind to any of the specified addresses, it will fail to start. The default is to bind to the wildcard address on the standard port.
         /// </summary>
+        [DefaultValue("127.0.0.1:88")]
         [DisplayName("kdc_listen")]
         public ICollection<string> KdcListenEndpoints { get; private set; }
 
         /// <summary>
-        /// Specifies the TCP listening addresses and/or ports for the krb5kdc daemon. Each entry may be an interface address, a port number, or an address and port number separated by a colon.
+        /// Specifies the TCP listening addresses and/or ports for the KDC service. Each entry may be an interface address, a port number, or an address and port number separated by a colon.
         /// If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address is used. If no port is specified, the standard port (88) is used.
-        /// To disable listening on TCP, set this relation to the empty string with kdc_tcp_listen = "". If the KDC daemon fails to bind to any of the specified addresses, it will fail to start.
-        /// The default is to bind to the wildcard address on the standard port.
+        /// To disable listening on TCP, set this relation to the empty string with kdc_tcp_listen = "".
         /// </summary>
+        [DefaultValue("127.0.0.1:88")]
         [DisplayName("kdc_tcp_listen")]
         public ICollection<string> KdcTcpListenEndpoints { get; private set; }
 
         /// <summary>
-        /// Specifies the kpasswd listening addresses and/or ports for the kadmind daemon. Each entry may be an interface address, a port number, or an address and port number separated by a colon.
-        /// If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address is used. If kadmind fails to bind to any of the specified addresses,
-        /// it will fail to start. The default is to bind to the wildcard address at the port specified in kpasswd_port, or the standard kpasswd port (464).
+        /// Specifies the kpasswd listening addresses and/or ports for the the admin service. Each entry may be an interface address, a port number, or an address and port number separated by a colon.
+        /// If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address is used. If the admin service fails to bind to any of the specified addresses,
+        /// it will fail to start.
         /// </summary>
+        [DefaultValue("127.0.0.1:464")]
         [DisplayName("kpasswd_listen")]
         public ICollection<string> PasswordListenEndpoints { get; private set; }
 
@@ -343,7 +329,7 @@ namespace Kerberos.NET.Configuration
         /// This option allows anonymous PKINIT to be enabled for use as FAST armor tickets without allowing anonymous authentication to services.
         /// </summary>
         [DisplayName("restrict_anonymous_to_tgt")]
-        public bool RestrictAnonymousToTicketGrantingTicketService { get; set; }
+        public bool RestrictAnonymousToTicketGrantingService { get; set; }
 
         /// <summary>
         /// Specifies an authentication indicator value that the KDC asserts into tickets obtained using SPAKE pre-authentication.

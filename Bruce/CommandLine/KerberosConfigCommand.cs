@@ -100,13 +100,24 @@ namespace Kerberos.NET.CommandLine
 
             var config = ConfigurationSectionList.FromConfigObject(client.Configuration);
 
+            bool changed = false;
+
             for (var i = 0; i < this.Parameters.Parameters.Length; i++)
             {
                 var param = this.Parameters.Parameters[i];
 
-                if (configSet && IsConfigParam(param))
+                if (CommandLineParameters.IsParameter(param, out string designator))
+                {
+                    param = param[designator.Length..];
+                }
+
+                if (configSet && ("c".Equals(param, StringComparison.OrdinalIgnoreCase) || "config".Equals(param, StringComparison.OrdinalIgnoreCase)))
                 {
                     i++;
+                    continue;
+                }
+                else if ("all".Equals(param, StringComparison.OrdinalIgnoreCase))
+                {
                     continue;
                 }
 
@@ -123,7 +134,7 @@ namespace Kerberos.NET.CommandLine
 
                 if (append.HasValue)
                 {
-                    param = param.Substring(1);
+                    param = param[1..];
                 }
 
                 var split = param.Split('=');
@@ -142,40 +153,34 @@ namespace Kerberos.NET.CommandLine
                 {
                     config.Set(param, null, append ?? false);
                 }
+
+                changed = true;
             }
 
-            // sanity check
-
-            var verified = config.ToConfigObject();
-
-            if (verified == null)
+            if (changed)
             {
-                throw new ArgumentException(SR.Resource("CommandLine_Config_Invalid"));
+                // sanity check
+
+                var verified = config.ToConfigObject();
+
+                if (verified == null)
+                {
+                    throw new ArgumentException(SR.Resource("CommandLine_Config_Invalid"));
+                }
+
+                string path;
+
+                if (configSet)
+                {
+                    path = this.ConfigurationPath;
+                }
+                else
+                {
+                    path = Krb5Config.DefaultUserConfiguration;
+                }
+
+                File.WriteAllText(path, Krb5ConfigurationSerializer.Serialize(config));
             }
-
-            string path;
-
-            if (configSet)
-            {
-                path = this.ConfigurationPath;
-            }
-            else
-            {
-                path = Krb5Config.DefaultUserConfiguration;
-            }
-
-            File.WriteAllText(path, Krb5ConfigurationSerializer.Serialize(config));
-        }
-
-        private static bool IsConfigParam(string param)
-        {
-            if (CommandLineParameters.IsParameter(param, out string designator))
-            {
-                param = param[designator.Length..];
-            }
-
-            return "c".Equals(param, StringComparison.OrdinalIgnoreCase) ||
-                   "config".Equals(param, StringComparison.OrdinalIgnoreCase);
         }
 
         private void ListConfiguration()

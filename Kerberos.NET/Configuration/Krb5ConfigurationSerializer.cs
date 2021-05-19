@@ -103,6 +103,11 @@ namespace Kerberos.NET.Configuration
 
         private static void SerializeSection(StringBuilder sb, ConfigurationSectionList section, Krb5ConfigurationSerializationConfig serializerConfig)
         {
+            if (section.Count <= 0)
+            {
+                return;
+            }
+
             sb.AppendFormat(CultureInfo.InvariantCulture, "[{0}]", section.Name);
             sb.AppendLine();
 
