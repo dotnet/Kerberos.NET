@@ -120,6 +120,9 @@
   <data name="BannerDescription" xml:space="preserve">
     <value>Command Line tooling for the Kerberos.NET library.</value>
   </data>
+  <data name="ComandLine_KConfig_Config" xml:space="preserve">
+    <value>Kerberos Configuration File</value>
+  </data>
   <data name="CommandLine_CachePath" xml:space="preserve">
     <value>Cache</value>
   </data>
@@ -127,13 +130,16 @@
     <value>Commands</value>
   </data>
   <data name="CommandLine_ConfigPath" xml:space="preserve">
-    <value>Configuration</value>
+    <value>Default Configuration Path</value>
+  </data>
+  <data name="CommandLine_ConfigPath_Actual" xml:space="preserve">
+    <value>Runtime Configuration Path</value>
   </data>
   <data name="CommandLine_Config_DotHelp" xml:space="preserve">
-    <value>Properties of configuration sections can be accessed through the dot operator.</value>
+    <value>Properties of configuration sections can be accessed through the dot operator (e.g. section.property).</value>
   </data>
   <data name="CommandLine_Config_DotHelpEscaped" xml:space="preserve">
-    <value>Properties that would contain dots can be escaped with quotes.</value>
+    <value>Properties that would contain dots can be escaped with quotes (e.g. section."realm.name".property).</value>
   </data>
   <data name="CommandLine_Config_Invalid" xml:space="preserve">
     <value>Configuration could not be processed</value>
@@ -165,8 +171,14 @@
   <data name="CommandLine_KerberosConfig" xml:space="preserve">
     <value>Set or review configuration settings at the default path.</value>
   </data>
+  <data name="CommandLine_KerberosConfigCommand_All" xml:space="preserve">
+    <value>Show all configuration options including default values.</value>
+  </data>
   <data name="CommandLine_KerberosConfigCommand_Config" xml:space="preserve">
     <value>Provide a path to a particular configuration file.</value>
+  </data>
+  <data name="CommandLine_KerberosDecode" xml:space="preserve">
+    <value>Launch a GUI to decode Kerberos tickets.</value>
   </data>
   <data name="CommandLine_KerberosDestroy" xml:space="preserve">
     <value>Delete the ticket cache.</value>
@@ -315,6 +327,9 @@
   <data name="CommandLine_KerberosListCommand_Cache" xml:space="preserve">
     <value>Display the contents of the provided cache name.</value>
   </data>
+  <data name="CommandLine_KerberosListCommand_DescribeClient" xml:space="preserve">
+    <value>Show client debug information</value>
+  </data>
   <data name="CommandLine_KerberosListCommand_Get" xml:space="preserve">
     <value>Get a service ticket for the provided SPN.</value>
   </data>
@@ -333,6 +348,12 @@
   <data name="CommandLine_KerberosListCommand_Verbose" xml:space="preserve">
     <value>Displays all data about the cache.</value>
   </data>
+  <data name="CommandLine_KerberosPing" xml:space="preserve">
+    <value>Locate and ping a KDC for the provided user to get pre-auth details.</value>
+  </data>
+  <data name="CommandLine_KerberosPing_UserPrincipalName" xml:space="preserve">
+    <value>The User Principal Name used to ping the KDC</value>
+  </data>
   <data name="CommandLine_KerberosWhoAmI" xml:space="preserve">
     <value>Displays details about the current authenticated user.</value>
   </data>
@@ -341,6 +362,9 @@
   </data>
   <data name="CommandLine_KList_Client" xml:space="preserve">
     <value>Client</value>
+  </data>
+  <data name="CommandLine_KList_ClientDetails" xml:space="preserve">
+    <value>Internal Client Details</value>
   </data>
   <data name="CommandLine_KList_Count" xml:space="preserve">
     <value>Ticket Count</value>

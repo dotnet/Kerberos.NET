@@ -313,7 +313,7 @@
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.button1);
             this.Name = "Form1";
-            this.Text = "Ticket Dump";
+            this.Text = "Decode Kerberos Ticket";
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel1.PerformLayout();
             this.splitContainer1.Panel2.ResumeLayout(false);

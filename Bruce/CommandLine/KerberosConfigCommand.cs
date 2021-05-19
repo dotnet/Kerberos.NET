@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +21,10 @@ namespace Kerberos.NET.CommandLine
         }
 
         [CommandLineParameter("c|config", Description = "Config")]
-        public string Configuration { get; set; }
+        public override string ConfigurationPath { get; set; }
+
+        [CommandLineParameter("all", Description = "All")]
+        public bool All { get; set; }
 
         public override void DisplayHelp()
         {
@@ -43,25 +47,25 @@ namespace Kerberos.NET.CommandLine
                 this.WriteUsage(use.Item1, use.Item2, max);
             }
 
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine(SR.Resource("CommandLine_Config_DotHelp"));
-            this.IO.Writer.WriteLine(SR.Resource("CommandLine_Config_DotHelpEscaped"));
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine(SR.Resource("CommandLine_Example"));
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine("libdefaults.default_tgs_enctypes=aes");
-            this.IO.Writer.WriteLine("realms.\"EXAMPLE.COM\".kdc=server.example.com");
-            this.IO.Writer.WriteLine("+realms.\"EXAMPLE.COM\".kdc=server.example.com");
+            this.WriteLine();
+            this.WriteLine(2, SR.Resource("CommandLine_Config_DotHelp"));
+            this.WriteLine(2, SR.Resource("CommandLine_Config_DotHelpEscaped"));
+            this.WriteLine();
+            this.WriteHeader(SR.Resource("CommandLine_Example"));
+            this.WriteLine();
+            this.WriteLine(2, "libdefaults.default_tgs_enctypes=aes");
+            this.WriteLine(2, "realms.\"EXAMPLE.COM\".kdc=server.example.com");
+            this.WriteLine(2, "+realms.\"EXAMPLE.COM\".kdc=server.example.com");
 
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
         }
 
         private void WriteUsage(string use, string desc, int padding)
         {
             var command = string.Format("{0} {1}", this.Parameters.Command, use);
 
-            this.IO.Writer.Write(command.PadLeft(10).PadRight(padding + 10));
-            this.IO.Writer.WriteLine(SR.Resource(desc));
+            var label = command.PadLeft(10).PadRight(padding + 10);
+            this.WriteLine(string.Format("   {0}{{Label}}", label), SR.Resource(desc));
         }
 
         public override async Task<bool> Execute()
@@ -76,9 +80,7 @@ namespace Kerberos.NET.CommandLine
                 this.WriteConfiguration();
             }
 
-            var client = this.CreateClient();
-
-            this.ListConfiguration(client.Configuration);
+            this.ListConfiguration();
 
             return true;
         }
@@ -88,9 +90,9 @@ namespace Kerberos.NET.CommandLine
             string configValue = null;
             bool configSet = false;
 
-            if (!string.IsNullOrWhiteSpace(this.Configuration))
+            if (!string.IsNullOrWhiteSpace(this.ConfigurationPath))
             {
-                configValue = File.ReadAllText(this.Configuration);
+                configValue = File.ReadAllText(this.ConfigurationPath);
                 configSet = true;
             }
 
@@ -98,13 +100,24 @@ namespace Kerberos.NET.CommandLine
 
             var config = ConfigurationSectionList.FromConfigObject(client.Configuration);
 
+            bool changed = false;
+
             for (var i = 0; i < this.Parameters.Parameters.Length; i++)
             {
                 var param = this.Parameters.Parameters[i];
 
-                if (configSet && IsConfigParam(param))
+                if (CommandLineParameters.IsParameter(param, out string designator))
+                {
+                    param = param[designator.Length..];
+                }
+
+                if (configSet && ("c".Equals(param, StringComparison.OrdinalIgnoreCase) || "config".Equals(param, StringComparison.OrdinalIgnoreCase)))
                 {
                     i++;
+                    continue;
+                }
+                else if ("all".Equals(param, StringComparison.OrdinalIgnoreCase))
+                {
                     continue;
                 }
 
@@ -121,7 +134,7 @@ namespace Kerberos.NET.CommandLine
 
                 if (append.HasValue)
                 {
-                    param = param.Substring(1);
+                    param = param[1..];
                 }
 
                 var split = param.Split('=');
@@ -140,49 +153,77 @@ namespace Kerberos.NET.CommandLine
                 {
                     config.Set(param, null, append ?? false);
                 }
+
+                changed = true;
             }
 
-            // sanity check
-
-            var verified = config.ToConfigObject();
-
-            if (verified == null)
+            if (changed)
             {
-                throw new ArgumentException(SR.Resource("CommandLine_Config_Invalid"));
-            }
+                // sanity check
 
-            string path;
+                var verified = config.ToConfigObject();
 
-            if (configSet)
-            {
-                path = this.Configuration;
-            }
-            else
-            {
-                path = Krb5Config.DefaultUserConfiguration;
-            }
+                if (verified == null)
+                {
+                    throw new ArgumentException(SR.Resource("CommandLine_Config_Invalid"));
+                }
 
-            File.WriteAllText(path, Krb5ConfigurationSerializer.Serialize(config));
+                string path;
+
+                if (configSet)
+                {
+                    path = this.ConfigurationPath;
+                }
+                else
+                {
+                    path = Krb5Config.DefaultUserConfiguration;
+                }
+
+                File.WriteAllText(path, Krb5ConfigurationSerializer.Serialize(config));
+            }
         }
 
-        private static bool IsConfigParam(string param)
+        private void ListConfiguration()
         {
-            if (IsParameter(param, out string designator))
+            var client = this.CreateClient();
+
+            var props = new List<(string, string)>()
             {
-                param = param.Substring(designator.Length);
+                (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfiguration),
+            };
+
+            if (!Krb5Config.DefaultUserConfiguration.Equals(this.ConfigurationPath, StringComparison.OrdinalIgnoreCase))
+            {
+                props.Add((SR.Resource("CommandLine_ConfigPath_Actual"), this.ConfigurationPath));
             }
 
-            return "c".Equals(param, StringComparison.OrdinalIgnoreCase) ||
-                   "config".Equals(param, StringComparison.OrdinalIgnoreCase);
-        }
+            this.WriteLine();
 
-        private void ListConfiguration(Krb5Config config)
-        {
-            var configStr = config.Serialize();
+            this.WriteProperties(props);
 
-            this.IO.Writer.WriteLine();
+            var configStr = client.Configuration.Serialize(new Krb5ConfigurationSerializationConfig { SerializeDefaultValues = this.All });
 
-            this.IO.Writer.WriteLine(configStr);
+            this.WriteLine();
+            this.WriteHeader(SR.Resource("ComandLine_KConfig_Config"));
+            this.WriteLine();
+
+            this.WriteLine("# ---------------- Configuration ----------------");
+            this.WriteLine();
+
+            foreach (var line in configStr.Split(Environment.NewLine))
+            {
+                if (line.Trim().StartsWith("["))
+                {
+                    this.WriteLineRaw(line + Environment.NewLine);
+                }
+                else
+                {
+                    this.WriteLineRaw("  " + line + Environment.NewLine);
+                }
+            }
+
+            this.WriteLine();
+            this.WriteLine("# -------------- End Configuration --------------");
         }
     }
 }

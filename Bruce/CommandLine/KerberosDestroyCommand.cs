@@ -5,7 +5,6 @@
 
 using System;
 using System.IO;
-using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET.CommandLine
@@ -47,12 +46,11 @@ namespace Kerberos.NET.CommandLine
             try
             {
                 File.Delete(Environment.ExpandEnvironmentVariables(path));
-                this.IO.Writer.WriteLine(SR.Resource("CommandLine_KerberosDestroy_Deleted"));
+                this.WriteLine(SR.Resource("CommandLine_KerberosDestroy_Deleted"));
             }
             catch (Exception ex)
             {
-                this.IO.Writer.Write("{0}: ", SR.Resource("CommandLine_KerberosDestroy_Error"));
-                this.IO.Writer.WriteLine(ex.Message);
+                this.WriteLine(string.Format("{0}{{Error}}", SR.Resource("CommandLine_KerberosDestroy_Error")), ex.Message);
             }
         }
     }

@@ -174,7 +174,7 @@ namespace Kerberos.NET.Transport
 
         private static DnsRecord ParseKdcEntryAsSrvRecord(string kdc, string realm, string servicePrefix)
         {
-            if (Uri.TryCreate(kdc, UriKind.Absolute, out _))
+            if (IsUri(kdc))
             {
                 return new DnsRecord
                 {
@@ -203,6 +203,13 @@ namespace Kerberos.NET.Transport
             }
 
             return record;
+        }
+
+        private static bool IsUri(string kdc)
+        {
+            return Uri.TryCreate(kdc, UriKind.Absolute, out Uri result) &&
+                ("https".Equals(result.Scheme, StringComparison.OrdinalIgnoreCase) ||
+                 "http".Equals(result.Scheme, StringComparison.OrdinalIgnoreCase));
         }
 
         private static async Task MonitorDnsCache()

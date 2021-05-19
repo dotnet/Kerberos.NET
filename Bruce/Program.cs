@@ -3,13 +3,18 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.CommandLine.Dns;
+using Kerberos.NET.Dns;
 
 namespace Kerberos.NET.CommandLine
 {
     class Program
     {
-        static async Task Main(string[] args)
+        [STAThread]
+        static void Main(string[] args)
         {
+            DnsQuery.RegisterImplementation(new PlatformIndependentDnsClient());
+
             var assembly = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName);
 
             string loadingModule = null;
@@ -35,7 +40,7 @@ namespace Kerberos.NET.CommandLine
                 Silent = args.Any(a => string.Equals("--silent", a, StringComparison.InvariantCultureIgnoreCase))
             };
 
-            await shell.Start();
+            shell.Start().Wait();
         }
     }
 }

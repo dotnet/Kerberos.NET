@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
 using Kerberos.NET.Configuration;
 
@@ -37,14 +36,14 @@ namespace Kerberos.NET.CommandLine
 
         public override Task<bool> Execute()
         {
-            var comm = CommandLoader.CreateCommandExecutor(this.Command, null, this.IO);
+            var comm = CommandLoader.CreateCommandExecutor(this.Command, this.Parameters.WithCommand(this.Command), ((ICommand)this).IO);
 
             if (comm == null)
             {
                 if (!string.IsNullOrWhiteSpace(this.Command))
                 {
-                    this.IO.Writer.WriteLine();
-                    this.IO.Writer.WriteLine(SR.Resource("CommandLine_UnknownCommand", this.Command));
+                    this.WriteLine();
+                    this.WriteLine(SR.Resource("CommandLine_UnknownCommand", this.Command));
                 }
 
                 this.DisplayUserDefaults();
@@ -53,7 +52,13 @@ namespace Kerberos.NET.CommandLine
             }
             else
             {
+                WriteLine();
+
+                WriteCommandLabel(comm.GetType());
+
                 this.DisplayUserDefaults();
+
+                comm.DisplayHelp();
             }
 
             return Task.FromResult(true);
@@ -61,9 +66,9 @@ namespace Kerberos.NET.CommandLine
 
         private void DisplayUserDefaults()
         {
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine("   {0}", SR.Resource("CommandLine_Defaults"));
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
+            this.WriteHeader(SR.Resource("CommandLine_Defaults"));
+            this.WriteLine();
 
             var props = new List<(string, string)>()
             {
@@ -72,50 +77,47 @@ namespace Kerberos.NET.CommandLine
                 (SR.Resource("CommandLine_CachePath"), Krb5Config.DefaultUserCredentialCache),
             };
 
-            var max = props.Max(p => p.Item1.Length) + 3;
-
-            foreach (var prop in props)
-            {
-                this.WriteProperty(prop.Item1, prop.Item2, max);
-            }
-        }
-
-        private void WriteProperty(string key, string value, int padding)
-        {
-            this.IO.Writer.WriteLine("{0}: {1}",
-                key.PadLeft(padding).PadRight(padding), value);
+            WriteProperties(props);
         }
 
         private void ListCommands()
         {
             var types = CommandLoader.LoadTypes().OrderBy(t => t.GetCustomAttribute<CommandLineCommandAttribute>().Command);
 
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine("   {0}", SR.Resource("CommandLine_Commands"));
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
+            this.WriteHeader(SR.Resource("CommandLine_Commands"));
+            this.WriteLine();
 
             var max = types.Max(t => t.GetCustomAttribute<CommandLineCommandAttribute>().Command.Length) + 10;
 
             foreach (var type in types)
             {
-                var attr = type.GetCustomAttribute<CommandLineCommandAttribute>();
+                WriteCommandLabel(type, max);
+            }
+        }
 
-                this.IO.Writer.Write(attr.Command.PadLeft(attr.Command.Length + 3).PadRight(max));
+        private void WriteCommandLabel(Type type, int max = 0)
+        {
+            var attr = type.GetCustomAttribute<CommandLineCommandAttribute>();
 
-                var descName = "CommandLine_" + attr.Description;
-                var desc = SR.Resource(descName);
-
-                if (string.Equals(descName, desc, StringComparison.OrdinalIgnoreCase))
-                {
-                    this.IO.Writer.WriteLine(attr.Description);
-                }
-                else
-                {
-                    this.IO.Writer.WriteLine(desc);
-                }
+            if (max <= 0)
+            {
+                max = attr.Command.Length + 4;
             }
 
-            this.IO.Writer.WriteLine();
+            var label = attr.Command.PadLeft(attr.Command.Length + 3).PadRight(max);
+
+            var descName = "CommandLine_" + attr.Description;
+            var desc = SR.Resource(descName);
+
+            if (string.Equals(descName, desc, StringComparison.OrdinalIgnoreCase))
+            {
+                this.WriteLine(string.Format("{0}{{Label}}", label), attr.Description);
+            }
+            else
+            {
+                this.WriteLine(string.Format("{0}{{Label}}", label), desc);
+            }
         }
     }
 }

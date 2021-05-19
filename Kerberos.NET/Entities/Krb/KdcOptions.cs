@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.ComponentModel;
 
 namespace Kerberos.NET.Entities
 {
@@ -53,6 +54,7 @@ namespace Kerberos.NET.Entities
         /// a subsequent request if the TGT on which it is based also has its MAY-POSTDATE
         /// flag set.
         /// </summary>
+        [Description("Allow Postdate")]
         AllowPostdate = 1 << 26,
 
         /// <summary>
@@ -93,6 +95,7 @@ namespace Kerberos.NET.Entities
         /// KDCs MUST NOT issue a ticket with this flag set. KDCs SHOULD NOT preserve this flag if it is
         /// set by another KDC.
         /// </summary>
+        [Description("Optional Hardware Auth")]
         OptHardwareAuth = 1 << 20,
 
         /// <summary>
@@ -105,6 +108,7 @@ namespace Kerberos.NET.Entities
         /// </summary>
         Unused13 = 1 << 18,
 
+        [Description("Constrained Delegation")]
         ConstrainedDelegation = 1 << 17,
 
         /// <summary>
@@ -116,12 +120,14 @@ namespace Kerberos.NET.Entities
         /// <summary>
         /// Indicates the client is requesting the KDC support anonymous PKINIT authentication.
         /// </summary>
+        [Description("Request Anonymous")]
         RequestAnonymous = 1 << 15,
 
         /// <summary>
         /// This option MUST be set in a KRB_TGS_REQ message to request Service
         /// for User to Proxy (S4U2proxy) functionality.
         /// </summary>
+        [Description("CName in Additional Ticket")]
         CNameInAdditionalTicket = 1 << 14,
 
         /// <summary>
@@ -173,6 +179,7 @@ namespace Kerberos.NET.Entities
         /// the transited field must be checked locally. KDCs are encouraged but not required
         /// to honor the DISABLE-TRANSITED-CHECK option.
         /// </summary>
+        [Description("Disable Transit Check")]
         DisableTransitCheck = 1 << 5,
 
         /// <summary>
@@ -182,6 +189,7 @@ namespace Kerberos.NET.Entities
         /// field may still be limited by local limits, or limits selected by the individual principal
         /// or server.
         /// </summary>
+        [Description("Renewable OK")]
         RenewableOk = 1 << 4,
 
         /// <summary>
@@ -189,6 +197,7 @@ namespace Kerberos.NET.Entities
         /// that the ticket for the end server is to be encrypted in the session key from the additional
         /// TGT provided.
         /// </summary>
+        [Description("Encrypt Ticket in Session Key")]
         EncTktInSkey = 1 << 3,
 
         /// <summary>

@@ -13,9 +13,11 @@ namespace Kerberos.NET.Dns
     {
         public bool Debug { get; set; }
 
+        public bool IsSupported => OSPlatform.IsWindows;
+
         public Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type)
         {
-            if (!OSPlatform.IsWindows)
+            if (!this.IsSupported)
             {
                 throw new InvalidOperationException("The win32 DNS query implementation is not supported outside of Windows");
             }

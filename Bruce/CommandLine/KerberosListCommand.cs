@@ -5,10 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Security.Cryptography.Asn1;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
 using Kerberos.NET.Entities;
@@ -36,13 +34,16 @@ namespace Kerberos.NET.CommandLine
         public bool ShortFormFlags { get; set; }
 
         [CommandLineParameter("v|verbose", EnforceCasing = false, Description = "Verbose")]
-        public bool Verbose { get; set; }
+        public override bool Verbose { get; protected set; }
 
         [CommandLineParameter("l|list-caches", Description = "ListCaches")]
         public bool ListCaches { get; set; }
 
         [CommandLineParameter("get", Description = "Get")]
         public string ServicePrincipalName { get; set; }
+
+        [CommandLineParameter("d|debug", Description = "DescribeClient")]
+        public bool DescribeClient { get; set; }
 
         public override async Task<bool> Execute()
         {
@@ -51,7 +52,7 @@ namespace Kerberos.NET.CommandLine
                 return true;
             }
 
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
 
             var client = this.CreateClient(verbose: this.Verbose);
 
@@ -77,7 +78,22 @@ namespace Kerberos.NET.CommandLine
 
             this.ListTickets(client.Configuration.Defaults.DefaultCCacheName);
 
+            if (this.DescribeClient)
+            {
+                this.DescribeClientDetails(client);
+            }
+
             return true;
+        }
+
+        private void DescribeClientDetails(KerberosClient client)
+        {
+            this.WriteLine();
+            this.WriteHeader(SR.Resource("CommandLine_KList_ClientDetails"));
+
+            this.WriteLine();
+
+            this.IO.ListProperties(client);
         }
 
         private async Task GetServiceTicket(KerberosClient client)
@@ -109,8 +125,13 @@ namespace Kerberos.NET.CommandLine
                         break;
                     }
 
-                    this.IO.Writer.WriteLine(ex?.Message ?? SR.Resource("Unknown Error"));
+                    this.WriteLine(ex?.Message ?? SR.Resource("Unknown Error"));
                 }
+            }
+
+            if (this.Verbose)
+            {
+                this.WriteLine();
             }
         }
 
@@ -122,8 +143,8 @@ namespace Kerberos.NET.CommandLine
 
             var tickets = ticketCache.Krb5Cache.Credentials.ToArray();
 
-            this.IO.Writer.WriteLine("{0}: {1}", SR.Resource("CommandLine_KList_Count"), tickets.Length);
-            this.IO.Writer.WriteLine();
+            this.WriteLine(string.Format("{0}: {{TicketCount}}", SR.Resource("CommandLine_KList_Count")), tickets.Length);
+            this.WriteLine();
 
             for (var i = 0; i < tickets.Length; i++)
             {
@@ -131,26 +152,26 @@ namespace Kerberos.NET.CommandLine
 
                 KrbTicket decodedTicket = TryParseTicket(ticket.Ticket);
 
-                var properties = new List<(string, string)>
+                var properties = new List<(string, (string, object[]))>
                 {
-                    ("CommandLine_KList_Client", $"{ticket.Client.FullyQualifiedName} @ {ticket.Client.Realm}"),
-                    ("CommandLine_KList_Server", $"{ticket.Server.FullyQualifiedName} @ {ticket.Server.Realm}"),
-                    ("CommandLine_KList_TicketEType", $"{decodedTicket?.EncryptedPart?.EType.ToString()}"),
-                    ("CommandLine_KList_Flags", ticket.Flags.ToString()),
-                    ("CommandLine_KList_Start", ticket.AuthTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)),
-                    ("CommandLine_KList_End", ticket.EndTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)),
-                    ("CommandLine_KList_RenewTime", ticket.RenewTill.ToLocalTime().ToString(CultureInfo.CurrentCulture))
+                    (SR.Resource("CommandLine_KList_Client"), ("{CName} @ {Realm}", new[] { ticket.Client.FullyQualifiedName, ticket.Client.Realm })),
+                    (SR.Resource("CommandLine_KList_Server"), ("{SName} @ {Realm}", new[] { ticket.Server.FullyQualifiedName, ticket.Server.Realm })),
+                    (SR.Resource("CommandLine_KList_TicketEType"), ("{EType} ({ETypeInt})", new object[] { decodedTicket?.EncryptedPart?.EType, (int)decodedTicket?.EncryptedPart?.EType })),
+                    (SR.Resource("CommandLine_KList_Flags"), ("{FlagsHex:x} -> {Flags}", new object[] { (uint)ticket.Flags, ticket.Flags })),
+                    (SR.Resource("CommandLine_KList_Start"), ("{StartTime}", new object[] { ticket.AuthTime.ToLocalTime() })),
+                    (SR.Resource("CommandLine_KList_End"), ("{EndTime}", new object[] { ticket.EndTime.ToLocalTime() })),
+                    (SR.Resource("CommandLine_KList_RenewTime"), ("{RenewTime}", new object[] { ticket.RenewTill.ToLocalTime() }))
                 };
 
                 var ticketEntryNumber = string.Format("#{0}>", i);
 
-                var max = properties.Max(p => p.Item1.Length);
+                var max = properties.Max(p => p.Item1.Length) + 10;
 
                 bool first = true;
 
                 foreach (var prop in properties)
                 {
-                    var key = string.Format("{0}: ", SR.Resource(prop.Item1)).PadLeft(max - 1).PadRight(max);
+                    var key = SR.Resource(prop.Item1).PadLeft(max - 1).PadRight(max);
 
                     if (first)
                     {
@@ -159,11 +180,13 @@ namespace Kerberos.NET.CommandLine
                         first = false;
                     }
 
-                    this.IO.Writer.Write(key);
-                    this.IO.Writer.WriteLine(prop.Item2);
+                    this.WriteLine(string.Format("{0}: {1}", key, prop.Item2.Item1), prop.Item2.Item2);
                 }
 
-                this.IO.Writer.WriteLine();
+                if (i < tickets.Length - 1)
+                {
+                    this.WriteLine();
+                }
             }
         }
 

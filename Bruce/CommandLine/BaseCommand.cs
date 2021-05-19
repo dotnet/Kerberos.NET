@@ -4,34 +4,47 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
-using Kerberos.NET.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.CommandLine
 {
     public abstract class BaseCommand : ICommand
     {
-        private static readonly IEnumerable<string> ParameterDesignators = new[] { "/", "--", "-" };
+        private ScreenReaderWriter io;
 
         protected BaseCommand(CommandLineParameters parameters)
         {
             this.Parameters = parameters;
 
             this.ParseParameters();
+
+            this.CalculateUserAndRealm();
         }
 
-        public InputControl IO { get; set; }
+        private protected ScreenReaderWriter IO => this.io ??= new ScreenReaderWriter(((ICommand)this).IO);
+
+        InputControl ICommand.IO { get; set; }
 
         public CommandLineParameters Parameters { get; }
+
+        public string DefaultRealm => Environment.GetEnvironmentVariable("USERDNSDOMAIN");
+
+        public virtual string Realm { get; set; }
+
+        public virtual string UserPrincipalName { get; set; }
+
+        public virtual string ConfigurationPath { get; set; }
+
+        public virtual bool Verbose { get; protected set; }
 
         [CommandLineParameter("h|help|?", Description = "Help")]
         public bool Help { get; protected set; }
@@ -46,122 +59,17 @@ namespace Kerberos.NET.CommandLine
             }
             else
             {
-                config = Krb5Config.CurrentUser();
+                config = Krb5Config.CurrentUser(this.ConfigurationPath);
             }
 
             ILoggerFactory logger = null;
 
             if (verbose)
             {
-                logger = this.CreateVerboseLogger();
+                logger = this.IO.CreateVerboseLogger(labels: true);
             }
 
             return new KerberosClient(config, logger) { CacheInMemory = false };
-        }
-
-        private ILoggerFactory CreateVerboseLogger()
-        {
-            return new KerberosDelegateLogger(
-                (level, cateogry, id, scopeState, logState, exception, log)
-                    => this.LogImpl(level, exception, logState as IReadOnlyList<KeyValuePair<string, object>>)
-            );
-        }
-
-        private void LogImpl(
-            TraceLevel level,
-            Exception exception,
-            IReadOnlyList<KeyValuePair<string, object>> logState
-        )
-        {
-            var line = logState.FirstOrDefault(f => f.Key == "{OriginalFormat}").Value?.ToString() ?? "";
-
-            WriteLine(level, line, logState, exception);
-
-        }
-
-        protected void WriteLine(TraceLevel level, string line, IReadOnlyList<KeyValuePair<string, object>> logState = null, Exception exception = null)
-        {
-            if (level != TraceLevel.Off)
-            {
-                var color = level switch
-                {
-                    TraceLevel.Warning => ConsoleColor.Yellow,
-                    TraceLevel.Error => ConsoleColor.Red,
-                    _ => ConsoleColor.Green,
-                };
-
-                this.IO.Writer.Write("[");
-                this.IO.SetColor(color);
-                this.IO.Writer.Write(level);
-                this.IO.ResetColor();
-                this.IO.Writer.Write("] ");
-            }
-
-            var index = -1;
-
-            for (var i = 0; i < line.Length; i++)
-            {
-                if (line[i] == '{')
-                {
-                    index = i;
-                    continue;
-                }
-
-                if (line[i] == '}')
-                {
-                    var substr = line.Substring(index, i - index).Replace("{", "").Replace("}", "");
-
-                    var val = logState?.FirstOrDefault(l => l.Key == substr) ?? default;
-
-                    WriteValue(val);
-
-                    this.IO.ResetColor();
-                    index = -1;
-
-                    continue;
-                }
-
-                if (index < 0)
-                {
-                    this.IO.Writer.Write(line[i]);
-                }
-            }
-
-            this.IO.Writer.WriteLine();
-
-            if (exception != null)
-            {
-                this.IO.SetColor(ConsoleColor.Red);
-                this.IO.Writer.WriteLine(exception.Message);
-                this.IO.SetColor(ConsoleColor.DarkYellow);
-                this.IO.Writer.WriteLine(exception.StackTrace);
-                this.IO.ResetColor();
-            }
-        }
-
-        private void WriteValue(KeyValuePair<string, object> val)
-        {
-            if (val.Value is null)
-            {
-                return;
-            }
-
-            var type = val.Value.GetType();
-
-            if (type.IsPrimitive)
-            {
-                this.IO.SetColor(ConsoleColor.DarkYellow);
-            }
-            else if (type.IsEnum)
-            {
-                this.IO.SetColor(ConsoleColor.Yellow);
-            }
-            else
-            {
-                this.IO.SetColor(ConsoleColor.DarkCyan);
-            }
-
-            this.IO.Writer.Write(val.Value);
         }
 
         protected virtual T CreateCommand<T>()
@@ -169,7 +77,7 @@ namespace Kerberos.NET.CommandLine
         {
             var command = (ICommand)Activator.CreateInstance(typeof(T), this.Parameters);
 
-            command.IO = this.IO;
+            command.IO = ((ICommand)this).IO;
 
             return (T)command;
         }
@@ -188,7 +96,9 @@ namespace Kerberos.NET.CommandLine
 
         public virtual void DisplayHelp()
         {
-            this.IO.Writer.Write("{0}: {1} ", SR.Resource("CommandLine_Usage"), this.Parameters.Command);
+            var sb = new StringBuilder();
+
+            sb.AppendFormat("{0}: {1} ", SR.Resource("CommandLine_Usage"), this.Parameters.Command);
 
             var typeProperties = this.GetType().GetProperties();
 
@@ -212,33 +122,96 @@ namespace Kerberos.NET.CommandLine
 
                 if (attr.FormalParameter)
                 {
-                    this.IO.Writer.WriteLine(attr.Name);
-                }
+                    sb.AppendFormat("{0} ", attr.Name);
 
-                WriteProperty(prop, attr);
+                    sb.AppendFormat("[{0}] ", WriteProperty(prop, attr));
+                }
+                else
+                {
+                    sb.Append(WriteProperty(prop, attr));
+                    sb.Append(" ");
+                }
             }
+
+            this.WriteLine();
+            this.WriteHeader(sb.ToString());
 
             var max = props.Select(p => p.Item2.Name).Max(p =>
                 p.Length + 7 +
                (p.Count(c => c == '|') * 9)
             ) + 5;
 
-            this.IO.Writer.WriteLine();
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
 
             foreach (var prop in props)
             {
                 WritePropertyDescription(prop.Item1.PropertyType, prop.Item2, this.GetType().Name, padding: max);
-                this.IO.Writer.WriteLine();
+                this.WriteLine();
             }
 
-            this.IO.Writer.WriteLine();
+            this.WriteLine();
         }
 
-        readonly StringBuilder sb = new StringBuilder();
+        protected virtual void WriteLine() => this.WriteLine(0, "");
 
-        private void WriteProperty(PropertyInfo prop, CommandLineParameterAttribute attr)
+        protected virtual void WriteHeader(string message)
         {
+            this.IO.WriteAsColor("   " + message, ConsoleColor.Yellow);
+            WriteLine();
+        }
+
+        protected virtual void WriteLineRaw(string message)
+        {
+            this.IO.WriteAsColor(message, ConsoleColor.White);
+        }
+
+        protected virtual void WriteLine(string message, params object[] args)
+        {
+            WriteLine(0, message, args);
+        }
+
+        protected virtual void WriteLine(int indent, string message, params object[] args)
+        {
+            this.IO.LogOffset = indent;
+
+            this.IO.Logger.LogInformation(string.Format("{0}", message), args);
+        }
+
+        protected virtual void WriteLineWarning(string message, params object[] args)
+        {
+            this.IO.Logger.LogWarning(message, args);
+        }
+
+        protected virtual void WriteLineError(string message, params object[] args)
+        {
+            this.IO.Logger.LogError(message, args);
+        }
+
+        protected void WriteProperties(IEnumerable<(string, string)> props)
+        {
+            var max = props.Max(p => p.Item1.Length) + 3;
+
+            foreach (var prop in props)
+            {
+                this.WriteProperty(prop.Item1, prop.Item2, max);
+            }
+        }
+
+        protected void WriteProperty(string key, string value, int padding)
+        {
+            this.WriteLine(
+                string.Format(
+                    "{0}: {{Value}}",
+                    key.PadLeft(padding).PadRight(padding)
+                ),
+                value
+            );
+        }
+
+        private string WriteProperty(PropertyInfo prop, CommandLineParameterAttribute attr)
+        {
+            var sb = new StringBuilder();
+
             var names = attr.Name.Split('|');
 
             var hasValue = prop.PropertyType != typeof(bool) &&
@@ -285,11 +258,13 @@ namespace Kerberos.NET.CommandLine
                     sb.AppendFormat("]");
                 }
 
-                sb.AppendFormat(" ");
+                if (i < names.Length - 1)
+                {
+                    sb.AppendFormat(" ");
+                }
             }
 
-            this.IO.Writer.Write(sb.ToString());
-            sb.Clear();
+            return sb.ToString();
         }
 
         private void WritePropertyDescription(Type propertyType, CommandLineParameterAttribute attr, string commandPrefix, int padding)
@@ -341,6 +316,8 @@ namespace Kerberos.NET.CommandLine
                 }
             }
 
+            var sb = new StringBuilder();
+
             var sbNameVal = sbName.ToString();
 
             sb.Append(sbNameVal.PadLeft(sbNameVal.Length + 3).PadRight(padding));
@@ -358,8 +335,37 @@ namespace Kerberos.NET.CommandLine
                 sb.Append(desc);
             }
 
-            this.IO.Writer.Write(sb.ToString());
-            sb.Clear();
+            this.IO.Write(sb.ToString());
+        }
+
+        private void CalculateUserAndRealm()
+        {
+            var client = CreateClient();
+
+            if (string.IsNullOrWhiteSpace(this.Realm))
+            {
+                this.Realm = client.DefaultDomain;
+
+                if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
+                {
+                    this.UserPrincipalName = client.UserPrincipalName;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(this.Realm))
+            {
+                this.Realm = this.DefaultRealm;
+            }
+
+            if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
+            {
+                this.UserPrincipalName = Environment.UserName;
+            }
+
+            if (!this.UserPrincipalName.Contains("@") && !string.IsNullOrWhiteSpace(this.Realm))
+            {
+                this.UserPrincipalName = $"{this.UserPrincipalName}@{this.Realm}";
+            }
         }
 
         private void ParseParameters()
@@ -412,7 +418,7 @@ namespace Kerberos.NET.CommandLine
                     continue;
                 }
 
-                if (IsParameter(param, out string designator))
+                if (CommandLineParameters.IsParameter(param, out string designator))
                 {
                     param = param.Substring(designator.Length);
                 }
@@ -500,6 +506,11 @@ namespace Kerberos.NET.CommandLine
             {
                 var ts = TimeSpanDurationSerializer.Parse(nextValue);
                 value = ts;
+            }
+            else if (type == typeof(DateTimeOffset) || type == typeof(DateTimeOffset?))
+            {
+                var dt = DateTimeAbsoluteSerializer.Parse(nextValue);
+                value = dt;
             }
             else if (type.BaseType == typeof(Enum))
             {

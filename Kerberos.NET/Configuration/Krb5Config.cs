@@ -16,11 +16,22 @@ namespace Kerberos.NET.Configuration
     /// </summary>
     public class Krb5Config
     {
+        public Krb5Config()
+        {
+            ConfigurationSectionList.Default.ToConfigObject(this);
+        }
+
         /// <summary>
         /// System defaults that will be used if the protocol or client do not provide explicit values.
         /// </summary>
         [DisplayName("libdefaults")]
         public Krb5ConfigDefaults Defaults { get; private set; }
+
+        /// <summary>
+        /// System defaults that will be used by the KDC implementation.
+        /// </summary>
+        [DisplayName("kdcdefaults")]
+        public Krb5KdcDefaults KdcDefaults { get; private set; }
 
         /// <summary>
         /// A mapping of realm names to their respective settings. Note that realm
@@ -112,12 +123,14 @@ namespace Kerberos.NET.Configuration
 
         public static Krb5Config Default()
         {
-            return Krb5ConfigurationSerializer.Deserialize(string.Empty).ToConfigObject();
+            return new Krb5Config();
         }
 
-        public string Serialize()
+        public string Serialize() => Serialize(null);
+
+        public string Serialize(Krb5ConfigurationSerializationConfig serializationConfig)
         {
-            return Krb5ConfigurationSerializer.Serialize(this);
+            return Krb5ConfigurationSerializer.Serialize(this, serializationConfig);
         }
     }
 }

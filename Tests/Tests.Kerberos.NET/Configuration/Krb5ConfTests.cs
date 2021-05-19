@@ -17,6 +17,39 @@ namespace Tests.Kerberos.NET
     public class Krb5ConfTests : BaseTest
     {
         [TestMethod]
+        public void HandleOptionalValues()
+        {
+            var conf = new ConfigurationSectionList();
+
+            conf.Set("libdefaults.blah", "123", false);
+            conf.Set("libdefaults.allow_weak_crypto", "true", false);
+
+            var obj = conf.ToConfigObject();
+
+            Assert.IsTrue(obj.Defaults.AllowWeakCrypto);
+            Assert.AreEqual(obj.Defaults.OptionalProperties["blah"], "123");
+
+            var roundtrip = Krb5ConfigurationSerializer.Serialize(obj);
+
+            Assert.IsTrue(roundtrip.Contains("blah = 123"));
+
+            var conf2 = Krb5ConfigurationSerializer.Deserialize(roundtrip);
+
+            var blah = conf2.Get("libdefaults.blah", typeof(string)).ToString();
+            Assert.AreEqual("123", blah);
+        }
+
+        [TestMethod]
+        public void DefaultSerializesAsEmpty()
+        {
+            var conf = Krb5Config.Default();
+
+            var ds = conf.Serialize();
+
+            Assert.IsTrue(string.IsNullOrWhiteSpace(ds));
+        }
+
+        [TestMethod]
         public void ParseBasicConfiguration()
         {
             var conf = ParseConfiguration();
@@ -123,6 +156,14 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public void DefaultWithNewCtor()
+        {
+            var config = new Krb5Config();
+
+            Assert.AreEqual(5, config.Defaults.DefaultTgsEncTypes.Count());
+        }
+
+        [TestMethod]
         public void TraverseQuotedSettings()
         {
             var conf = ParseConfiguration();
@@ -224,6 +265,32 @@ namespace Tests.Kerberos.NET
             config.Remove("foo");
 
             Assert.IsNull(config["foo"]);
+        }
+
+        [TestMethod]
+        public void DateTimeParser()
+        {
+            var expected = new DateTimeOffset(2014, 12, 31, 23, 59, 0, TimeSpan.Zero);
+            var today = DateTimeOffset.Now.Date.AddHours(20);
+
+            var pairs = new List<(string, DateTimeOffset)>
+            {
+                ("20141231235900", expected),
+                ("2014.12.31.23.59.00", expected),
+                ("141231235900", expected),
+                ("14.12.31.23.59.00", expected),
+                ("31-12-2014:23:59:00", expected),
+                ("31-Dec-2014:23:59:00", expected),
+                ("20:00:00", today.ToLocalTime()),
+                ("200000", today.ToLocalTime()),
+            };
+
+            foreach (var pair in pairs)
+            {
+                var dt = DateTimeAbsoluteSerializer.Parse(pair.Item1);
+
+                Assert.AreEqual(pair.Item2, dt);
+            }
         }
     }
 }

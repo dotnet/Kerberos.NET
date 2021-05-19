@@ -10,5 +10,7 @@ namespace Kerberos.NET.Configuration
         public int IndentWidth { get; set; } = 3;
 
         public int CurrentIndent { get; set; }
+
+        public bool SerializeDefaultValues { get; set; }
     }
 }

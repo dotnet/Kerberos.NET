@@ -18,6 +18,14 @@ A [deep dive into the design of Kerberos.NET](https://syfuhs.net/a-deep-dive-int
 
 You can find the Fiddler extension installer under [releases](https://github.com/dotnet/Kerberos.NET/releases) on the right hand side of this page. For more information go read [a write up on how to install and use it](https://syfuhs.net/a-fiddler-extension-for-kerberos-messages).
 
+# Bruce Commmand Line Tool
+
+The Bruce command line tool is a collection of utilities that let you interact with the Kerberos.NET library components and is available via `dotnet tool install bruce -g`. It includes useful tools for things like ticket cache and keytab management. It also includes the Ticket Decoder utility mentioned below. The tool more or less follows the MIT and Heimdal command line standards, but for more information on all  the tools in the suite type `help` from the Bruce command line.
+
+See this [blog post on how to use the tool](https://syfuhs.net/bruce-a-command-line-kerberos-net-management-tool).
+
+![](docs/bruce.png?raw=true)
+
 # Cross Platform Support
 
 The library will work on all [supported .NET Standard 2.0 platforms with some caveats](https://syfuhs.net/cross-platform-support-for-kerberos).
@@ -93,7 +101,7 @@ Assert.IsFalse(string.IsNullOrWhitespace(name));
 
 Note that the constructor parameter for the authenticator is a `KeyTable`. The `KeyTable` is a common format used to store keys on other platforms. You can either use a file created by a tool like `ktpass`, or you can just pass a `KerberosKey` during instantiation and it'll have the same effect.
 
-# KerbDump Tool
+# Kerberos Ticket Decoder Tool
 
 This library comes with an optional utility to decode service tickets. It's easy to use. Just copy the Base64 encoded copy of the ticket into the left textbox. It will decode the unencrypted message if you don't provide a key. It will attempt to decrypt the message if you provide a key. You won't need to provide a host value if the ticket was encrypted using RC4, but it will need a host value if it's encrypted with AES (to derive the salt). Alternatively you could also include a keytab file if you happen to have that too.
 
@@ -104,365 +112,462 @@ Here's a sample of what a sample ticket looks like:
 ```js
 {
   "Request": {
-    "MechType": {
-      "Mechanism": "SPNEGO",
-      "Oid": "1.3.6.1.5.5.2"
-    },
-    "NegotiationRequest": {
-      "MechToken": {
-        "NegotiateExtension": null,
-        "ThisMech": {
-          "Mechanism": "Kerberos V5",
-          "Oid": "1.2.840.113554.1.2.2"
+    "KrbApReq": {
+      "ProtocolVersionNumber": 5,
+      "MessageType": "KRB_AP_REQ",
+      "ApOptions": "Reserved",
+      "Ticket": {
+        "TicketNumber": 5,
+        "Realm": "CORP.IDENTITYINTERVENTION.COM",
+        "SName": {
+          "FullyQualifiedName": "desktop-h71o9uu",
+          "IsServiceName": false,
+          "Type": "NT_PRINCIPAL",
+          "Name": [
+            "desktop-h71o9uu"
+          ]
         },
-        "InnerContextToken": {
-          "ProtocolVersionNumber": 5,
-          "MessageType": [
-            "KRB_AP_REQ"
-          ],
-          "APOptions": [
-            "MUTUAL_REQUIRED"
-          ],
-          "Ticket": {
-            "TicketVersionNumber": 5,
-            "Realm": "CORP.IDENTITYINTERVENTION.COM",
-            "SName": {
-              "Realm": "CORP.IDENTITYINTERVENTION.COM",
-              "NameType": [
-                "NT_SRV_INST"
-              ],
-              "Names": [
-                "host/delegated.identityintervention.com"
-              ]
-            },
-            "EncPart": {
-              "EType": [
-                "RC4_HMAC_NT"
-              ],
-              "KeyVersionNumber": 3,
-              "Cipher": "...snip..."
-            }
-          },
-          "Authenticator": {
-            "EType": [
-              "RC4_HMAC_NT"
-            ],
-            "KeyVersionNumber": null,
-            "Cipher": "...snip..."
-          }
-        },
-        "NtlmNegotiate": null
-      },
-      "MechTypes": [
-        {
-          "Mechanism": "Kerberos V5 Legacy",
-          "Oid": "1.2.840.48018.1.2.2"
-        },
-        {
-          "Mechanism": "Kerberos V5",
-          "Oid": "1.2.840.113554.1.2.2"
-        },
-        {
-          "Mechanism": "NegoEx",
-          "Oid": "1.3.6.1.4.1.311.2.2.30"
-        },
-        {
-          "Mechanism": "NTLM",
-          "Oid": "1.3.6.1.4.1.311.2.2.10"
+        "EncryptedPart": {
+          "EType": "AES256_CTS_HMAC_SHA1_96",
+          "KeyVersionNumber": 3,
+          "Cipher": "Vo4uodU2/OP1KvfvSXyZNZsflbXQFWQ8bbB6Xmb7aSJI2NilJQDVEz+jOXKh1H3UevlG0yJ/WsAAV+gF8aZ+ZqswjWoqP3Th0LjUR158y4ox2Yl+6AyVqCUtgQD2+pk3J4+n9P/UFj+2kji95xiR2myH1UpFid33xz+MLO83YeAVTlpYl2z8yPPCrTdg1l3JG4RGIB97Hq0txmcr8fDgrpSOeKPa1mx7sgJz/Eu703x+toqAztiHTQjd9DX+PflitG2H0cyUGz34He28YvQNvd1y32eIa0LtDMEE9PK4Wcb74bScGvjv3XTinCYAlWQpY+RUZn/AoR3A+s/T0dEqIaHRMeMWwnzouWA8QT6WSmatuXJx1mfXLNRBIa7QcRHJtKp9NPgseJLXFBdQ4G/ekzQOW4jC+zbWSuEbzQJOsmKcTg9f24aMSB+HRWS+bygWHdtzBcaiaTvFMsstn6BDXt4caAYJwC3HB2QT32ImNBWy+Mrm8r4DzxDi/qgW19cQwzuxWtqPZ+PnO/vnEQraG+8EeEi+Vge+IBWL1IMYgFu60l5mXeyu3mXRugqtJqGrKIqTmYvDTuit/v6TCnpw/BzaPakBm8kDT3oU13DNCQ6TMh/dgyVKZomn1SVxeBeGHpqEMfDShmLkLN8VLfjiC0w8CRdJZmfGH9slfte7J6JRN1qIVCibe8SoB3Y1QHEfF8CG8BAnjMB7A7v3d4DMieboFzkfh3liX6/HO44VdLsLwpsdlGZKDk2C61BS9DUZI6YqJ7K2M+kPrXIq7V/xVY6y53rZswQihaGWZNewUlB5hqEnERvu1GXJhRNj+zvTdWNraUjDC7dv+owjPsm4KZAKHU0+tjbX64LE6StrsFOQRfOE4X4zp2K9NjG8axGrEcYe2F+xM4i+wXdLct0CbdRtDSl4Qr/hSzEGsDehMYXlu7WUPGT2b8Ys2eBin7g6ezybL3qb0qLuH3gNS8J6YXn4gkVmCkJeAlPnmfcFsmk4TVJNeXTab7zobicdrjOosku7nbz13ZnYLkVnMC0kARP2tR7E3Zqf1cbAVYDhJm1CEjCnPKpuSA80AOv2m7qYPW06f0CJI7labGFrf2fLIhkvJqRit8B13DXaGpea/q+CrP3eXg1QBnhjEuoeJeEFO2+03ddxMv2GBXYYx5YKK+CqneUkj2WiwfkFdg6cBjY5GxllV3UxnJff4IKLMGIhtvmc/3WmeGm8W7XibtDIiUfbSa31rg/E+zY3RynYtEm/MoAwWjmAyLsyriO1jjHhWU469b1gflYbOPeDuFe8/KsV5YIB4GIYHTSfWB2Jfw+DH3soT92AV4S5J50Y3VgPrfI+cuNDbtfkjqxXALj+d6Lj4JK3qCoPlPTTtMm3lQkKiqLyTP8Kr4Tdo2gZ6ycWfIU9jdV1Fp3JouVdwGC6N7Xyq6rISSQg4SdCikZ1U5b4rWPS8MviFbcgSldh3PLITcvh3BS6uSQ7Jz5vvtME0tz5OcC30YLLRUNFBEkdsa+As69qihFNlUrWyQWCXa4FewRNRXBwjmsshgyjs+Vr+A=="
         }
-      ]
+      },
+      "Authenticator": {
+        "EType": "AES256_CTS_HMAC_SHA1_96",
+        "KeyVersionNumber": null,
+        "Cipher": "NnLmEFkmO3HXCSsJ0zoU+AF4BXPaSIKQ7dNwoL3peZ4fntxOVEt+3lFWUZgFbGx1cn1y1FLrPsSnwJ01yIu+9u9//RD3Srn1uD2lWjeVmnCDENd+hSoNeLdJoQFluY/MyYZx3KJWzGWa73PE+K+xOxCHWLGOZzI/EXnKm3xwN28Up8y3r31AJam3jANuJRdFMnDzj6Rvbt+FESsbH8dFAdB8rTmI28/+WRdnx3O69zPcrvw5hOcQLi40x63A6NbZ3TQNrG8xQr5aRC7mO69C17e4r7duawg9FHOHPMS4vdPFA2ShMAPuNRYQSSkskztk9yfjHQgCdfNmpPrGfIf4GVeg3RjZ0U87skHcmcKAqX7jtwoHbjQjOfgAtXnsBRhPU0a2nnfD53Fo8ZsONEUCkNAHWj2jYmyzL4WkDoqYKJhoA7YTiy+I2z/umhpXvao4E7NERCea7vPQv0TgtCxn6r5v936XWbBSt1CY4fSnjEgZfYYv0abhobC93Iktt2HCndXN7TceHAq5P3i8TZ6Cvd2HCVJ2/kyvzRWWtkPCFI1YRb3g379V1/VmIEOk+xEOup0YmNW5AicQVvvk"
+      }
     },
-    "Request": null
+    "KrbApRep": null
   },
   "Decrypted": {
-    "EType": [
-      "RC4_HMAC_NT"
-    ],
+    "Options": "Reserved",
+    "EType": "AES256_CTS_HMAC_SHA1_96",
+    "SName": {
+      "FullyQualifiedName": "desktop-h71o9uu",
+      "IsServiceName": false,
+      "Type": "NT_PRINCIPAL",
+      "Name": [
+        "desktop-h71o9uu"
+      ]
+    },
     "Authenticator": {
-      "VersionNumber": 5,
+      "AuthenticatorVersionNumber": 5,
       "Realm": "CORP.IDENTITYINTERVENTION.COM",
       "CName": {
-        "Realm": "CORP.IDENTITYINTERVENTION.COM",
-        "NameType": [
-          "NT_ENTERPRISE"
-        ],
-        "Names": [
-          "tests4u"
+        "FullyQualifiedName": "jack",
+        "IsServiceName": false,
+        "Type": "NT_PRINCIPAL",
+        "Name": [
+          "jack"
         ]
       },
-      "Checksum": "oAUCAwCAA6EaBBgQAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAA=",
-      "CuSec": 73,
-      "CTime": "2019-02-23T03:26:00+00:00",
-      "SubSessionKey": {
-        "KeyType": [
-          "RC4_HMAC_NT"
-        ],
-        "RawKey": "xG8Kpugq38doJ1I911iMCw=="
+      "Checksum": {
+        "Type": "32771",
+        "Checksum": "EAAAAAAAAAAAAAAAAAAAAAAAAAA8QAAA"
       },
-      "SequenceNumber": 2122637123,
-      "Subkey": "xG8Kpugq38doJ1I911iMCw==",
-      "Authorizations": [
+      "CuSec": 305,
+      "CTime": "2021-04-21T17:38:11+00:00",
+      "Subkey": {
+        "Usage": "Unknown",
+        "EType": "AES256_CTS_HMAC_SHA1_96",
+        "KeyValue": "nPIQrMQu/tpUV3dmeIJYjdUCnpg0sVDjFGHt8EK94EM="
+      },
+      "SequenceNumber": 404160760,
+      "AuthorizationData": [
         {
-          "Type": [
-            "AdIfRelevant"
-          ],
-          "Authorizations": [
-            {
-              "Type": [
-                "AD_ETYPE_NEGOTIATION"
-              ],
-              "ETypes": [
-                [
-                  "AES256_CTS_HMAC_SHA1_96"
-                ],
-                [
-                  "AES128_CTS_HMAC_SHA1_96"
-                ],
-                [
-                  "RC4_HMAC_NT"
-                ]
-              ]
-            },
-            {
-              "RestrictionType": 0,
-              "Restriction": {
-                "Flags": [
-                  "Full"
-                ],
-                "TokenIntegrityLevel": [
-                  "Medium"
-                ],
-                "MachineId": "LkMHyrZTnvXuZfgAixO7o5JMZ1AXqiMsbEnsE2a2UsY="
-              },
-              "Type": [
-                "KERB_AUTH_DATA_TOKEN_RESTRICTIONS"
-              ]
-            },
-            {
-              "Type": [
-                "KERB_LOCAL"
-              ],
-              "Value": "EINby2wBAACoCPQAAAAAAA=="
-            },
-            {
-              "Type": [
-                "KERB_AP_OPTIONS"
-              ],
-              "Options": [
-                "CHANNEL_BINDING_SUPPORTED"
-              ]
-            },
-            {
-              "Type": [
-                "KERB_SERVICE_TARGET"
-              ],
-              "ServiceName": "host/delegated.identityintervention.com@CORP.IDENTITYINTERVENTION.COM"
-            }
-          ]
+          "Type": "AdIfRelevant",
+          "Data": "MIHTMD+gBAICAI2hNwQ1MDMwMaADAgEAoSoEKAAAAAAAMAAATxr82+sI2kbFmPnkrjldLUfESt/oJzLaWWNqCkOgC7IwGqAEAgIAjqESBBAQF4PYQgIAAAkwwQQAAAAAMA6gBAICAI+hBgQEAEAAADBkoAQCAgCQoVwEWmQAZQBzAGsAdABvAHAALQBoADcAMQBvADkAdQB1AEAAQwBPAFIAUAAuAEkARABFAE4AVABJAFQAWQBJAE4AVABFAFIAVgBFAE4AVABJAE8ATgAuAEMATwBNAA=="
         }
       ]
     },
     "Ticket": {
-      "TicketFlags": [
+      "Flags": [
         "EncryptedPreAuthentication",
         "PreAuthenticated",
         "Renewable",
         "Forwardable"
       ],
       "Key": {
-        "KeyType": [
-          "RC4_HMAC_NT"
-        ],
-        "RawKey": "6ZBHsIubiNYuW/klY+IKhw=="
+        "Usage": "Unknown",
+        "EType": "AES256_CTS_HMAC_SHA1_96",
+        "KeyValue": "gXZ5AIsNAdQSo/qdEzkfw3RrLhhypyuG+YcZwqdX9mk="
       },
       "CRealm": "CORP.IDENTITYINTERVENTION.COM",
       "CName": {
-        "Realm": "CORP.IDENTITYINTERVENTION.COM",
-        "NameType": [
-          "NT_ENTERPRISE"
-        ],
-        "Names": [
-          "tests4u"
+        "FullyQualifiedName": "jack",
+        "IsServiceName": false,
+        "Type": "NT_PRINCIPAL",
+        "Name": [
+          "jack"
         ]
       },
-      "AuthTime": "2019-02-23T03:25:44+00:00",
-      "StartTime": "2019-02-23T03:26:00+00:00",
-      "EndTime": "2019-02-23T03:41:00+00:00",
-      "RenewTill": "2019-03-02T03:25:44+00:00",
-      "HostAddresses": 0,
+      "Transited": {
+        "Type": "DomainX500Compress",
+        "Contents": ""
+      },
+      "AuthTime": "2021-04-21T17:24:53+00:00",
+      "StartTime": "2021-04-21T17:38:11+00:00",
+      "EndTime": "2021-04-22T03:24:53+00:00",
+      "RenewTill": "2021-04-28T17:24:53+00:00",
+      "CAddr": null,
       "AuthorizationData": [
         {
-          "Type": [
-            "AdIfRelevant"
-          ],
-          "Authorizations": [
-            {
-              "Type": [
-                "AD_WIN2K_PAC"
-              ],
-              "Certificate": {
-                "DecodingErrors": [],
-                "Version": 0,
-                "LogonInfo": {
-                  "LogonTime": "1601-01-01T00:00:00+00:00",
-                  "LogoffTime": "0001-01-01T00:00:00+00:00",
-                  "KickOffTime": "0001-01-01T00:00:00+00:00",
-                  "PwdLastChangeTime": "1601-01-01T00:05:11.1506395+00:00",
-                  "PwdCanChangeTime": "1601-01-01T00:06:22.30801+00:00",
-                  "PwdMustChangeTime": "1601-01-01T00:04:53.283094+00:00",
-                  "LogonCount": 0,
-                  "BadPasswordCount": 0,
-                  "UserName": "tests4u",
-                  "UserDisplayName": "Test S4U",
-                  "LogonScript": "",
-                  "ProfilePath": "",
-                  "HomeDirectory": "",
-                  "HomeDrive": "",
-                  "ServerName": "DC01",
-                  "DomainName": "corp",
-                  "UserSid": {
-                    "Attributes": [
-                      "0"
-                    ],
-                    "Value": "S-1-5-21-1450222856-612051446-931472078-1107"
-                  },
-                  "GroupSid": {
-                    "Attributes": [
-                      "0"
-                    ],
-                    "Value": "S-1-5-21-1450222856-612051446-931472078-513"
-                  },
-                  "GroupSids": [
-                    {
-                      "Attributes": [
-                        "SE_GROUP_MANDATORY",
-                        "SE_GROUP_ENABLED_BY_DEFAULT",
-                        "SE_GROUP_ENABLED"
-                      ],
-                      "Value": "S-1-5-21-1450222856-612051446-931472078-513"
-                    }
-                  ],
-                  "ExtraSids": [
-                    {
-                      "Attributes": [
-                        "SE_GROUP_MANDATORY",
-                        "SE_GROUP_ENABLED_BY_DEFAULT",
-                        "SE_GROUP_ENABLED"
-                      ],
-                      "Value": "S-1-18-2"
-                    }
-                  ],
-                  "UserAccountControl": [
-                    "ADS_UF_LOCKOUT",
-                    "ADS_UF_MNS_LOGON_ACCOUNT"
-                  ],
-                  "UserFlags": [
-                    "LOGON_EXTRA_SIDS"
-                  ],
-                  "FailedILogonCount": 0,
-                  "LastFailedILogon": "1601-01-01T00:00:00+00:00",
-                  "LastSuccessfulILogon": "1601-01-01T00:00:00+00:00",
-                  "SubAuthStatus": 0,
-                  "ResourceDomainSid": null,
-                  "ResourceGroups": null,
-                  "DomainSid": {
-                    "Attributes": [
-                      "0"
-                    ],
-                    "Value": "S-1-5-21-1450222856-612051446-931472078"
-                  }
-                },
-                "ServerSignature": {
-                  "Type": [
-                    "KERB_CHECKSUM_HMAC_MD5"
-                  ],
-                  "Signature": "HeigjZh19Odn+5L76bHJwA==",
-                  "RODCIdentifier": 0
-                },
-                "CredentialType": null,
-                "KdcSignature": {
-                  "Type": [
-                    "HMAC_SHA1_96_AES256"
-                  ],
-                  "Signature": "G4Ph1DqTxZPuhlQo",
-                  "RODCIdentifier": 0
-                },
-                "ClientClaims": null,
-                "DeviceClaims": null,
-                "ClientInformation": {
-                  "ClientId": "1601-01-01T00:03:20.5972775+00:00",
-                  "Name": "tests4u"
-                },
-                "UpnDomainInformation": {
-                  "Upn": "tests4u@corp.identityintervention.com",
-                  "Domain": "CORP.IDENTITYINTERVENTION.COM",
-                  "Flags": [
-                    "0"
-                  ]
-                },
-                "DelegationInformation": {
-                  "S4U2ProxyTarget": "host/delegated.identityintervention.com",
-                  "S4UTransitedServices": [
-                    "appsvc@CORP.IDENTITYINTERVENTION.COM"
-                  ]
-                }
-              }
-            }
-          ]
+          "Type": "AdIfRelevant",
+          "Data": "MIIDIjCCAx6gBAICAIChggMUBIIDEAUAAAAAAAAAAQAAAOgBAABYAAAAAAAAAAoAAAASAAAAQAIAAAAAAAAMAAAAmAAAAFgCAAAAAAAABgAAABAAAADwAgAAAAAAAAcAAAAQAAAAAAMAAAAAAAABEAgAzMzMzNgBAAAAAAAAAAACALv80z3TNtcB/////////3//////////fwrvbMLQ6tYBCq/W7Jnr1gH/////////fwgACAAEAAIAFgAWAAgAAgAAAAAADAACAAAAAAAQAAIAAAAAABQAAgAAAAAAGAACAGMAAABmBAAAAQIAAAYAAAAcAAIAIAAAAAAAAAAAAAAAAAAAAAAAAAAIAAoAIAACAAgACgAkAAIAKAACAAAAAAAAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAALAACAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAGoAYQBjAGsACwAAAAAAAAALAAAASgBhAGMAawAgAEgAYQBuAGQAZQB5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAGwEAAAHAAAAawQAAAcAAABoBAAABwAAAGoEAAAHAAAAAQIAAAcAAABpBAAABwAAAAUAAAAAAAAABAAAAEQAQwAwADEABQAAAAAAAAAEAAAAQwBPAFIAUAAEAAAAAQQAAAAAAAUVAAAAlAmTEqNsKELQwsZoAQAAADAAAgAHAAAAAQAAAAEBAAAAAAASAQAAAICglj3TNtcBCABqAGEAYwBrAAAAAAAAAEQAEAA6AFgAAAAAAAAAAABqAGEAYwBrAEAAYwBvAHIAcAAuAGkAZABlAG4AdABpAHQAeQBpAG4AdABlAHIAdgBlAG4AdABpAG8AbgAuAGMAbwBtAAAAAABDAE8AUgBQAC4ASQBEAEUATgBUAEkAVABZAEkATgBUAEUAUgBWAEUATgBUAEkATwBOAC4AQwBPAE0AAAAAAAAAEAAAAENIJ0ZsQaIecNA80hAAAAAdWyt6rmuoGI9Mcg0="
         },
         {
-          "Type": [
-            "AdIfRelevant"
-          ],
-          "Authorizations": [
-            {
-              "RestrictionType": 0,
-              "Restriction": {
-                "Flags": [
-                  "Full"
-                ],
-                "TokenIntegrityLevel": [
-                  "Medium"
-                ],
-                "MachineId": "LkMHyrZTnvXuZfgAixO7o5JMZ1AXqiMsbEnsE2a2UsY="
-              },
-              "Type": [
-                "KERB_AUTH_DATA_TOKEN_RESTRICTIONS"
-              ]
-            },
-            {
-              "Type": [
-                "KERB_LOCAL"
-              ],
-              "Value": "EINby2wBAACYCPQAAAAAAA=="
-            }
-          ]
-        }
-      ],
-      "EncryptionKey": "6ZBHsIubiNYuW/klY+IKhw==",
-      "Transited": [
-        {
-          "Type": [
-            "DomainX500Compress"
-          ],
-          "Contents": ""
+          "Type": "AdIfRelevant",
+          "Data": "MF0wP6AEAgIAjaE3BDUwMzAxoAMCAQChKgQoAAAAAAAwAABPGvzb6wjaRsWY+eSuOV0tR8RK3+gnMtpZY2oKQ6ALsjAaoAQCAgCOoRIEEBAXg9hCAgAACTDBBAAAAAA="
         }
       ]
     },
+    "DelegationTicket": null,
+    "SessionKey": {
+      "Usage": null,
+      "EncryptionType": "AES256_CTS_HMAC_SHA1_96",
+      "Host": null,
+      "PrincipalName": null,
+      "Version": null,
+      "Salt": "",
+      "Password": null,
+      "IterationParameter": "",
+      "PasswordBytes": "",
+      "SaltFormat": "ActiveDirectoryService",
+      "RequiresDerivation": false
+    },
     "Skew": "00:05:00"
+  },
+  "Computed": {
+    "Name": "jack@corp.identityintervention.com",
+    "Restrictions": {
+      "KerbAuthDataTokenRestrictions": [
+        {
+          "RestrictionType": 0,
+          "Restriction": {
+            "Flags": "Full",
+            "TokenIntegrityLevel": "High",
+            "MachineId": "Txr82+sI2kbFmPnkrjldLUfESt/oJzLaWWNqCkOgC7I="
+          },
+          "Type": "KerbAuthDataTokenRestrictions"
+        },
+        {
+          "RestrictionType": 0,
+          "Restriction": {
+            "Flags": "Full",
+            "TokenIntegrityLevel": "High",
+            "MachineId": "Txr82+sI2kbFmPnkrjldLUfESt/oJzLaWWNqCkOgC7I="
+          },
+          "Type": "KerbAuthDataTokenRestrictions"
+        }
+      ],
+      "KerbLocal": [
+        {
+          "Value": "EBeD2EICAAAJMMEEAAAAAA==",
+          "Type": "KerbLocal"
+        },
+        {
+          "Value": "EBeD2EICAAAJMMEEAAAAAA==",
+          "Type": "KerbLocal"
+        }
+      ],
+      "KerbApOptions": [
+        {
+          "Options": "ChannelBindingSupported",
+          "Type": "KerbApOptions"
+        }
+      ],
+      "KerbServiceTarget": [
+        {
+          "ServiceName": "desktop-h71o9uu@CORP.IDENTITYINTERVENTION.COM",
+          "Type": "KerbServiceTarget"
+        }
+      ],
+      "AdWin2kPac": [
+        {
+          "Mode": "Server",
+          "DecodingErrors": [],
+          "Version": 0,
+          "LogonInfo": {
+            "PacType": "LOGON_INFO",
+            "LogonTime": "2021-04-21T17:24:53.4021307+00:00",
+            "LogoffTime": "0001-01-01T00:00:00+00:00",
+            "KickOffTime": "0001-01-01T00:00:00+00:00",
+            "PwdLastChangeTime": "2021-01-14T23:55:39.0024458+00:00",
+            "PwdCanChangeTime": "2021-01-15T23:55:39.0024458+00:00",
+            "PwdMustChangeTime": "0001-01-01T00:00:00+00:00",
+            "UserName": "jack",
+            "UserDisplayName": "Jack Handey",
+            "LogonScript": "",
+            "ProfilePath": "",
+            "HomeDirectory": "",
+            "HomeDrive": "",
+            "LogonCount": 99,
+            "BadPasswordCount": 0,
+            "UserId": 1126,
+            "GroupId": 513,
+            "GroupCount": 6,
+            "GroupIds": [
+              {
+                "RelativeId": 1132,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ]
+              },
+              {
+                "RelativeId": 1131,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ]
+              },
+              {
+                "RelativeId": 1128,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ]
+              },
+              {
+                "RelativeId": 1130,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ]
+              },
+              {
+                "RelativeId": 513,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ]
+              },
+              {
+                "RelativeId": 1129,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ]
+              }
+            ],
+            "UserFlags": "LOGON_EXTRA_SIDS",
+            "UserSessionKey": "AAAAAAAAAAAAAAAAAAAAAA==",
+            "ServerName": "DC01\u0000",
+            "DomainName": "CORP\u0000",
+            "DomainId": "S-1-5-21-311626132-1109945507-1757856464",
+            "Reserved1": "AAAAAAAAAAA=",
+            "UserAccountControl": [
+              "ADS_UF_LOCKOUT",
+              "ADS_UF_NORMAL_ACCOUNT"
+            ],
+            "SubAuthStatus": 0,
+            "LastSuccessfulILogon": "1601-01-01T00:00:00+00:00",
+            "LastFailedILogon": "1601-01-01T00:00:00+00:00",
+            "FailedILogonCount": 0,
+            "Reserved3": 0,
+            "ExtraSidCount": 1,
+            "ExtraIds": [
+              {
+                "Sid": "S-1-18-1",
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ]
+              }
+            ],
+            "ResourceDomainId": null,
+            "ResourceGroupCount": 0,
+            "ResourceGroupIds": null,
+            "UserSid": {
+              "Id": 1126,
+              "Attributes": "0",
+              "Value": "S-1-5-21-311626132-1109945507-1757856464-1126"
+            },
+            "GroupSid": {
+              "Id": 513,
+              "Attributes": "0",
+              "Value": "S-1-5-21-311626132-1109945507-1757856464-513"
+            },
+            "GroupSids": [
+              {
+                "Id": 1132,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ],
+                "Value": "S-1-5-21-311626132-1109945507-1757856464-1132"
+              },
+              {
+                "Id": 1131,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ],
+                "Value": "S-1-5-21-311626132-1109945507-1757856464-1131"
+              },
+              {
+                "Id": 1128,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ],
+                "Value": "S-1-5-21-311626132-1109945507-1757856464-1128"
+              },
+              {
+                "Id": 1130,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ],
+                "Value": "S-1-5-21-311626132-1109945507-1757856464-1130"
+              },
+              {
+                "Id": 513,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ],
+                "Value": "S-1-5-21-311626132-1109945507-1757856464-513"
+              },
+              {
+                "Id": 1129,
+                "Attributes": [
+                  "SE_GROUP_MANDATORY",
+                  "SE_GROUP_ENABLED_BY_DEFAULT",
+                  "SE_GROUP_ENABLED"
+                ],
+                "Value": "S-1-5-21-311626132-1109945507-1757856464-1129"
+              }
+            ],
+            "ExtraSids": [
+              {
+                "Id": 1,
+                "Attributes": "0",
+                "Value": "S-1-18-1"
+              }
+            ],
+            "ResourceDomainSid": null,
+            "ResourceGroups": [],
+            "DomainSid": {
+              "Id": 1757856464,
+              "Attributes": "0",
+              "Value": "S-1-5-21-311626132-1109945507-1757856464"
+            }
+          },
+          "ServerSignature": {
+            "Type": "HMAC_SHA1_96_AES256",
+            "Signature": "Q0gnRmxBoh5w0DzS",
+            "RODCIdentifier": 0,
+            "PacType": "0"
+          },
+          "CredentialType": null,
+          "KdcSignature": {
+            "Type": "HMAC_SHA1_96_AES256",
+            "Signature": "HVsreq5rqBiPTHIN",
+            "RODCIdentifier": 0,
+            "PacType": "0"
+          },
+          "ClientClaims": null,
+          "DeviceClaims": null,
+          "ClientInformation": {
+            "ClientId": "2021-04-21T17:24:53+00:00",
+            "Name": "jack",
+            "PacType": "CLIENT_NAME_TICKET_INFO"
+          },
+          "UpnDomainInformation": {
+            "Upn": "jack@corp.identityintervention.com",
+            "Domain": "CORP.IDENTITYINTERVENTION.COM",
+            "Flags": "0",
+            "PacType": "UPN_DOMAIN_INFO"
+          },
+          "DelegationInformation": null,
+          "HasRequiredFields": true,
+          "Type": "AdWin2kPac"
+        }
+      ]
+    },
+    "ValidationMode": "Pac",
+    "Claims": [
+      {
+        "Type": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid",
+        "Value": "S-1-5-21-311626132-1109945507-1757856464-1126"
+      },
+      {
+        "Type": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+        "Value": "Jack Handey"
+      },
+      {
+        "Type": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
+        "Value": "jack@corp.identityintervention.com"
+      },
+      {
+        "Type": "http://schemas.microsoft.com/ws/2008/06/identity/claims/groupsid",
+        "Value": "S-1-5-21-311626132-1109945507-1757856464-1132"
+      },
+      {
+        "Type": "http://schemas.microsoft.com/ws/2008/06/identity/claims/groupsid",
+        "Value": "S-1-5-21-311626132-1109945507-1757856464-1131"
+      },
+      {
+        "Type": "http://schemas.microsoft.com/ws/2008/06/identity/claims/groupsid",
+        "Value": "S-1-5-21-311626132-1109945507-1757856464-1128"
+      },
+      {
+        "Type": "http://schemas.microsoft.com/ws/2008/06/identity/claims/groupsid",
+        "Value": "S-1-5-21-311626132-1109945507-1757856464-1130"
+      },
+      {
+        "Type": "http://schemas.microsoft.com/ws/2008/06/identity/claims/groupsid",
+        "Value": "S-1-5-21-311626132-1109945507-1757856464-513"
+      },
+      {
+        "Type": "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+        "Value": "Domain Users"
+      },
+      {
+        "Type": "http://schemas.microsoft.com/ws/2008/06/identity/claims/groupsid",
+        "Value": "S-1-5-21-311626132-1109945507-1757856464-1129"
+      },
+      {
+        "Type": "http://schemas.microsoft.com/ws/2008/06/identity/claims/groupsid",
+        "Value": "S-1-18-1"
+      }
+    ]
   },
   "KeyTable": {
     "FileVersion": 2,
     "KerberosVersion": 5,
     "Entries": [
       {
-        "EncryptionType": null,
+        "EncryptionType": "NULL",
         "Length": 0,
-        "Timestamp": "0001-01-01T00:00:00+00:00",
-        "Version": 0,
+        "Timestamp": "2021-04-21T23:52:22.5460123+00:00",
+        "Version": 5,
         "Host": null,
-        "PasswordBytes": "UABAAHMAcwB3ADAAcgBkACEA",
-        "Key": null
+        "PasswordBytes": "jBBI1KL19X3olbCK/f9p/+cxZi3RnqqQRH4WawB4EzY=",
+        "KeyPrincipalName": {
+          "Realm": "CORP.IDENTITYINTERVENTION.COM",
+          "Names": [
+            "STEVE-HOME"
+          ],
+          "NameType": "NT_SRV_HST",
+          "FullyQualifiedName": "STEVE-HOME"
+        },
+        "Salt": null
       }
     ]
   }
