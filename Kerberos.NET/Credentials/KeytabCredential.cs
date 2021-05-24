@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -25,6 +25,16 @@ namespace Kerberos.NET.Credentials
             if (!string.IsNullOrWhiteSpace(domain))
             {
                 this.Domain = domain.ToUpperInvariant();
+            }
+            else
+            {
+                var entry = keytab.Entries.FirstOrDefault(e => e.Principal != null);
+
+                if (entry != null)
+                {
+                    this.Domain = entry.Principal.Realm?.ToUpperInvariant() ??
+                                  entry.Principal.FullyQualifiedName.Split('/', '@').Last().ToUpperInvariant();
+                }
             }
         }
 

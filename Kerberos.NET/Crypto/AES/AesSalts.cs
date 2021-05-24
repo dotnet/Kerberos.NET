@@ -1,10 +1,11 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System.Linq;
 using System.Text;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto.AES
 {
@@ -86,7 +87,37 @@ namespace Kerberos.NET.Crypto.AES
 
             salt.Append("host");
 
-            salt.Append(key.Host.ToLowerInvariant());
+            string host;
+
+            if (!string.IsNullOrWhiteSpace(key.Host))
+            {
+                host = key.Host.ToLowerInvariant();
+            }
+            else
+            {
+                var spnSplit = key.PrincipalName.FullyQualifiedName.Split('/', '@');
+
+                if (spnSplit.Length == 0)
+                {
+                    host = "";
+                }
+                else if (spnSplit.Length == 1 || !key.PrincipalName.FullyQualifiedName.Contains('/'))
+                {
+                    host = spnSplit[0];
+                }
+                else
+                {
+                    host = spnSplit[1];
+                }
+            }
+
+            if (host.EndsWith("$"))
+            {
+                host = host.Substring(0, host.Length - 1);
+            }
+
+            salt.Append(host);
+
             salt.Append(".");
             salt.Append(key.PrincipalName.Realm.ToLowerInvariant());
         }

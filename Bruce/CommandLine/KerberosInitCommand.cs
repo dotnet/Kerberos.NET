@@ -27,13 +27,13 @@ namespace Kerberos.NET.CommandLine
             FormalParameter = true,
             Required = true,
             Description = "UserPrincipalName")]
-        public override string UserPrincipalName { get; set; }
+        public override string PrincipalName { get; set; }
 
         [CommandLineParameter("realm", Description = "RealmName")]
         public override string Realm { get; set; }
 
         [CommandLineParameter("V|verbose", Description = "Verbose")]
-        public override bool Verbose { get; protected set; }
+        public override bool Verbose { get; set; }
 
         [CommandLineParameter("l|lifetime", Description = "LifeTime")]
         public TimeSpan? Lifetime { get; set; }
@@ -155,6 +155,12 @@ namespace Kerberos.NET.CommandLine
                 client.PinKdc(cred.Domain, this.KdcHostname);
             }
 
+            if (string.IsNullOrWhiteSpace(cred.Domain))
+            {
+                this.WriteLine(SR.Resource("CommandLine_KerberosInitCommand_DomainRequired"));
+                return true;
+            }
+
             await client.Authenticate(cred);
 
             if (!string.IsNullOrWhiteSpace(this.ServiceName))
@@ -238,7 +244,7 @@ namespace Kerberos.NET.CommandLine
             {
                 if (this.Certificate == string.Empty)
                 {
-                    this.Certificate = this.UserPrincipalName;
+                    this.Certificate = this.PrincipalName;
                 }
 
                 return KerberosAsymmetricCredential.Get(this.Certificate, this.Realm);
@@ -254,15 +260,11 @@ namespace Kerberos.NET.CommandLine
 
                 var kt = new KeyTable(File.ReadAllBytes(Environment.ExpandEnvironmentVariables(keytab)));
 
-                return new KeytabCredential(this.UserPrincipalName, kt, this.Realm);
+                return new KeytabCredential(this.PrincipalName, kt, this.Realm);
             }
             else
             {
-                ((ICommand)this).IO.Writer.Write(
-                    SR.Resource("CommandLine_KInit_PassPrompt",
-                        this.UserPrincipalName
-                    )
-                );
+                this.Write(SR.Resource("CommandLine_KInit_PassPrompt", this.PrincipalName));
 
                 var password = ReadMasked();
 
@@ -271,7 +273,7 @@ namespace Kerberos.NET.CommandLine
                     return null;
                 }
 
-                var cred = new KerberosPasswordCredential(this.UserPrincipalName, password, this.Realm);
+                var cred = new KerberosPasswordCredential(this.PrincipalName, password, this.Realm);
 
                 return cred;
             }

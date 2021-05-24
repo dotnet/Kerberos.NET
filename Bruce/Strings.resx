@@ -219,6 +219,9 @@
   <data name="CommandLine_KerberosInitCommand_CredNotFound" xml:space="preserve">
     <value>Error: Credential not found</value>
   </data>
+  <data name="CommandLine_KerberosInitCommand_DomainRequired" xml:space="preserve">
+    <value>A realm cannot be determined based on the configuration or credential information.</value>
+  </data>
   <data name="CommandLine_KerberosInitCommand_Enterprise" xml:space="preserve">
     <value>Treat the principal name as an enterprise name.</value>
   </data>
@@ -291,8 +294,62 @@
   <data name="CommandLine_KerberosInitCommand_Verbose" xml:space="preserve">
     <value>Display verbose output.</value>
   </data>
+  <data name="CommandLine_KerberosKeytab" xml:space="preserve">
+    <value>View, create, and modify keytab files.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Add" xml:space="preserve">
+    <value>Add a new key to the file.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Delete" xml:space="preserve">
+    <value>Delete the keytab file.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_EType" xml:space="preserve">
+    <value>Optioanlly specify which Encryption Types should have keys generated.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_File" xml:space="preserve">
+    <value>The path of the keytab file to create, modify, or view.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Host" xml:space="preserve">
+    <value>The sAMAccountName if the principal is a service account with SPN.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Key" xml:space="preserve">
+    <value>Optionally provide the key as a base64 encoded value.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Offline" xml:space="preserve">
+    <value>Do not attempt to get logon information from the KDC.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Password" xml:space="preserve">
+    <value>Optionally provide the password of the principal.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Principal" xml:space="preserve">
+    <value>The Principal Name (user or service) of the key to add.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_PType" xml:space="preserve">
+    <value>Optionally specify type of principal name to use instead of detecting format.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Realm" xml:space="preserve">
+    <value>The realm of the principal of the key to add.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Salt" xml:space="preserve">
+    <value>Provide the salt used to derive the key instead of computing it.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Show" xml:space="preserve">
+    <value>Show the key when viewing details about the file.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Verbose" xml:space="preserve">
+    <value>Display additional logging information.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_Verify" xml:space="preserve">
+    <value>Verify the generated keytab can be used to authenticate a principal.</value>
+  </data>
+  <data name="CommandLine_KerberosKeytabCommand_VerifyFailedCred" xml:space="preserve">
+    <value>Verification of the keytab failed because authentication failed. Maybe the password is wrong?</value>
+  </data>
   <data name="CommandLine_KerberosKeytab_EType" xml:space="preserve">
     <value>Encryption Type</value>
+  </data>
+  <data name="CommandLine_KerberosKeytab_FileDeleted" xml:space="preserve">
+    <value>Keytab file deleted</value>
   </data>
   <data name="CommandLine_KerberosKeytab_FileVersion" xml:space="preserve">
     <value>File Version</value>
@@ -319,7 +376,7 @@
     <value>Timestamp</value>
   </data>
   <data name="CommandLine_KerberosKeytab_UnknownFile" xml:space="preserve">
-    <value>File not found</value>
+    <value>File not found: {0}</value>
   </data>
   <data name="CommandLine_KerberosList" xml:space="preserve">
     <value>Displays the current list of tickets in the cache.</value>
@@ -342,6 +399,9 @@
   <data name="CommandLine_KerberosListCommand_ShortFlags" xml:space="preserve">
     <value>Display ticket flags in short-form.</value>
   </data>
+  <data name="CommandLine_KerberosListCommand_ShowTgt" xml:space="preserve">
+    <value>Show the TGT of the current user.</value>
+  </data>
   <data name="CommandLine_KerberosListCommand_Test" xml:space="preserve">
     <value>Verify a Ticket-Granting-Ticket is present and valid in the cache.</value>
   </data>
@@ -351,11 +411,35 @@
   <data name="CommandLine_KerberosPing" xml:space="preserve">
     <value>Locate and ping a KDC for the provided user to get pre-auth details.</value>
   </data>
+  <data name="CommandLine_KerberosPing_Realm" xml:space="preserve">
+    <value>Indicate which realm the queried user belongs.</value>
+  </data>
   <data name="CommandLine_KerberosPing_UserPrincipalName" xml:space="preserve">
     <value>The User Principal Name used to ping the KDC</value>
   </data>
+  <data name="CommandLine_KerberosPing_Verbose" xml:space="preserve">
+    <value>Include detailed logging information about the ping request.</value>
+  </data>
   <data name="CommandLine_KerberosWhoAmI" xml:space="preserve">
     <value>Displays details about the current authenticated user.</value>
+  </data>
+  <data name="CommandLine_KerberosWhoAmI_All" xml:space="preserve">
+    <value>Display all available details about the current user.</value>
+  </data>
+  <data name="CommandLine_KerberosWhoAmI_Cache" xml:space="preserve">
+    <value>Optionally provide the path to the ticket cache file of the user to look up.</value>
+  </data>
+  <data name="CommandLine_KerberosWhoAmI_Claims" xml:space="preserve">
+    <value>Display claims for the current user.</value>
+  </data>
+  <data name="CommandLine_KerberosWhoAmI_Groups" xml:space="preserve">
+    <value>Display group membership about the current user.</value>
+  </data>
+  <data name="CommandLine_KerberosWhoAmI_Logon" xml:space="preserve">
+    <value>Display logon information about the current user.</value>
+  </data>
+  <data name="CommandLine_KerberosWhoAmI_Verbose" xml:space="preserve">
+    <value>Include detailed logging information in the whoami request.</value>
   </data>
   <data name="CommandLine_KInit_PassPrompt" xml:space="preserve">
     <value>Password for {0}: </value>

@@ -367,6 +367,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A realm cannot be determined based on the configuration or credential information..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_DomainRequired {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_DomainRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Treat the principal name as an enterprise name..
         /// </summary>
         internal static string CommandLine_KerberosInitCommand_Enterprise {
@@ -583,11 +592,29 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to View, create, and modify keytab files..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Encryption Type.
         /// </summary>
         internal static string CommandLine_KerberosKeytab_EType {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosKeytab_EType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keytab file deleted.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytab_FileDeleted {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytab_FileDeleted", resourceCulture);
             }
         }
         
@@ -664,11 +691,155 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to File not found.
+        ///   Looks up a localized string similar to File not found: {0}.
         /// </summary>
         internal static string CommandLine_KerberosKeytab_UnknownFile {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosKeytab_UnknownFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Add a new key to the file..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Add {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Add", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete the keytab file..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Delete {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Optioanlly specify which Encryption Types should have keys generated..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_EType {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_EType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The path of the keytab file to create, modify, or view..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_File {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_File", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The sAMAccountName if the principal is a service account with SPN..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Host {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Host", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Optionally provide the key as a base64 encoded value..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Key {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Key", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not attempt to get logon information from the KDC..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Offline {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Offline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Optionally provide the password of the principal..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Password {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Principal Name (user or service) of the key to add..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Principal {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Principal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Optionally specify type of principal name to use instead of detecting format..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_PType {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_PType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The realm of the principal of the key to add..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Realm {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Realm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide the salt used to derive the key instead of computing it..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Salt {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Salt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show the key when viewing details about the file..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Show {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Show", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display additional logging information..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Verbose {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Verbose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verify the generated keytab can be used to authenticate a principal..
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_Verify {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_Verify", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verification of the keytab failed because authentication failed. Maybe the password is wrong?.
+        /// </summary>
+        internal static string CommandLine_KerberosKeytabCommand_VerifyFailedCred {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosKeytabCommand_VerifyFailedCred", resourceCulture);
             }
         }
         
@@ -736,6 +907,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show the TGT of the current user..
+        /// </summary>
+        internal static string CommandLine_KerberosListCommand_ShowTgt {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosListCommand_ShowTgt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Verify a Ticket-Granting-Ticket is present and valid in the cache..
         /// </summary>
         internal static string CommandLine_KerberosListCommand_Test {
@@ -763,6 +943,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Indicate which realm the queried user belongs..
+        /// </summary>
+        internal static string CommandLine_KerberosPing_Realm {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPing_Realm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The User Principal Name used to ping the KDC.
         /// </summary>
         internal static string CommandLine_KerberosPing_UserPrincipalName {
@@ -772,11 +961,74 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Include detailed logging information about the ping request..
+        /// </summary>
+        internal static string CommandLine_KerberosPing_Verbose {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPing_Verbose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Displays details about the current authenticated user..
         /// </summary>
         internal static string CommandLine_KerberosWhoAmI {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosWhoAmI", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display all available details about the current user..
+        /// </summary>
+        internal static string CommandLine_KerberosWhoAmI_All {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosWhoAmI_All", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Optionally provide the path to the ticket cache file of the user to look up..
+        /// </summary>
+        internal static string CommandLine_KerberosWhoAmI_Cache {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosWhoAmI_Cache", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display claims for the current user..
+        /// </summary>
+        internal static string CommandLine_KerberosWhoAmI_Claims {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosWhoAmI_Claims", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display group membership about the current user..
+        /// </summary>
+        internal static string CommandLine_KerberosWhoAmI_Groups {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosWhoAmI_Groups", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display logon information about the current user..
+        /// </summary>
+        internal static string CommandLine_KerberosWhoAmI_Logon {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosWhoAmI_Logon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Include detailed logging information in the whoami request..
+        /// </summary>
+        internal static string CommandLine_KerberosWhoAmI_Verbose {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosWhoAmI_Verbose", resourceCulture);
             }
         }
         
