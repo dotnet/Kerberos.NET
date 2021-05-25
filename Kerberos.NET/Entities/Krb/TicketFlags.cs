@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.ComponentModel;
 
 namespace Kerberos.NET.Entities
 {
@@ -46,11 +47,13 @@ namespace Kerberos.NET.Entities
         /// <summary>
         /// Indicates the requested ticket may be post-dated for use in future.
         /// </summary>
+        [Description("May Post-date")]
         MayPostDate = 1 << 26,
 
         /// <summary>
         /// Indicates the requested ticket is post-dated for use in the future.
         /// </summary>
+        [Description("Post-dated")]
         PostDated = 1 << 25,
 
         /// <summary>
@@ -76,6 +79,7 @@ namespace Kerberos.NET.Entities
         /// This flag usually indicates the presence of an authenticator in the ticket.
         /// It can also flag the presence of credentials taken from a smart card logon.
         /// </summary>
+        [Description("Pre-Authenticated")]
         PreAuthenticated = 1 << 21,
 
         /// <summary>
@@ -84,21 +88,25 @@ namespace Kerberos.NET.Entities
         /// V5 protocol. KDCs MUST NOT issue a ticket with this flag set. KDCs SHOULD NOT preserve
         /// this flag if it is set by another KDC.
         /// </summary>
+        [Description("Hardware Authenticated")]
         HardwareAuthentication = 1 << 20,
 
         /// <summary>
         /// Application servers MUST ignore the TRANSITED-POLICY-CHECKED flag.
         /// </summary>
+        [Description("Transit Policy-Checked")]
         TransitPolicyChecked = 1 << 19,
 
         /// <summary>
         /// The KDC MUST set the OK-AS-DELEGATE flag if the service account is trusted for delegation.
         /// </summary>
+        [Description("Ok as Delegate")]
         OkAsDelegate = 1 << 18,
 
         /// <summary>
         /// Indicates the client supports FAST negotiation.
         /// </summary>
+        [Description("Encrypted Pre-Authentication")]
         EncryptedPreAuthentication = 1 << 16,
 
         /// <summary>

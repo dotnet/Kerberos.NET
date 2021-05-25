@@ -3,16 +3,17 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace Kerberos.NET.Configuration
 {
-    public class Krb5RealmConfig
+    public class Krb5RealmConfig : Krb5ConfigObject
     {
         /// <summary>
         /// Identifies the host where the administration server is running. Typically, this is the primary Kerberos server.
-        /// This tag must be given a value in order to communicate with the kadmind server for the realm.
+        /// This tag must be given a value in order to communicate with the the admin service server for the realm.
         /// </summary>
         [DisplayName("admin_server")]
         public ICollection<string> AdminServer { get; private set; }
@@ -163,5 +164,186 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         [DisplayName("v4_realm")]
         public IDictionary<string, string> V4Realm { get; private set; }
+
+        ////////////////////// KDC Configuration /////////////////////////
+
+        /// <summary>
+        /// Location of the access control list file that the admin service uses to determine which principals are allowed which permissions on the Kerberos database.
+        /// </summary>
+        [DisplayName("acl_file")]
+        public string AclFile { get; set; }
+
+        /// <summary>
+        /// This relation indicates the name of the configuration section under [dbmodules] for database-specific parameters used by the loadable database library.
+        /// The default value is the realm name. If this configuration section does not exist, default values will be used for all database parameters.
+        /// </summary>
+        [DisplayName("database_module")]
+        public string DatabaseModule { get; set; }
+
+        /// <summary>
+        /// Specifies the default expiration date of principals created in this realm. The default value is 0, which means no expiration date.
+        /// </summary>
+        [DefaultValue(0)]
+        [DisplayName("default_principal_expiration")]
+        public DateTimeOffset DefaultPrincipalExpiration { get; set; }
+
+        /// <summary>
+        /// Specifies the default attributes of principals created in this realm. The format for this string is a comma-separated list of flags,
+        /// with ‘+’ before each flag that should be enabled and ‘-‘ before each flag that should be disabled.
+        /// The postdateable, forwardable, tgt-based, renewable, proxiable, dup-skey, allow-tickets, and service flags default to enabled.
+        /// </summary>
+        [DefaultValue("+postdateable, +forwardable, +tgt-based, +renewable, +proxiable, +dup-skey, +allow-tickets, +service")]
+        [DisplayName("default_principal_flags")]
+        public FlagString<PrincipalFlags> DefaultPrincipalFlags { get; set; }
+
+        /// <summary>
+        /// Location of the dictionary file containing strings that are not allowed as passwords. The file should contain one string per line,
+        /// with no additional whitespace. If none is specified or if there is no policy assigned to the principal, no dictionary
+        /// checks of passwords will be performed.
+        /// </summary>
+        [DisplayName("dict_file")]
+        public string DictionaryFilePath { get; set; }
+
+        /// <summary>
+        /// Specifies the authentication indicator value that the KDC asserts into tickets obtained using FAST encrypted challenge pre-authentication.
+        /// </summary>
+        [DisplayName("encrypted_challenge_indicator")]
+        public string EncryptedChallenegeIndicator { get; set; }
+
+        /// <summary>
+        /// Lists services which will get host-based referral processing even if the server principal is not marked as host-based by the client.
+        /// </summary>
+        [DisplayName("host_based_services")]
+        public ICollection<string> HostBasedServices { get; private set; }
+
+        /// <summary>
+        /// Specifies whether incremental database propagation is enabled. The default value is false.
+        /// </summary>
+        [DisplayName("iprop_enabled")]
+        public bool IncrementalPropagationEnabled { get; set; }
+
+        /// <summary>
+        /// Specifies the maximum number of log entries to be retained for incremental propagation.
+        /// </summary>
+        [DefaultValue(1000)]
+        [DisplayName("iprop_ulogsize")]
+        public int IncrementalPropagationLogSize { get; set; }
+
+        /// <summary>
+        /// Specifies how often the replica KDC polls for new updates from the primary.
+        /// </summary>
+        [DefaultValue("2m")]
+        [DisplayName("iprop_replica_poll")]
+        public TimeSpan IncrementalPropagationReplicaPoll { get; set; }
+
+        /// <summary>
+        /// Specifies the iprop RPC listening addresses and/or ports for the the admin service. Each entry may be an interface address,
+        /// a port number, or an address and port number separated by a colon. If the address contains colons, enclose it in square brackets.
+        /// If no address is specified, the wildcard address is used.
+        /// </summary>
+        [DefaultValue("127.0.0.1:754")]
+        [DisplayName("iprop_listen")]
+        public ICollection<string> IncrementalPropagationListenEndpoints { get; private set; }
+
+        /// <summary>
+        /// Specifies the amount of time to wait for a full propagation to complete. This is optional in configuration files, and is used by replica KDCs only.
+        /// </summary>
+        [DefaultValue("5m")]
+        [DisplayName("iprop_resync_timeout")]
+        public TimeSpan IncrementalPropagationResyncTimeout { get; set; }
+
+        /// <summary>
+        /// Specifies the admin service RPC listening addresses and/or ports for the the admin service. Each entry may be an interface address, a port number, or an address
+        /// and port number separated by a colon. If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address
+        /// is used.
+        /// </summary>
+        [DefaultValue("127.0.0.1:749")]
+        [DisplayName("kadmind_listen")]
+        public ICollection<string> AdminServiceListenEndpoints { get; private set; }
+
+        /// <summary>
+        /// Specifies the location where the system key has been stored.
+        /// </summary>
+        [DisplayName("key_stash_file")]
+        public string KeyStashFile { get; set; }
+
+        /// <summary>
+        /// Specifies the UDP listening addresses and/or ports for the KDC service. Each entry may be an interface address, a port number, or an address and port number separated by a colon.
+        /// If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address is used. If no port is specified, the standard port (88) is used.
+        /// </summary>
+        [DefaultValue("127.0.0.1:88")]
+        [DisplayName("kdc_listen")]
+        public ICollection<string> KdcListenEndpoints { get; private set; }
+
+        /// <summary>
+        /// Specifies the TCP listening addresses and/or ports for the KDC service. Each entry may be an interface address, a port number, or an address and port number separated by a colon.
+        /// If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address is used. If no port is specified, the standard port (88) is used.
+        /// To disable listening on TCP, set this relation to the empty string with kdc_tcp_listen = "".
+        /// </summary>
+        [DefaultValue("127.0.0.1:88")]
+        [DisplayName("kdc_tcp_listen")]
+        public ICollection<string> KdcTcpListenEndpoints { get; private set; }
+
+        /// <summary>
+        /// Specifies the kpasswd listening addresses and/or ports for the the admin service. Each entry may be an interface address, a port number, or an address and port number separated by a colon.
+        /// If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address is used. If the admin service fails to bind to any of the specified addresses,
+        /// it will fail to start.
+        /// </summary>
+        [DefaultValue("127.0.0.1:464")]
+        [DisplayName("kpasswd_listen")]
+        public ICollection<string> PasswordListenEndpoints { get; private set; }
+
+        /// <summary>
+        /// Specifies the maximum time period for which a ticket may be valid in this realm. The default value is 24 hours.
+        /// </summary>
+        [DefaultValue("24h")]
+        [DisplayName("max_life")]
+        public TimeSpan MaxTicketLifetime { get; set; }
+
+        /// <summary>
+        /// Specifies the maximum time period during which a valid ticket may be renewed in this realm. The default value is 0.
+        /// </summary>
+        [DisplayName("max_renewable_life")]
+        public TimeSpan MaxRenewableLifetime { get; set; }
+
+        /// <summary>
+        /// Lists services to block from getting host-based referral processing, even if the client marks the server principal as host-based or
+        /// the service is also listed in host_based_services. no_host_referral = * will disable referral processing altogether.
+        /// </summary>
+        [DisplayName("no_host_referral")]
+        public ICollection<string> NoHostReferral { get; private set; }
+
+        /// <summary>
+        /// If set to true, the KDC will check the list of transited realms for cross-realm tickets against the transit path computed from the realm names and the capaths section of its krb5.conf file;
+        /// if the path in the ticket to be issued contains any realms not in the computed path, the ticket will not be issued, and an error will be returned to the client instead.
+        /// If this value is set to false, such tickets will be issued anyways, and it will be left up to the application server to validate the realm transit path.
+        /// If the disable-transited-check flag is set in the incoming request, this check is not performed at all.Having the reject_bad_transit option will cause such ticket requests to be rejected always.
+        /// This transit path checking and config file option currently apply only to TGS requests.
+        /// </summary>
+        [DefaultValue(true)]
+        [DisplayName("reject_bad_transit")]
+        public bool RejectBadTransit { get; set; }
+
+        /// <summary>
+        /// If set to true, the KDC will reject ticket requests from anonymous principals to service principals other than the realm’s ticket-granting service.
+        /// This option allows anonymous PKINIT to be enabled for use as FAST armor tickets without allowing anonymous authentication to services.
+        /// </summary>
+        [DisplayName("restrict_anonymous_to_tgt")]
+        public bool RestrictAnonymousToTicketGrantingService { get; set; }
+
+        /// <summary>
+        /// Specifies an authentication indicator value that the KDC asserts into tickets obtained using SPAKE pre-authentication.
+        /// The default is not to add any indicators. This option may be specified multiple times.
+        /// </summary>
+        [DisplayName("spake_preauth_indicator")]
+        public ICollection<string> SpakePreAuthIndicator { get; private set; }
+
+        /// <summary>
+        /// Specifies the default key/salt combinations of principals for this realm.
+        /// </summary>
+        [DefaultValue("aes256-cts-hmac-sha1-96:normal aes128-cts-hmac-sha1-96:normal")]
+        [DisplayName("supported_enctypes")]
+        public ICollection<KeySaltPair> SupportedEncryptionTypes { get; private set; }
+
     }
 }

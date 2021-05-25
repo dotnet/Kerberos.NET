@@ -1,1 +1,0 @@
-msbuild -property:generate=true Build.Kerberos.NET.sln

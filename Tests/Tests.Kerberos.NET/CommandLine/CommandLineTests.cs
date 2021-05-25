@@ -81,7 +81,7 @@ namespace Tests.Kerberos.NET
             textWriter.Flush();
             var str = textWriter.ToString();
 
-            Assert.IsTrue(str.StartsWith("Usage: kinit principal", System.StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(str.Trim().StartsWith("Usage: kinit principal", System.StringComparison.OrdinalIgnoreCase));
         }
 
         [TestMethod]
@@ -114,7 +114,7 @@ namespace Tests.Kerberos.NET
             var types = LoadTypes();
             var io = InputControl.Default();
 
-            Assert.AreEqual(6, types.Count());
+            Assert.AreEqual(8, types.Count());
 
             foreach (var type in types)
             {

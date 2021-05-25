@@ -11,7 +11,7 @@ using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Configuration
 {
-    public class Krb5ConfigDefaults
+    public class Krb5ConfigDefaults : Krb5ConfigObject
     {
         /// <summary>
         /// If this flag is set to false, then weak encryption types will be filtered out of the lists

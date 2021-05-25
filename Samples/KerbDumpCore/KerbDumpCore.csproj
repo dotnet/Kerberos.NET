@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>KerbDumpCore</AssemblyName>
+    <RootNamespace>KerbDump</RootNamespace>
+  </PropertyGroup>
+    
+  <ItemGroup>
+    <Compile Include="..\KerbDump\**\*.cs" />
+    <EmbeddedResource Include="..\KerbDump\**\*.resx" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <Compile Remove="..\KerbDump\Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <ProjectReference Include="..\..\Kerberos.NET\Kerberos.NET.csproj" />
+  </ItemGroup>
+
+</Project>

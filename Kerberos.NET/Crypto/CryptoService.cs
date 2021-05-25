@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using ChecksumConstructor = System.Func<System.ReadOnlyMemory<byte>, System.ReadOnlyMemory<byte>, Kerberos.NET.Crypto.KerberosChecksum>;
 
@@ -16,6 +17,9 @@ namespace Kerberos.NET.Crypto
 
         private static readonly Dictionary<ChecksumType, ChecksumConstructor> ChecksumAlgorithms
             = new Dictionary<ChecksumType, ChecksumConstructor>();
+
+        private static readonly ConcurrentDictionary<EncryptionType, ChecksumType> ETypeToChecksumCache
+            = new ConcurrentDictionary<EncryptionType, ChecksumType>();
 
         static CryptoService()
         {
@@ -72,11 +76,9 @@ namespace Kerberos.NET.Crypto
             return CryptoAlgorithms.ContainsKey(etype);
         }
 
-        private static readonly Dictionary<EncryptionType, ChecksumType> Cache = new Dictionary<EncryptionType, ChecksumType>();
-
         internal static ChecksumType ConvertType(EncryptionType type)
         {
-            if (Cache.TryGetValue(type, out ChecksumType checksumType))
+            if (ETypeToChecksumCache.TryGetValue(type, out ChecksumType checksumType))
             {
                 return checksumType;
             }
@@ -107,7 +109,7 @@ namespace Kerberos.NET.Crypto
                     break;
             }
 
-            Cache[type] = checksumType;
+            ETypeToChecksumCache.TryAdd(type, checksumType);
 
             return checksumType;
         }

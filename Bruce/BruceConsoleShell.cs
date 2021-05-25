@@ -19,8 +19,8 @@ namespace Kerberos.NET.CommandLine
 @"  ____                      
  | __ ) _ __ _   _  ___ ___ 
  |  _ \| '__| | | |/ __/ _ \
- | |_) | |  | |_| | (_|  __/
- |____/|_|   \__,_|\___\___|
+ | |_) | |  | |_| | (_|  __/  (___/=  
+ |____/|_|   \__,_|\___\___|   7 7    
 
 
 {BannerDescription} (v{Version})
@@ -107,7 +107,7 @@ namespace Kerberos.NET.CommandLine
 
                 var parameters = CommandLineParameters.Parse(commandLine);
 
-                if (parameters == null)
+                if (string.IsNullOrWhiteSpace(parameters?.Command))
                 {
                     continue;
                 }
@@ -172,17 +172,18 @@ namespace Kerberos.NET.CommandLine
                 this.PrintUnknownCommand(parameters);
             }
 
-            bool executed = false;
-
             if (command != null)
             {
-                executed = await command.Execute();
+                var executed = await command.Execute();
+
+                if (!executed)
+                {
+                    this.io.Writer.WriteLine();
+                    command.DisplayHelp();
+                }
             }
 
-            if (!executed)
-            {
-                command?.DisplayHelp();
-            }
+            this.io.Writer.WriteLine();
         }
 
         private bool TryProcessSystemCommand(CommandLineParameters parameters, out bool exiting)
@@ -209,7 +210,8 @@ namespace Kerberos.NET.CommandLine
 
         private void PrintUnknownCommand(CommandLineParameters parameters)
         {
-            this.io.Writer.WriteLine(string.Format(BR.UnknownCommand, parameters.Command));
+            this.io.Writer.WriteLine();
+            this.io.Writer.WriteLine(string.Format(Strings.UnknownCommand, parameters.Command));
         }
 
         private bool TryPopShell()
@@ -228,7 +230,7 @@ namespace Kerberos.NET.CommandLine
 
             var banner = Banner
                             .Replace("{Version}", versionString)
-                            .Replace("{BannerDescription}", BR.BannerDescription)
+                            .Replace("{BannerDescription}", Strings.BannerDescription)
                             .Replace("{BannerYear}", DateTimeOffset.UtcNow.Year.ToString(CultureInfo.InvariantCulture));
 
             this.io.Writer.WriteLine(banner);
