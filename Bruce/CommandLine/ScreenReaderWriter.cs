@@ -169,7 +169,7 @@ namespace Kerberos.NET.CommandLine
 
                 if (line[i] == '}')
                 {
-                    var substr = line.Substring(index, i - index).Replace("{", "").Replace("}", "");
+                    var substr = line[index..i].Replace("{", "").Replace("}", "");
 
                     var modifierIndex = substr.IndexOf(':');
                     string modifier = null;
@@ -182,7 +182,7 @@ namespace Kerberos.NET.CommandLine
 
                     var val = logState?.FirstOrDefault(l => l.Key == substr) ?? default;
 
-                    WriteValue(indent, val, modifier);
+                    WriteValue(indent, val, modifier, index);
 
                     this.IO.ResetColor();
                     index = -1;
@@ -208,7 +208,7 @@ namespace Kerberos.NET.CommandLine
             }
         }
 
-        private void WriteValue(int indent, KeyValuePair<string, object> val, string modifier)
+        private void WriteValue(int indent, KeyValuePair<string, object> val, string modifier, int position)
         {
             if (val.Value is null)
             {
@@ -227,7 +227,11 @@ namespace Kerberos.NET.CommandLine
             }
             else if (Reflect.IsBytes(val.Value, out ReadOnlyMemory<byte> bytes))
             {
-                Hex.DumpHex(bytes, (str, index) => this.LoggerWriteLine(index == 0 ? 0 : indent, "{Value}", str), bytesPerLine: bytes.Length > 16 ? 16 : 8);
+                Hex.DumpHex(
+                    bytes,
+                    (str, index) => this.LoggerWriteLine(index == 0 ? 0 : indent + position / 2, "{Value}", str),
+                    bytesPerLine: bytes.Length > 16 ? 16 : 8
+                );
             }
             else if (type == typeof(DateTimeOffset))
             {

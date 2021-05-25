@@ -34,7 +34,7 @@ namespace Kerberos.NET.CommandLine
         public bool ShortFormFlags { get; set; }
 
         [CommandLineParameter("v|verbose", EnforceCasing = false, Description = "Verbose")]
-        public override bool Verbose { get; protected set; }
+        public override bool Verbose { get; set; }
 
         [CommandLineParameter("l|list-caches", Description = "ListCaches")]
         public bool ListCaches { get; set; }
@@ -44,6 +44,9 @@ namespace Kerberos.NET.CommandLine
 
         [CommandLineParameter("d|debug", Description = "DescribeClient")]
         public bool DescribeClient { get; set; }
+
+        [CommandLineParameter("tgt", Description = "ShowTgt")]
+        public bool ShowTgt { get; set; }
 
         public override async Task<bool> Execute()
         {
@@ -83,7 +86,31 @@ namespace Kerberos.NET.CommandLine
                 this.DescribeClientDetails(client);
             }
 
+            if (this.ShowTgt)
+            {
+                this.ShowTgtDetails(client);
+            }
+
             return true;
+        }
+
+        private void ShowTgtDetails(KerberosClient client)
+        {
+            var myTgtEntry = client.Cache.GetCacheItem<KerberosClientCacheEntry>($"krbtgt/{client.DefaultDomain}");
+
+            var myTgt = myTgtEntry.KdcResponse?.Ticket;
+
+            if (myTgt == null)
+            {
+                this.WriteHeader(SR.Resource("CommandLine_WhoAmI_NoTgt"));
+                return;
+            }
+
+            this.WriteLine();
+            this.WriteHeader("Ticket Granting Ticket");
+            this.WriteLine();
+
+            this.WriteLine(2, myTgtEntry.KdcResponse.Ticket.EncodeApplication());
         }
 
         private void DescribeClientDetails(KerberosClient client)

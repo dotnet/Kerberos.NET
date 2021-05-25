@@ -26,24 +26,29 @@ namespace Kerberos.NET.CommandLine
             {
                 var attr = type.GetCustomAttribute<CommandLineCommandAttribute>();
 
-                if (string.Equals(commandValue, attr.Command, StringComparison.InvariantCultureIgnoreCase))
+                var allCommands = attr.Command.Split('|');
+
+                foreach (var commandStr in allCommands)
                 {
-                    var ctor = type.GetConstructor(new[] { typeof(CommandLineParameters) });
-
-                    ICommand command;
-
-                    if (ctor != null)
+                    if (string.Equals(commandValue, commandStr, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        command = (ICommand)ctor.Invoke(new[] { instance });
-                    }
-                    else
-                    {
-                        command = (ICommand)Activator.CreateInstance(type);
-                    }
+                        var ctor = type.GetConstructor(new[] { typeof(CommandLineParameters) });
 
-                    command.IO = io;
+                        ICommand command;
 
-                    return command;
+                        if (ctor != null)
+                        {
+                            command = (ICommand)ctor.Invoke(new[] { instance });
+                        }
+                        else
+                        {
+                            command = (ICommand)Activator.CreateInstance(type);
+                        }
+
+                        command.IO = io;
+
+                        return command;
+                    }
                 }
             }
 

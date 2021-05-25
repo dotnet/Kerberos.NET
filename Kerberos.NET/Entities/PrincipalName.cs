@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -32,6 +32,22 @@ namespace Kerberos.NET.Entities
         public PrincipalNameType NameType { get; set; }
 
         public string FullyQualifiedName => string.Join("/", this.Names);
+
+        public static PrincipalName FromKrbPrincipalName(KrbPrincipalName name, string realm = null)
+        {
+            if (name.Name.Length > 2)
+            {
+                var possibleRealm = name.Name[2];
+
+                if (string.IsNullOrWhiteSpace(realm))
+                {
+                    realm = possibleRealm;
+                    name.Name = new[] { name.Name[0], name.Name[1] };
+                }
+            }
+
+            return new PrincipalName(name.Type, realm, name.Name);
+        }
 
         public override bool Equals(object obj)
         {

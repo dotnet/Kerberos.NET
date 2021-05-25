@@ -56,16 +56,16 @@ namespace Kerberos.NET.Configuration
         public string DefaultCCacheName { get; set; }
 
         /// <summary>
-        /// This relation specifies the name of the default keytab for obtaining client credentials. The default is %DEFCKTNAME%.
+        /// This relation specifies the name of the default keytab for obtaining client credentials. The default is "%APPDATA%\\Kerberos.NET\\client.keytab".
         /// </summary>
-        [DefaultValue("%DEFCKTNAME%")]
+        [DefaultValue("%APPDATA%\\Kerberos.NET\\.keytab")]
         [DisplayName("default_client_keytab_name")]
         public string DefaultClientKeytabName { get; set; }
 
         /// <summary>
-        /// This relation specifies the default keytab name to be used by application servers such as sshd. The default is %DEFKTNAME%.
+        /// This relation specifies the default keytab name to be used by application servers such as sshd. The default is "%APPDATA%\\Kerberos.NET\\server.keytab".
         /// </summary>
-        [DefaultValue("%DEFKTNAME%")]
+        [DefaultValue("%APPDATA%\\Kerberos.NET\\.keytab")]
         [DisplayName("default_keytab_name")]
         public string DefaultKeytabName { get; set; }
 
@@ -220,8 +220,7 @@ namespace Kerberos.NET.Configuration
 
         /// <summary>
         /// Identifies the encryption types that servers will permit for session keys and for ticket and authenticator encryption,
-        /// ordered by preference from highest to lowest. Starting in release 1.18, this tag also acts as the default value for
-        /// default_tgs_enctypes and default_tkt_enctypes.
+        /// ordered by preference from highest to lowest.
         /// </summary>
         [DefaultValue("aes128-cts-hmac-sha256-128 aes256-cts-hmac-sha384-192 aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 rc4-hmac-nt")]
         [DisplayName("permitted_enctypes")]
