@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -147,12 +147,12 @@ namespace Kerberos.NET.Crypto
 
             if (validation.HasFlag(ValidationActions.ClientPrincipalIdentifier))
             {
-                this.ValidateClientPrincipalIdentifier(this.Authenticator.CName, this.Ticket.CName);
+                this.ValidateClientPrincipalIdentifier(this.Ticket.CName, this.Authenticator.CName);
             }
 
             if (validation.HasFlag(ValidationActions.Realm))
             {
-                this.ValidateRealm(this.token.Ticket.Realm, this.Authenticator.Realm);
+                this.ValidateRealm(this.Ticket.CRealm, this.Authenticator.Realm);
             }
 
             var now = this.Now();
