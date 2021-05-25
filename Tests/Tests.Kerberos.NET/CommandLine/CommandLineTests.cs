@@ -114,7 +114,7 @@ namespace Tests.Kerberos.NET
             var types = LoadTypes();
             var io = InputControl.Default();
 
-            Assert.AreEqual(8, types.Count());
+            Assert.AreEqual(9, types.Count());
 
             foreach (var type in types)
             {
@@ -125,19 +125,24 @@ namespace Tests.Kerberos.NET
                 Assert.IsNotNull(attr.Command);
                 Assert.IsNotNull(attr.Description);
 
-                var commandLine = CommandLineParameters.Parse(attr.Command);
+                var commandStrs = attr.Command.Split('|');
 
-                Assert.IsNotNull(commandLine);
+                foreach (var commandStr in commandStrs)
+                {
+                    var commandLine = CommandLineParameters.Parse(commandStr);
 
-                io.Writer = new StringWriter();
+                    Assert.IsNotNull(commandLine);
 
-                var command = commandLine.CreateCommandExecutor(io);
-                Assert.IsNotNull(command);
+                    io.Writer = new StringWriter();
 
-                command.DisplayHelp();
+                    var command = commandLine.CreateCommandExecutor(io);
+                    Assert.IsNotNull(command);
 
-                Assert.IsTrue(!string.IsNullOrWhiteSpace(io.Writer.ToString()));
-                Assert.IsTrue(io.Writer.ToString().Contains(attr.Command));
+                    command.DisplayHelp();
+
+                    Assert.IsTrue(!string.IsNullOrWhiteSpace(io.Writer.ToString()));
+                    Assert.IsTrue(io.Writer.ToString().Contains(commandStr));
+                }
             }
         }
 
