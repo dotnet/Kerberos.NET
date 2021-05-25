@@ -70,7 +70,7 @@ namespace Kerberos.NET.CommandLine
             this.WriteHeader(SR.Resource("CommandLine_Defaults"));
             this.WriteLine();
 
-            var props = new List<(string, string)>()
+            var props = new List<(string, object)>()
             {
                 (SR.Resource("CommandLine_Version"), Version),
                 (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfiguration),
@@ -88,7 +88,7 @@ namespace Kerberos.NET.CommandLine
             this.WriteHeader(SR.Resource("CommandLine_Commands"));
             this.WriteLine();
 
-            var max = types.Max(t => t.GetCustomAttribute<CommandLineCommandAttribute>().Command.Length) + 10;
+            var max = types.Max(t => t.GetCustomAttribute<CommandLineCommandAttribute>().Command.Split('|').OrderByDescending(s => s.Length).First().Length) + 10;
 
             foreach (var type in types)
             {
@@ -100,23 +100,34 @@ namespace Kerberos.NET.CommandLine
         {
             var attr = type.GetCustomAttribute<CommandLineCommandAttribute>();
 
+            var commands = attr.Command.Split('|');
+
+            var command = commands.First();
+
             if (max <= 0)
             {
-                max = attr.Command.Length + 4;
+                max = command.Length + 4;
             }
 
-            var label = attr.Command.PadLeft(attr.Command.Length + 3).PadRight(max);
+            var label = command.PadLeft(command.Length + 3).PadRight(max);
 
             var descName = "CommandLine_" + attr.Description;
             var desc = SR.Resource(descName);
 
+            var format = "{0}{{Desc}}";
+
+            if (commands.Length > 1)
+            {
+                format += " (Aliases: {{Aliases}})";
+            }
+
             if (string.Equals(descName, desc, StringComparison.OrdinalIgnoreCase))
             {
-                this.WriteLine(string.Format("{0}{{Label}}", label), attr.Description);
+                this.WriteLine(string.Format(format, label), attr.Description, commands.Skip(1));
             }
             else
             {
-                this.WriteLine(string.Format("{0}{{Label}}", label), desc);
+                this.WriteLine(string.Format(format, label), desc, commands.Skip(1));
             }
         }
     }

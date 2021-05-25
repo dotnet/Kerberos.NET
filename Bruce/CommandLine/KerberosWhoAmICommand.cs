@@ -29,7 +29,7 @@ namespace Kerberos.NET.CommandLine
         public string Cache { get; set; }
 
         [CommandLineParameter("verbose", Description = "Verbose")]
-        public override bool Verbose { get; protected set; }
+        public override bool Verbose { get; set; }
 
         [CommandLineParameter("all", Description = "All")]
         public bool All { get; set; }
@@ -40,7 +40,7 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("logon", Description = "Logon")]
         public bool Logon { get; set; }
 
-        [CommandLineParameter("claims", Description = "claims")]
+        [CommandLineParameter("claims", Description = "Claims")]
         public bool Claims { get; set; }
 
         public override async Task<bool> Execute()
@@ -74,20 +74,35 @@ namespace Kerberos.NET.CommandLine
                 return;
             }
 
-            var result = await client.GetServiceTicket(
-                new RequestServiceTicket
+            try
+            {
+                var result = await client.GetServiceTicket(
+                    new RequestServiceTicket
+                    {
+                        ServicePrincipalName = client.UserPrincipalName,
+                        UserToUserTicket = myTgt,
+                        CacheTicket = false,
+                    }
+                );
+
+                var authenticator = new KerberosAuthenticator(new KerberosValidator(myTgtEntry.SessionKey.AsKey()));
+
+                var identity = await authenticator.Authenticate(result.ApReq.EncodeApplication());
+
+                this.DescribeTicket(identity as KerberosIdentity);
+            }
+            catch (KerberosProtocolException kex)
+            {
+                this.WriteLine();
+
+                this.WriteLine(1, "{ErrorCode}: {ErrorText}", kex.Error.ErrorCode, kex.Error.ETextWithoutCode());
+
+                if (kex.Error.ErrorCode == KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
                 {
-                    ServicePrincipalName = client.UserPrincipalName,
-                    UserToUserTicket = myTgt,
-                    CacheTicket = false,
+                    this.WriteLine();
+                    this.WriteLine(1, SR.Resource("CommandLine_WhoAmI_NoTgt"));
                 }
-            );
-
-            var authenticator = new KerberosAuthenticator(new KerberosValidator(myTgtEntry.SessionKey.AsKey()));
-
-            var identity = await authenticator.Authenticate(result.ApReq.EncodeApplication());
-
-            this.DescribeTicket(identity as KerberosIdentity);
+            }
         }
 
         private readonly HashSet<string> IgnoredProperties = new HashSet<string>
@@ -132,14 +147,13 @@ namespace Kerberos.NET.CommandLine
                         continue;
                     }
 
-                    properties.Add(("", obj.GetType().Name.Humanize(LetterCasing.Title)));
+                    properties.Add((null, obj.GetType().Name.Humanize(LetterCasing.Title)));
 
                     var props = obj.GetType().GetProperties();
 
                     foreach (var prop in props)
                     {
                         if (!Reflect.IsEnumerable(prop.PropertyType) &&
-                            !Reflect.IsBytes(prop.PropertyType) &&
                             prop.PropertyType != typeof(RpcSid) &&
                             !IgnoredProperties.Contains(prop.Name))
                         {
@@ -180,43 +194,7 @@ namespace Kerberos.NET.CommandLine
                 }
             }
 
-            int max = 0;
-
-            var propsMax = properties.Where(p => p.Item2 != null);
-
-            if (propsMax.Any())
-            {
-                max = propsMax.Max(p => p.Item1.Length);
-
-                if (max > 50)
-                {
-                    max = 50;
-                }
-
-                foreach (var prop in properties)
-                {
-                    if (string.IsNullOrWhiteSpace(prop.Item1))
-                    {
-                        this.WriteLine();
-                        this.WriteHeader(prop.Item2.ToString());
-                        this.WriteLine();
-                        continue;
-                    }
-
-                    string key;
-
-                    if (prop.Item2 == null)
-                    {
-                        key = SR.Resource(prop.Item1);
-                    }
-                    else
-                    {
-                        key = string.Format("{0}: ", SR.Resource(prop.Item1).PadLeft(max));
-                    }
-
-                    this.WriteLine(string.Format("  {0}{{Value}}", key), prop.Item2);
-                }
-            }
+            WriteProperties(properties);
 
             if (this.All || this.Groups)
             {
@@ -237,7 +215,7 @@ namespace Kerberos.NET.CommandLine
                     Name = SecurityIdentifierNames.GetFriendlyName(s.Value, pac.LogonInfo.DomainSid.Value)
                 });
 
-                max = sids.Max(s => s.Sid.Value.Length);
+                var max = sids.Max(s => s.Sid.Value.Length);
                 var maxName = sids.Max(s => s.Name?.Length ?? 0);
 
                 foreach (var group in sids.OrderBy(c => c.Sid.Value))

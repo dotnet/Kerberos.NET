@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kerberos.NET.CommandLine
 {
-    [CommandLineCommand("kping", Description = "KerberosPing")]
+    [CommandLineCommand("kping|ping", Description = "KerberosPing")]
     public class KerberosPing : BaseCommand
     {
         public KerberosPing(CommandLineParameters parameters)
@@ -27,13 +27,13 @@ namespace Kerberos.NET.CommandLine
             FormalParameter = true,
             Required = true,
             Description = "UserPrincipalName")]
-        public override string UserPrincipalName { get; set; }
+        public override string PrincipalName { get; set; }
 
         [CommandLineParameter("realm", Description = "Realm")]
         public override string Realm { get; set; }
 
         [CommandLineParameter("verbose", Description = "Verbose")]
-        public override bool Verbose { get; protected set; }
+        public override bool Verbose { get; set; }
 
         public override async Task<bool> Execute()
         {
@@ -49,18 +49,18 @@ namespace Kerberos.NET.CommandLine
 
             var implicitUsername = false;
 
-            if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
+            if (string.IsNullOrWhiteSpace(this.PrincipalName))
             {
-                this.UserPrincipalName = client.UserPrincipalName;
+                this.PrincipalName = client.UserPrincipalName;
                 implicitUsername = true;
             }
 
-            if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
+            if (string.IsNullOrWhiteSpace(this.PrincipalName))
             {
                 return false;
             }
 
-            var credential = new KerberosPasswordCredential(this.UserPrincipalName, "password not required for this");
+            var credential = new KerberosPasswordCredential(this.PrincipalName, "password not required for this");
 
             if (string.IsNullOrWhiteSpace(credential.UserName))
             {
@@ -72,7 +72,7 @@ namespace Kerberos.NET.CommandLine
             {
                 if (implicitUsername)
                 {
-                    credential = new KerberosPasswordCredential(this.UserPrincipalName, "password not required for this", this.Realm ?? this.DefaultRealm);
+                    credential = new KerberosPasswordCredential(this.PrincipalName, "password not required for this", this.Realm ?? this.DefaultRealm);
                 }
 
                 if (string.IsNullOrWhiteSpace(credential.Domain))
@@ -157,7 +157,7 @@ namespace Kerberos.NET.CommandLine
                 this.WriteLine();
             }
 
-            this.WriteLine(1, "{ErrorCode}: {ErrorText}", pex.Error.ErrorCode, pex.Error.EText?.Replace(pex.Error.ErrorCode.ToString() + ": ", ""));
+            this.WriteLine(1, "{ErrorCode}: {ErrorText}", pex.Error.ErrorCode, pex.Error.ETextWithoutCode());
             this.WriteLine();
 
             if (!string.IsNullOrWhiteSpace(pex.Error.Realm))
@@ -221,11 +221,11 @@ namespace Kerberos.NET.CommandLine
                                 this.WriteLine();
                             }
 
-                            this.WriteLine(3, "{Value}", pa.Value);
+                            this.WriteLine(3, pa.Value);
                         }
                         else
                         {
-                            this.WriteLine(3, "{PaValue}", (string)null);
+                            this.WriteLine(3, (object)null);
 
                             if (index < paData.Count())
                             {

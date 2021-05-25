@@ -40,11 +40,11 @@ namespace Kerberos.NET.CommandLine
 
         public virtual string Realm { get; set; }
 
-        public virtual string UserPrincipalName { get; set; }
+        public virtual string PrincipalName { get; set; }
 
         public virtual string ConfigurationPath { get; set; }
 
-        public virtual bool Verbose { get; protected set; }
+        public virtual bool Verbose { get; set; }
 
         [CommandLineParameter("h|help|?", Description = "Help")]
         public bool Help { get; protected set; }
@@ -152,6 +152,11 @@ namespace Kerberos.NET.CommandLine
             this.WriteLine();
         }
 
+        protected virtual void Write(string message)
+        {
+            this.IO.Write(message);
+        }
+
         protected virtual void WriteLine() => this.WriteLine(0, "");
 
         protected virtual void WriteHeader(string message)
@@ -165,6 +170,11 @@ namespace Kerberos.NET.CommandLine
             this.IO.WriteAsColor(message, ConsoleColor.White);
         }
 
+        protected virtual void WriteLine(int indent, object value)
+        {
+            this.WriteLine(indent, "{Value}", value);
+        }
+
         protected virtual void WriteLine(string message, params object[] args)
         {
             WriteLine(0, message, args);
@@ -174,7 +184,7 @@ namespace Kerberos.NET.CommandLine
         {
             this.IO.LogOffset = indent;
 
-            this.IO.Logger.LogInformation(string.Format("{0}", message), args);
+            this.IO.Logger.LogInformation(message, args);
         }
 
         protected virtual void WriteLineWarning(string message, params object[] args)
@@ -187,18 +197,37 @@ namespace Kerberos.NET.CommandLine
             this.IO.Logger.LogError(message, args);
         }
 
-        protected void WriteProperties(IEnumerable<(string, string)> props)
+        protected void WriteProperties(IEnumerable<(string, object)> props)
         {
-            var max = props.Max(p => p.Item1.Length) + 3;
+            this.WriteProperties(0, props);
+        }
+
+        protected void WriteProperties(int indent, IEnumerable<(string, object)> props)
+        {
+            var max = (indent * 2) + props.Max(p => p.Item1?.Length ?? 0) + 3;
 
             foreach (var prop in props)
             {
-                this.WriteProperty(prop.Item1, prop.Item2, max);
+                this.WriteProperty(indent, prop.Item1, prop.Item2, max);
             }
         }
 
-        protected void WriteProperty(string key, string value, int padding)
+        protected void WriteProperty(int indent, string key, object value, int padding)
         {
+            if (key is null)
+            {
+                this.WriteLine();
+                this.WriteHeader(value.ToString().PadLeft(value.ToString().Length + (indent * 2)));
+                this.WriteLine();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                this.WriteLine();
+                return;
+            }
+
             this.WriteLine(
                 string.Format(
                     "{0}: {{Value}}",
@@ -346,9 +375,9 @@ namespace Kerberos.NET.CommandLine
             {
                 this.Realm = client.DefaultDomain;
 
-                if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
+                if (string.IsNullOrWhiteSpace(this.PrincipalName))
                 {
-                    this.UserPrincipalName = client.UserPrincipalName;
+                    this.PrincipalName = client.UserPrincipalName;
                 }
             }
 
@@ -357,14 +386,14 @@ namespace Kerberos.NET.CommandLine
                 this.Realm = this.DefaultRealm;
             }
 
-            if (string.IsNullOrWhiteSpace(this.UserPrincipalName))
+            if (string.IsNullOrWhiteSpace(this.PrincipalName))
             {
-                this.UserPrincipalName = Environment.UserName;
+                this.PrincipalName = Environment.UserName;
             }
 
-            if (!this.UserPrincipalName.Contains("@") && !string.IsNullOrWhiteSpace(this.Realm))
+            if (!this.PrincipalName.Contains("@") && !string.IsNullOrWhiteSpace(this.Realm))
             {
-                this.UserPrincipalName = $"{this.UserPrincipalName}@{this.Realm}";
+                this.PrincipalName = $"{this.PrincipalName}@{this.Realm}";
             }
         }
 
@@ -557,6 +586,54 @@ namespace Kerberos.NET.CommandLine
             }
 
             return list;
+        }
+
+        protected string ReadMasked()
+        {
+            var masked = "";
+
+            var io = ((ICommand)this).IO;
+
+            try
+            {
+                io.HookCtrlC(true);
+
+                do
+                {
+                    ConsoleKeyInfo key = io.ReadKey();
+
+                    if (key.Modifiers.HasFlag(ConsoleModifiers.Control) && key.Key == ConsoleKey.C)
+                    {
+                        io.Writer.WriteLine();
+                        return null;
+                    }
+                    else if (key.Key != ConsoleKey.Backspace &&
+                        key.Key != ConsoleKey.Enter &&
+                        !char.IsControl(key.KeyChar))
+                    {
+                        masked += key.KeyChar;
+
+                        io.Writer.Write("*");
+                    }
+                    else if (key.Key == ConsoleKey.Backspace && masked.Length > 0)
+                    {
+                        io.Writer.Write("\b \b");
+                        masked = masked[0..^1];
+                    }
+                    else if (key.Key == ConsoleKey.Enter)
+                    {
+                        io.Writer.WriteLine();
+                        break;
+                    }
+                }
+                while (true);
+
+                return masked;
+            }
+            finally
+            {
+                io.HookCtrlC(false);
+            }
         }
     }
 }

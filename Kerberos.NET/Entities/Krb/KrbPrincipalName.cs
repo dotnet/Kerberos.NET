@@ -159,7 +159,8 @@ namespace Kerberos.NET.Entities
             "@", // NT_SMTP_NAME = 7,
             "@", // 8
             "@", // 9
-            "@"  // NT_ENTERPRISE = 10
+            "@", // NT_ENTERPRISE = 10,
+            "/"  // NT_WELLKNOWN = 11
         };
 
         public bool Matches(object obj)

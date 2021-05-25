@@ -6,6 +6,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -26,6 +27,11 @@ namespace Kerberos.NET.CommandLine
             }
 
             return string.Format(CultureInfo.CurrentCulture, resource, args);
+        }
+
+        public static string ETextWithoutCode(this KrbError error)
+        {
+            return error?.EText?.Replace(error?.ErrorCode.ToString() + ": ", "");
         }
     }
 }

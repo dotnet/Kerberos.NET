@@ -187,7 +187,7 @@ namespace Kerberos.NET.CommandLine
         {
             var client = this.CreateClient();
 
-            var props = new List<(string, string)>()
+            var props = new List<(string, object)>()
             {
                 (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfiguration),
             };
