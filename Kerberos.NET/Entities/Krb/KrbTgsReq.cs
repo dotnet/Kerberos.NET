@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET.Asn1;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
@@ -123,11 +124,22 @@ namespace Kerberos.NET.Entities
 
             if (!string.IsNullOrWhiteSpace(rst.S4uTarget))
             {
-                paData.Add(new KrbPaData
+                if (tgtSessionKey.EType == EncryptionType.RC4_HMAC_NT)
                 {
-                    Type = PaDataType.PA_FOR_USER,
-                    Value = EncodeS4URequest(rst.S4uTarget, tgt.Realm, tgtSessionKey)
-                });
+                    paData.Add(new KrbPaData
+                    {
+                        Type = PaDataType.PA_FOR_USER,
+                        Value = EncodeS4ULegacyRequest(rst.S4uTarget, tgt.Realm, tgtSessionKey)
+                    });
+                }
+                else
+                {
+                    paData.Add(new KrbPaData
+                    {
+                        Type = PaDataType.PA_FOR_X509_USER,
+                        Value = EncodeS4URequest(rst.S4uTarget, rst.S4uTargetCertificate, body.Nonce, tgt.Realm, sessionKey)
+                    });
+                }
             }
 
             var tgs = new KrbTgsReq
@@ -139,7 +151,7 @@ namespace Kerberos.NET.Entities
             return tgs;
         }
 
-        private static ReadOnlyMemory<byte> EncodeS4URequest(string s4u, string realm, KrbEncryptionKey sessionKey)
+        private static ReadOnlyMemory<byte> EncodeS4ULegacyRequest(string s4u, string realm, KrbEncryptionKey sessionKey)
         {
             var paS4u = new KrbPaForUser
             {
@@ -151,6 +163,29 @@ namespace Kerberos.NET.Entities
             paS4u.GenerateChecksum(sessionKey.AsKey());
 
             return paS4u.Encode();
+        }
+
+        private static ReadOnlyMemory<byte> EncodeS4URequest(string s4u, X509Certificate2 certificate, int nonce, string realm, KrbEncryptionKey sessionKey)
+        {
+            var userId = new KrbS4uUserId()
+            {
+                CName = new KrbPrincipalName { Type = PrincipalNameType.NT_ENTERPRISE, Name = new[] { s4u } },
+                Nonce = nonce,
+                Realm = realm
+            };
+
+            if (certificate != null)
+            {
+                userId.SubjectCertificate = certificate.RawData;
+            }
+
+            var paX509 = new KrbPaS4uX509User
+            {
+                UserId = userId,
+                Checksum = KrbChecksum.Create(userId.Encode(), sessionKey.AsKey(), (KeyUsage)26)
+            };
+
+            return paX509.Encode();
         }
 
         private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey, KrbChecksum checksum, out KrbEncryptionKey sessionKey)

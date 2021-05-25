@@ -50,7 +50,9 @@
     <AsnXml Include="Entities\Krb\KrbPaForUser.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacOptions.xml" />
     <AsnXml Include="Entities\Krb\KrbPaPacRequest.xml" />
+    <AsnXml Include="Entities\Krb\KrbPaS4uX509User.xml" />
     <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
+    <AsnXml Include="Entities\Krb\KrbS4uUserId.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsReq.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
     <AsnXml Include="Entities\Krb\KrbTicket.xml" />
