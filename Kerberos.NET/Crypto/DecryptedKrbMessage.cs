@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -95,7 +95,7 @@ namespace Kerberos.NET.Crypto
             {
                 throw new KerberosValidationException(
                     "Ticket CName " +
-                    $"({leftName.Type}: {leftName.Type})" +
+                    $"({leftName.Type}: {leftName.Name})" +
                     " does not match Authenticator CName " +
                     $"({rightName?.Type}: {rightName?.Name})",
                     nameof(KrbPrincipalName)
