@@ -82,6 +82,7 @@ namespace Kerberos.NET.CommandLine
                         ServicePrincipalName = client.UserPrincipalName,
                         UserToUserTicket = myTgt,
                         CacheTicket = false,
+                        S4uTarget = client.UserPrincipalName
                     }
                 );
 

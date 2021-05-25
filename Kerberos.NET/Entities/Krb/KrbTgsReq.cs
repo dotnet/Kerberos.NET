@@ -122,21 +122,24 @@ namespace Kerberos.NET.Entities
                 }
             };
 
-            if (!string.IsNullOrWhiteSpace(rst.S4uTarget) && rst.S4uTargetCertificate == null)
+            if (!string.IsNullOrWhiteSpace(rst.S4uTarget))
             {
-                paData.Add(new KrbPaData
+                if (tgtSessionKey.EType == EncryptionType.RC4_HMAC_NT)
                 {
-                    Type = PaDataType.PA_FOR_USER,
-                    Value = EncodeS4URequest(rst.S4uTarget, tgt.Realm, tgtSessionKey)
-                });
-            }
-            else if (rst.S4uTargetCertificate != null)
-            {
-                paData.Add(new KrbPaData
+                    paData.Add(new KrbPaData
+                    {
+                        Type = PaDataType.PA_FOR_USER,
+                        Value = EncodeS4ULegacyRequest(rst.S4uTarget, tgt.Realm, tgtSessionKey)
+                    });
+                }
+                else
                 {
-                    Type = PaDataType.PA_FOR_X509_USER,
-                    Value = EncodeS4URequest(rst.S4uTarget, rst.S4uTargetCertificate, body.Nonce, tgt.Realm, tgtSessionKey)
-                });
+                    paData.Add(new KrbPaData
+                    {
+                        Type = PaDataType.PA_FOR_X509_USER,
+                        Value = EncodeS4URequest(rst.S4uTarget, rst.S4uTargetCertificate, body.Nonce, tgt.Realm, sessionKey)
+                    });
+                }
             }
 
             var tgs = new KrbTgsReq
@@ -148,7 +151,7 @@ namespace Kerberos.NET.Entities
             return tgs;
         }
 
-        private static ReadOnlyMemory<byte> EncodeS4URequest(string s4u, string realm, KrbEncryptionKey sessionKey)
+        private static ReadOnlyMemory<byte> EncodeS4ULegacyRequest(string s4u, string realm, KrbEncryptionKey sessionKey)
         {
             var paS4u = new KrbPaForUser
             {
@@ -168,9 +171,13 @@ namespace Kerberos.NET.Entities
             {
                 CName = new KrbPrincipalName { Type = PrincipalNameType.NT_ENTERPRISE, Name = new[] { s4u } },
                 Nonce = nonce,
-                Realm = realm,
-                SubjectCertificate = certificate.RawData
+                Realm = realm
             };
+
+            if (certificate != null)
+            {
+                userId.SubjectCertificate = certificate.RawData;
+            }
 
             var paX509 = new KrbPaS4uX509User
             {
