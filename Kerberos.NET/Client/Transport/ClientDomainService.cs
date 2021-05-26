@@ -126,7 +126,7 @@ namespace Kerberos.NET.Transport
             {
                 try
                 {
-                    await QueryDns(domain, servicePrefix, records);
+                    await this.QueryDns(domain, servicePrefix, records);
                 }
                 catch (DnsNotSupportedException ex)
                 {
@@ -157,7 +157,7 @@ namespace Kerberos.NET.Transport
 
             if (!skipLookup)
             {
-                logger.LogDebug("Querying DNS {Lookup}", lookup);
+                this.logger.LogDebug("Querying DNS {Lookup}", lookup);
 
                 var dnsResults = await DnsQuery.QuerySrv(lookup);
 
@@ -165,7 +165,7 @@ namespace Kerberos.NET.Transport
                 {
                     DomainServiceNegativeCache[lookup] = DateTimeOffset.UtcNow.AddMinutes(5);
 
-                    logger.LogDebug("DNS failed {Lookup} so negative caching", lookup);
+                    this.logger.LogDebug("DNS failed {Lookup} so negative caching", lookup);
                 }
 
                 records.AddRange(dnsResults);

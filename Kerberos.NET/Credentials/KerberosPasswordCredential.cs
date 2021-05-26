@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -12,6 +12,8 @@ namespace Kerberos.NET.Credentials
 {
     public class KerberosPasswordCredential : KerberosCredential
     {
+        private static readonly EncryptionType[] ETypePreference = KerberosConstants.ETypes.ToArray();
+
         private readonly string password;
 
         public KerberosPasswordCredential(string username, string password, string domain = null)
@@ -68,7 +70,8 @@ namespace Kerberos.NET.Credentials
 
                         if (this.Salts != null && this.Salts.Any())
                         {
-                            var kv = this.Salts.ElementAt(0);
+                            var etypes = this.Salts.Select(s => s.Key).Intersect(ETypePreference).OrderBy(e => Array.IndexOf(ETypePreference, e));
+                            var kv = this.Salts.First(s => s.Key == etypes.First());
 
                             etype = kv.Key;
                             salt = kv.Value;

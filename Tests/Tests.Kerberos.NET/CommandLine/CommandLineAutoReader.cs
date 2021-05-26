@@ -25,27 +25,27 @@ namespace Tests.Kerberos.NET
 
         public void QueueNext(string s)
         {
-            lines.Enqueue(s);
+            this.lines.Enqueue(s);
         }
 
         public override string ReadLine()
         {
-            return lines.Dequeue();
+            return this.lines.Dequeue();
         }
 
         public char ReadKey()
         {
-            if (lastLine.Count == 0)
+            if (this.lastLine.Count == 0)
             {
-                var line = ReadLine();
+                var line = this.ReadLine();
 
                 foreach (var c in line)
                 {
-                    lastLine.Enqueue(c);
+                    this.lastLine.Enqueue(c);
                 }
             }
 
-            return lastLine.Dequeue();
+            return this.lastLine.Dequeue();
         }
     }
 }

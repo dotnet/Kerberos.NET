@@ -34,7 +34,7 @@ namespace Kerberos.NET.Crypto
 
             ref byte rSecret = ref MemoryMarshal.GetReference(secret);
 
-            var status = BCryptCreateHash(phAlgorithm, out phHash, IntPtr.Zero, 0, ref rSecret, secret.Length, BCryptCreateHashFlags.BCRYPT_HASH_REUSABLE_FLAG);
+            var status = BCryptCreateHash(this.phAlgorithm, out this.phHash, IntPtr.Zero, 0, ref rSecret, secret.Length, BCryptCreateHashFlags.BCRYPT_HASH_REUSABLE_FLAG);
 
             ThrowIfNotSuccess(status);
         }
@@ -44,20 +44,20 @@ namespace Kerberos.NET.Crypto
             ref byte rData = ref MemoryMarshal.GetReference(data);
             ref byte rHash = ref MemoryMarshal.GetReference(hash);
 
-            var status = BCryptHashData(phHash, ref rData, data.Length);
+            var status = BCryptHashData(this.phHash, ref rData, data.Length);
 
             ThrowIfNotSuccess(status);
 
-            status = BCryptFinishHash(phHash, ref rHash, hash.Length);
+            status = BCryptFinishHash(this.phHash, ref rHash, hash.Length);
 
             ThrowIfNotSuccess(status);
         }
 
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data)
         {
-            var hash = new byte[HashSize];
+            var hash = new byte[this.HashSize];
 
-            ComputeHash(data, hash);
+            this.ComputeHash(data, hash);
 
             return hash;
         }
@@ -66,27 +66,27 @@ namespace Kerberos.NET.Crypto
 
         public void Dispose()
         {
-            Dispose(true);
+            this.Dispose(true);
             GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_isDisposed)
+            if (this._isDisposed)
             {
                 return;
             }
 
-            _isDisposed = true;
+            this._isDisposed = true;
 
             // Note: don't dispose, as _hAlgorithm comes from a cache (see comment at the field declaration)
             
-            if (phHash != IntPtr.Zero)
+            if (this.phHash != IntPtr.Zero)
             {
-                BCryptDestroyHash(phHash);
+                BCryptDestroyHash(this.phHash);
             }
         }
 
-        ~Win32CngHash() => Dispose(false);
+        ~Win32CngHash() => this.Dispose(false);
     }
 }

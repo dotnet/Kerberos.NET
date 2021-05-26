@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Kerberos.NET.CommandLine;
+using Kerberos.NET.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Tests.Kerberos.NET.KdcListener;
 
@@ -15,13 +16,13 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class KerberosInitCommandTests : CommandLineTestBase
     {
-        private const string KInitParameters = "kinit --kdc {0} --cache {2} --realm corp.identityintervention.com {1}";
+        private const string KInitParameters = "kinit --kdc {0} --cache {2} --realm corp.identityintervention.com --config {3} {1}";
         protected const string AdminAtCorpUserName = "administrator@corp.identityintervention.com";
         protected const string FakeAdminAtCorpPassword = "P@ssw0rd!";
 
-        private static KerberosInitCommand CreateCommand(string kdc, string upn, string cache, InputControl io)
+        private static KerberosInitCommand CreateCommand(string kdc, string upn, string cache, string config, InputControl io)
         {
-            var parameters = CommandLineParameters.Parse(string.Format(KInitParameters, kdc, upn, cache));
+            var parameters = CommandLineParameters.Parse(string.Format(KInitParameters, kdc, upn, cache, config));
 
             return (KerberosInitCommand)parameters.CreateCommandExecutor(io);
         }
@@ -31,9 +32,14 @@ namespace Tests.Kerberos.NET
         {
             var port = NextPort();
             var tmpCacheFile = Path.GetTempFileName();
+            var tmpConfigFile = Path.GetTempFileName();
 
             try
             {
+                var config = Krb5Config.Default();
+
+                File.WriteAllText(tmpConfigFile, config.Serialize());
+
                 using (var listener = StartTcpListener(port))
                 {
                     _ = listener.Start();
@@ -51,7 +57,7 @@ namespace Tests.Kerberos.NET
                         ReadKey = () => ReadKey(reader)
                     };
 
-                    var command = CreateCommand($"127.0.0.1:{port}", AdminAtCorpUserName, tmpCacheFile, io);
+                    var command = CreateCommand($"127.0.0.1:{port}", AdminAtCorpUserName, tmpCacheFile, tmpConfigFile, io);
 
                     reader.QueueNext(FakeAdminAtCorpPassword + "\n");
 
@@ -66,6 +72,7 @@ namespace Tests.Kerberos.NET
             finally
             {
                 TryCleanupTmp(tmpCacheFile);
+                TryCleanupTmp(tmpConfigFile);
             }
         }
     }

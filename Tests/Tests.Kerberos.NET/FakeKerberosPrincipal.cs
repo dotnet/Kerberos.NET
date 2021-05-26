@@ -46,6 +46,8 @@ namespace Tests.Kerberos.NET
         public SupportedEncryptionTypes SupportedEncryptionTypes { get; set; }
              = SupportedEncryptionTypes.Aes128CtsHmacSha196 |
                SupportedEncryptionTypes.Aes256CtsHmacSha196 |
+               SupportedEncryptionTypes.Aes128CtsHmacSha256 |
+               SupportedEncryptionTypes.Aes256CtsHmacSha384 |
                SupportedEncryptionTypes.Rc4Hmac |
                SupportedEncryptionTypes.DesCbcCrc |
                SupportedEncryptionTypes.DesCbcMd5;
@@ -90,17 +92,18 @@ namespace Tests.Kerberos.NET
                 LogonInfo = new PacLogonInfo
                 {
                     DomainName = Realm,
-                    UserName = this.PrincipalName,
-                    UserDisplayName = this.PrincipalName,
+                    UserName = PrincipalName,
+                    UserDisplayName = PrincipalName,
                     BadPasswordCount = 12,
                     SubAuthStatus = 0,
                     DomainSid = DomainSid,
-                    UserSid = this.userSid,
-                    GroupSid = this.groupSid,
+                    UserSid = userSid,
+                    GroupSid = groupSid,
                     LogonTime = DateTimeOffset.UtcNow,
                     ServerName = "server",
                     UserAccountControl = UserAccountControlFlags.ADS_UF_NORMAL_ACCOUNT,
                     UserFlags = UserFlags.LOGON_WINLOGON,
+
                 }
             };
 
@@ -118,6 +121,13 @@ namespace Tests.Kerberos.NET
 
         public KerberosKey RetrieveLongTermCredential()
         {
+            EncryptionType etype = ExtractEType(this.PrincipalName);
+
+            return this.RetrieveLongTermCredential(etype);
+        }
+
+        public KerberosKey RetrieveLongTermCredential(EncryptionType etype)
+        {
             KerberosKey key;
 
             if (this.PrincipalName.StartsWith("krbtgt", StringComparison.InvariantCultureIgnoreCase))
@@ -126,10 +136,8 @@ namespace Tests.Kerberos.NET
             }
             else
             {
-                key = KeyCache.GetOrAdd(this.PrincipalName, pn =>
+                key = KeyCache.GetOrAdd(etype + this.PrincipalName, pn =>
                 {
-                    EncryptionType etype = ExtractEType(this.PrincipalName);
-
                     return new KerberosKey(
                         password: FakePassword,
                         principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, Realm, new[] { this.PrincipalName }),
@@ -152,9 +160,17 @@ namespace Tests.Kerberos.NET
             {
                 return EncryptionType.AES128_CTS_HMAC_SHA1_96;
             }
+            else if (principalName.StartsWith("AES128SHA256", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return EncryptionType.AES128_CTS_HMAC_SHA256_128;
+            }
             else if (principalName.StartsWith("AES256", StringComparison.InvariantCultureIgnoreCase))
             {
                 return EncryptionType.AES256_CTS_HMAC_SHA1_96;
+            }
+            else if (principalName.StartsWith("AES256SHA384", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return EncryptionType.AES256_CTS_HMAC_SHA384_192;
             }
 
             return EncryptionType.AES256_CTS_HMAC_SHA1_96;

@@ -107,9 +107,9 @@ namespace Kerberos.NET.Entities
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReadOnlyMemory<byte> UnicodeBytesToUtf8(byte[] str)
+        public static ReadOnlyMemory<byte> UnicodeBytesToUtf8(ReadOnlyMemory<byte> str)
         {
-            return Encoding.Convert(Encoding.Unicode, Encoding.UTF8, str, 0, str.Length);
+            return Encoding.Convert(Encoding.Unicode, Encoding.UTF8, str.ToArray(), 0, str.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

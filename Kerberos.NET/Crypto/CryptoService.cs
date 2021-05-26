@@ -30,9 +30,13 @@ namespace Kerberos.NET.Crypto
 #endif
             RegisterCryptographicAlgorithm(EncryptionType.AES128_CTS_HMAC_SHA1_96, () => new AES128Transformer());
             RegisterCryptographicAlgorithm(EncryptionType.AES256_CTS_HMAC_SHA1_96, () => new AES256Transformer());
+            RegisterCryptographicAlgorithm(EncryptionType.AES128_CTS_HMAC_SHA256_128, () => new AES128Sha256Transformer());
+            RegisterCryptographicAlgorithm(EncryptionType.AES256_CTS_HMAC_SHA384_192, () => new AES256Sha384Transformer());
 
             RegisterChecksumAlgorithm(ChecksumType.HMAC_SHA1_96_AES128, (signature, signatureData) => new HmacAes128KerberosChecksum(signature, signatureData));
             RegisterChecksumAlgorithm(ChecksumType.HMAC_SHA1_96_AES256, (signature, signatureData) => new HmacAes256KerberosChecksum(signature, signatureData));
+            RegisterChecksumAlgorithm(ChecksumType.HMAC_SHA256_128_AES128, (signature, signatureData) => new HmacAes128Sha256KerberosChecksum(signature, signatureData));
+            RegisterChecksumAlgorithm(ChecksumType.HMAC_SHA384_192_AES256, (signature, signatureData) => new HmacAes256Sha384KerberosChecksum(signature, signatureData));
         }
 
         public static void RegisterCryptographicAlgorithm(
@@ -114,7 +118,7 @@ namespace Kerberos.NET.Crypto
             return checksumType;
         }
 
-        internal static KerberosChecksum CreateChecksum(
+        public static KerberosChecksum CreateChecksum(
             ChecksumType type,
             ReadOnlyMemory<byte> signature = default,
             ReadOnlyMemory<byte> signatureData = default
