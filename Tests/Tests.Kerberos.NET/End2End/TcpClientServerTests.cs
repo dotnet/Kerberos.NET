@@ -131,7 +131,7 @@ namespace Tests.Kerberos.NET
             var port = NextPort();
 
             var threads = 20;
-            var requests = 10;
+            var requests = 50;
 
             var cacheTickets = false;
             var encodeNego = false;
