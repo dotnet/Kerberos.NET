@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -7,11 +7,9 @@ using System;
 
 namespace Kerberos.NET.Crypto
 {
-    public interface IHmacAlgorithm
+    public interface IHmacAlgorithm : IDisposable
     {
-        ReadOnlyMemory<byte> ComputeHash(
-            ReadOnlyMemory<byte> key,
-            ReadOnlyMemory<byte> data
-        );
+        int HashSize { get; }
+        ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> buffer);
     }
 }

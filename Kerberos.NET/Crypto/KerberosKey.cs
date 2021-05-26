@@ -1,14 +1,8 @@
-﻿// -----------------------------------------------------------------------
-// Licensed to The .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// -----------------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using Kerberos.NET.Crypto.AES;
 using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto
@@ -26,12 +20,12 @@ namespace Kerberos.NET.Crypto
             PrincipalName principalName = null,
             string host = null,
             string salt = null,
+            byte[] saltBytes = null,
             EncryptionType etype = 0,
             SaltType saltType = SaltType.ActiveDirectoryService,
             byte[] iterationParams = null,
             int? kvno = null
-        )
-            : this(null, password, null, principalName, host, salt, etype, saltType, iterationParams, kvno)
+        ) : this(null, password, null, principalName, host, salt, saltBytes, etype, saltType, iterationParams, kvno)
         {
             if (string.IsNullOrWhiteSpace(password))
             {
@@ -45,12 +39,12 @@ namespace Kerberos.NET.Crypto
             PrincipalName principal = null,
             string host = null,
             string salt = null,
+            byte[] saltBytes = null,
             EncryptionType etype = 0,
             SaltType saltType = SaltType.ActiveDirectoryService,
             byte[] iterationParams = null,
             int? kvno = null
-        )
-            : this(key, null, password, principal, host, salt, etype, saltType, iterationParams, kvno)
+            ) : this(key, null, password, principal, host, salt, saltBytes, etype, saltType, iterationParams, kvno)
         {
             if (key == null && password == null)
             {
@@ -65,6 +59,7 @@ namespace Kerberos.NET.Crypto
             PrincipalName principalName = null,
             string host = null,
             string salt = null,
+            byte[] saltBytes = null,
             EncryptionType etype = 0,
             SaltType saltFormat = SaltType.ActiveDirectoryService,
             byte[] iterationParams = null,
@@ -77,6 +72,7 @@ namespace Kerberos.NET.Crypto
             this.PrincipalName = principalName;
             this.Host = host;
             this.salt = salt;
+            this.saltBytes = saltBytes;
             this.EncryptionType = etype;
             this.SaltFormat = saltFormat;
             this.IterationParameter = iterationParams;
@@ -146,6 +142,8 @@ namespace Kerberos.NET.Crypto
             return derived;
         }
 
+        private byte[] saltBytes;
+
         private string salt;
 
         public EncryptionType EncryptionType { get; }
@@ -156,14 +154,26 @@ namespace Kerberos.NET.Crypto
 
         public int? Version { get; }
 
+        public byte[] SaltBytes
+        {
+            get
+            {
+                if (this.saltBytes == null && !string.IsNullOrEmpty(this.Salt))
+                {
+                    this.saltBytes = KerberosConstants.UnicodeStringToUtf8(this.Salt).ToArray();
+                }
+
+                return this.saltBytes;
+            }
+        }
+
         public string Salt
         {
             get
             {
                 if (string.IsNullOrWhiteSpace(this.salt))
                 {
-                    if (this.EncryptionType == EncryptionType.AES128_CTS_HMAC_SHA1_96 ||
-                        this.EncryptionType == EncryptionType.AES256_CTS_HMAC_SHA1_96)
+                    if (IsAes(this.EncryptionType))
                     {
                         var sb = new StringBuilder();
 
@@ -177,15 +187,20 @@ namespace Kerberos.NET.Crypto
             }
         }
 
+        private static bool IsAes(EncryptionType etype)
+        {
+            return etype >= EncryptionType.AES128_CTS_HMAC_SHA1_96 && etype <= EncryptionType.AES256_CTS_HMAC_SHA384_192;
+        }
+
         private readonly byte[] key;
 
         public string Password { get; }
 
-        public ReadOnlyMemory<byte> IterationParameter { get; }
+        public byte[] IterationParameter { get; }
 
         private byte[] passwordBytes;
 
-        public ReadOnlyMemory<byte> PasswordBytes
+        public byte[] PasswordBytes
         {
             get
             {

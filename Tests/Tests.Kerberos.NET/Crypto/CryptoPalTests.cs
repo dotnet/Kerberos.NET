@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -40,7 +40,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void PalSupportsHmacMd5()
         {
-            var hmac = CryptoPal.Platform.HmacMd5();
+            var hmac = CryptoPal.Platform.HmacMd5(default);
 
             Assert.IsNotNull(hmac);
         }
@@ -49,7 +49,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void PalSupportsHmacSha1()
         {
-            var hmac = CryptoPal.Platform.HmacSha1();
+            var hmac = CryptoPal.Platform.HmacSha1(default);
 
             Assert.IsNotNull(hmac);
         }

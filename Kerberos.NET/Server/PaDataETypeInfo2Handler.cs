@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
@@ -36,18 +37,30 @@ namespace Kerberos.NET.Server
                 return;
             }
 
-            var cred = principal.RetrieveLongTermCredential();
+            var entries = new List<KrbETypeInfo2Entry>();
 
-            var etypeInfo = new KrbETypeInfo2
+            foreach (EncryptionType type in Enum.GetValues(typeof(EncryptionType)))
             {
-                ETypeInfo = new[]
+                if (type <= 0)
                 {
-                    new  KrbETypeInfo2Entry
+                    continue;
+                }
+
+                var cred = principal.RetrieveLongTermCredential(type);
+
+                if (cred != null)
+                {
+                    entries.Add(new KrbETypeInfo2Entry
                     {
                         EType = cred.EncryptionType,
                         Salt = cred.Salt
-                    }
+                    });
                 }
+            }
+
+            var etypeInfo = new KrbETypeInfo2
+            {
+                ETypeInfo = entries.ToArray()
             };
 
             var infoPaData = new KrbPaData

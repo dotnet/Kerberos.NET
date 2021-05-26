@@ -139,6 +139,8 @@ namespace Kerberos.NET.Server
         /// <returns>Returns the expected long term key used during authentication</returns>
         KerberosKey RetrieveLongTermCredential();
 
+        KerberosKey RetrieveLongTermCredential(EncryptionType etype);
+
         /// <summary>
         /// Generate the PAC used by Windows for authorization decisions.
         /// </summary>

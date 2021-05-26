@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -12,7 +12,7 @@ namespace Kerberos.NET.Crypto
 {
     internal class AesAlgorithm : ISymmetricAlgorithm
     {
-        private static readonly Lazy<Aes> LazyAlgorithm
+        private static readonly Lazy<Aes> lazyAlgorithm
             = new Lazy<Aes>(() =>
             {
                 var impl = Aes.Create();
@@ -21,7 +21,7 @@ namespace Kerberos.NET.Crypto
                 return impl;
             });
 
-        public static Aes Algorithm => LazyAlgorithm.Value;
+        public static Aes Algorithm => lazyAlgorithm.Value;
 
         private static Memory<byte> Transform(
            ReadOnlyMemory<byte> data,

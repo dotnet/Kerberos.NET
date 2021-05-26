@@ -39,6 +39,11 @@ namespace Kerberos.NET
             throw new NotSupportedException();
         }
 
+        public KerberosKey RetrieveLongTermCredential(EncryptionType type)
+        {
+            throw new NotSupportedException();
+        }
+
         public void Validate(X509Certificate2Collection certificates)
         {
             throw new NotSupportedException();

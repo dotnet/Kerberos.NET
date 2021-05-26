@@ -334,7 +334,7 @@ namespace Kerberos.NET.Client
 
             using (this.logger.BeginRequestScope(this.ScopeId))
             {
-                await AuthenticateCredential(credential);
+                await this.AuthenticateCredential(credential);
             }
         }
 

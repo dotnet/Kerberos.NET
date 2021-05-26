@@ -4,11 +4,16 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Security.Cryptography;
+using static Kerberos.NET.BinaryExtensions;
 
 namespace Kerberos.NET.Crypto
 {
-    public interface IHashAlgorithm : IDisposable
+    internal class HmacSha256 : HmacAlgorithmBase
     {
-        ReadOnlyMemory<byte> ComputeHash(ReadOnlySpan<byte> data);
+        public HmacSha256(ReadOnlyMemory<byte> key)
+            : base(new HMACSHA256(TryGetArrayFast(key)))
+        {
+        }
     }
 }

@@ -56,11 +56,11 @@ namespace Kerberos.NET.Transport
                 throw new KerberosTransportException($"Cannot locate a KDC Proxy endpoint for {domain}");
             }
 
-            logger.LogInformation("KDC target found {KDC}", kdc);
+            this.logger.LogInformation("KDC target found {KDC}", kdc);
 
             try
             {
-                return await SendMessage<T>(domain, req, kdc);
+                return await this.SendMessage<T>(domain, req, kdc);
             }
             catch (KerberosTransportException kex)
             {

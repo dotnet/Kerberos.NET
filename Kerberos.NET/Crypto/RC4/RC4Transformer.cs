@@ -146,9 +146,9 @@ namespace Kerberos.NET.Crypto
 
         private static ReadOnlyMemory<byte> HMACMD5(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
         {
-            var hmac = CryptoPal.Platform.HmacMd5();
+            var hmac = CryptoPal.Platform.HmacMd5(key);
 
-            return hmac.ComputeHash(key, data);
+            return hmac.ComputeHash(data);
         }
 
         private static ReadOnlyMemory<byte> MD4(ReadOnlyMemory<byte> key)

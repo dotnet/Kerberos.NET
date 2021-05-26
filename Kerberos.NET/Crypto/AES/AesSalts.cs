@@ -7,10 +7,20 @@ using System.Linq;
 using System.Text;
 using Kerberos.NET.Entities;
 
-namespace Kerberos.NET.Crypto.AES
+namespace Kerberos.NET.Crypto
 {
     internal static class AesSalts
     {
+        public static byte[] GenerateSaltBytes(KerberosKey key)
+        {
+            if (key.SaltBytes != null)
+            {
+                return key.SaltBytes;
+            }
+
+            return KerberosConstants.UnicodeStringToUtf8(GenerateSalt(key)).ToArray();
+        }
+
         public static string GenerateSalt(KerberosKey key)
         {
             if (!string.IsNullOrWhiteSpace(key.Salt))
@@ -61,7 +71,7 @@ namespace Kerberos.NET.Crypto.AES
 
         private static void GenerateActiveDirectoryUserSalt(KerberosKey key, StringBuilder salt)
         {
-            // User accounts:
+            // User accounts: 
             //
             // < DNS of the realm, converted to upper case> | < user name >
             //
@@ -73,12 +83,12 @@ namespace Kerberos.NET.Crypto.AES
 
         private static void GenerateActiveDirectoryServiceSalt(KerberosKey key, StringBuilder salt)
         {
-            // Computer accounts:
+            // Computer accounts: 
             //
-            // < DNS name of the realm, converted to upper case > |
-            // "host" |
-            // < computer name, converted to lower case with trailing "$" stripped off > |
-            // "." |
+            // < DNS name of the realm, converted to upper case > | 
+            // "host" | 
+            // < computer name, converted to lower case with trailing "$" stripped off > | 
+            // "." | 
             // < DNS name of the realm, converted to lower case >
             //
             // Ex: REALM.COMhostappservice.realm.com

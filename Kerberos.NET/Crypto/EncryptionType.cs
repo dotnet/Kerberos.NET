@@ -49,6 +49,8 @@ namespace Kerberos.NET.Crypto
         Rc4Hmac = 1 << 2,
         Aes128CtsHmacSha196 = 1 << 3,
         Aes256CtsHmacSha196 = 1 << 4,
+        Aes128CtsHmacSha256 = 1 << 5,
+        Aes256CtsHmacSha384 = 1 << 6,
 
         FastSupported = 1 << 18,
         CompoundIdentitySupported = 1 << 19,
