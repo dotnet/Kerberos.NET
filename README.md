@@ -14,17 +14,77 @@ A library built in .NET that lets you operate on Kerberos messages. You can run 
 
 A [deep dive into the design of Kerberos.NET](https://syfuhs.net/a-deep-dive-into-the-design-kerberos-net) is available and worth a read.
 
-# Fiddler Extension
+This project is primarily a library, but also includes a bunch of useful tools wrapping the library to help build out applications and troubleshoot Kerberos issues.
+
+# Useful Tools
+
+## Fiddler Extension
 
 You can find the Fiddler extension installer under [releases](https://github.com/dotnet/Kerberos.NET/releases) on the right hand side of this page. For more information go read [a write up on how to install and use it](https://syfuhs.net/a-fiddler-extension-for-kerberos-messages).
 
-# Bruce Commmand Line Tool
+## Bruce Commmand Line Tool
 
 The Bruce command line tool is a collection of utilities that let you interact with the Kerberos.NET library components and is available via `dotnet tool install bruce -g`. It includes useful tools for things like ticket cache and keytab management. It also includes the Ticket Decoder utility mentioned below. The tool more or less follows the MIT and Heimdal command line standards, but for more information on all  the tools in the suite type `help` from the Bruce command line.
 
 See this [blog post on how to use the tool](https://syfuhs.net/bruce-a-command-line-kerberos-net-management-tool).
 
-![](docs/bruce.png?raw=true)
+![image](https://user-images.githubusercontent.com/1210849/119709780-71087300-be12-11eb-94ba-f9a361f2dc36.png)
+
+### Available tools
+
+#### kconfig 
+
+View and modify krb5 config files.
+
+![image](https://user-images.githubusercontent.com/1210849/119711341-47504b80-be14-11eb-8088-5455c668e05d.png)
+
+#### kdecode
+
+Decode Kerberos/Negotiate tickets and optionally decrypt if you know the secrets.
+
+![image](https://user-images.githubusercontent.com/1210849/119711367-533c0d80-be14-11eb-98d2-97fb4ff9a627.png)
+
+#### kdestroy
+
+Delete any ticket cache files.
+
+![image](https://user-images.githubusercontent.com/1210849/119711409-5fc06600-be14-11eb-9600-e8749562d54b.png)
+
+#### kinit
+
+Authenticate a user and request a TGT with a bunch of available options for the request.
+
+![image](https://user-images.githubusercontent.com/1210849/119711450-6ea71880-be14-11eb-9c74-95ee722c9c61.png)
+
+#### klist
+
+View all the tickets in a cache and optionally request more tickets.
+
+![image](https://user-images.githubusercontent.com/1210849/119711512-7bc40780-be14-11eb-8d8e-efec57ab4f30.png)
+
+#### kping 
+
+Send an AS-REQ "ping" to a KDC for the current or supplied user to get metadata for the user.
+
+![image](https://user-images.githubusercontent.com/1210849/119711559-87afc980-be14-11eb-97ba-345f0d8ecf6b.png)
+
+#### ktpass
+
+View and manipulate keytab files with support for troubleshooting.
+
+![image](https://user-images.githubusercontent.com/1210849/119712052-0c024c80-be15-11eb-8ad5-c36d2f17455b.png)
+
+#### whoami
+
+Request a ticket for the current user and format the details in a useful manner.
+
+![image](https://user-images.githubusercontent.com/1210849/119710961-d315a800-be13-11eb-8486-ce61cb6157ad.png)
+
+### Verbose Logging
+
+The tool exposes useful logging messages if you pass the `/verbose` command line parameter.
+
+![image](https://user-images.githubusercontent.com/1210849/119713039-238e0500-be16-11eb-909c-b83f69db9fac.png)
 
 # Cross Platform Support
 
@@ -36,10 +96,6 @@ There are two ways you can go about using this library. The first is to download
 ```powershell
 PM> Install-Package Kerberos.NET
 ```
-
-## On Updates to the Nuget Packages
-
-The nuget packages will generally be kept up to date with any changes to the core library.
 
 # Using the Library
 
@@ -101,9 +157,95 @@ Assert.IsFalse(string.IsNullOrWhitespace(name));
 
 Note that the constructor parameter for the authenticator is a `KeyTable`. The `KeyTable` is a common format used to store keys on other platforms. You can either use a file created by a tool like `ktpass`, or you can just pass a `KerberosKey` during instantiation and it'll have the same effect.
 
+## On Updates to the Nuget Packages
+
+The nuget packages will generally be kept up to date with any changes to the core library.
+
+## .NET Core
+
+Hey, it works! Just add the nuget package as a reference and go. 
+
+[More Information](http://syfuhs.net/2017/08/11/porting-kerberos-net-to-net-core/)
+
+## Creating a Kerberos SPN in Active Directory
+
+Active Directory requires an identity to be present that matches the domain where the token is being sent. This identity can be any user or computer object in Active Directory, but it needs to be configured correctly. This means it needs a Service Principal Name (SPN). You can find instructions on setting up a test user [here](https://syfuhs.net/2017/03/20/configuring-an-spn-in-active-directory-for-kerberos-net/).
+
+## Active Directory Claims
+
+Active Directory has supported claims since Server 2012. At the time you could only access the claims through Windows principals or ADFS dark magic. Kerberos.NET now natively supports parsing claims in kerberos tickets. Take a look at the [Claims Guide](http://syfuhs.net/2017/07/29/active-directory-claims-and-kerberos-net/) for more information on setting this up.
+
+## KeyTable (keytab) File Generation
+
+Kerberos.NET supports the KeyTable (keytab) file format for passing in the keys used to decrypt and validate Kerberos tickets. The keytab file format is a common format used by many platforms for storing keys. You can generate these files on Windows by using the `ktpass` command line utility, which is part of the Remote Server Administration Tools (RSAT) pack. You can install it on a *server* via PowerShell (or through the add Windows components dialog):
+
+```powershell
+Add-WindowsFeature RSAT
+```
+
+From there you can generate the keytab file by running the following command:
+
+```bat
+ktpass /princ HTTP/test.identityintervention.com@IDENTITIYINTERVENTION.COM /mapuser IDENTITYINTER\server01$ /pass P@ssw0rd! /out sample.keytab /crypto all /PTYPE KRB5_NT_SRV_INST /mapop set
+```
+
+The parameter `princ` is used to specify the generated PrincipalName, and `mapuser` which is used to map it to the user in Active Directory. The `crypto` parameter specifies which algorithms should generate entries.
+
+## AES Support
+AES tickets are supported natively. No need to do anything extra!
+
+This also now includes support for SHA256 and SHA384 through RFC8009.
+
+## Compound Authentication and Flexible Authentication Secure Tunneling Support
+
+For more information see [FAST Armoring](https://syfuhs.net/kerberos-fast-armoring).
+
+This is not currently supported, but it's on the [roadmap](https://github.com/dotnet/Kerberos.NET/issues/170).
+
+## Registering Custom Decryptors
+
+You can add your own support for other algorithms like DES (don't know why you would, but...) where you associate an Encryption type to a Func<> that instantiates new decryptors. There's also nothing stopping you from DI'ing this process if you like.
+
+```C#
+KerberosRequest.RegisterDecryptor(
+   EncryptionType.DES_CBC_MD5,
+   (token) => new DESMD5DecryptedData(token)
+);
+```
+
+# Replay Detection
+
+The built-in replay detection uses a `MemoryCache` to temporarily store references to hashes of the ticket nonces. These references are removed when the ticket expires. The detection process occurs right after decryption as soon as the authenticator sequence number is available.
+
+Note that the built-in detection logic does not work effectively when the application is clustered because the cache is not shared across machines. The built-in implementation uses an in-memory service and as such isn't shared with anyone.
+
+You will need to create a cache that is shared across machines for this to work correctly in a clustered environment. This has been simplified greatly through the new .NET Core dependency injection services. All you need to do is register an `IDistributedCache` implementation. You can find more information on that in the [Mirosoft Docs](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/distributed).
+
+If you'd like to use your own replay detection just implement the `ITicketReplayValidator` interface and pass it in the `KerberosValidator` constructor.
+
+# Samples!
+There are samples!
+
+ - [KerbCrypto](Samples/KerbCrypto) Runs through the 6 supported token formats.
+    - rc4-kerberos-data
+    - rc4-spnego-data
+    - aes128-kerberos-data
+    - aes128-spnego-data
+    - aes256-kerberos-data
+    - aes256-spnego-data
+ - [KerbTester](Samples/KerbTester) A command line tool used to test real tickets and dump the parsed results.
+ - [KerberosMiddlewareEndToEndSample](Samples/KerberosMiddlewareEndToEndSample) An end-to-end sample that shows how the server prompts for negotiation and the emulated browser's response.
+ - [KerberosMiddlewareSample](Samples/KerberosMiddlewareSample) A simple pass/fail middleware sample that decodes a ticket if present, but otherwise never prompts to negotiate.
+ - [KerberosWebSample](Samples/KerberosWebSample) A sample web project intended to be hosted in IIS that prompts to negotiate and validates any incoming tickets from the browser.
+
+# License
+This project has an MIT License. See the [License File](/LICENSE) for more details. Also see the [Notices file](/NOTICES) for more information on the licenses of projects this depends on.
+
 # Kerberos Ticket Decoder Tool
 
 This library comes with an optional utility to decode service tickets. It's easy to use. Just copy the Base64 encoded copy of the ticket into the left textbox. It will decode the unencrypted message if you don't provide a key. It will attempt to decrypt the message if you provide a key. You won't need to provide a host value if the ticket was encrypted using RC4, but it will need a host value if it's encrypted with AES (to derive the salt). Alternatively you could also include a keytab file if you happen to have that too.
+
+You can launch it using the Bruce tool with `bruce kdecode`.
 
 ![](docs/kerbDump.png?raw=true)
 
@@ -130,13 +272,13 @@ Here's a sample of what a sample ticket looks like:
         "EncryptedPart": {
           "EType": "AES256_CTS_HMAC_SHA1_96",
           "KeyVersionNumber": 3,
-          "Cipher": "Vo4uodU2/OP1KvfvSXyZNZsflbXQFWQ8bbB6Xmb7aSJI2NilJQDVEz+jOXKh1H3UevlG0yJ/WsAAV+gF8aZ+ZqswjWoqP3Th0LjUR158y4ox2Yl+6AyVqCUtgQD2+pk3J4+n9P/UFj+2kji95xiR2myH1UpFid33xz+MLO83YeAVTlpYl2z8yPPCrTdg1l3JG4RGIB97Hq0txmcr8fDgrpSOeKPa1mx7sgJz/Eu703x+toqAztiHTQjd9DX+PflitG2H0cyUGz34He28YvQNvd1y32eIa0LtDMEE9PK4Wcb74bScGvjv3XTinCYAlWQpY+RUZn/AoR3A+s/T0dEqIaHRMeMWwnzouWA8QT6WSmatuXJx1mfXLNRBIa7QcRHJtKp9NPgseJLXFBdQ4G/ekzQOW4jC+zbWSuEbzQJOsmKcTg9f24aMSB+HRWS+bygWHdtzBcaiaTvFMsstn6BDXt4caAYJwC3HB2QT32ImNBWy+Mrm8r4DzxDi/qgW19cQwzuxWtqPZ+PnO/vnEQraG+8EeEi+Vge+IBWL1IMYgFu60l5mXeyu3mXRugqtJqGrKIqTmYvDTuit/v6TCnpw/BzaPakBm8kDT3oU13DNCQ6TMh/dgyVKZomn1SVxeBeGHpqEMfDShmLkLN8VLfjiC0w8CRdJZmfGH9slfte7J6JRN1qIVCibe8SoB3Y1QHEfF8CG8BAnjMB7A7v3d4DMieboFzkfh3liX6/HO44VdLsLwpsdlGZKDk2C61BS9DUZI6YqJ7K2M+kPrXIq7V/xVY6y53rZswQihaGWZNewUlB5hqEnERvu1GXJhRNj+zvTdWNraUjDC7dv+owjPsm4KZAKHU0+tjbX64LE6StrsFOQRfOE4X4zp2K9NjG8axGrEcYe2F+xM4i+wXdLct0CbdRtDSl4Qr/hSzEGsDehMYXlu7WUPGT2b8Ys2eBin7g6ezybL3qb0qLuH3gNS8J6YXn4gkVmCkJeAlPnmfcFsmk4TVJNeXTab7zobicdrjOosku7nbz13ZnYLkVnMC0kARP2tR7E3Zqf1cbAVYDhJm1CEjCnPKpuSA80AOv2m7qYPW06f0CJI7labGFrf2fLIhkvJqRit8B13DXaGpea/q+CrP3eXg1QBnhjEuoeJeEFO2+03ddxMv2GBXYYx5YKK+CqneUkj2WiwfkFdg6cBjY5GxllV3UxnJff4IKLMGIhtvmc/3WmeGm8W7XibtDIiUfbSa31rg/E+zY3RynYtEm/MoAwWjmAyLsyriO1jjHhWU469b1gflYbOPeDuFe8/KsV5YIB4GIYHTSfWB2Jfw+DH3soT92AV4S5J50Y3VgPrfI+cuNDbtfkjqxXALj+d6Lj4JK3qCoPlPTTtMm3lQkKiqLyTP8Kr4Tdo2gZ6ycWfIU9jdV1Fp3JouVdwGC6N7Xyq6rISSQg4SdCikZ1U5b4rWPS8MviFbcgSldh3PLITcvh3BS6uSQ7Jz5vvtME0tz5OcC30YLLRUNFBEkdsa+As69qihFNlUrWyQWCXa4FewRNRXBwjmsshgyjs+Vr+A=="
+          "Cipher": "Vo4uodU2...snip...XBwjmsshgyjs+Vr+A=="
         }
       },
       "Authenticator": {
         "EType": "AES256_CTS_HMAC_SHA1_96",
         "KeyVersionNumber": null,
-        "Cipher": "NnLmEFkmO3HXCSsJ0zoU+AF4BXPaSIKQ7dNwoL3peZ4fntxOVEt+3lFWUZgFbGx1cn1y1FLrPsSnwJ01yIu+9u9//RD3Srn1uD2lWjeVmnCDENd+hSoNeLdJoQFluY/MyYZx3KJWzGWa73PE+K+xOxCHWLGOZzI/EXnKm3xwN28Up8y3r31AJam3jANuJRdFMnDzj6Rvbt+FESsbH8dFAdB8rTmI28/+WRdnx3O69zPcrvw5hOcQLi40x63A6NbZ3TQNrG8xQr5aRC7mO69C17e4r7duawg9FHOHPMS4vdPFA2ShMAPuNRYQSSkskztk9yfjHQgCdfNmpPrGfIf4GVeg3RjZ0U87skHcmcKAqX7jtwoHbjQjOfgAtXnsBRhPU0a2nnfD53Fo8ZsONEUCkNAHWj2jYmyzL4WkDoqYKJhoA7YTiy+I2z/umhpXvao4E7NERCea7vPQv0TgtCxn6r5v936XWbBSt1CY4fSnjEgZfYYv0abhobC93Iktt2HCndXN7TceHAq5P3i8TZ6Cvd2HCVJ2/kyvzRWWtkPCFI1YRb3g379V1/VmIEOk+xEOup0YmNW5AicQVvvk"
+        "Cipher": "NnLmEFkmO3HXCS...snip...up0YmNW5AicQVvvk"
       }
     },
     "KrbApRep": null
@@ -178,7 +320,7 @@ Here's a sample of what a sample ticket looks like:
       "AuthorizationData": [
         {
           "Type": "AdIfRelevant",
-          "Data": "MIHTMD+gBAICAI2hNwQ1MDMwMaADAgEAoSoEKAAAAAAAMAAATxr82+sI2kbFmPnkrjldLUfESt/oJzLaWWNqCkOgC7IwGqAEAgIAjqESBBAQF4PYQgIAAAkwwQQAAAAAMA6gBAICAI+hBgQEAEAAADBkoAQCAgCQoVwEWmQAZQBzAGsAdABvAHAALQBoADcAMQBvADkAdQB1AEAAQwBPAFIAUAAuAEkARABFAE4AVABJAFQAWQBJAE4AVABFAFIAVgBFAE4AVABJAE8ATgAuAEMATwBNAA=="
+          "Data": "MIHTMD+gBAICAI2hNwQ1M...snip...BJAE8ATgAuAEMATwBNAA=="
         }
       ]
     },
@@ -215,11 +357,11 @@ Here's a sample of what a sample ticket looks like:
       "AuthorizationData": [
         {
           "Type": "AdIfRelevant",
-          "Data": "MIIDIjCCAx6gBAICAIChggMUBIIDEAUAAAAAAAAAAQAAAOgBAABYAAAAAAAAAAoAAAASAAAAQAIAAAAAAAAMAAAAmAAAAFgCAAAAAAAABgAAABAAAADwAgAAAAAAAAcAAAAQAAAAAAMAAAAAAAABEAgAzMzMzNgBAAAAAAAAAAACALv80z3TNtcB/////////3//////////fwrvbMLQ6tYBCq/W7Jnr1gH/////////fwgACAAEAAIAFgAWAAgAAgAAAAAADAACAAAAAAAQAAIAAAAAABQAAgAAAAAAGAACAGMAAABmBAAAAQIAAAYAAAAcAAIAIAAAAAAAAAAAAAAAAAAAAAAAAAAIAAoAIAACAAgACgAkAAIAKAACAAAAAAAAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAALAACAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAGoAYQBjAGsACwAAAAAAAAALAAAASgBhAGMAawAgAEgAYQBuAGQAZQB5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAGwEAAAHAAAAawQAAAcAAABoBAAABwAAAGoEAAAHAAAAAQIAAAcAAABpBAAABwAAAAUAAAAAAAAABAAAAEQAQwAwADEABQAAAAAAAAAEAAAAQwBPAFIAUAAEAAAAAQQAAAAAAAUVAAAAlAmTEqNsKELQwsZoAQAAADAAAgAHAAAAAQAAAAEBAAAAAAASAQAAAICglj3TNtcBCABqAGEAYwBrAAAAAAAAAEQAEAA6AFgAAAAAAAAAAABqAGEAYwBrAEAAYwBvAHIAcAAuAGkAZABlAG4AdABpAHQAeQBpAG4AdABlAHIAdgBlAG4AdABpAG8AbgAuAGMAbwBtAAAAAABDAE8AUgBQAC4ASQBEAEUATgBUAEkAVABZAEkATgBUAEUAUgBWAEUATgBUAEkATwBOAC4AQwBPAE0AAAAAAAAAEAAAAENIJ0ZsQaIecNA80hAAAAAdWyt6rmuoGI9Mcg0="
+          "Data": "MIIDIjCCAx6gBAICAIChg...snip...muoGI9Mcg0="
         },
         {
           "Type": "AdIfRelevant",
-          "Data": "MF0wP6AEAgIAjaE3BDUwMzAxoAMCAQChKgQoAAAAAAAwAABPGvzb6wjaRsWY+eSuOV0tR8RK3+gnMtpZY2oKQ6ALsjAaoAQCAgCOoRIEEBAXg9hCAgAACTDBBAAAAAA="
+          "Data": "MF0wP6AEAgIAj...snip...AXg9hCAgAACTDBBAAAAAA="
         }
       ]
     },
@@ -573,75 +715,3 @@ Here's a sample of what a sample ticket looks like:
   }
 }
 ```
-
-## .NET Core
-
-Hey, it works! Just add the nuget package as a reference and go. 
-
-[More Information](http://syfuhs.net/2017/08/11/porting-kerberos-net-to-net-core/)
-
-## Creating a Kerberos SPN in Active Directory
-
-Active Directory requires an identity to be present that matches the domain where the token is being sent. This identity can be any user or computer object in Active Directory, but it needs to be configured correctly. This means it needs a Service Principal Name (SPN). You can find instructions on setting up a test user [here](https://syfuhs.net/2017/03/20/configuring-an-spn-in-active-directory-for-kerberos-net/).
-
-## Active Directory Claims
-
-Active Directory has supported claims since Server 2012. At the time you could only access the claims through Windows principals or ADFS dark magic. Kerberos.NET now natively supports parsing claims in kerberos tickets. Take a look at the [Claims Guide](http://syfuhs.net/2017/07/29/active-directory-claims-and-kerberos-net/) for more information on setting this up.
-
-## KeyTable (keytab) File Generation
-
-Kerberos.NET supports the KeyTable (keytab) file format for passing in the keys used to decrypt and validate Kerberos tickets. The keytab file format is a common format used by many platforms for storing keys. You can generate these files on Windows by using the `ktpass` command line utility, which is part of the Remote Server Administration Tools (RSAT) pack. You can install it on a *server* via PowerShell (or through the add Windows components dialog):
-
-```powershell
-Add-WindowsFeature RSAT
-```
-
-From there you can generate the keytab file by running the following command:
-
-```bat
-ktpass /princ HTTP/test.identityintervention.com@IDENTITIYINTERVENTION.COM /mapuser IDENTITYINTER\server01$ /pass P@ssw0rd! /out sample.keytab /crypto all /PTYPE KRB5_NT_SRV_INST /mapop set
-```
-
-The parameter `princ` is used to specify the generated PrincipalName, and `mapuser` which is used to map it to the user in Active Directory. The `crypto` parameter specifies which algorithms should generate entries.
-
-## AES Support
-AES tickets are supported natively. No need to do anything extra!
-
-## Registering Custom Decryptors
-
-You can add your own support for other algorithms like DES (don't know why you would, but...) where you associate an Encryption type to a Func<> that instantiates new decryptors. There's also nothing stopping you from DI'ing this process if you like.
-
-```C#
-KerberosRequest.RegisterDecryptor(
-   EncryptionType.DES_CBC_MD5,
-   (token) => new DESMD5DecryptedData(token)
-);
-```
-
-# Replay Detection
-
-The built-in replay detection uses a `MemoryCache` to temporarily store references to hashes of the ticket nonces. These references are removed when the ticket expires. The detection process occurs right after decryption as soon as the authenticator sequence number is available.
-
-Note that the built-in detection logic does not work effectively when the application is clustered because the cache is not shared across machines. The built-in implementation uses an in-memory service and as such isn't shared with anyone.
-
-You will need to create a cache that is shared across machines for this to work correctly in a clustered environment. This has been simplified greatly through the new .NET Core dependency injection services. All you need to do is register an `IDistributedCache` implementation. You can find more information on that in the [Mirosoft Docs](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/distributed).
-
-If you'd like to use your own replay detection just implement the `ITicketReplayValidator` interface and pass it in the `KerberosValidator` constructor.
-
-# Samples!
-There are samples!
-
- - [KerbCrypto](Samples/KerbCrypto) Runs through the 6 supported token formats.
-    - rc4-kerberos-data
-    - rc4-spnego-data
-    - aes128-kerberos-data
-    - aes128-spnego-data
-    - aes256-kerberos-data
-    - aes256-spnego-data
- - [KerbTester](Samples/KerbTester) A command line tool used to test real tickets and dump the parsed results.
- - [KerberosMiddlewareEndToEndSample](Samples/KerberosMiddlewareEndToEndSample) An end-to-end sample that shows how the server prompts for negotiation and the emulated browser's response.
- - [KerberosMiddlewareSample](Samples/KerberosMiddlewareSample) A simple pass/fail middleware sample that decodes a ticket if present, but otherwise never prompts to negotiate.
- - [KerberosWebSample](Samples/KerberosWebSample) A sample web project intended to be hosted in IIS that prompts to negotiate and validates any incoming tickets from the browser.
-
-# License
-This project has an MIT License. See the [License File](/LICENSE) for more details. Also see the [Notices file](/NOTICES) for more information on the licenses of projects this depends on.
