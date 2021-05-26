@@ -16,6 +16,15 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaForUser
     {
+        /*
+          PA-FOR-USER     ::= SEQUENCE {
+              userName        [0] PrincipalName,
+              userRealm       [1] Realm,
+              cksum           [2] Checksum,
+              auth-package    [3] KerberosString
+          }
+         */
+    
         public KrbPrincipalName UserName { get; set; }
   
         public string UserRealm { get; set; }

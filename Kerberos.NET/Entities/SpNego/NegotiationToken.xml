@@ -5,13 +5,10 @@
   name="NegotiationToken"
   namespace="Kerberos.NET.Entities">
   <!--
-   /*
-NegotiationToken ::= CHOICE {
-    negTokenInit    [0] NegTokenInit,
-    negTokenResp    [1] NegTokenResp
-}
-        */
-  -->
+          NegotiationToken ::= CHOICE {
+              negTokenInit    [0] NegTokenInit,
+              negTokenResp    [1] NegTokenResp
+          }-->
 
   <asn:AsnType name="InitialToken" explicitTag="0" typeName="NegTokenInit" />
   <asn:AsnType name="ResponseToken" explicitTag="1" typeName="NegTokenResp" />

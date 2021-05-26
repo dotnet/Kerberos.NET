@@ -5,17 +5,14 @@
   name="KrbPaPacOptions"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    PA-PAC-OPTIONS ::= SEQUENCE {
-     KerberosFlags
-       - - Claims (0)
-       - - Branch Aware (1)
-       - - Forward to Full DC (2)
-     }
-     Note: KerberosFlags   ::= BIT STRING (SIZE (32..MAX))
-             - - minimum number of bits shall be sent, but no fewer than 32 
-         
-  -->
+          PA-PAC-OPTIONS ::= SEQUENCE {
+           KerberosFlags
+             - - Claims (0)
+             - - Branch Aware (1)
+             - - Forward to Full DC (2)
+           }
+           Note: KerberosFlags   ::= BIT STRING (SIZE (32..MAX))
+                   - - minimum number of bits shall be sent, but no fewer than 32-->
 
   <asn:BitString name="Flags" explicitTag="0" enumType="PacOptions" treatAsEnum="true" />
 </asn:Sequence>

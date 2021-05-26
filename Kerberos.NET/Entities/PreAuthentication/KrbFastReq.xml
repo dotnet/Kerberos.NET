@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbFastReq"
+  namespace="Kerberos.NET.Entities">
+<!--
+          KrbFastReq ::= SEQUENCE {
+              fast-options [0] FastOptions,
+                  - - Additional options.
+              padata       [1] SEQUENCE OF PA-DATA,
+                  - - padata typed holes.
+              req-body     [2] KDC-REQ-BODY,
+                  - - Contains the KDC request body as defined in Section
+                  - - 5.4.1 of [RFC4120].
+                  - - This req-body field is preferred over the outer field
+                  - - in the KDC request.
+               ...
+          }-->
+
+  <asn:BitString name="FastOptions" explicitTag="0" treatAsEnum="true" enumType="FastOptions" />
+  <asn:SequenceOf name="PaData" explicitTag="1">
+    <asn:AsnType typeName="KrbPaData" />
+  </asn:SequenceOf>
+  <asn:AsnType name="ReqBody" explicitTag="2" typeName="KrbKdcReqBody" />
+</asn:Sequence>

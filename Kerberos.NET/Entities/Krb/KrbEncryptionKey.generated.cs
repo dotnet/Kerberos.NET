@@ -16,6 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncryptionKey
     {
+        /*
+          EncryptionKey   ::= SEQUENCE {
+                  keytype         [0] Int32,
+                  keyvalue        [1] OCTET STRING
+          }
+         */
+    
         public EncryptionType EType { get; set; }
     
         public ReadOnlyMemory<byte> KeyValue { get; set; }

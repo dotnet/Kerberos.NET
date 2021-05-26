@@ -16,6 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbChecksum
     {
+        /*
+          Checksum        ::= SEQUENCE {
+                  cksumtype       [0] Int32,
+                  checksum        [1] OCTET STRING
+          }
+         */
+    
         public ChecksumType Type { get; set; }
     
         public ReadOnlyMemory<byte> Checksum { get; set; }

@@ -16,8 +16,28 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbKdcDHKeyInfo
     {
+        /*
+          KDCDHKeyInfo ::= SEQUENCE {
+            subjectPublicKey        [0] BIT STRING,
+          		   - - The KDC's DH public key.
+          		   - - The DH public key value is encoded as a BIT
+          		   - - STRING according to [RFC3279].
+            nonce                   [1] INTEGER (0..4294967295),
+          		   - - Contains the nonce in the pkAuthenticator field
+          		   - - in the request if the DH keys are NOT reused,
+          		   - - 0 otherwise.
+            dhKeyExpiration         [2] KerberosTime OPTIONAL,
+          		   - - Expiration time for KDC's key pair,
+          		   - - present if and only if the DH keys are reused.
+          		   - - If present, the KDC's DH public key MUST not be
+          		   - - used past the point of this expiration time.
+          		   - - If this field is omitted then the serverDHNonce
+          		   - - field MUST also be omitted.
+            ...
+          }
+         */
     
-    public ReadOnlyMemory<byte> SubjectPublicKey { get; set; }
+        public ReadOnlyMemory<byte> SubjectPublicKey { get; set; }
     
         public System.Numerics.BigInteger Nonce { get; set; }
   

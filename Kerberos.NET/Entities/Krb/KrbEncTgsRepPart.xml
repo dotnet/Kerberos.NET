@@ -5,10 +5,7 @@
   name="KrbEncTgsRepPart"
   namespace="Kerberos.NET.Entities" explicitTag="26">
   <!--
-
-    EncTGSRepPart    ::= [APPLICATION 26] EncKDCRepPart
-
-  -->
+          EncTGSRepPart    ::= [APPLICATION 26] EncKDCRepPart-->
 
   <asn:AsnType name="EncTgsRepPart" explicitTag="26" tagClass="Application" typeName="KrbEncKdcRepPart" />
 

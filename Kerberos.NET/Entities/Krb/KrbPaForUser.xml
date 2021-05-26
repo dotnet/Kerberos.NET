@@ -5,15 +5,12 @@
   name="KrbPaForUser"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    PA-FOR-USER     ::= SEQUENCE {
-        userName        [0] PrincipalName,
-        userRealm       [1] Realm,
-        cksum           [2] Checksum,
-        auth-package    [3] KerberosString
-    }
-   
-  -->
+          PA-FOR-USER     ::= SEQUENCE {
+              userName        [0] PrincipalName,
+              userRealm       [1] Realm,
+              cksum           [2] Checksum,
+              auth-package    [3] KerberosString
+          }-->
 
   <asn:AsnType name="UserName" explicitTag="0" typeName="KrbPrincipalName" />
   <asn:GeneralString name="UserRealm" explicitTag="1" />

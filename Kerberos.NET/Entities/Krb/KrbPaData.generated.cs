@@ -16,6 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaData
     {
+        /*
+          PA-DATA         ::= SEQUENCE {
+              padata-type     [1] Int32,
+              padata-value    [2] OCTET STRING
+          }
+         */
+    
         public PaDataType Type { get; set; }
     
         public ReadOnlyMemory<byte> Value { get; set; }

@@ -16,6 +16,16 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbHostAddress
     {
+        /*
+          HostAddress     ::= SEQUENCE  {
+                  addr-type       [0] Int32,
+                  address         [1] OCTET STRING
+          }
+          
+          HostAddresses   
+                  ::= SEQUENCE OF HostAddress
+         */
+    
         public AddressType AddressType { get; set; }
     
         public ReadOnlyMemory<byte> Address { get; set; }

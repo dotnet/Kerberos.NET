@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbFastArmoredRep"
+  namespace="Kerberos.NET.Entities">
+<!--
+          KrbFastArmoredRep ::= SEQUENCE {
+            enc-fast-rep      [0] EncryptedData, - - KrbFastResponse - -
+                - - The encryption key is the armor key in the request, and
+                - - the key usage number is KEY_USAGE_FAST_REP.
+            ...
+          }-->
+
+  <asn:AsnType name="EncFastRep" explicitTag="0" typeName="KrbEncryptedData" />
+</asn:Sequence>

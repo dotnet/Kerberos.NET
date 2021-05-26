@@ -5,10 +5,8 @@
   name="KrbMethodData"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    METHOD-DATA     ::= SEQUENCE OF PA-DATA
-
-  -->
+          METHOD-DATA     ::= SEQUENCE OF PA-DATA-->
+  
   <asn:SequenceOf name="MethodData">
     <asn:AsnType typeName="KrbPaData" />
   </asn:SequenceOf>

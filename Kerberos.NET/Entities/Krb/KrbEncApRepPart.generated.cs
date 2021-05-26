@@ -16,6 +16,15 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncApRepPart
     {
+        /*
+          EncAPRepPart    ::= [APPLICATION 27] SEQUENCE {
+                  ctime           [0] KerberosTime,
+                  cusec           [1] Microseconds,
+                  subkey          [2] EncryptionKey OPTIONAL,
+                  seq-number      [3] UInt32 OPTIONAL
+          }
+         */
+    
         public DateTimeOffset CTime { get; set; }
   
         public int CuSec { get; set; }

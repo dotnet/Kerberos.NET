@@ -16,6 +16,15 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbTicket
     {
+        /*
+          Ticket          ::= [APPLICATION 1] SEQUENCE {
+                  tkt-vno         [0] INTEGER (5),
+                  realm           [1] Realm,
+                  sname           [2] PrincipalName,
+                  enc-part        [3] EncryptedData
+          }
+         */
+    
         public int TicketNumber { get; set; }
   
         public string Realm { get; set; }

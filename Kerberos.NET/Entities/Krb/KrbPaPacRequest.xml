@@ -5,13 +5,10 @@
   name="KrbPaPacRequest"
   namespace="Kerberos.NET.Entities">
   <!--
-  
-     KERB-PA-PAC-REQUEST ::= SEQUENCE { 
-     include-pac[0] BOOLEAN - -If TRUE, and no pac present, include PAC. 
-                            - -If FALSE, and PAC present, remove PAC 
-     } 
-    
-  -->
+          KERB-PA-PAC-REQUEST ::= SEQUENCE { 
+          include-pac[0] BOOLEAN - -If TRUE, and no pac present, include PAC. 
+                                 - -If FALSE, and PAC present, remove PAC 
+          }-->
 
   <asn:Boolean name="IncludePac" explicitTag="0" />
 </asn:Sequence>

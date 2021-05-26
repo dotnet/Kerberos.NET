@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -37,7 +37,12 @@ namespace Kerberos.NET
                 return error.EText;
             }
 
-            return $"{error.ErrorCode}: " + SR.Resource($"KRB_ERROR_{error.ErrorCode}");
+            return $"KDC {error.ErrorCode}: {GetErrorMessage(error.ErrorCode)}";
+        }
+
+        public static string GetErrorMessage(KerberosErrorCode error)
+        {
+            return SR.Resource($"KRB_ERROR_{error}");
         }
 
         public KerberosProtocolException(string message)

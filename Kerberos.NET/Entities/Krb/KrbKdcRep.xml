@@ -5,22 +5,19 @@
   name="KrbKdcRep"
   namespace="Kerberos.NET.Entities">
   <!--
-  
-    AS-REP          ::= [APPLICATION 11] KDC-REP
-
-    TGS-REP         ::= [APPLICATION 13] KDC-REP
-
-    KDC-REP         ::= SEQUENCE {
-            pvno            [0] INTEGER (5),
-            msg-type        [1] INTEGER,
-            padata          [2] SEQUENCE OF PA-DATA OPTIONAL,
-            crealm          [3] Realm,
-            cname           [4] PrincipalName,
-            ticket          [5] Ticket,
-            enc-part        [6] EncryptedData
-    }
-
-  -->
+          AS-REP          ::= [APPLICATION 11] KDC-REP
+          
+          TGS-REP         ::= [APPLICATION 13] KDC-REP
+          
+          KDC-REP         ::= SEQUENCE {
+                  pvno            [0] INTEGER (5),
+                  msg-type        [1] INTEGER,
+                  padata          [2] SEQUENCE OF PA-DATA OPTIONAL,
+                  crealm          [3] Realm,
+                  cname           [4] PrincipalName,
+                  ticket          [5] Ticket,
+                  enc-part        [6] EncryptedData
+          }-->
 
   <asn:Integer name="ProtocolVersionNumber" backingType="int" explicitTag="0" />
   <asn:Integer name="MessageType" backingType="enum" enumType="MessageType" explicitTag="1" />

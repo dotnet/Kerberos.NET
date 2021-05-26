@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbFastArmoredReq"
+  namespace="Kerberos.NET.Entities">
+<!--
+          KrbFastArmoredReq ::= SEQUENCE {
+              armor        [0] KrbFastArmor OPTIONAL,
+                  - - Contains the armor that identifies the armor key.
+                  - - MUST be present in AS-REQ.
+              req-checksum [1] Checksum,
+                  - - For AS, contains the checksum performed over the type
+                  - - KDC-REQ-BODY for the req-body field of the KDC-REQ
+                  - - structure;
+                  - - For TGS, contains the checksum performed over the type
+                  - - AP-REQ in the PA-TGS-REQ padata.
+                  - - The checksum key is the armor key, the checksum
+                  - - type is the required checksum type for the enctype of
+                  - - the armor key, and the key usage number is
+                  - - KEY_USAGE_FAST_REQ_CHKSUM.
+              enc-fast-req [2] EncryptedData, - - KrbFastReq - -
+                  - - The encryption key is the armor key, and the key usage
+                  - - number is KEY_USAGE_FAST_ENC.
+              ...
+          }-->
+  
+  <asn:AsnType name="Armor" explicitTag="0" typeName="KrbFastArmor" optional="true" />
+  <asn:AsnType name="RequestChecksum" explicitTag="1" typeName="KrbChecksum" />
+  <asn:AsnType name="EncryptedFastRequest" explicitTag="2" typeName="KrbEncryptedData" />
+</asn:Sequence>

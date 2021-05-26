@@ -5,13 +5,10 @@
   name="KrbAuthorizationDataSequence"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    AuthorizationData       ::= SEQUENCE OF SEQUENCE {
-            ad-type         [0] Int32,
-            ad-data         [1] OCTET STRING
-    }
-
--->
+          AuthorizationData       ::= SEQUENCE OF SEQUENCE {
+                  ad-type         [0] Int32,
+                  ad-data         [1] OCTET STRING
+          }-->
 
   <asn:SequenceOf name="AuthorizationData"> 
     <asn:AsnType typeName="KrbAuthorizationData"/>

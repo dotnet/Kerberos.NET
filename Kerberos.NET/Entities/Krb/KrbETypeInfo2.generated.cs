@@ -18,6 +18,10 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbETypeInfo2
     {
+        /*
+          ETYPE-INFO2              ::= SEQUENCE SIZE (1..MAX) OF ETYPE-INFO2-ENTRY
+         */
+    
         public KrbETypeInfo2Entry[] ETypeInfo { get; set; }
   
 #if DEBUG

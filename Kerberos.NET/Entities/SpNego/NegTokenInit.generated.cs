@@ -17,10 +17,19 @@ namespace Kerberos.NET.Entities
 {
     public partial class NegTokenInit
     {
+        /*
+          NegTokenInit ::= SEQUENCE {
+              mechTypes       [0] MechTypeList,
+              reqFlags        [1] ContextFlags  OPTIONAL,
+              mechToken       [2] OCTET STRING  OPTIONAL,
+              mechListMIC     [3] OCTET STRING  OPTIONAL,
+              ...
+          }
+         */
+    
         public Oid[] MechTypes { get; set; }
   
-    
-    public ReadOnlyMemory<byte>? RequestFlags { get; set; }
+        public ReadOnlyMemory<byte>? RequestFlags { get; set; }
     
         public ReadOnlyMemory<byte>? MechToken { get; set; }
   

@@ -5,21 +5,18 @@
   name="NegTokenResp"
   namespace="Kerberos.NET.Entities">
   <!--
-   /*
-NegTokenResp ::= SEQUENCE {
-    negState       [0] ENUMERATED {
-        accept-completed    (0),
-        accept-incomplete   (1),
-        reject              (2),
-        request-mic         (3)
-    }                                 OPTIONAL,
-    supportedMech   [1] MechType      OPTIONAL,
-    responseToken   [2] OCTET STRING  OPTIONAL,
-    mechListMIC     [3] OCTET STRING  OPTIONAL,
-    ...
-}
-        */
-  -->
+          NegTokenResp ::= SEQUENCE {
+              negState       [0] ENUMERATED {
+                  accept-completed    (0),
+                  accept-incomplete   (1),
+                  reject              (2),
+                  request-mic         (3)
+              }                                 OPTIONAL,
+              supportedMech   [1] MechType      OPTIONAL,
+              responseToken   [2] OCTET STRING  OPTIONAL,
+              mechListMIC     [3] OCTET STRING  OPTIONAL,
+              ...
+          }-->
 
   <asn:Enumerated name="State" explicitTag="0" backingType="NegotiateState" optional="true" />
   <asn:ObjectIdentifier name="SupportedMech" explicitTag="1" optional="true" />

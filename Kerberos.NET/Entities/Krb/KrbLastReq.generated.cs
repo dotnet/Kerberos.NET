@@ -16,6 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbLastReq
     {
+        /*
+          LastReq         ::=     SEQUENCE OF SEQUENCE {
+                lr-type         [0] Int32,
+                lr-value        [1] KerberosTime
+          }
+         */
+    
         public int Type { get; set; }
   
         public DateTimeOffset Value { get; set; }

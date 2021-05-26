@@ -5,13 +5,10 @@
   name="KrbSubjectPublicKeyInfo"
   namespace="Kerberos.NET.Entities">
   <!--
-  
- SubjectPublicKeyInfo ::= SEQUENCE {
-    algorithm            AlgorithmIdentifier,
-    subjectPublicKey     BIT STRING
-}
-
-  -->
+          SubjectPublicKeyInfo ::= SEQUENCE {
+              algorithm            AlgorithmIdentifier,
+              subjectPublicKey     BIT STRING
+          }-->
 
   <asn:AsnType name="Algorithm" typeName="KrbAlgorithmIdentifier" />
   <asn:BitString name="SubjectPublicKey" />

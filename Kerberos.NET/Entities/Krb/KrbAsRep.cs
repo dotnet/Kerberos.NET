@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -37,8 +37,8 @@ namespace Kerberos.NET.Entities
 
             if (string.IsNullOrWhiteSpace(rst.RealmName))
             {
-                // TODO: Possible bug. Realm service can have multiple krbtgt's so the name is always set
-                // to the name of our KDC name.
+                // TODO: Possible bug. Realm service now has multiple krbtgt's so the name is always set
+                // to the name of our (cloud) KDC name. Will this be an issue for trust ticket or mcticket?
                 rst.RealmName = realmService.Name;
             }
 

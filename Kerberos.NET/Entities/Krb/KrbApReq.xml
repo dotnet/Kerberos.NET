@@ -5,16 +5,13 @@
   name="KrbApReq"
   namespace="Kerberos.NET.Entities" explicitTag="14">
   <!--
-  
-    AP-REQ          ::= [APPLICATION 14] SEQUENCE {
-        pvno            [0] INTEGER (5),
-        msg-type        [1] INTEGER (14),
-        ap-options      [2] APOptions,
-        ticket          [3] Ticket,
-        authenticator   [4] EncryptedData
-    }
-
-  -->
+          AP-REQ          ::= [APPLICATION 14] SEQUENCE {
+              pvno            [0] INTEGER (5),
+              msg-type        [1] INTEGER (14),
+              ap-options      [2] APOptions,
+              ticket          [3] Ticket,
+              authenticator   [4] EncryptedData
+          }-->
 
   <asn:Integer name="ProtocolVersionNumber" explicitTag="0" backingType="int" />
   <asn:Integer name="MessageType" explicitTag="1" backingType="enum" enumType="MessageType" />

@@ -16,6 +16,26 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbDHReplyInfo
     {
+        /*
+          DHRepInfo ::= SEQUENCE {
+            dhSignedData            [0] IMPLICIT OCTET STRING,
+          		   - - Contains a CMS type ContentInfo encoded according
+          		   - - to [RFC3852].
+          		   - - The contentType field of the type ContentInfo is
+          		   - - id-signedData (1.2.840.113549.1.7.2), and the
+          		   - - content field is a SignedData.
+          		   - - The eContentType field for the type SignedData is
+          		   - - id-pkinit-DHKeyData (1.3.6.1.5.2.3.2), and the
+          		   - - eContent field contains the DER encoding of the
+          		   - - type KDCDHKeyInfo.
+          		   - - KDCDHKeyInfo is defined below.
+            serverDHNonce           [1] DHNonce OPTIONAL,
+          		   - - Present if and only if dhKeyExpiration is
+          		   - - present.
+            ...
+          }
+         */
+    
         public ReadOnlyMemory<byte> DHSignedData { get; set; }
   
         public ReadOnlyMemory<byte>? ServerDHNonce { get; set; }

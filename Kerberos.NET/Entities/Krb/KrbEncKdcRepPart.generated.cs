@@ -17,6 +17,23 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncKdcRepPart
     {
+        /*
+          EncKDCRepPart   ::= SEQUENCE {
+                  key             [0] EncryptionKey,
+                  last-req        [1] LastReq,
+                  nonce           [2] UInt32,
+                  key-expiration  [3] KerberosTime OPTIONAL,
+                  flags           [4] TicketFlags,
+                  authtime        [5] KerberosTime,
+                  starttime       [6] KerberosTime OPTIONAL,
+                  endtime         [7] KerberosTime,
+                  renew-till      [8] KerberosTime OPTIONAL,
+                  srealm          [9] Realm,
+                  sname           [10] PrincipalName,
+                  caddr           [11] HostAddresses OPTIONAL
+          }
+         */
+    
         public KrbEncryptionKey Key { get; set; }
   
         public KrbLastReq[] LastReq { get; set; }
@@ -26,7 +43,6 @@ namespace Kerberos.NET.Entities
         public DateTimeOffset? KeyExpiration { get; set; }
   
         public TicketFlags Flags { get; set; }
-    
         public DateTimeOffset AuthTime { get; set; }
   
         public DateTimeOffset? StartTime { get; set; }

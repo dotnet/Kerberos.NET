@@ -17,6 +17,15 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbKdcReq
     {
+        /*
+          KDC-REQ         ::= SEQUENCE {
+                  pvno            [1] INTEGER (5) ,
+                  msg-type        [2] INTEGER,
+                  padata          [3] SEQUENCE OF PA-DATA OPTIONAL
+                  req-body        [4] KDC-REQ-BODY
+          }
+         */
+    
         public int ProtocolVersionNumber { get; set; }
   
         public MessageType MessageType { get; set; }

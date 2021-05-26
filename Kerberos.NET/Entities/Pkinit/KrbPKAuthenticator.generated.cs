@@ -16,6 +16,23 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPKAuthenticator
     {
+        /*
+          PKAuthenticator ::= SEQUENCE {
+            cusec                   [0] INTEGER (0..999999),
+            ctime                   [1] KerberosTime,
+          		   - - cusec and ctime are used as in [RFC4120], for
+          		   - - replay prevention.
+            nonce                   [2] INTEGER (0..4294967295),
+          		   - - Chosen randomly; this nonce does not need to
+          		   - - match with the nonce in the KDC-REQ-BODY.
+            paChecksum              [3] OCTET STRING OPTIONAL,
+          		   - - MUST be present.
+          		   - - Contains the SHA1 checksum, performed over
+          		   - - KDC-REQ-BODY.
+            ...
+          }
+         */
+    
         public int CuSec { get; set; }
   
         public DateTimeOffset CTime { get; set; }

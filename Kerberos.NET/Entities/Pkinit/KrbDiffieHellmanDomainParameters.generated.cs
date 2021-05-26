@@ -16,6 +16,16 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbDiffieHellmanDomainParameters
     {
+        /*
+          DomainParameters ::= SEQUENCE {
+              p       INTEGER, - - odd prime, p=jq +1
+              g       INTEGER, - - generator, g
+              q       INTEGER, - - factor of p-1
+              j       INTEGER OPTIONAL, - - subgroup factor
+              validationParms  ValidationParms OPTIONAL
+          }
+         */
+    
         public ReadOnlyMemory<byte> P { get; set; }
   
         public ReadOnlyMemory<byte> G { get; set; }

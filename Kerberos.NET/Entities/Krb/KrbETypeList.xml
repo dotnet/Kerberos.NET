@@ -5,13 +5,11 @@
   name="KrbETypeList"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    EtypeList ::= SEQUENCE OF Int32
-                  - - Specifies the enctypes supported by the client.
-                  - - This enctype list is in decreasing preference order
-                  - - (favorite choice first).
-                  - - Int32 is defined in [RFC4120].
--->
+          EtypeList ::= SEQUENCE OF Int32
+                        - - Specifies the enctypes supported by the client.
+                        - - This enctype list is in decreasing preference order
+                        - - (favorite choice first).
+                        - - Int32 is defined in [RFC4120].-->
 
   <asn:SequenceOf name="List">
     <asn:Integer backingType="enum" enumType="EncryptionType" />

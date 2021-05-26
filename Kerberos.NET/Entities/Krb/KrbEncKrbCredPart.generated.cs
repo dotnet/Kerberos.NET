@@ -17,6 +17,17 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncKrbCredPart
     {
+        /*
+          EncKrbCredPart  ::= [APPLICATION 29] SEQUENCE {
+                  ticket-info     [0] SEQUENCE OF KrbCredInfo,
+                  nonce           [1] UInt32 OPTIONAL,
+                  timestamp       [2] KerberosTime OPTIONAL,
+                  usec            [3] Microseconds OPTIONAL,
+                  s-address       [4] HostAddress OPTIONAL,
+                  r-address       [5] HostAddress OPTIONAL
+          }
+         */
+    
         public KrbCredInfo[] TicketInfo { get; set; }
   
         public int? Nonce { get; set; }

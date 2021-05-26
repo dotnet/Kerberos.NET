@@ -5,15 +5,12 @@
   name="KrbEncApRepPart"
   namespace="Kerberos.NET.Entities" explicitTag="27">
   <!--
-
-    EncAPRepPart    ::= [APPLICATION 27] SEQUENCE {
-            ctime           [0] KerberosTime,
-            cusec           [1] Microseconds,
-            subkey          [2] EncryptionKey OPTIONAL,
-            seq-number      [3] UInt32 OPTIONAL
-    }
-
-  -->
+          EncAPRepPart    ::= [APPLICATION 27] SEQUENCE {
+                  ctime           [0] KerberosTime,
+                  cusec           [1] Microseconds,
+                  subkey          [2] EncryptionKey OPTIONAL,
+                  seq-number      [3] UInt32 OPTIONAL
+          }-->
 
   <asn:GeneralizedTime name="CTime" explicitTag="0" />
   <asn:Integer name="CuSec" explicitTag="1" backingType="int" />

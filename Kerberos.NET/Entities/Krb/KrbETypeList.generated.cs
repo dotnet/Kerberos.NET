@@ -18,6 +18,14 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbETypeList
     {
+        /*
+          EtypeList ::= SEQUENCE OF Int32
+                        - - Specifies the enctypes supported by the client.
+                        - - This enctype list is in decreasing preference order
+                        - - (favorite choice first).
+                        - - Int32 is defined in [RFC4120].
+         */
+    
         public EncryptionType[] List { get; set; }
   
 #if DEBUG

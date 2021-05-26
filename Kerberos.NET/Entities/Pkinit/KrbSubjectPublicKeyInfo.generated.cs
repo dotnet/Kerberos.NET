@@ -16,10 +16,16 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbSubjectPublicKeyInfo
     {
+        /*
+          SubjectPublicKeyInfo ::= SEQUENCE {
+              algorithm            AlgorithmIdentifier,
+              subjectPublicKey     BIT STRING
+          }
+         */
+    
         public KrbAlgorithmIdentifier Algorithm { get; set; }
   
-    
-    public ReadOnlyMemory<byte> SubjectPublicKey { get; set; }
+        public ReadOnlyMemory<byte> SubjectPublicKey { get; set; }
     
         // Encoding methods
         public ReadOnlyMemory<byte> Encode()

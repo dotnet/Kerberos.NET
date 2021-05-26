@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbFastResponse"
+  namespace="Kerberos.NET.Entities">
+<!--
+        KrbFastResponse ::= SEQUENCE {
+            padata         [0] SEQUENCE OF PA-DATA,
+                - - padata typed holes.
+            strengthen-key [1] EncryptionKey OPTIONAL,
+                - - This, if present, strengthens the reply key for AS and
+                - - TGS. MUST be present for TGS.
+                - - MUST be absent in KRB-ERROR.
+            finished       [2] KrbFastFinished OPTIONAL,
+                - - Present in AS or TGS reply; absent otherwise.
+            nonce          [3] UInt32,
+                - - Nonce from the client request.
+            ...
+        }-->
+
+  <asn:SequenceOf name="PaData" explicitTag="0">
+    <asn:AsnType typeName="KrbPaData" />
+  </asn:SequenceOf>
+  <asn:AsnType name="StrengthenKey" explicitTag="1" typeName="KrbEncryptionKey" optional="true" />
+  <asn:AsnType name="Finished" explicitTag="2" typeName="KrbFastFinished" optional="true" />
+  <asn:Integer name="Nonce" explicitTag="3" backingType="int" />
+</asn:Sequence>

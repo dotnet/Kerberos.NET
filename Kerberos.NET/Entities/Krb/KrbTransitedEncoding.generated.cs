@@ -16,6 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbTransitedEncoding
     {
+        /*
+          TransitedEncoding       ::= SEQUENCE {
+                  tr-type         [0] Int32,
+                  contents        [1] OCTET STRING
+          }
+         */
+    
         public TransitedEncodingType Type { get; set; }
     
         public ReadOnlyMemory<byte> Contents { get; set; }

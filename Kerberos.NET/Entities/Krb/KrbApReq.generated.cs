@@ -16,12 +16,21 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbApReq
     {
+        /*
+          AP-REQ          ::= [APPLICATION 14] SEQUENCE {
+              pvno            [0] INTEGER (5),
+              msg-type        [1] INTEGER (14),
+              ap-options      [2] APOptions,
+              ticket          [3] Ticket,
+              authenticator   [4] EncryptedData
+          }
+         */
+    
         public int ProtocolVersionNumber { get; set; }
   
         public MessageType MessageType { get; set; }
     
         public ApOptions ApOptions { get; set; }
-    
         public KrbTicket Ticket { get; set; }
   
         public KrbEncryptedData Authenticator { get; set; }

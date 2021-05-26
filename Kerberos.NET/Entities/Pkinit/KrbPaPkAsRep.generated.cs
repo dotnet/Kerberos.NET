@@ -17,6 +17,30 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaPkAsRep
     {
+        /*
+          PA-PK-AS-REP ::= CHOICE {
+            dhInfo                  [0] DHRepInfo,
+          		   - - Selected when Diffie-Hellman key exchange is
+          		   - - used.
+            encKeyPack              [1] IMPLICIT OCTET STRING,
+          		   - - Selected when public key encryption is used.
+          		   - - Contains a CMS type ContentInfo encoded
+          		   - - according to [RFC3852].
+          		   - - The contentType field of the type ContentInfo is
+          		   - - id-envelopedData (1.2.840.113549.1.7.3).
+          		   - - The content field is an EnvelopedData.
+          		   - - The contentType field for the type EnvelopedData
+          		   - - is id-signedData (1.2.840.113549.1.7.2).
+          		   - - The eContentType field for the inner type
+          		   - - SignedData (when unencrypted) is
+          		   - - id-pkinit-rkeyData (1.3.6.1.5.2.3.3) and the
+          		   - - eContent field contains the DER encoding of the
+          		   - - type ReplyKeyPack.
+          		   - - ReplyKeyPack is defined below.
+            ...
+          }
+         */
+    
         public KrbDHReplyInfo DHInfo { get; set; }
   
         public ReadOnlyMemory<byte>? EncKeyPack { get; set; }
