@@ -22,6 +22,11 @@ namespace Kerberos.NET.Crypto
 
         public ReadOnlyMemory<byte> ComputeHash(ReadOnlyMemory<byte> buffer)
         {
+            return this.ComputeHashArray(buffer);
+        }
+
+        public byte[] ComputeHashArray(ReadOnlyMemory<byte> buffer)
+        {
             var dataArray = TryGetArrayFast(buffer);
 
             return this.hmac.ComputeHash(dataArray, 0, buffer.Length);

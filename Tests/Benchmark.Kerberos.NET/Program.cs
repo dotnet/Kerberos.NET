@@ -1,12 +1,12 @@
-﻿using BenchmarkDotNet.Running;
-using Microsoft.Win32.SafeHandles;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using BenchmarkDotNet.Running;
+using Microsoft.Win32.SafeHandles;
 
 namespace Benchmark.Kerberos.NET
 {
@@ -42,39 +42,39 @@ namespace Benchmark.Kerberos.NET
         {
             var parameters = new List<string>();
 
-            if (Benchmark != BenchmarkType.None)
+            if (this.Benchmark != BenchmarkType.None)
             {
-                parameters.Add($"-benchmark {Benchmark}");
+                parameters.Add($"-benchmark {this.Benchmark}");
             }
 
-            if (!string.IsNullOrWhiteSpace(ClientIdentifier))
+            if (!string.IsNullOrWhiteSpace(this.ClientIdentifier))
             {
-                parameters.Add($"-client {ClientIdentifier}");
+                parameters.Add($"-client {this.ClientIdentifier}");
             }
 
-            if (Port > 0)
+            if (this.Port > 0)
             {
-                parameters.Add($"-port {Port}");
+                parameters.Add($"-port {this.Port}");
             }
 
-            if (ThreadCount > 0)
+            if (this.ThreadCount > 0)
             {
-                parameters.Add($"-threads {ThreadCount}");
+                parameters.Add($"-threads {this.ThreadCount}");
             }
 
-            if (!string.IsNullOrWhiteSpace(ServerIdentifier))
+            if (!string.IsNullOrWhiteSpace(this.ServerIdentifier))
             {
-                parameters.Add($"-server {ServerIdentifier}");
+                parameters.Add($"-server {this.ServerIdentifier}");
             }
 
-            if (WorkerCount > 0)
+            if (this.WorkerCount > 0)
             {
-                parameters.Add($"-workers {WorkerCount}");
+                parameters.Add($"-workers {this.WorkerCount}");
             }
 
-            if (RequestCount > 0)
+            if (this.RequestCount > 0)
             {
-                parameters.Add($"-requests {RequestCount}");
+                parameters.Add($"-requests {this.RequestCount}");
             }
 
             return string.Join(" ", parameters);
@@ -186,7 +186,7 @@ namespace Benchmark.Kerberos.NET
         {
             public ProcessWaitHandle(Process process)
             {
-                SafeWaitHandle = new SafeWaitHandle(process.Handle, false);
+                this.SafeWaitHandle = new SafeWaitHandle(process.Handle, false);
             }
         }
 

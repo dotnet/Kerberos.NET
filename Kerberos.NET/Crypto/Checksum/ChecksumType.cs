@@ -5,16 +5,12 @@
 
 namespace Kerberos.NET.Crypto
 {
-#if WEAKCRYPTO
-    internal sealed class Win32CspMd4 : Win32CspHash
+    public enum ChecksumType : int
     {
-        private const int CALG_MD4 = 0x00008002;
-        private const int MD4HashSize = 16;
-
-        public Win32CspMd4()
-            : base("MD4", CALG_MD4, MD4HashSize)
-        {
-        }
+        KERB_CHECKSUM_HMAC_MD5 = unchecked((int)0xFFFFFF76),
+        HMAC_SHA1_96_AES128 = 0x0000000F,
+        HMAC_SHA1_96_AES256 = 0x00000010,
+        HMAC_SHA256_128_AES128 = 0x00000013,
+        HMAC_SHA384_192_AES256 = 0x00000014,
     }
-#endif
 }

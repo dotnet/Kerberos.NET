@@ -1,4 +1,9 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
@@ -25,7 +30,8 @@ namespace Kerberos.NET.Crypto
             SaltType saltType = SaltType.ActiveDirectoryService,
             byte[] iterationParams = null,
             int? kvno = null
-        ) : this(null, password, null, principalName, host, salt, saltBytes, etype, saltType, iterationParams, kvno)
+        )
+            : this(null, password, null, principalName, host, salt, saltBytes, etype, saltType, iterationParams, kvno)
         {
             if (string.IsNullOrWhiteSpace(password))
             {
@@ -44,7 +50,8 @@ namespace Kerberos.NET.Crypto
             SaltType saltType = SaltType.ActiveDirectoryService,
             byte[] iterationParams = null,
             int? kvno = null
-            ) : this(key, null, password, principal, host, salt, saltBytes, etype, saltType, iterationParams, kvno)
+        )
+            : this(key, null, password, principal, host, salt, saltBytes, etype, saltType, iterationParams, kvno)
         {
             if (key == null && password == null)
             {
@@ -154,7 +161,7 @@ namespace Kerberos.NET.Crypto
 
         public int? Version { get; }
 
-        public byte[] SaltBytes
+        public ReadOnlyMemory<byte> SaltBytes
         {
             get
             {

@@ -40,55 +40,55 @@ namespace KerbDump
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = AutoScaleMode.Dpi;
 
-            InitializeComponent();
+            this.InitializeComponent();
 
-            DefaultTreeFont = new Font(treeView1.Font.FontFamily, treeView1.Font.Size, FontStyle.Italic);
-            txtDump.ReadOnly = true;
+            this.DefaultTreeFont = new Font(this.treeView1.Font.FontFamily, this.treeView1.Font.Size, FontStyle.Italic);
+            this.txtDump.ReadOnly = true;
 
-            exportMenu.Items.Add("Export to WireShark", null, ExportWireshark);
-            exportMenu.Items.Add("Export to Keytab", null, ExportKeytab);
+            this.exportMenu.Items.Add("Export to WireShark", null, this.ExportWireshark);
+            this.exportMenu.Items.Add("Export to Keytab", null, this.ExportKeytab);
 
-            btnExport.Click += (s, e) =>
+            this.btnExport.Click += (s, e) =>
             {
-                exportMenu.Show(btnExport, new Point());
+                this.exportMenu.Show(this.btnExport, new Point());
             };
 
-            splitter1Default = splitContainer1.SplitterDistance;
-            splitter2Default = splitContainer2.SplitterDistance;
+            this.splitter1Default = this.splitContainer1.SplitterDistance;
+            this.splitter2Default = this.splitContainer2.SplitterDistance;
 
-            splitContainer1.DoubleClick += (s, e) =>
+            this.splitContainer1.DoubleClick += (s, e) =>
             {
-                if (splitContainer1.SplitterDistance >= splitter1Default)
+                if (this.splitContainer1.SplitterDistance >= this.splitter1Default)
                 {
-                    splitContainer1.SplitterDistance = 5;
+                    this.splitContainer1.SplitterDistance = 5;
                 }
                 else
                 {
-                    splitContainer1.SplitterDistance = splitter1Default;
+                    this.splitContainer1.SplitterDistance = this.splitter1Default;
                 }
             };
 
-            splitContainer2.DoubleClick += (s, e) =>
+            this.splitContainer2.DoubleClick += (s, e) =>
             {
-                if (splitContainer2.SplitterDistance >= splitter2Default)
+                if (this.splitContainer2.SplitterDistance >= this.splitter2Default)
                 {
-                    splitContainer2.SplitterDistance = 5;
+                    this.splitContainer2.SplitterDistance = 5;
                 }
                 else
                 {
-                    splitContainer2.SplitterDistance = splitter2Default;
+                    this.splitContainer2.SplitterDistance = this.splitter2Default;
                 }
             };
 
             CryptoService.RegisterCryptographicAlgorithm(EncryptionType.NULL, () => new NoopTransform());
 
-            SetHost();
+            this.SetHost();
 
-            txtHost.TextChanged += Host_Changed;
+            this.txtHost.TextChanged += this.Host_Changed;
 
-            txtHost.Text = hostName;
+            this.txtHost.Text = this.hostName;
 
-            TryLoadPersistedSettings();
+            this.TryLoadPersistedSettings();
         }
 
         private void CopyNodeValue(object sender, EventArgs e)
@@ -150,37 +150,37 @@ namespace KerbDump
         {
             if (!Settings.Default.ShouldRemember)
             {
-                chkRemember.Checked = false;
+                this.chkRemember.Checked = false;
 
                 return;
             }
 
-            txtTicket.Text = Settings.Default.Ticket;
-            txtKey.Text = Unprotect(Settings.Default.Secret);
-            chkEncodedKey.Checked = Settings.Default.IsSecretEncoded;
-            txtHost.Text = Settings.Default.Host;
+            this.txtTicket.Text = Settings.Default.Ticket;
+            this.txtKey.Text = this.Unprotect(Settings.Default.Secret);
+            this.chkEncodedKey.Checked = Settings.Default.IsSecretEncoded;
+            this.txtHost.Text = Settings.Default.Host;
 
-            button1_Click(this, EventArgs.Empty);
+            this.button1_Click(this, EventArgs.Empty);
         }
 
         private void SetHost()
         {
-            hostName = Environment.MachineName.ToLowerInvariant();
+            this.hostName = Environment.MachineName.ToLowerInvariant();
         }
 
         string hostName = "";
 
         private void Host_Changed(object sender, EventArgs e)
         {
-            hostName = txtHost.Text;
+            this.hostName = this.txtHost.Text;
 
-            if (!string.IsNullOrWhiteSpace(hostName))
+            if (!string.IsNullOrWhiteSpace(this.hostName))
             {
-                btnRequest.Text = string.Format(RequestTemplateText, hostName);
+                this.btnRequest.Text = string.Format(RequestTemplateText, this.hostName);
             }
             else
             {
-                btnRequest.Text = string.Format(RequestTemplateText, "<host>");
+                this.btnRequest.Text = string.Format(RequestTemplateText, "<host>");
             }
         }
 
@@ -188,53 +188,53 @@ namespace KerbDump
         {
             try
             {
-                Decode().Wait();
+                this.Decode().Wait();
             }
             catch (Exception ex)
             {
-                ShowError(ex);
+                this.ShowError(ex);
             }
         }
 
         private async Task Decode()
         {
-            if (chkRemember.Checked)
+            if (this.chkRemember.Checked)
             {
-                TryPersistingValues();
+                this.TryPersistingValues();
             }
             else
             {
-                ResetPersistedValues();
+                this.ResetPersistedValues();
             }
 
-            if (string.IsNullOrWhiteSpace(txtTicket.Text))
+            if (string.IsNullOrWhiteSpace(this.txtTicket.Text))
             {
                 return;
             }
 
             string ticket;
 
-            if (string.IsNullOrWhiteSpace(txtKey.Text) && table == null)
+            if (string.IsNullOrWhiteSpace(this.txtKey.Text) && this.table == null)
             {
-                ticket = Decode(txtTicket.Text);
+                ticket = this.Decode(this.txtTicket.Text);
             }
             else
             {
-                var key = CreateKeytab();
+                var key = this.CreateKeytab();
 
-                ticket = await Decode(txtTicket.Text, key);
+                ticket = await this.Decode(this.txtTicket.Text, key);
             }
 
-            DisplayDeconstructed(ticket, "Decoded Message");
+            this.DisplayDeconstructed(ticket, "Decoded Message");
         }
 
         private KeyTable CreateKeytab()
         {
-            var key = table;
+            var key = this.table;
 
             var domain = Environment.GetEnvironmentVariable("USERDNSDOMAIN") ?? "";
 
-            var host = txtHost.Text;
+            var host = this.txtHost.Text;
 
             var split = host.Split(new[] { '.' }, 2);
 
@@ -246,9 +246,9 @@ namespace KerbDump
 
             if (key == null)
             {
-                if (chkEncodedKey.Checked)
+                if (this.chkEncodedKey.Checked)
                 {
-                    var bytes = Convert.FromBase64String(txtKey.Text);
+                    var bytes = Convert.FromBase64String(this.txtKey.Text);
 
                     key = new KeyTable(
                         new KerberosKey(
@@ -262,7 +262,7 @@ namespace KerbDump
                 {
                     key = new KeyTable(
                         new KerberosKey(
-                            txtKey.Text,
+                            this.txtKey.Text,
                             principalName: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
                             host: string.IsNullOrWhiteSpace(host) ? null : host
                         )
@@ -292,10 +292,10 @@ namespace KerbDump
             {
                 Settings.Default.ShouldRemember = true;
 
-                Settings.Default.Ticket = txtTicket.Text;
-                Settings.Default.Secret = Protect(txtKey.Text);
-                Settings.Default.IsSecretEncoded = chkEncodedKey.Checked;
-                Settings.Default.Host = txtHost.Text;
+                Settings.Default.Ticket = this.txtTicket.Text;
+                Settings.Default.Secret = this.Protect(this.txtKey.Text);
+                Settings.Default.IsSecretEncoded = this.chkEncodedKey.Checked;
+                Settings.Default.Host = this.txtHost.Text;
 
                 Settings.Default.Save();
             }
@@ -331,11 +331,11 @@ namespace KerbDump
 
         private void DisplayDeconstructed(string ticket, string label)
         {
-            label2.Text = label;
+            this.label2.Text = label;
 
-            txtDump.Text = ticket;
+            this.txtDump.Text = ticket;
 
-            CreateTreeView(ticket, label);
+            this.CreateTreeView(ticket, label);
         }
 
         private async Task<string> Decode(string ticket, KeyTable key)
@@ -350,11 +350,11 @@ namespace KerbDump
 
             var request = MessageParser.Parse(ticketBytes);
 
-            var keytableFormat = GenerateFormattedKeyTable(key);
+            var keytableFormat = this.GenerateFormattedKeyTable(key);
 
             var authenticated = await new KerberosAuthenticator(validator).Authenticate(ticketBytes) as KerberosIdentity;
 
-            return FormatSerialize(new
+            return this.FormatSerialize(new
             {
                 Request = request,
                 Decrypted = decrypted,
@@ -535,11 +535,11 @@ namespace KerbDump
 
             var request = MessageParser.Parse(ticketBytes);
 
-            var keytab = GenerateFormattedKeyTable(table);
+            var keytab = this.GenerateFormattedKeyTable(this.table);
 
             var obj = new { Request = request, KeyTable = keytab };
 
-            return FormatSerialize(obj);
+            return this.FormatSerialize(obj);
         }
 
         private void btnDecodeLocal_Click(object sender, EventArgs e)
@@ -550,22 +550,22 @@ namespace KerbDump
                 {
                     secret.GetSecret(out byte[] bytes);
 
-                    txtKey.Text = Convert.ToBase64String(bytes);
+                    this.txtKey.Text = Convert.ToBase64String(bytes);
                 }
 
-                chkEncodedKey.Checked = true;
+                this.chkEncodedKey.Checked = true;
 
-                button1_Click(sender, e);
+                this.button1_Click(sender, e);
             }
             catch (Exception ex)
             {
-                ShowError(ex);
+                this.ShowError(ex);
             }
         }
 
         private void ShowError(Exception ex)
         {
-            treeView1.Nodes.Clear();
+            this.treeView1.Nodes.Clear();
 
             var sb = new StringBuilder();
 
@@ -581,30 +581,30 @@ namespace KerbDump
                 sb.Append(ex.ToString());
             }
 
-            txtDump.Text = sb.ToString();
+            this.txtDump.Text = sb.ToString();
         }
 
         private void RequestLocalTicket()
         {
-            if (string.IsNullOrWhiteSpace(hostName))
+            if (string.IsNullOrWhiteSpace(this.hostName))
             {
-                SetHost();
+                this.SetHost();
 
-                txtHost.Text = hostName;
+                this.txtHost.Text = this.hostName;
             }
 
-            SspiContext context = new SspiContext(spn: hostName);
+            SspiContext context = new SspiContext(spn: this.hostName);
 
             byte[] tokenBytes = context.RequestToken();
 
-            txtTicket.Text = Convert.ToBase64String(tokenBytes);
+            this.txtTicket.Text = Convert.ToBase64String(tokenBytes);
         }
 
         private void CreateTreeView(string json, string label)
         {
-            treeView1.BeginUpdate();
+            this.treeView1.BeginUpdate();
 
-            treeView1.Nodes.Clear();
+            this.treeView1.Nodes.Clear();
 
             using (var reader = new StringReader(json))
             using (var jsonReader = new JsonTextReader(reader))
@@ -613,20 +613,20 @@ namespace KerbDump
 
                 var root = new TreeNode(label);
 
-                AddNode(obj, root);
+                this.AddNode(obj, root);
 
-                treeView1.Nodes.Add(root);
+                this.treeView1.Nodes.Add(root);
 
-                treeView1.ExpandAll();
+                this.treeView1.ExpandAll();
             }
 
-            if (treeView1.Nodes.Count > 0)
+            if (this.treeView1.Nodes.Count > 0)
             {
-                treeView1.Nodes[0].EnsureVisible();
-                treeView1.Nodes[0].NodeFont = new Font(treeView1.Font, FontStyle.Regular);
+                this.treeView1.Nodes[0].EnsureVisible();
+                this.treeView1.Nodes[0].NodeFont = new Font(this.treeView1.Font, FontStyle.Regular);
             }
 
-            treeView1.EndUpdate();
+            this.treeView1.EndUpdate();
         }
 
         private TreeNode MakeNode(string display)
@@ -637,10 +637,10 @@ namespace KerbDump
 
             if (display.IndexOf(" = ") > 0)
             {
-                node.ContextMenuStrip.Items.Add("Copy", null, CopyNodeText);
+                node.ContextMenuStrip.Items.Add("Copy", null, this.CopyNodeText);
             }
 
-            node.ContextMenuStrip.Items.Add("Copy Value", null, CopyNodeValue);
+            node.ContextMenuStrip.Items.Add("Copy Value", null, this.CopyNodeValue);
 
             return node;
         }
@@ -659,7 +659,7 @@ namespace KerbDump
 
             if (token is JValue)
             {
-                inTreeNode.Nodes.Add(MakeNode(token.ToString()));
+                inTreeNode.Nodes.Add(this.MakeNode(token.ToString()));
 
                 return 0;
             }
@@ -673,26 +673,26 @@ namespace KerbDump
 
                     if (property.Value is JValue)
                     {
-                        var childNode = MakeNode($"{property.Name} = {property.Value}");
+                        var childNode = this.MakeNode($"{property.Name} = {property.Value}");
 
                         if (string.IsNullOrWhiteSpace(property.Value.ToString()))
                         {
-                            childNode.NodeFont = DefaultTreeFont;
+                            childNode.NodeFont = this.DefaultTreeFont;
                         }
 
                         inTreeNode.Nodes.Add(childNode);
                     }
                     else
                     {
-                        var childNode = MakeNode(property.Name);
+                        var childNode = this.MakeNode(property.Name);
 
-                        var childrenAdded = AddNode(property.Value, childNode);
+                        var childrenAdded = this.AddNode(property.Value, childNode);
 
                         inTreeNode.Nodes.Add(childNode);
 
                         if (childrenAdded == 0)
                         {
-                            childNode.NodeFont = DefaultTreeFont;
+                            childNode.NodeFont = this.DefaultTreeFont;
                         }
                     }
                 }
@@ -713,7 +713,7 @@ namespace KerbDump
                         }
                         else
                         {
-                            AddNode(value, inTreeNode);
+                            this.AddNode(value, inTreeNode);
                         }
                     }
                     else
@@ -735,9 +735,9 @@ namespace KerbDump
                             typeName = i.ToString();
                         }
 
-                        var childNode = inTreeNode.Nodes[inTreeNode.Nodes.Add(MakeNode(typeName))];
+                        var childNode = inTreeNode.Nodes[inTreeNode.Nodes.Add(this.MakeNode(typeName))];
 
-                        AddNode(value, childNode);
+                        this.AddNode(value, childNode);
                     }
                 }
 
@@ -772,7 +772,7 @@ namespace KerbDump
 
                 if (result == DialogResult.OK)
                 {
-                    LoadKeytab(dialog.FileName);
+                    this.LoadKeytab(dialog.FileName);
                 }
             }
         }
@@ -787,52 +787,52 @@ namespace KerbDump
 
                 if (keytab.Entries.Any())
                 {
-                    table = keytab;
+                    this.table = keytab;
 
-                    lblKeytab.Text = fileName;
+                    this.lblKeytab.Text = fileName;
 
-                    if (string.IsNullOrWhiteSpace(txtTicket.Text))
+                    if (string.IsNullOrWhiteSpace(this.txtTicket.Text))
                     {
-                        var formatted = GenerateFormattedKeyTable(table);
+                        var formatted = this.GenerateFormattedKeyTable(this.table);
 
-                        var serialized = FormatSerialize(new { KeyTable = formatted });
+                        var serialized = this.FormatSerialize(new { KeyTable = formatted });
 
-                        DisplayDeconstructed(serialized, "KeyTable");
+                        this.DisplayDeconstructed(serialized, "KeyTable");
                     }
                 }
             }
             catch (Exception ex)
             {
-                lblKeytab.Text = "";
+                this.lblKeytab.Text = "";
                 this.ShowError(ex);
             }
         }
 
         private void btnClear_Click(object sender, EventArgs e)
         {
-            splitContainer1.SplitterDistance = splitter1Default;
-            splitContainer2.SplitterDistance = splitter2Default;
+            this.splitContainer1.SplitterDistance = this.splitter1Default;
+            this.splitContainer2.SplitterDistance = this.splitter2Default;
 
-            txtTicket.Text = "";
-            txtDump.Text = "";
-            txtHost.Text = "";
-            txtKey.Text = "";
-            chkEncodedKey.Checked = false;
+            this.txtTicket.Text = "";
+            this.txtDump.Text = "";
+            this.txtHost.Text = "";
+            this.txtKey.Text = "";
+            this.chkEncodedKey.Checked = false;
 
-            treeView1.Nodes.Clear();
-            table = null;
-            lblKeytab.Text = "";
+            this.treeView1.Nodes.Clear();
+            this.table = null;
+            this.lblKeytab.Text = "";
         }
 
         private void btnRequest_Click(object sender, EventArgs e)
         {
             try
             {
-                RequestLocalTicket();
+                this.RequestLocalTicket();
             }
             catch (Exception ex)
             {
-                ShowError(ex);
+                this.ShowError(ex);
             }
         }
 
@@ -849,7 +849,7 @@ namespace KerbDump
                 {
                     using (var stream = dialog.OpenFile())
                     {
-                        ExportWireSharkFile(stream);
+                        this.ExportWireSharkFile(stream);
                     }
                 }
             }
@@ -868,7 +868,7 @@ namespace KerbDump
                 {
                     using (var stream = dialog.OpenFile())
                     {
-                        ExportKeytabFile(stream);
+                        this.ExportKeytabFile(stream);
                     }
                 }
             }
@@ -876,7 +876,7 @@ namespace KerbDump
 
         private void ExportKeytabFile(Stream stream)
         {
-            var keytab = CreateKeytab();
+            var keytab = this.CreateKeytab();
 
             using (var writer = new BinaryWriter(stream))
             {
@@ -894,7 +894,7 @@ namespace KerbDump
             header.AppendLine("User-Agent: kerberos/net");
             header.AppendLine("Pragma: no-cache");
             header.AppendLine("Host: fakeserver");
-            header.AppendFormat("WWW-Authenticate: Negotiate {0}\r\n", txtTicket.Text);
+            header.AppendFormat("WWW-Authenticate: Negotiate {0}\r\n", this.txtTicket.Text);
             header.AppendLine("Accept-Language: en-US");
             header.AppendLine("Accept-Encoding: gzip, deflate");
             header.AppendLine("Connection: close");
@@ -962,7 +962,7 @@ namespace KerbDump
 
         public LSASecret(string key)
         {
-            secretName = new LSA_UNICODE_STRING()
+            this.secretName = new LSA_UNICODE_STRING()
             {
                 Buffer = Marshal.StringToHGlobalUni(key),
                 Length = (ushort)(key.Length * 2),
@@ -977,7 +977,7 @@ namespace KerbDump
                     ref localsystem,
                     ref objectAttributes,
                     POLICY_GET_PRIVATE_INFORMATION,
-                    out lsaPolicyHandle
+                    out this.lsaPolicyHandle
                 )
             );
 
@@ -1000,7 +1000,7 @@ namespace KerbDump
         public string GetSecret(out byte[] data)
         {
             var winErrorCode = LsaNtStatusToWinError(
-                LsaRetrievePrivateData(lsaPolicyHandle, ref secretName, out IntPtr privateData)
+                LsaRetrievePrivateData(this.lsaPolicyHandle, ref this.secretName, out IntPtr privateData)
             );
 
             if (winErrorCode != 0)
@@ -1021,7 +1021,7 @@ namespace KerbDump
 
         public void Dispose()
         {
-            var winErrorCode = LsaNtStatusToWinError(LsaClose(lsaPolicyHandle));
+            var winErrorCode = LsaNtStatusToWinError(LsaClose(this.lsaPolicyHandle));
 
             if (winErrorCode != 0)
             {

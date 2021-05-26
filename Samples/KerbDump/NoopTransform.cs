@@ -1,5 +1,5 @@
-﻿using Kerberos.NET.Crypto;
-using System;
+﻿using System;
+using Kerberos.NET.Crypto;
 
 namespace KerbDump
 {

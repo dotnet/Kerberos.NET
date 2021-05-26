@@ -1,7 +1,7 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Kerberos.NET.Crypto;
-using System;
 
 namespace Benchmark.Kerberos.NET
 {

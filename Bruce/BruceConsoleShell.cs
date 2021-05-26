@@ -112,7 +112,7 @@ namespace Kerberos.NET.CommandLine
                     continue;
                 }
 
-                if (TryProcessSystemCommand(parameters, out bool exiting))
+                if (this.TryProcessSystemCommand(parameters, out bool exiting))
                 {
                     if (exiting && !this.TryPopShell())
                     {
@@ -124,7 +124,7 @@ namespace Kerberos.NET.CommandLine
 
                 try
                 {
-                    await ExecuteCommand(parameters);
+                    await this.ExecuteCommand(parameters);
                 }
                 catch (AggregateException agg)
                 {

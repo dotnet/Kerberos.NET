@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -11,6 +11,12 @@ namespace Kerberos.NET.Crypto
 {
     internal unsafe abstract class Win32CspHash : IHashAlgorithm
     {
+        private const string ADVAPI32 = "advapi32.dll";
+        private const int PROV_RSA_AES = 24;
+        private const int CRYPT_NEWKEYSET = 0x00000008;
+
+        private const int HP_HASHVAL = 0x0002;
+
         protected Win32CspHash(string algorithm, int calg, int hashSize)
         {
             this.Algorithm = algorithm;
@@ -30,12 +36,6 @@ namespace Kerberos.NET.Crypto
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
         }
-
-        private const string ADVAPI32 = "advapi32.dll";
-        private const int PROV_RSA_AES = 24;
-        private const int CRYPT_NEWKEYSET = 0x00000008;
-
-        private const int HP_HASHVAL = 0x0002;
 
         [DllImport(ADVAPI32, CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern bool CryptAcquireContext(

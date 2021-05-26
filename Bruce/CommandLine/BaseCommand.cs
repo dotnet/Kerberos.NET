@@ -124,11 +124,11 @@ namespace Kerberos.NET.CommandLine
                 {
                     sb.AppendFormat("{0} ", attr.Name);
 
-                    sb.AppendFormat("[{0}] ", WriteProperty(prop, attr));
+                    sb.AppendFormat("[{0}] ", this.WriteProperty(prop, attr));
                 }
                 else
                 {
-                    sb.Append(WriteProperty(prop, attr));
+                    sb.Append(this.WriteProperty(prop, attr));
                     sb.Append(" ");
                 }
             }
@@ -145,7 +145,7 @@ namespace Kerberos.NET.CommandLine
 
             foreach (var prop in props)
             {
-                WritePropertyDescription(prop.Item1.PropertyType, prop.Item2, this.GetType().Name, padding: max);
+                this.WritePropertyDescription(prop.Item1.PropertyType, prop.Item2, this.GetType().Name, padding: max);
                 this.WriteLine();
             }
 
@@ -162,7 +162,7 @@ namespace Kerberos.NET.CommandLine
         protected virtual void WriteHeader(string message)
         {
             this.IO.WriteAsColor("   " + message, ConsoleColor.Yellow);
-            WriteLine();
+            this.WriteLine();
         }
 
         protected virtual void WriteLineRaw(string message)
@@ -177,7 +177,7 @@ namespace Kerberos.NET.CommandLine
 
         protected virtual void WriteLine(string message, params object[] args)
         {
-            WriteLine(0, message, args);
+            this.WriteLine(0, message, args);
         }
 
         protected virtual void WriteLine(int indent, string message, params object[] args)
@@ -369,7 +369,7 @@ namespace Kerberos.NET.CommandLine
 
         private void CalculateUserAndRealm()
         {
-            var client = CreateClient();
+            var client = this.CreateClient();
 
             if (string.IsNullOrWhiteSpace(this.Realm))
             {
@@ -425,7 +425,7 @@ namespace Kerberos.NET.CommandLine
                     continue;
                 }
 
-                SetPropertyValue(prop, attr, ref parameters);
+                this.SetPropertyValue(prop, attr, ref parameters);
             }
 
             parameters = parameters.Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();

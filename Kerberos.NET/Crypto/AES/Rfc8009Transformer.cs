@@ -6,21 +6,27 @@
 using System;
 using System.Security;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Kerberos.NET.Crypto
 {
     public abstract class Rfc8009Transformer : AESTransformer
     {
+        protected const int Aes128Sha256KeyLength = 128;
+        protected const int Aes256Sha384ChecksumLength = 192;
+        protected const int Aes256Sha384KeyLength = 256;
+
+        /// <summary>
+        /// Default iteration count is 32768.
+        /// </summary>
         private static readonly ReadOnlyMemory<byte> DefaultIterations = new ReadOnlyMemory<byte>(new byte[] { 0, 0, 0x80, 0 });
 
-        protected Rfc8009Transformer(int keySize, string encTypeName)
+        private readonly ReadOnlyMemory<byte> encTypeNameBytes;
+
+        protected Rfc8009Transformer(int keySize, ReadOnlyMemory<byte> encTypeName)
             : base(keySize)
         {
-            this.EncTypeName = Encoding.UTF8.GetBytes(encTypeName);
+            this.encTypeNameBytes = encTypeName;
         }
-
-        protected ReadOnlyMemory<byte> EncTypeName { get; }
 
         protected override ReadOnlyMemory<byte> String2Key(ReadOnlyMemory<byte> password, ReadOnlyMemory<byte> salt, ReadOnlyMemory<byte> param)
         {
@@ -29,28 +35,32 @@ namespace Kerberos.NET.Crypto
              * saltp = enctype-name | 0x00 | salt
              * tkey = random-to-key(PBKDF2(passphrase, saltp, iter_count, keylength))
              * base-key = random-to-key(KDF-HMAC-SHA2(tkey, "kerberos", keylength))
-             * 
+             *
              * where "kerberos" is the octet-string 0x6B65726265726F73.
              */
 
-            var encLength = this.EncTypeName.Length;
+            var encLength = this.encTypeNameBytes.Length;
 
             var saltp = new Memory<byte>(new byte[encLength + 1 + salt.Length]);
 
-            this.EncTypeName.CopyTo(saltp);
+            this.encTypeNameBytes.CopyTo(saltp);
 
             salt.CopyTo(saltp.Slice(encLength + 1));
 
+            byte[] iterations;
+
             if (param.Length == 0)
             {
-                var defaultParam = new byte[4];
-
-                DefaultIterations.CopyTo(defaultParam);
-
-                param = defaultParam;
+                iterations = new byte[4];
+                DefaultIterations.CopyTo(iterations);
+            }
+            else
+            {
+                iterations = new byte[param.Length];
+                param.CopyTo(iterations);
             }
 
-            return base.String2Key(password, saltp, param);
+            return base.String2Key(password, saltp, iterations);
         }
 
         public override ReadOnlyMemory<byte> MakeChecksum(
@@ -70,7 +80,7 @@ namespace Kerberos.NET.Crypto
 
         public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey kerberosKey, KeyUsage usage)
         {
-            var Ke = this.GetOrDeriveKey(kerberosKey, usage, KeyDerivationMode.Ke);
+            var ke = this.GetOrDeriveKey(kerberosKey, usage, KeyDerivationMode.Ke);
 
             ReadOnlyMemory<byte> confounder;
 
@@ -87,11 +97,13 @@ namespace Kerberos.NET.Crypto
 
             using (var cleartextPool = CryptoPool.Rent<byte>(concatLength))
             {
-                var cleartext = Concat(confounder.Span, data.Span, cleartextPool.Memory.Slice(0, concatLength));
+                var cleartext = cleartextPool.Memory.Slice(0, concatLength);
+
+                Concat(confounder.Span, data.Span, cleartext);
 
                 var encrypted = AESCTS.Encrypt(
                     cleartext,
-                    Ke,
+                    ke,
                     AllZerosInitVector
                 );
 
@@ -119,11 +131,11 @@ namespace Kerberos.NET.Crypto
                 throw new SecurityException("Invalid checksum");
             }
 
-            var Ke = this.GetOrDeriveKey(kerberosKey, usage, KeyDerivationMode.Ke);
+            var ke = this.GetOrDeriveKey(kerberosKey, usage, KeyDerivationMode.Ke);
 
             var decrypted = AESCTS.Decrypt(
                 encrypted,
-                Ke,
+                ke,
                 AllZerosInitVector
             );
 
@@ -132,41 +144,40 @@ namespace Kerberos.NET.Crypto
 
         protected override ReadOnlyMemory<byte> DR(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
         {
-            Memory<byte> input = new byte[constant.Length + 9];
+            /* derivation uses SP800-108 5.1 Counter mode
+             * K1 = HMAC-SHA-256(key, 0x00000001 | label | 0x00 | k)
+             *
+             * k: Length in bits of the key to be outputted, expressed in big-endian binary representation in 4 bytes.
+             * Specifically, k=128 is represented as 0x00000080, 192 as 0x000000C0, 256 as 0x00000100, and 384 as 0x00000180.
+             */
 
-            input.Span[3] = 1;
-
-            constant.CopyTo(input.Slice(4));
-
-            IHmacAlgorithm hmac;
-
-            int keyLength;
+            int k;
+            HashAlgorithmName algName;
 
             if (keySize == 16)
             {
-                keyLength = 128;
-                hmac = CryptoPal.Platform.HmacSha256(key);
+                k = Aes128Sha256KeyLength;
+                algName = HashAlgorithmName.SHA256;
             }
             else
             {
-                hmac = CryptoPal.Platform.HmacSha384(key);
+                algName = HashAlgorithmName.SHA384;
 
                 var last = (KeyDerivationMode)constant.Span[constant.Length - 1];
 
                 if (last == KeyDerivationMode.Kc || last == KeyDerivationMode.Ki)
                 {
-                    keyLength = 192;
+                    k = Aes256Sha384ChecksumLength;
                 }
                 else
                 {
-                    keyLength = 256;
+                    k = Aes256Sha384KeyLength;
                 }
             }
 
-            input.Span[input.Length - 1] = (byte)keyLength;
-            input.Span[input.Length - 2] = (byte)(keyLength / 256);
+            var sp800 = CryptoPal.Platform.SP800108CounterMode();
 
-            return hmac.ComputeHash(input).Slice(0, keySize);
+            return sp800.Derive(algName, key, constant, k, keySize);
         }
 
         protected abstract ReadOnlyMemory<byte> Hmac(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data);

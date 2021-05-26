@@ -12,7 +12,7 @@ namespace Kerberos.NET.Crypto
     internal class HmacSha384 : HmacAlgorithmBase
     {
         public HmacSha384(ReadOnlyMemory<byte> key)
-            : base (new HMACSHA384(TryGetArrayFast(key)))
+            : base(new HMACSHA384(TryGetArrayFast(key)))
         {
         }
     }

@@ -6,19 +6,14 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto
 {
-    public enum KeyDerivationMode : byte
-    {
-        Kc = 0x99,
-        Ke = 0xAA,
-        Ki = 0x55
-    }
-
     public abstract class KerberosCryptoTransformer
     {
         private static readonly RandomNumberGenerator RNG = RandomNumberGenerator.Create();
+        protected static readonly ReadOnlyMemory<byte> PrfConstant = KerberosConstants.UnicodeStringToUtf8("prf");
 
         public abstract int ChecksumSize { get; }
 
@@ -48,6 +43,11 @@ namespace Kerberos.NET.Crypto
             return new ReadOnlyMemory<byte>(arr);
         }
 
+        public virtual ReadOnlyMemory<byte> Random2Key(ReadOnlyMemory<byte> random)
+        {
+            return random;
+        }
+
         public virtual ReadOnlyMemory<byte> MakeChecksum(
             ReadOnlyMemory<byte> data,
             KerberosKey key,
@@ -55,12 +55,17 @@ namespace Kerberos.NET.Crypto
             KeyDerivationMode kdf,
             int hashSize)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public virtual ReadOnlyMemory<byte> MakeChecksum(ReadOnlyMemory<byte> key, ReadOnlySpan<byte> data, KeyUsage keyUsage)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
+        }
+
+        public virtual ReadOnlyMemory<byte> PseudoRandomFunction(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> input)
+        {
+            throw new NotSupportedException();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]

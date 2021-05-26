@@ -1,11 +1,11 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System;
+using System.Net;
+using System.Threading.Tasks;
+using BenchmarkDotNet.Attributes;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Server;
-using System;
-using System.Net;
-using System.Threading.Tasks;
 using Tests.Kerberos.NET;
 
 namespace Benchmark.Kerberos.NET
@@ -24,19 +24,19 @@ namespace Benchmark.Kerberos.NET
         [GlobalSetup]
         public void Setup()
         {
-            port = new Random().Next(20000, 40000);
+            this.port = new Random().Next(20000, 40000);
 
             var options = new ListenerOptions
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
+                ListeningOn = new IPEndPoint(IPAddress.Loopback, this.port),
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(),
                 IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm),
+                RealmLocator = realm => this.LocateRealm(realm),
                 ReceiveTimeout = TimeSpan.FromHours(1)
             };
 
-            listener = new KdcServiceListener(options);
-            _ = listener.Start();
+            this.listener = new KdcServiceListener(options);
+            _ = this.listener.Start();
         }
 
         [Params(1, 10, 100, 1000, 10000)]
@@ -45,7 +45,7 @@ namespace Benchmark.Kerberos.NET
         [GlobalCleanup]
         public void Teardown()
         {
-            listener.Stop();
+            this.listener.Stop();
         }
 
         private IRealmService LocateRealm(string realm)
@@ -60,15 +60,15 @@ namespace Benchmark.Kerberos.NET
         [Arguments("AES256")]
         public async Task RequestServiceTicket(string algo)
         {
-            var kerbCred = new KerberosPasswordCredential(algo + user, password);
+            var kerbCred = new KerberosPasswordCredential(algo + this.user, this.password);
 
             using (var client = new KerberosClient())
             {
-                client.PinKdc(kerbCred.Domain, $"{overrideKdc}:{port}");
+                client.PinKdc(kerbCred.Domain, $"{this.overrideKdc}:{this.port}");
 
                 await client.Authenticate(kerbCred);
 
-                for (var i = 0; i < AuthenticationAttempts; i++)
+                for (var i = 0; i < this.AuthenticationAttempts; i++)
                 {
                     await client.GetServiceTicket(
                         "host/appservice.corp.identityintervention.com",

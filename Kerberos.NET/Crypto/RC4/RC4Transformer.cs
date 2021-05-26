@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -15,6 +15,8 @@ namespace Kerberos.NET.Crypto
     {
         private const int HashSize = 16;
         private const int ConfounderSize = 8;
+
+        private static readonly ReadOnlyMemory<byte> ChecksumSignatureKey = Encoding.ASCII.GetBytes("signaturekey\0");
 
         public override int ChecksumSize => HashSize;
 
@@ -101,8 +103,6 @@ namespace Kerberos.NET.Crypto
             return plaintext.Slice(ConfounderSize);
         }
 
-        private static readonly ReadOnlyMemory<byte> ChecksumSignatureKey = Encoding.ASCII.GetBytes("signaturekey\0");
-
         public override ReadOnlyMemory<byte> MakeChecksum(ReadOnlyMemory<byte> key, ReadOnlySpan<byte> data, KeyUsage keyUsage)
         {
             var ksign = HMACMD5(key, ChecksumSignatureKey);
@@ -116,6 +116,16 @@ namespace Kerberos.NET.Crypto
             var tmp = MD5(span);
 
             return HMACMD5(ksign, tmp);
+        }
+
+        public override ReadOnlyMemory<byte> PseudoRandomFunction(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> input)
+        {
+            // hmac-sha1(input)
+
+            using (var hmac = CryptoPal.Platform.HmacSha1(key))
+            {
+                return hmac.ComputeHash(input);
+            }
         }
 
         private static byte[] GetSalt(int usage)

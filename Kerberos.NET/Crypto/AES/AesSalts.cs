@@ -14,12 +14,12 @@ namespace Kerberos.NET.Crypto
     {
         public static ReadOnlyMemory<byte> GenerateSaltBytes(KerberosKey key)
         {
-            if (key.SaltBytes != null)
+            if (key != null && key.SaltBytes.Length > 0)
             {
                 return key.SaltBytes;
             }
 
-            return KerberosConstants.UnicodeStringToUtf8(GenerateSalt(key)).ToArray();
+            return KerberosConstants.UnicodeStringToUtf8(GenerateSalt(key));
         }
 
         public static string GenerateSalt(KerberosKey key)

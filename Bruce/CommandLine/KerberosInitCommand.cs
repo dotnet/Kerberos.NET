@@ -141,7 +141,7 @@ namespace Kerberos.NET.CommandLine
 
             this.SetClientProperties(client);
 
-            var cred = ParseCredential(client.Configuration);
+            var cred = this.ParseCredential(client.Configuration);
 
             if (cred == null)
             {
@@ -266,7 +266,7 @@ namespace Kerberos.NET.CommandLine
             {
                 this.Write(SR.Resource("CommandLine_KInit_PassPrompt", this.PrincipalName));
 
-                var password = ReadMasked();
+                var password = this.ReadMasked();
 
                 if (string.IsNullOrWhiteSpace(password))
                 {

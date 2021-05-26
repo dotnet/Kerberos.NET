@@ -52,9 +52,9 @@ namespace Kerberos.NET.CommandLine
             }
             else
             {
-                WriteLine();
+                this.WriteLine();
 
-                WriteCommandLabel(comm.GetType());
+                this.WriteCommandLabel(comm.GetType());
 
                 this.DisplayUserDefaults();
 
@@ -77,7 +77,7 @@ namespace Kerberos.NET.CommandLine
                 (SR.Resource("CommandLine_CachePath"), Krb5Config.DefaultUserCredentialCache),
             };
 
-            WriteProperties(props);
+            this.WriteProperties(props);
         }
 
         private void ListCommands()
@@ -92,7 +92,7 @@ namespace Kerberos.NET.CommandLine
 
             foreach (var type in types)
             {
-                WriteCommandLabel(type, max);
+                this.WriteCommandLabel(type, max);
             }
         }
 
