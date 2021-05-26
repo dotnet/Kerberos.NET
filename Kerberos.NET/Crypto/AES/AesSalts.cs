@@ -3,6 +3,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using System.Text;
 using Kerberos.NET.Entities;
@@ -11,7 +12,7 @@ namespace Kerberos.NET.Crypto
 {
     internal static class AesSalts
     {
-        public static byte[] GenerateSaltBytes(KerberosKey key)
+        public static ReadOnlyMemory<byte> GenerateSaltBytes(KerberosKey key)
         {
             if (key.SaltBytes != null)
             {

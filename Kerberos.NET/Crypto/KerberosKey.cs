@@ -196,11 +196,11 @@ namespace Kerberos.NET.Crypto
 
         public string Password { get; }
 
-        public byte[] IterationParameter { get; }
+        public ReadOnlyMemory<byte> IterationParameter { get; }
 
         private byte[] passwordBytes;
 
-        public byte[] PasswordBytes
+        public ReadOnlyMemory<byte> PasswordBytes
         {
             get
             {

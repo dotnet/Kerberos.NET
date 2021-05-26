@@ -22,7 +22,7 @@ namespace Kerberos.NET.Crypto
 
         protected ReadOnlyMemory<byte> EncTypeName { get; }
 
-        protected override ReadOnlyMemory<byte> String2Key(byte[] password, ReadOnlyMemory<byte> salt, byte[] param)
+        protected override ReadOnlyMemory<byte> String2Key(ReadOnlyMemory<byte> password, ReadOnlyMemory<byte> salt, ReadOnlyMemory<byte> param)
         {
             /*
              * iter_count = string-to-key parameter, default is decimal 32768
@@ -41,10 +41,13 @@ namespace Kerberos.NET.Crypto
 
             salt.CopyTo(saltp.Slice(encLength + 1));
 
-            if (param == null || param.Length == 0)
+            if (param.Length == 0)
             {
-                param = new byte[4];
-                DefaultIterations.CopyTo(param);
+                var defaultParam = new byte[4];
+
+                DefaultIterations.CopyTo(defaultParam);
+
+                param = defaultParam;
             }
 
             return base.String2Key(password, saltp, param);

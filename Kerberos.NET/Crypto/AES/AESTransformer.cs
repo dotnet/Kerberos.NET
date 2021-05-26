@@ -52,7 +52,7 @@ namespace Kerberos.NET.Crypto
             );
         }
 
-        protected virtual ReadOnlyMemory<byte> String2Key(byte[] password, ReadOnlyMemory<byte> salt, byte[] param)
+        protected virtual ReadOnlyMemory<byte> String2Key(ReadOnlyMemory<byte> password, ReadOnlyMemory<byte> salt, ReadOnlyMemory<byte> param)
         {
             var passwordBytes = KerberosConstants.UnicodeBytesToUtf8(password);
 
