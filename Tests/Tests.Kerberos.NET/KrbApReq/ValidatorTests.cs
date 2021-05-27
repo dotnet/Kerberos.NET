@@ -9,6 +9,7 @@ using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
 using Kerberos.NET;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -144,8 +145,12 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task ValidatorMemoryCacheExpirationExpired()
         {
+            var config = Krb5Config.Default();
+
+            config.Defaults.ClockSkew = TimeSpan.Zero;
+
             using (var logger = new FakeExceptionLoggerFactory())
-            using (var replay = new TicketReplayValidator(logger))
+            using (var replay = new TicketReplayValidator(config, logger))
             {
                 var entry = new TicketCacheEntry
                 {
@@ -164,6 +169,30 @@ namespace Tests.Kerberos.NET
                 Assert.IsTrue(added);
 
                 Assert.IsTrue(logger.Logs.Count() > 1);
+            }
+        }
+
+        [TestMethod]
+        public async Task ValidatorMemoryCacheExpirationExpired_WithinSkew()
+        {
+            using (var logger = new FakeExceptionLoggerFactory())
+            using (var replay = new TicketReplayValidator(logger))
+            {
+                var entry = new TicketCacheEntry
+                {
+                    Key = "blargh",
+                    Expires = DateTimeOffset.UtcNow.AddMilliseconds(100)
+                };
+
+                var added = await replay.Add(entry);
+
+                Assert.IsTrue(added);
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
+
+                added = await replay.Add(entry);
+
+                Assert.IsFalse(added);
             }
         }
 
