@@ -5,8 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography.Asn1;
 using System.Threading;
@@ -93,7 +95,7 @@ namespace Kerberos.NET.Client
                 ScopeId = this.ScopeId
             };
 
-            this.Cache = new MemoryTicketCache(logger) { Refresh = this.Refresh };
+            this.Cache = new MemoryTicketCache(this.Configuration, logger) { Refresh = this.Refresh };
 
             this.MaximumRetries = 10;
         }
@@ -373,6 +375,11 @@ namespace Kerberos.NET.Client
                         }
                     }
 
+                    if (pex?.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_POLICY)
+                    {
+                        HandlePolicyViolation(pex);
+                    }
+
                     if (pex?.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
                     {
                         this.ConfigurePreAuth(credential, pex);
@@ -393,6 +400,24 @@ namespace Kerberos.NET.Client
                 }
             }
             while (++preauthAttempts <= 4);
+        }
+
+        private static void HandlePolicyViolation(KerberosProtocolException pex)
+        {
+            if (KrbErrorData.CanDecode(pex.Error.EData.Value))
+            {
+                var errorData = KrbErrorData.Decode(pex.Error.EData.Value);
+
+                var decoded = errorData.DecodeExtendedError();
+
+                throw decoded?.Status switch
+                {
+                    Win32.Win32StatusCode.STATUS_SMARTCARD_LOGON_REQUIRED => new KerberosPolicyException(PaDataType.PA_PK_AS_REQ),
+                    _ => new KerberosPolicyException(decoded.Status),
+                };
+            }
+
+            throw new KerberosPolicyException(pex.Message, pex);
         }
 
         private bool TryPinPrimaryKdc(string realm)
@@ -677,6 +702,13 @@ namespace Kerberos.NET.Client
 
         private void SetFileCache(string cachePath)
         {
+            if (this.Configuration.Defaults.CCacheType < 4)
+            {
+                throw new NotSupportedException(
+                    $"A cache type of {this.Configuration.Defaults.CCacheType} is not supported. Only version 4 or higher is supported."
+                );
+            }
+
             CreateFilePath(cachePath);
 
             this.Cache = new Krb5TicketCache(cachePath, this.loggerFactory);
@@ -819,7 +851,7 @@ namespace Kerberos.NET.Client
             // optimistically try and refresh a cached ticket if it's renewable
             // however tickets that are already expired can't be renewed
 
-            if (entry.IsExpired())
+            if (entry.IsExpired(this.Configuration.Defaults.ClockSkew))
             {
                 return;
             }

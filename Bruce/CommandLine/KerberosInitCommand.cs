@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Humanizer;
 using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
@@ -161,7 +162,36 @@ namespace Kerberos.NET.CommandLine
                 return true;
             }
 
-            await client.Authenticate(cred);
+            try
+            {
+                await client.Authenticate(cred);
+            }
+            catch (KerberosPolicyException kex)
+            {
+                this.WriteLine();
+                this.WriteLine(1, "Authentication failed because of a policy violation");
+
+                if (kex.RequestedType != null)
+                {
+                    string type = kex.RequestedType switch
+                    {
+                        Entities.PaDataType.PA_PK_AS_REQ => "Smart Card",
+                        _ => kex.RequestedType.ToString().Humanize(LetterCasing.Title),
+                    };
+
+                    this.WriteLine(1, "KDC requires {Type} logon", type);
+                }
+                else if (kex.StatusCode != null)
+                {
+                    this.WriteLine(1, "KDC error: {Error}", kex.StatusCode.ToString().Humanize(LetterCasing.Title));
+                }
+                else if (!string.IsNullOrWhiteSpace(kex.Message))
+                {
+                    this.WriteLine(1, kex.Message);
+                }
+
+                return true;
+            }
 
             if (!string.IsNullOrWhiteSpace(this.ServiceName))
             {

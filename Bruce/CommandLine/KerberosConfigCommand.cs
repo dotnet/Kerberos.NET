@@ -26,6 +26,9 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("all", Description = "All")]
         public bool All { get; set; }
 
+        [CommandLineParameter("defaults", Description = "Defaults")]
+        public bool Defaults { get; set; }
+
         public override void DisplayHelp()
         {
             base.DisplayHelp();
@@ -141,7 +144,7 @@ namespace Kerberos.NET.CommandLine
 
                 if (param.Contains("="))
                 {
-                    config.Set(split[0], split.Length > 1 ? split[1] : null, append ?? false);
+                    config.Set(split[0], split.Length > 1 ? split[1]?.Replace("\"", "") : null, append ?? false);
                 }
                 else if (i < this.Parameters.Parameters.Length - 1)
                 {
@@ -185,7 +188,7 @@ namespace Kerberos.NET.CommandLine
 
         private void ListConfiguration()
         {
-            var client = this.CreateClient();
+            var client = this.CreateClient(this.Defaults ? Krb5Config.Default().Serialize() : null);
 
             var props = new List<(string, object)>()
             {
@@ -201,7 +204,7 @@ namespace Kerberos.NET.CommandLine
 
             this.WriteProperties(props);
 
-            var configStr = client.Configuration.Serialize(new Krb5ConfigurationSerializationConfig { SerializeDefaultValues = this.All });
+            var configStr = client.Configuration.Serialize(new Krb5ConfigurationSerializationConfig { SerializeDefaultValues = this.All || this.Defaults });
 
             this.WriteLine();
             this.WriteHeader(SR.Resource("ComandLine_KConfig_Config"));

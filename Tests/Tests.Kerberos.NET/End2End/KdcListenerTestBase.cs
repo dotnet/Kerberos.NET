@@ -29,7 +29,14 @@ namespace Tests.Kerberos.NET
         protected const string FakeAppServiceSpn = "host/appservice.corp.identityintervention.com";
         protected const string FakeAppServiceInOtherRealm = "fake/app.otherrealm.identityintervention.com";
 
-        internal static KerberosClient CreateClient(KdcListener listener, string kdc = null, bool caching = true, bool queryDns = false)
+        internal static KerberosClient CreateClient(
+            KdcListener listener,
+            string kdc = null,
+            bool caching = true,
+            bool queryDns = false,
+            bool allowWeakCrypto = false,
+            bool useWeakCrypto = false
+        )
         {
             KerberosClient client;
 
@@ -47,11 +54,17 @@ namespace Tests.Kerberos.NET
             }
 
             client.Configuration.Defaults.DnsLookupKdc = queryDns;
-
+            client.Configuration.Defaults.AllowWeakCrypto = allowWeakCrypto;
             client.CacheServiceTickets = caching;
             client.RenewTickets = caching;
             client.RenewTicketsThreshold = TimeSpan.MaxValue;
             client.RefreshPollInterval = TimeSpan.FromMilliseconds(10);
+
+            if (useWeakCrypto)
+            {
+                client.Configuration.Defaults.DefaultTicketEncTypes.Clear();
+                client.Configuration.Defaults.DefaultTicketEncTypes.Add(EncryptionType.RC4_HMAC_NT);
+            }
 
             return client;
         }
@@ -68,7 +81,9 @@ namespace Tests.Kerberos.NET
             bool includePac = true,
             X509Certificate2 cert = null,
             string spn = FakeAppServiceSpn,
-            KeyAgreementAlgorithm keyAgreement = KeyAgreementAlgorithm.DiffieHellmanModp14
+            KeyAgreementAlgorithm keyAgreement = KeyAgreementAlgorithm.DiffieHellmanModp14,
+            bool allowWeakCrypto = false,
+            bool useWeakCrypto = false
         )
         {
             KerberosCredential kerbCred;
@@ -86,7 +101,7 @@ namespace Tests.Kerberos.NET
                 kerbCred = new KerberosPasswordCredential(user, password);
             }
 
-            KerberosClient client = CreateClient(listener, overrideKdc, caching: caching);
+            KerberosClient client = CreateClient(listener, overrideKdc, caching: caching, allowWeakCrypto: allowWeakCrypto, useWeakCrypto: useWeakCrypto);
 
             using (kerbCred as IDisposable)
             using (client)

@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
 using Microsoft.Extensions.Logging;
 using static Kerberos.NET.MemoryTicketCache;
 
@@ -16,8 +17,9 @@ namespace Kerberos.NET
         private readonly Task backgroundRunner;
         private bool disposedValue;
 
-        public TicketCacheBase(ILoggerFactory logger)
+        public TicketCacheBase(Krb5Config config, ILoggerFactory logger)
         {
+            this.Configuration = config;
             this.Logger = logger.CreateLoggerSafe<TicketCacheBase>();
 
             this.Cancellation = new CancellationTokenSource();
@@ -32,6 +34,8 @@ namespace Kerberos.NET
         public virtual string DefaultDomain { get; set; }
 
         internal Func<CacheEntry, Task> Refresh { get; set; }
+
+        protected Krb5Config Configuration { get; }
 
         protected CancellationTokenSource Cancellation { get; }
 

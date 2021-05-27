@@ -177,8 +177,28 @@ namespace Kerberos.NET.CommandLine
 
             this.WriteLine();
 
+            if (pex.Error.ErrorCode == KerberosErrorCode.KDC_ERR_POLICY &&
+                pex.Error.EData.HasValue &&
+                KrbErrorData.CanDecode(pex.Error.EData.Value))
+            {
+                var decoded = KrbErrorData.Decode(pex.Error.EData.Value);
+                var ext = decoded.DecodeExtendedError();
+
+                this.WriteLine(1, pex.Message);
+                this.WriteLine();
+                this.WriteLine(1, "Status: {Status}", ext.Status);
+                this.WriteLine(1, " Flags: {Flags}", ext.Flags);
+
+                return;
+            }
+
             if (pex.Error.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
             {
+                if (pex.Error.EData.HasValue)
+                {
+                    this.WriteLine(1, "{EData}", pex.Error.EData);
+                }
+
                 return;
             }
 

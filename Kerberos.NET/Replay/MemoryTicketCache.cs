@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET
@@ -17,8 +18,8 @@ namespace Kerberos.NET
         private readonly ConcurrentDictionary<string, CacheEntry> cache
             = new ConcurrentDictionary<string, CacheEntry>();
 
-        public MemoryTicketCache(ILoggerFactory logger)
-            : base(logger)
+        public MemoryTicketCache(Krb5Config config, ILoggerFactory logger)
+            : base(config, logger)
         {
         }
 
@@ -35,7 +36,7 @@ namespace Kerberos.NET
                     continue;
                 }
 
-                if (entry.IsExpired())
+                if (entry.IsExpired(this.Configuration.Defaults.ClockSkew))
                 {
                     this.cache.TryRemove(kv, out _);
                 }
@@ -135,7 +136,7 @@ namespace Kerberos.NET
         {
             if (this.cache.TryGetValue(entryKey, out CacheEntry entry))
             {
-                if (entry.IsExpired())
+                if (entry.IsExpired(this.Configuration.Defaults.ClockSkew))
                 {
                     this.Evict(entryKey);
                 }
@@ -196,9 +197,9 @@ namespace Kerberos.NET
                 this.RenewUntil = renewUntil;
             }
 
-            public bool IsExpired()
+            public bool IsExpired(TimeSpan skew)
             {
-                return this.TimeToLive <= TimeSpan.Zero;
+                return (this.TimeToLive + skew) <= TimeSpan.Zero;
             }
         }
     }
