@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
 using Microsoft.Extensions.Logging;
@@ -82,6 +83,8 @@ namespace Kerberos.NET.CommandLine
                 }
             }
 
+            credential.Configuration = client.Configuration;
+
             var asReqMessage = KrbAsReq.CreateAsReq(credential, AuthenticationOptions.Renewable);
 
             var asReq = asReqMessage.EncodeApplication();
@@ -106,13 +109,15 @@ namespace Kerberos.NET.CommandLine
 
                 if (asRep?.Ticket != null)
                 {
-                    this.WriteLineError("Danger: The principal {PrincipalName} does not require pre-authentication", asRep.CName.FullyQualifiedName);
-                    this.WriteLineError("Pre-authentication should be enabled ASAP");
+                    this.IO.WriteAsColor("  Danger: ", ConsoleColor.Red);
+                    this.WriteLine("The principal {PrincipalName} does not require pre-authentication", asRep.CName.FullyQualifiedName);
+                    this.WriteLine();
+                    this.WriteLine(1, "Pre-authentication should be enabled ASAP");
                 }
             }
             catch (KerberosProtocolException pex)
             {
-                this.WritePreAuthRequirement(credential, pex);
+                this.WritePreAuthRequirement(credential, pex, asReqMessage);
             }
             catch (AggregateException gex)
             {
@@ -150,24 +155,24 @@ namespace Kerberos.NET.CommandLine
             }
         }
 
-        private void WritePreAuthRequirement(KerberosPasswordCredential credential, KerberosProtocolException pex)
+        private void WritePreAuthRequirement(KerberosPasswordCredential credential, KerberosProtocolException pex, KrbAsReq asreq)
         {
             if (this.Verbose)
             {
                 this.WriteLine();
             }
 
-            this.WriteLine(1, "{ErrorCode}: {ErrorText}", pex.Error.ErrorCode, pex.Error.ETextWithoutCode());
+            this.WriteLine(1, "{ErrorCode}: {ErrorText}", pex.Error.ErrorCode, pex.Error.ETextWithoutCode() ?? "(no message)");
             this.WriteLine();
 
             if (!string.IsNullOrWhiteSpace(pex.Error.Realm))
             {
-                this.WriteLine(1, "Realm: {Realm}", pex.Error.Realm);
+                this.WriteLine(1, " Realm: {Realm}", pex.Error.Realm);
             }
 
             if (pex.Error.CName != null)
             {
-                this.WriteLine(1, "Client: {CName}", pex.Error.CName.FullyQualifiedName);
+                this.WriteLine(1, " Client: {CName}", pex.Error.CName.FullyQualifiedName);
             }
 
             if (pex.Error.SName != null)
@@ -176,6 +181,33 @@ namespace Kerberos.NET.CommandLine
             }
 
             this.WriteLine();
+
+            if (pex.Error.ErrorCode == KerberosErrorCode.KDC_ERR_ETYPE_NOSUPP)
+            {
+                this.IO.WriteAsColor("   Error: ", ConsoleColor.Red);
+                this.WriteLine("Client requested the following ETypes but the KDC cannot support any of them.");
+                this.WriteLine();
+
+                bool first = true;
+
+                foreach (var etype in asreq.Body.EType)
+                {
+                    var label = first ? "ETypes: " : "        ";
+
+                    this.WriteLine(1, label + "{ETypes}", etype);
+
+                    first = false;
+                }
+
+                if (!asreq.Body.EType.Contains(EncryptionType.RC4_HMAC_NT))
+                {
+                    this.WriteLine();
+                    this.IO.WriteAsColor("    Note: ", ConsoleColor.Green);
+                    this.WriteLine("RC4 is not enabled on the client. The KDC likely only supports RC4 for this user.");
+                }
+
+                return;
+            }
 
             if (pex.Error.ErrorCode == KerberosErrorCode.KDC_ERR_POLICY &&
                 pex.Error.EData.HasValue &&
