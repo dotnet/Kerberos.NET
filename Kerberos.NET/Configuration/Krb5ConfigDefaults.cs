@@ -40,13 +40,11 @@ namespace Kerberos.NET.Configuration
 
         /// <summary>
         /// Sets the maximum allowable amount of clockskew in seconds that the library will tolerate before assuming that
-        /// a Kerberos message is invalid. The default value is 300 seconds, or five minutes. The clockskew setting is also
-        /// used when evaluating ticket start and expiration times. For example, tickets that have reached their expiration
-        /// time can still be used if they have been expired for a shorter duration than the clockskew setting.
+        /// a Kerberos message is invalid. The default value is 300 seconds, or five minutes.
         /// </summary>
-        [DefaultValue(300)]
+        [DefaultValue("300")]
         [DisplayName("clockskew")]
-        public int ClockSkew { get; set; }
+        public TimeSpan ClockSkew { get; set; }
 
         /// <summary>
         /// This relation specifies the name of the default credential cache. The default is "FILE:%APPDATA%\Kerberos.NET\.krb5cc".
@@ -285,8 +283,9 @@ namespace Kerberos.NET.Configuration
         /// <summary>
         /// A whitespace or comma-separated list of words which specifies the groups allowed for SPAKE preauthentication.
         /// </summary>
+        [DefaultValue("P-256 P-384 P-521")]
         [DisplayName("spake_preauth_groups")]
-        public ICollection<string> SpakePreAuthGroups { get; private set; }
+        public ICollection<SpakePreAuthGroupType> SpakePreAuthGroups { get; private set;  }
 
         /// <summary>
         /// Sets the default lifetime for initial ticket requests. The default value is 1 day.

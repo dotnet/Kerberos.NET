@@ -37,6 +37,7 @@
     <AsnXml Include="Entities\Krb\KrbEncTgsRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncTicketPart.xml" />
     <AsnXml Include="Entities\Krb\KrbError.xml" />
+    <AsnXml Include="Entities\Krb\KrbErrorData.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeInfo2Entry.xml" />
     <AsnXml Include="Entities\Krb\KrbHostAddress.xml" />

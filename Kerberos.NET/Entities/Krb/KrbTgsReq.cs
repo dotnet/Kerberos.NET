@@ -77,7 +77,7 @@ namespace Kerberos.NET.Entities
 
             var body = new KrbKdcReqBody
             {
-                EType = KerberosConstants.GetPreferredETypes(config.Defaults.DefaultTicketEncTypes).ToArray(),
+                EType = KerberosConstants.GetPreferredETypes(config.Defaults.DefaultTgsEncTypes, config.Defaults.AllowWeakCrypto).ToArray(),
                 KdcOptions = rst.KdcOptions,
                 Nonce = KerberosConstants.GetNonce(),
                 Realm = rst.Realm,
