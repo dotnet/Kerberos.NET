@@ -22,6 +22,8 @@ namespace Kerberos.NET.Entities
 
         public static IEnumerable<EncryptionType> ETypes = new[]
         {
+            EncryptionType.AES256_CTS_HMAC_SHA384_192,
+            EncryptionType.AES128_CTS_HMAC_SHA256_128,
             EncryptionType.AES256_CTS_HMAC_SHA1_96,
             EncryptionType.AES128_CTS_HMAC_SHA1_96,
             EncryptionType.RC4_HMAC_NT,
@@ -29,7 +31,7 @@ namespace Kerberos.NET.Entities
             EncryptionType.RC4_HMAC_OLD_EXP
         };
 
-        internal static IEnumerable<EncryptionType> GetPreferredETypes(IEnumerable<EncryptionType> etypes = null)
+        internal static IEnumerable<EncryptionType> GetPreferredETypes(IEnumerable<EncryptionType> etypes = null, bool allowWeakCrypto = false)
         {
             if (etypes == null)
             {
@@ -38,7 +40,7 @@ namespace Kerberos.NET.Entities
 
             foreach (var etype in etypes)
             {
-                if (CryptoService.SupportsEType(etype))
+                if (CryptoService.SupportsEType(etype, allowWeakCrypto))
                 {
                     yield return etype;
                 }

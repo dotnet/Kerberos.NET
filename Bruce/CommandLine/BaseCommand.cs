@@ -53,7 +53,7 @@ namespace Kerberos.NET.CommandLine
         {
             Krb5Config config;
 
-            if (!string.IsNullOrWhiteSpace(configValue))
+            if (configValue != null)
             {
                 config = Krb5Config.Parse(configValue);
             }

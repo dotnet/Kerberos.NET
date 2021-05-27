@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -34,6 +34,42 @@ namespace Tests.Kerberos.NET
                     AdminAtCorpUserName,
                     FakeAdminAtCorpPassword,
                     $"127.0.0.1:{port}"
+                );
+            }
+        }
+
+        [TestMethod]
+        public async Task E2E_ClientWantsWeakCrypto()
+        {
+            var port = NextPort();
+
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    listener,
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    allowWeakCrypto: false,
+                    useWeakCrypto: true
+                );
+            }
+        }
+
+        [TestMethod]
+        public async Task E2E_ClientWantsWeakCrypto_AllowWeak()
+        {
+            var port = NextPort();
+
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    listener,
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    allowWeakCrypto: true,
+                    useWeakCrypto: true
                 );
             }
         }

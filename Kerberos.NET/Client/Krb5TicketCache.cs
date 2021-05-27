@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Client
@@ -34,7 +35,11 @@ namespace Kerberos.NET.Client
         }
 
         protected Krb5TicketCache(ILoggerFactory logger)
-            : base(logger)
+            : this(Krb5Config.Default(), logger)
+        { }
+
+        protected Krb5TicketCache(Krb5Config config, ILoggerFactory logger)
+            : base(config, logger)
         {
             this.cache = new Krb5CredentialCache();
             this.cache.Header[Krb5CredentialCacheTag.KdcClientOffset] = new byte[8];

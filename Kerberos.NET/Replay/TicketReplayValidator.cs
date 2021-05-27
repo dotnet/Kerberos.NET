@@ -1,10 +1,11 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET
@@ -15,8 +16,12 @@ namespace Kerberos.NET
         private bool disposedValue;
 
         public TicketReplayValidator(ILoggerFactory logger)
+            : this(Krb5Config.Default(), logger)
+        { }
+
+        public TicketReplayValidator(Krb5Config config, ILoggerFactory logger)
         {
-            this.cache = new MemoryTicketCache(logger) { BlockUpdates = true };
+            this.cache = new MemoryTicketCache(config, logger) { BlockUpdates = true };
         }
 
         public async Task<bool> Add(TicketCacheEntry entry)

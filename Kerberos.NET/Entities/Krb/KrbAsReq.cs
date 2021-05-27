@@ -57,7 +57,7 @@ namespace Kerberos.NET.Entities
                 {
                     Addresses = IncludeAddresses(config),
                     CName = ExtractCName(credential),
-                    EType = KerberosConstants.GetPreferredETypes(config.Defaults.DefaultTicketEncTypes).ToArray(),
+                    EType = KerberosConstants.GetPreferredETypes(config.Defaults.DefaultTicketEncTypes, config.Defaults.AllowWeakCrypto).ToArray(),
                     KdcOptions = kdcOptions,
                     Nonce = KerberosConstants.GetNonce(),
                     RTime = CalculateRenewTime(kdcOptions, config),

@@ -852,6 +852,11 @@ namespace Kerberos.NET.Configuration
                 {
                     var parsed = Parse(val.ToString(), genericParamType);
 
+                    if (parsed == null)
+                    {
+                        continue;
+                    }
+
                     if ((parsed is IEnumerable || parsed is ICollection) && !(parsed is string))
                     {
                         addRange.Invoke(list, new[] { parsed });
@@ -938,7 +943,14 @@ namespace Kerberos.NET.Configuration
             }
             else
             {
-                return Enum.Parse(type, val, true);
+                try
+                {
+                    return Enum.Parse(type, val, true);
+                }
+                catch (ArgumentException)
+                {
+                    return null;
+                }
             }
         }
 

@@ -12,21 +12,39 @@ namespace Kerberos.NET.Crypto
 {
     public static class CryptoService
     {
-        private static readonly Dictionary<EncryptionType, Func<KerberosCryptoTransformer>> CryptoAlgorithms
-            = new Dictionary<EncryptionType, Func<KerberosCryptoTransformer>>();
+        private static readonly ConcurrentDictionary<EncryptionType, Func<KerberosCryptoTransformer>> CryptoAlgorithms
+            = new ConcurrentDictionary<EncryptionType, Func<KerberosCryptoTransformer>>();
 
-        private static readonly Dictionary<ChecksumType, ChecksumConstructor> ChecksumAlgorithms
-            = new Dictionary<ChecksumType, ChecksumConstructor>();
+        private static readonly ConcurrentDictionary<ChecksumType, ChecksumConstructor> ChecksumAlgorithms
+            = new ConcurrentDictionary<ChecksumType, ChecksumConstructor>();
 
         private static readonly ConcurrentDictionary<EncryptionType, ChecksumType> ETypeToChecksumCache
             = new ConcurrentDictionary<EncryptionType, ChecksumType>();
 
+        private static readonly HashSet<EncryptionType> WeakEncryptionTypes = new HashSet<EncryptionType>();
+
+        private static readonly HashSet<ChecksumType> WeakChecksumTypes = new HashSet<ChecksumType>();
+
         static CryptoService()
         {
 #if WEAKCRYPTO
-            RegisterCryptographicAlgorithm(EncryptionType.RC4_HMAC_NT, () => new RC4Transformer());
-            RegisterCryptographicAlgorithm(EncryptionType.RC4_HMAC_NT_EXP, () => new RC4Transformer());
-            RegisterChecksumAlgorithm(ChecksumType.KERB_CHECKSUM_HMAC_MD5, (signature, signatureData) => new HmacMd5KerberosChecksum(signature, signatureData));
+            RegisterCryptographicAlgorithm(
+                EncryptionType.RC4_HMAC_NT,
+                () => new RC4Transformer(),
+                isWeakAlgorithm: true
+            );
+
+            RegisterCryptographicAlgorithm(
+                EncryptionType.RC4_HMAC_NT_EXP,
+                () => new RC4Transformer(),
+                isWeakAlgorithm: true
+            );
+
+            RegisterChecksumAlgorithm(
+                ChecksumType.KERB_CHECKSUM_HMAC_MD5,
+                (signature, signatureData) => new HmacMd5KerberosChecksum(signature, signatureData),
+                isWeakAlgorithm: true
+            );
 #endif
             RegisterCryptographicAlgorithm(EncryptionType.AES128_CTS_HMAC_SHA1_96, () => new AES128Transformer());
             RegisterCryptographicAlgorithm(EncryptionType.AES256_CTS_HMAC_SHA1_96, () => new AES256Transformer());
@@ -44,7 +62,35 @@ namespace Kerberos.NET.Crypto
             Func<KerberosCryptoTransformer> transformerFunc
         )
         {
+            RegisterCryptographicAlgorithm(type, transformerFunc, isWeakAlgorithm: false);
+        }
+
+        public static void RegisterCryptographicAlgorithm(
+            EncryptionType type,
+            Func<KerberosCryptoTransformer> transformerFunc,
+            bool isWeakAlgorithm
+        )
+        {
             CryptoAlgorithms[type] = transformerFunc;
+
+            if (isWeakAlgorithm)
+            {
+                WeakEncryptionTypes.Add(type);
+            }
+        }
+
+        public static void RegisterChecksumAlgorithm(
+            ChecksumType type,
+            ChecksumConstructor checksumFunc,
+            bool isWeakAlgorithm
+        )
+        {
+            ChecksumAlgorithms[type] = checksumFunc;
+
+            if (isWeakAlgorithm)
+            {
+                WeakChecksumTypes.Add(type);
+            }
         }
 
         public static void RegisterChecksumAlgorithm(
@@ -52,17 +98,17 @@ namespace Kerberos.NET.Crypto
             ChecksumConstructor checksumFunc
         )
         {
-            ChecksumAlgorithms[type] = checksumFunc;
+            RegisterChecksumAlgorithm(type, checksumFunc, isWeakAlgorithm: false);
         }
 
         public static void UnregisterCryptographicAlgorithm(EncryptionType encryptionType)
         {
-            CryptoAlgorithms.Remove(encryptionType);
+            CryptoAlgorithms.TryRemove(encryptionType, out _);
         }
 
         public static void UnregisterChecksumAlgorithm(ChecksumType checksumType)
         {
-            ChecksumAlgorithms.Remove(checksumType);
+            ChecksumAlgorithms.TryRemove(checksumType, out _);
         }
 
         public static KerberosCryptoTransformer CreateTransform(EncryptionType etype)
@@ -75,10 +121,17 @@ namespace Kerberos.NET.Crypto
             return null;
         }
 
-        public static bool SupportsEType(EncryptionType etype)
+        public static bool SupportsEType(EncryptionType etype, bool allowWeakCrypto)
         {
+            if (!allowWeakCrypto && WeakEncryptionTypes.Contains(etype))
+            {
+                return false;
+            }
+
             return CryptoAlgorithms.ContainsKey(etype);
         }
+
+        public static bool SupportsEType(EncryptionType etype) => SupportsEType(etype, allowWeakCrypto: false);
 
         internal static ChecksumType ConvertType(EncryptionType type)
         {

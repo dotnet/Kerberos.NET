@@ -91,5 +91,28 @@ namespace Tests.Kerberos.NET
                 await client.GetServiceTicket("host/test.com");
             }
         }
+
+        [TestMethod]
+        public void CacheFileFormat4Supported()
+        {
+            using (var client = new KerberosClient())
+            {
+                Assert.AreEqual(4, client.Configuration.Defaults.CCacheType);
+                Assert.IsNotNull(client.Cache);
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
+        public void CacheFileFormatBelow4Unsupported()
+        {
+            using (var client = new KerberosClient())
+            {
+                client.CacheInMemory = false;
+                client.Configuration.Defaults.CCacheType = 3;
+
+                Assert.IsNull(client.Cache);
+            }
+        }
     }
 }
