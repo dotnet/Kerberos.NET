@@ -1,13 +1,17 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+using System;
 using System.Buffers.Binary;
-using System.Linq;
 using Kerberos.NET.Crypto;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
 {
     [TestClass]
-    public class Rfc8009Tests
+    public class Rfc8009Tests : BaseCryptoTest
     {
         private const string Aes128Sha256BaseKey = "37 05 D9 60 80 C1 77 28 A0 E8 00 EA B6 E0 D2 3C";
         private const string Aes256Sha384BaseKey = "6D 40 4D 37 FA F7 9F 9D F0 D3 35 68 D3 20 66 98 00 EB 48 36 47 2E A8 A0 26 D1 6B 71 82 46 0C 52";
@@ -15,14 +19,18 @@ namespace Tests.Kerberos.NET
         private const string CompleteOneBlock = "00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F";
         private const string MoreThanOneBlock = "00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14";
 
-        private static byte[] HexToByte(string hex)
+        [TestInitialize]
+        public void Configure()
         {
-            hex = hex.Replace(" ", "").Replace("0x", "").Replace(",", "");
+            Rfc2898DeriveBytes.AttemptReflectionLookup = true;
+            Rfc2898DeriveBytes.RequireNativeImplementation = true;
+        }
 
-            return Enumerable.Range(0, hex.Length)
-                     .Where(x => x % 2 == 0)
-                     .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
-                     .ToArray();
+        [TestCleanup]
+        public void Cleanup()
+        {
+            Rfc2898DeriveBytes.AttemptReflectionLookup = true;
+            Rfc2898DeriveBytes.RequireNativeImplementation = true;
         }
 
         [TestMethod]
@@ -72,6 +80,7 @@ namespace Tests.Kerberos.NET
         public void Aes128_Sha256_Iter32768_Managed()
         {
             Rfc2898DeriveBytes.AttemptReflectionLookup = false;
+            Rfc2898DeriveBytes.RequireNativeImplementation = false;
 
             /*
              * Iteration count = 32768
@@ -168,6 +177,7 @@ namespace Tests.Kerberos.NET
              */
 
             Rfc2898DeriveBytes.AttemptReflectionLookup = false;
+            Rfc2898DeriveBytes.RequireNativeImplementation = false;
 
             var expectedBytes = HexToByte("45 BD 80 6D BF 6A 83 3A 9C FF C1 C9 45 89 A2 22 36 7A 79 BC 21 C4 13 71 89 06 E9 F5 78 A7 84 67");
             var saltBytes = HexToByte("10 DF 9D D7 83 E5 BC 8A CE A1 73 0E 74 35 5F 61 41 54 48 45 4E 41 2E 4D 49 54 2E 45 44 55 72 61 65 62 75 72 6E");
@@ -364,7 +374,7 @@ namespace Tests.Kerberos.NET
              */
 
             AssertEncryption(
-                plaintextHex: "",
+                plaintextHex: string.Empty,
                 confounderHex: "7E 58 95 EA F2 67 24 35 BA D8 17 F5 45 A3 71 48",
                 keyHex: Aes128Sha256BaseKey,
                 expectedBytesHex: "EF 85 FB 89 0B B8 47 2F 4D AB 20 39 4D CA 78 1D AD 87 7E DA 39 D5 0C 87 0C 0D 5A 0A 8E 48 C7 18",
@@ -464,7 +474,7 @@ namespace Tests.Kerberos.NET
              */
 
             AssertEncryption(
-               plaintextHex: "",
+               plaintextHex: string.Empty,
                confounderHex: "F7 64 E9 FA 15 C2 76 47 8B 2C 7D 0C 4E 5F 58 E4",
                keyHex: Aes256Sha384BaseKey,
                expectedBytesHex: "41 F5 3F A5 BF E7 02 6D 91 FA F9 BE 95 91 95 A0 58 70 72 73 A9 6A 40 F0 A0 19 60 62 1A C6 12 74 8B 9B BF BE 7E B4 CE 3C",
@@ -747,11 +757,6 @@ namespace Tests.Kerberos.NET
             var expectedBytes = HexToByte(expectedBytesHex);
 
             AssertArrayEquals(expectedBytes, output);
-        }
-
-        private static void AssertArrayEquals(ReadOnlyMemory<byte> expectedBytes, ReadOnlyMemory<byte> actualBytes)
-        {
-            Assert.IsTrue(expectedBytes.Span.SequenceEqual(actualBytes.Span));
         }
 
         private class AES256Sha384TransformerEx : AES256Sha384Transformer

@@ -16,6 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAlgorithmIdentifier
     {
+        /*
+          AlgorithmIdentifier ::= SEQUENCE {
+              algorithm OBJECT IDENTIFIER,
+              parameters ANY DEFINED BY algorithm OPTIONAL
+          }
+         */
+    
         public Oid Algorithm { get; set; }
   
         public ReadOnlyMemory<byte>? Parameters { get; set; }

@@ -1,10 +1,10 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
-using System.Runtime.InteropServices;
+using Kerberos.NET.Crypto.Pal;
 
 namespace Kerberos.NET.Crypto
 {
@@ -24,6 +24,7 @@ namespace Kerberos.NET.Crypto
         public override IHashAlgorithm Md5() => new Win32CspMd5();
 
         public override IHmacAlgorithm HmacMd5(ReadOnlyMemory<byte> key) => new HmacMd5(key);
+
 #endif
         public override IHmacAlgorithm HmacSha1(ReadOnlyMemory<byte> key) => new HmacSha1(key);
 
@@ -32,6 +33,8 @@ namespace Kerberos.NET.Crypto
         public override IHmacAlgorithm HmacSha384(ReadOnlyMemory<byte> key) => new HmacSha384(key);
 
         public override IKeyDerivationAlgorithm Rfc2898DeriveBytes() => new Rfc2898DeriveBytes();
+
+        public override IKeyDerivationAlgorithm SP800108CounterMode() => new SP800108CounterModeKdf();
 
         public override IHashAlgorithm Sha1() => new Sha1();
 

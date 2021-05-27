@@ -17,6 +17,20 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAuthenticator
     {
+        /*
+          Authenticator   ::= [APPLICATION 2] SEQUENCE  {
+                  authenticator-vno       [0] INTEGER (5),
+                  crealm                  [1] Realm,
+                  cname                   [2] PrincipalName,
+                  cksum                   [3] Checksum OPTIONAL,
+                  cusec                   [4] Microseconds,
+                  ctime                   [5] KerberosTime,
+                  subkey                  [6] EncryptionKey OPTIONAL,
+                  seq-number              [7] UInt32 OPTIONAL,
+                  authorization-data      [8] AuthorizationData OPTIONAL
+          }
+         */
+    
         public int AuthenticatorVersionNumber { get; set; }
   
         public string Realm { get; set; }

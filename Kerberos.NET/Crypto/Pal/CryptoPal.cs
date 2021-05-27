@@ -68,6 +68,8 @@ namespace Kerberos.NET.Crypto
 
         public abstract IKeyDerivationAlgorithm Rfc2898DeriveBytes();
 
+        public abstract IKeyDerivationAlgorithm SP800108CounterMode();
+
         public abstract IHashAlgorithm Sha1();
 
         public abstract IHashAlgorithm Sha256();

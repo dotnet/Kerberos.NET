@@ -16,8 +16,18 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaPacOptions
     {
-        public PacOptions Flags { get; set; }
+        /*
+          PA-PAC-OPTIONS ::= SEQUENCE {
+           KerberosFlags
+             - - Claims (0)
+             - - Branch Aware (1)
+             - - Forward to Full DC (2)
+           }
+           Note: KerberosFlags   ::= BIT STRING (SIZE (32..MAX))
+                   - - minimum number of bits shall be sent, but no fewer than 32
+         */
     
+        public PacOptions Flags { get; set; }
         // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {

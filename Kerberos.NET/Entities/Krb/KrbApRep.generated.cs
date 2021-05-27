@@ -16,6 +16,21 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbApRep
     {
+        /*
+          AP-REP          ::= [APPLICATION 15] SEQUENCE {
+                  pvno            [0] INTEGER (5),
+                  msg-type        [1] INTEGER (15),
+                  enc-part        [2] EncryptedData 
+          }
+          
+          EncAPRepPart    ::= [APPLICATION 27] SEQUENCE {
+                  ctime           [0] KerberosTime,
+                  cusec           [1] Microseconds,
+                  subkey          [2] EncryptionKey OPTIONAL,
+                  seq-number      [3] UInt32 OPTIONAL
+          }
+         */
+    
         public int ProtocolVersionNumber { get; set; }
   
         public MessageType MessageType { get; set; }

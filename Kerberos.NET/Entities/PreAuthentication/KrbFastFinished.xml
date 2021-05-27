@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbFastFinished"
+  namespace="Kerberos.NET.Entities">
+<!--
+            KrbFastFinished ::= SEQUENCE {
+                timestamp       [0] KerberosTime,
+                usec            [1] Microseconds,
+                    - - timestamp and usec represent the time on the KDC when
+                    - - the reply was generated.
+                crealm          [2] Realm,
+                cname           [3] PrincipalName,
+                    - - Contains the client realm and the client name.
+                ticket-checksum [4] Checksum,
+                    - - checksum of the ticket in the KDC-REP using the armor
+                    - - and the key usage is KEY_USAGE_FAST_FINISH.
+                    - - The checksum type is the required checksum type
+                    - - of the armor key.
+                ...
+            }-->
+
+  <asn:GeneralizedTime name="Timestamp" explicitTag="0" />
+  <asn:Integer name="USec" explicitTag="1" backingType="int" />
+  <asn:GeneralString name="CRealm" explicitTag="2" />
+  <asn:AsnType name="CName" explicitTag="3" typeName="KrbPrincipalName" />
+  <asn:AsnType name="TicketChecksum" explicitTag="4" typeName="KrbChecksum" />
+</asn:Sequence>

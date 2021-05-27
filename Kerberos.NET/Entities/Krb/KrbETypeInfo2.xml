@@ -5,8 +5,7 @@
   name="KrbETypeInfo2"
   namespace="Kerberos.NET.Entities">
   <!--
-    ETYPE-INFO2              ::= SEQUENCE SIZE (1..MAX) OF ETYPE-INFO2-ENTRY
-    -->
+          ETYPE-INFO2              ::= SEQUENCE SIZE (1..MAX) OF ETYPE-INFO2-ENTRY-->
 
   <asn:SequenceOf name="ETypeInfo">
     <asn:AsnType typeName="KrbETypeInfo2Entry" />

@@ -12,6 +12,8 @@
   <xsl:strip-space elements="*"/>
   <xsl:output method="text" indent="no" />
 
+<xsl:template match="comment()" mode="Comment"><xsl:value-of select="." /></xsl:template>
+
   <xsl:template match="node()[name()]" priority="-9">
     <xsl:message terminate="yes">Error, unknown node "<xsl:copy-of select="."/>"</xsl:message>
   </xsl:template>
@@ -58,7 +60,10 @@ using System.Security.Cryptography.Asn1;
 namespace <xsl:value-of select="@namespace" />
 {
     public partial class <xsl:value-of select="@name" /> : <xsl:apply-templates mode="InheritedParentDef" />
-    {<xsl:if test="@explicitTag">
+    {
+        /*<xsl:apply-templates mode="Comment" />
+         */
+    <xsl:if test="@explicitTag">
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, <xsl:value-of select="@explicitTag" />);
         
         public override ReadOnlyMemory&lt;byte&gt; EncodeApplication() 
@@ -102,7 +107,10 @@ using Kerberos.NET.Asn1;
 namespace <xsl:value-of select="@namespace" />
 {
     public partial class <xsl:value-of select="@name" />
-    {<xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="DefaultFieldDef" /><xsl:apply-templates mode="FieldDef" />
+    {
+        /*<xsl:apply-templates mode="Comment" />
+         */
+    <xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="DefaultFieldDef" /><xsl:apply-templates mode="FieldDef" />
       <xsl:if test="*[@defaultDerInit]">
 #if DEBUG
         static <xsl:value-of select="@name" />()
@@ -269,7 +277,10 @@ using Kerberos.NET.Asn1;
 namespace <xsl:value-of select="@namespace" />
 {
     public partial class <xsl:value-of select="@name" />
-    {<xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="ValidateChoice" /><xsl:apply-templates mode="FieldDef" />
+    {
+        /*<xsl:apply-templates mode="Comment" />
+         */
+    <xsl:apply-templates mode="Validate" /><xsl:apply-templates mode="ValidateChoice" /><xsl:apply-templates mode="FieldDef" />
 #if DEBUG
         static <xsl:value-of select="@name" />()
         {
@@ -605,9 +616,11 @@ namespace <xsl:value-of select="@namespace" />
     <xsl:choose>
       <xsl:when test="@optional | parent::asn:Choice" xml:space="preserve">
             <xsl:value-of select="$indent"/><xsl:value-of select="@typeName"/>.Decode&lt;<xsl:value-of select="@typeName"/>&gt;(<xsl:value-of select="$readerName"/>, <xsl:call-template name="MaybeImplicitCallP"/>out <xsl:value-of select="@typeName"/> tmp<xsl:value-of select="@name"/>);
-            <xsl:value-of select="$indent"/><xsl:value-of select="$name"/> = tmp<xsl:value-of select="@name"/>;</xsl:when><xsl:otherwise xml:space="preserve">
+            <xsl:value-of select="$indent"/><xsl:value-of select="$name"/> = tmp<xsl:value-of select="@name"/>;</xsl:when>
+      <xsl:otherwise xml:space="preserve">
             <xsl:value-of select="$indent"/><xsl:value-of select="@typeName"/>.Decode&lt;<xsl:value-of select="@typeName"/>&gt;(<xsl:value-of select="$readerName"/>, <xsl:call-template name="MaybeImplicitCallP"/>out <xsl:value-of select="@typeName"/> tmp<xsl:value-of select="@name"/>);
-            <xsl:value-of select="$indent"/><xsl:value-of select="$name"/> = tmp<xsl:value-of select="@name"/>;</xsl:otherwise></xsl:choose>
+            <xsl:value-of select="$indent"/><xsl:value-of select="$name"/> = tmp<xsl:value-of select="@name"/>;</xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
   
   <xsl:template match="asn:AsnType" mode="DefaultTag">Asn1Tag.Sequence</xsl:template>
@@ -838,8 +851,7 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:Integer" mode="DefaultTag">Asn1Tag.Integer</xsl:template>
 
   <xsl:template match="asn:BitString" mode="FieldDef">
-    <xsl:if test="@treatAsEnum">    public <xsl:value-of select="@enumType"/> <xsl:value-of select="@name"/> { get; set; }</xsl:if>
-    <xsl:if test="not(@treatAsEnum)">public ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/> { get; set; }
+    <xsl:if test="@treatAsEnum">    public <xsl:value-of select="@enumType"/> <xsl:value-of select="@name"/> { get; set; }</xsl:if><xsl:if test="not(@treatAsEnum)">    public ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/> { get; set; }
     </xsl:if></xsl:template>
 
   <xsl:template match="asn:BitString" mode="CollectionElementType">ReadOnlyMemory&lt;byte&gt;</xsl:template>
@@ -925,7 +937,8 @@ namespace <xsl:value-of select="@namespace" />
             <xsl:value-of select="$indent"/>else
             <xsl:value-of select="$indent"/>{
             <xsl:value-of select="$indent"/>    <xsl:value-of select="$name"/> = <xsl:value-of select="$readerName"/>.ReadOctetString(<xsl:call-template name="MaybeImplicitCall0"/>);
-            <xsl:value-of select="$indent"/>}</xsl:if></xsl:template>
+            <xsl:value-of select="$indent"/>}</xsl:if>
+  </xsl:template>
 
   <xsl:template match="asn:OctetString" mode="DefaultTag">Asn1Tag.PrimitiveOctetString</xsl:template>
 

@@ -42,26 +42,26 @@ namespace Benchmark.Kerberos.NET
         [GlobalSetup]
         public void Setup()
         {
-            options = new ListenerOptions
+            this.options = new ListenerOptions
             {
                 DefaultRealm = Realm,
                 RealmLocator = LocateRealm
             };
 
-            credential = Creds.GetOrAdd(AlgorithmType, a => new KerberosPasswordCredential(a + user, password));
+            this.credential = Creds.GetOrAdd(this.AlgorithmType, a => new KerberosPasswordCredential(a + this.user, this.password));
 
-            asReq = KrbAsReq.CreateAsReq(credential, DefaultAuthentication).EncodeApplication();
+            this.asReq = KrbAsReq.CreateAsReq(this.credential, DefaultAuthentication).EncodeApplication();
 
-            switch (AlgorithmType)
+            switch (this.AlgorithmType)
             {
                 case "RC4":
-                    etype = EncryptionType.RC4_HMAC_NT;
+                    this.etype = EncryptionType.RC4_HMAC_NT;
                     break;
                 case "AES128":
-                    etype = EncryptionType.AES128_CTS_HMAC_SHA1_96;
+                    this.etype = EncryptionType.AES128_CTS_HMAC_SHA1_96;
                     break;
                 case "AES256":
-                    etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
+                    this.etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
                     break;
             }
         }
@@ -78,9 +78,9 @@ namespace Benchmark.Kerberos.NET
         [Benchmark]
         public void ProcessAsReq()
         {
-            for (var i = 0; i < AuthenticationAttempts; i++)
+            for (var i = 0; i < this.AuthenticationAttempts; i++)
             {
-                KdcAsReqMessageHandler handler = new KdcAsReqMessageHandler(asReq, options);
+                KdcAsReqMessageHandler handler = new KdcAsReqMessageHandler(this.asReq, this.options);
 
                 var response = handler.Execute();
 
@@ -109,10 +109,10 @@ namespace Benchmark.Kerberos.NET
                 Flags = TicketFlags.EncryptedPreAuthentication | TicketFlags.Renewable | TicketFlags.Forwardable,
                 Principal = principal,
                 EncryptedPartKey = principalKey,
-                ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: etype, kvno: 123)
+                ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: this.etype, kvno: 123)
             };
 
-            for (var i = 0; i < AuthenticationAttempts; i++)
+            for (var i = 0; i < this.AuthenticationAttempts; i++)
             {
                 var tgt = KrbAsRep.GenerateTgt(rst, realmService);
 

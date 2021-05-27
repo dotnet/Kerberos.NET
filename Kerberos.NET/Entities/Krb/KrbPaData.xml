@@ -5,13 +5,11 @@
   name="KrbPaData"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    PA-DATA         ::= SEQUENCE {
-        padata-type     [1] Int32,
-        padata-value    [2] OCTET STRING
-    }
-   
-  -->
+          PA-DATA         ::= SEQUENCE {
+              padata-type     [1] Int32,
+              padata-value    [2] OCTET STRING
+          }-->
+  
   <asn:Integer name="Type" explicitTag="1" backingType="enum" enumType="PaDataType" />
   <asn:OctetString name="Value" explicitTag="2" />
 </asn:Sequence>

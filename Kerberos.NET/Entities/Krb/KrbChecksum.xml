@@ -5,13 +5,10 @@
   name="KrbChecksum"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    Checksum        ::= SEQUENCE {
-            cksumtype       [0] Int32,
-            checksum        [1] OCTET STRING
-    }
-
-  -->
+          Checksum        ::= SEQUENCE {
+                  cksumtype       [0] Int32,
+                  checksum        [1] OCTET STRING
+          }-->
 
   <asn:Integer name="Type" explicitTag="0" backingType="enum" enumType="ChecksumType" />
   <asn:OctetString name="Checksum" explicitTag="1 "/>

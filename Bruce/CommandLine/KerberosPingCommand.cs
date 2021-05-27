@@ -112,11 +112,11 @@ namespace Kerberos.NET.CommandLine
             }
             catch (KerberosProtocolException pex)
             {
-                WritePreAuthRequirement(credential, pex);
+                this.WritePreAuthRequirement(credential, pex);
             }
             catch (AggregateException gex)
             {
-                WriteFailure(logger, gex);
+                this.WriteFailure(logger, gex);
             }
             catch (Exception ex)
             {

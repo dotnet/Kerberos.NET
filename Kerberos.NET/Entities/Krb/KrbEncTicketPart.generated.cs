@@ -17,8 +17,23 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncTicketPart
     {
-        public TicketFlags Flags { get; set; }
+        /*
+          EncTicketPart   ::= [APPLICATION 3] SEQUENCE {
+                  flags                   [0] TicketFlags,
+                  key                     [1] EncryptionKey,
+                  crealm                  [2] Realm,
+                  cname                   [3] PrincipalName,
+                  transited               [4] TransitedEncoding,
+                  authtime                [5] KerberosTime,
+                  starttime               [6] KerberosTime OPTIONAL,
+                  endtime                 [7] KerberosTime,
+                  renew-till              [8] KerberosTime OPTIONAL,
+                  caddr                   [9] HostAddresses OPTIONAL,
+                  authorization-data      [10] AuthorizationData OPTIONAL
+          }
+         */
     
+        public TicketFlags Flags { get; set; }
         public KrbEncryptionKey Key { get; set; }
   
         public string CRealm { get; set; }

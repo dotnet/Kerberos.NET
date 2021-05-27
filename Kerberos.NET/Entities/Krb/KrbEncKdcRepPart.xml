@@ -5,23 +5,20 @@
   name="KrbEncKdcRepPart"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    EncKDCRepPart   ::= SEQUENCE {
-            key             [0] EncryptionKey,
-            last-req        [1] LastReq,
-            nonce           [2] UInt32,
-            key-expiration  [3] KerberosTime OPTIONAL,
-            flags           [4] TicketFlags,
-            authtime        [5] KerberosTime,
-            starttime       [6] KerberosTime OPTIONAL,
-            endtime         [7] KerberosTime,
-            renew-till      [8] KerberosTime OPTIONAL,
-            srealm          [9] Realm,
-            sname           [10] PrincipalName,
-            caddr           [11] HostAddresses OPTIONAL
-    }
-        
-  -->
+          EncKDCRepPart   ::= SEQUENCE {
+                  key             [0] EncryptionKey,
+                  last-req        [1] LastReq,
+                  nonce           [2] UInt32,
+                  key-expiration  [3] KerberosTime OPTIONAL,
+                  flags           [4] TicketFlags,
+                  authtime        [5] KerberosTime,
+                  starttime       [6] KerberosTime OPTIONAL,
+                  endtime         [7] KerberosTime,
+                  renew-till      [8] KerberosTime OPTIONAL,
+                  srealm          [9] Realm,
+                  sname           [10] PrincipalName,
+                  caddr           [11] HostAddresses OPTIONAL
+          }-->
 
   <asn:AsnType explicitTag="0" name="Key" typeName="KrbEncryptionKey" />
 

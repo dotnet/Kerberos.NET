@@ -5,16 +5,13 @@
   name="KrbHostAddress"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    HostAddress     ::= SEQUENCE  {
-            addr-type       [0] Int32,
-            address         [1] OCTET STRING
-    }
-
-    HostAddresses   
-            ::= SEQUENCE OF HostAddress
-
-  -->
+          HostAddress     ::= SEQUENCE  {
+                  addr-type       [0] Int32,
+                  address         [1] OCTET STRING
+          }
+          
+          HostAddresses   
+                  ::= SEQUENCE OF HostAddress-->
 
   <asn:Integer name="AddressType" explicitTag="0" backingType="enum" enumType="AddressType" />
   <asn:OctetString name="Address" explicitTag="1" />

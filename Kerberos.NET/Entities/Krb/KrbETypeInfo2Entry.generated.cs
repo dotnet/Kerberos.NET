@@ -16,6 +16,16 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbETypeInfo2Entry
     {
+        /*
+          ETYPE-INFO2-ENTRY       ::= SEQUENCE {
+              etype           [0] Int32,
+              salt            [1] KerberosString OPTIONAL,
+              s2kparams       [2] OCTET STRING OPTIONAL
+          }
+          
+          ETYPE-INFO2              ::= SEQUENCE SIZE (1..MAX) OF ETYPE-INFO2-ENTRY
+         */
+    
         public EncryptionType EType { get; set; }
     
         public string Salt { get; set; }

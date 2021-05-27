@@ -16,6 +16,14 @@ namespace Kerberos.NET.Entities
 {
     public partial class KdcProxyMessage
     {
+        /*
+          KDC-PROXY-MESSAGE::= SEQUENCE {
+              kerb-message           [0] OCTET STRING,
+              target-domain          [1] KERB-REALM OPTIONAL,
+              dclocator-hint         [2] INTEGER OPTIONAL
+          }
+         */
+    
         public ReadOnlyMemory<byte> KerbMessage { get; set; }
   
         public string TargetDomain { get; set; }

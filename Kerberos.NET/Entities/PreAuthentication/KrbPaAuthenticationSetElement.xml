@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbPaAuthenticationSetElement"
+  namespace="Kerberos.NET.Entities">
+<!--
+          PA-AUTHENTICATION-SET ::= SEQUENCE OF PA-AUTHENTICATION-SET-ELEM
+          
+          PA-AUTHENTICATION-SET-ELEM ::= SEQUENCE {
+              pa-type      [0] Int32,
+                  - - same as padata-type.
+              pa-hint      [1] OCTET STRING OPTIONAL,
+              pa-value     [2] OCTET STRING OPTIONAL,
+              ...
+          }-->
+
+
+  <asn:Integer name="Type" explicitTag="0" backingType="enum" enumType="PaDataType" />
+  <asn:OctetString name="Hint" explicitTag="1" optional="true" />
+  <asn:OctetString name="Value" explicitTag="2" optional="true" />
+  </asn:Sequence>

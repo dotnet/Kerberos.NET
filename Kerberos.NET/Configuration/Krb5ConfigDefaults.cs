@@ -97,7 +97,7 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         [DefaultValue("aes128-cts-hmac-sha256-128 aes256-cts-hmac-sha384-192 aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 rc4-hmac-nt")]
         [DisplayName("default_tkt_enctypes")]
-        public ICollection<EncryptionType> DefaultTicketEncTypes { get; private set;  }
+        public ICollection<EncryptionType> DefaultTicketEncTypes { get; private set; }
 
         /// <summary>
         /// Indicate whether name lookups will be used to canonicalize hostnames for use in service
@@ -142,7 +142,7 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         [CommaSeparatedList]
         [DisplayName("extra_addresses")]
-        public ICollection<string> ExtraAddresses { get; private set;  }
+        public ICollection<string> ExtraAddresses { get; private set; }
 
         /// <summary>
         /// If this flag is true, initial tickets will be forwardable by default, if allowed by the KDC. The default value is false.
@@ -222,7 +222,7 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         [DefaultValue("aes128-cts-hmac-sha256-128 aes256-cts-hmac-sha384-192 aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 rc4-hmac-nt")]
         [DisplayName("permitted_enctypes")]
-        public ICollection<EncryptionType> PermittedEncryptionTypes { get; private set;  }
+        public ICollection<EncryptionType> PermittedEncryptionTypes { get; private set; }
 
         /// <summary>
         /// If set, determines the base directory where krb5 plugins are located.
@@ -238,7 +238,7 @@ namespace Kerberos.NET.Configuration
         [CommaSeparatedList]
         [DefaultValue("17,16,2")]
         [DisplayName("preferred_preauth_types")]
-        public ICollection<PaDataType> PreferredPreAuthTypes { get; private set;  }
+        public ICollection<PaDataType> PreferredPreAuthTypes { get; private set; }
 
         /// <summary>
         /// If this flag is true, initial tickets will be proxiable by default, if allowed by the KDC. The default value is false.

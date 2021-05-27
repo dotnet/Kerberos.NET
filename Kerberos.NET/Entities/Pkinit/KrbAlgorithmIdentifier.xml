@@ -5,13 +5,10 @@
   name="KrbAlgorithmIdentifier"
   namespace="Kerberos.NET.Entities">
   <!--
-  
-AlgorithmIdentifier ::= SEQUENCE {
-    algorithm OBJECT IDENTIFIER,
-    parameters ANY DEFINED BY algorithm OPTIONAL
-}
-
-  -->
+          AlgorithmIdentifier ::= SEQUENCE {
+              algorithm OBJECT IDENTIFIER,
+              parameters ANY DEFINED BY algorithm OPTIONAL
+          }-->
 
   <asn:ObjectIdentifier name="Algorithm" />
   <asn:AnyValue name="Parameters" optional="true" />

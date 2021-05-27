@@ -17,6 +17,35 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAuthPack
     {
+        /*
+          AuthPack ::= SEQUENCE {
+            pkAuthenticator         [0] PKAuthenticator,
+            clientPublicValue       [1] SubjectPublicKeyInfo OPTIONAL,
+          		   - - Type SubjectPublicKeyInfo is defined in
+          		   - - [RFC3280].
+          		   - - Specifies Diffie-Hellman domain parameters
+          		   - - and the client's public key value [IEEE1363].
+          		   - - The DH public key value is encoded as a BIT
+          		   - - STRING according to [RFC3279].
+          		   - - This field is present only if the client wishes
+          		   - - to use the Diffie-Hellman key agreement method.
+            supportedCMSTypes       [2] SEQUENCE OF AlgorithmIdentifier
+          							  OPTIONAL,
+          		   - - Type AlgorithmIdentifier is defined in
+          		   - - [RFC3280].
+          		   - - List of CMS algorithm [RFC3370] identifiers
+          		   - - that identify key transport algorithms, or
+          		   - - content encryption algorithms, or signature
+          		   - - algorithms supported by the client in order of
+          		   - - (decreasing) preference.
+            clientDHNonce           [3] DHNonce OPTIONAL,
+          		   - - Present only if the client indicates that it
+          		   - - wishes to reuse DH keys or to allow the KDC to
+          		   - - do so.
+            ...
+          }
+         */
+    
         public KrbPKAuthenticator PKAuthenticator { get; set; }
   
         public KrbSubjectPublicKeyInfo ClientPublicValue { get; set; }

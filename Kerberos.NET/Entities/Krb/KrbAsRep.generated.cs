@@ -13,6 +13,10 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAsRep : KrbKdcRep
     {
+        /*
+            AS-REP          ::= [APPLICATION 11] KDC-REP
+         */
+    
         private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 11);
         
         public override ReadOnlyMemory<byte> EncodeApplication() 

@@ -114,6 +114,9 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("rst|reset", Description = "Reset")]
         public bool Reset { get; set; }
 
+        [CommandLineParameter("config", Description = "Config")]
+        public override string ConfigurationPath { get; set; }
+
         public override async Task<bool> Execute()
         {
             if (await base.Execute())
@@ -142,7 +145,7 @@ namespace Kerberos.NET.CommandLine
 
             this.SetClientProperties(client);
 
-            var cred = ParseCredential(client.Configuration);
+            var cred = this.ParseCredential(client.Configuration);
 
             if (cred == null)
             {
@@ -296,7 +299,7 @@ namespace Kerberos.NET.CommandLine
             {
                 this.Write(SR.Resource("CommandLine_KInit_PassPrompt", this.PrincipalName));
 
-                var password = ReadMasked();
+                var password = this.ReadMasked();
 
                 if (string.IsNullOrWhiteSpace(password))
                 {

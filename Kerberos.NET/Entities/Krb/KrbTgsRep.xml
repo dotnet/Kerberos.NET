@@ -5,10 +5,7 @@
   name="KrbTgsRep"
   namespace="Kerberos.NET.Entities" explicitTag="13">
   <!--
-  
-  TGS-REP          ::= [APPLICATION 13] KDC-REQ
-  
-  -->
+          TGS-REP          ::= [APPLICATION 13] KDC-REQ-->
 
   <asn:AsnType name="Response" typeName="KrbKdcRep" />
 </asn:InheritedSequence>

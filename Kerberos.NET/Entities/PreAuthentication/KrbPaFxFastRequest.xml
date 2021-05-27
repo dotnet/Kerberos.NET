@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Choice
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbPaFxFastRequest"
+  namespace="Kerberos.NET.Entities">
+<!--
+          PA-FX-FAST-REQUEST ::= CHOICE {
+              armored-data [0] KrbFastArmoredReq,
+              ...
+          }-->
+  <asn:AsnType name="ArmoredData" explicitTag="0" typeName="KrbFastArmoredReq" />
+</asn:Choice>

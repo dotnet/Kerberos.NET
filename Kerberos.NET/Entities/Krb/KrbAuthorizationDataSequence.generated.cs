@@ -18,6 +18,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbAuthorizationDataSequence
     {
+        /*
+          AuthorizationData       ::= SEQUENCE OF SEQUENCE {
+                  ad-type         [0] Int32,
+                  ad-data         [1] OCTET STRING
+          }
+         */
+    
         public KrbAuthorizationData[] AuthorizationData { get; set; }
   
 #if DEBUG

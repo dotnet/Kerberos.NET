@@ -1,9 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
-using Kerberos.NET.Client;
-using Kerberos.NET.Credentials;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Server;
-using System;
+﻿using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -11,6 +6,11 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using BenchmarkDotNet.Attributes;
+using Kerberos.NET.Client;
+using Kerberos.NET.Credentials;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Server;
 using Tests.Kerberos.NET;
 
 namespace Benchmark.Kerberos.NET
@@ -56,11 +56,11 @@ namespace Benchmark.Kerberos.NET
         [GlobalSetup]
         public Task Setup()
         {
-            Port = new Random().Next(20000, 40000);
+            this.Port = new Random().Next(20000, 40000);
 
             var options = new ListenerOptions
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, Port),
+                ListeningOn = new IPEndPoint(IPAddress.Loopback, this.Port),
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(),
                 RealmLocator = realm => LocateRealm(realm),
                 QueueLength = 10 * 1000,
@@ -68,12 +68,12 @@ namespace Benchmark.Kerberos.NET
                 Log = null
             };
 
-            listener = new KdcServiceListener(options);
-            _ = listener.Start();
+            this.listener = new KdcServiceListener(options);
+            _ = this.listener.Start();
 
-            credential = Creds.GetOrAdd(AlgorithmType, a => new KerberosPasswordCredential(a + user, password));
+            this.credential = Creds.GetOrAdd(this.AlgorithmType, a => new KerberosPasswordCredential(a + this.user, this.password));
 
-            asReq = new ReadOnlySequence<byte>(KrbAsReq.CreateAsReq(credential, DefaultAuthentication).EncodeApplication());
+            this.asReq = new ReadOnlySequence<byte>(KrbAsReq.CreateAsReq(this.credential, DefaultAuthentication).EncodeApplication());
 
             return Task.CompletedTask;
         }
@@ -84,9 +84,9 @@ namespace Benchmark.Kerberos.NET
         [GlobalCleanup]
         public void Teardown()
         {
-            if (listener != null)
+            if (this.listener != null)
             {
-                listener.Stop();
+                this.listener.Stop();
             }
         }
 
@@ -95,17 +95,17 @@ namespace Benchmark.Kerberos.NET
         {
             var requestCounter = 0;
 
-            Task.WaitAll(Enumerable.Range(0, ConcurrentRequests).Select(taskNum => Task.Run(async () =>
+            Task.WaitAll(Enumerable.Range(0, this.ConcurrentRequests).Select(taskNum => Task.Run(async () =>
             {
                 var client = new KerberosClient();
 
-                client.PinKdc(credential.Domain, $"{overrideKdc}:{Port}");
+                client.PinKdc(this.credential.Domain, $"{this.overrideKdc}:{this.Port}");
 
-                for (var i = 0; i < AuthenticationAttempts; i++)
+                for (var i = 0; i < this.AuthenticationAttempts; i++)
                 {
-                    await client.Authenticate(credential);
+                    await client.Authenticate(this.credential);
 
-                    if (DisplayProgress)
+                    if (this.DisplayProgress)
                     {
                         CountItOut(ref requestCounter);
                     }

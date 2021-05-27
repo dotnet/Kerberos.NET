@@ -16,6 +16,14 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncryptedData
     {
+        /*
+          EncryptedData   ::= SEQUENCE {
+                  etype   [0] Int32,
+                  kvno    [1] UInt32 OPTIONAL,
+                  cipher  [2] OCTET STRING
+          }
+         */
+    
         public EncryptionType EType { get; set; }
     
         public int? KeyVersionNumber { get; set; }

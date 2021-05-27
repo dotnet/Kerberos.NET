@@ -16,6 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaEncTsEnc
     {
+        /*
+          PA-ENC-TS-ENC           ::= SEQUENCE {
+                patimestamp     [0] KerberosTime,
+                pausec          [1] Microseconds OPTIONAL
+          }
+         */
+    
         public DateTimeOffset PaTimestamp { get; set; }
   
         public int? PaUSec { get; set; }

@@ -25,7 +25,7 @@ namespace Kerberos.NET.CommandLine
         {
             this.IO = io;
 
-            this.Logger = CreateVerboseLogger().CreateLogger(this.GetType().Name);
+            this.Logger = this.CreateVerboseLogger().CreateLogger(this.GetType().Name);
         }
 
         protected InputControl IO { get; }
@@ -36,7 +36,7 @@ namespace Kerberos.NET.CommandLine
 
         public void ListProperties(object thing, int depth = 2)
         {
-            if (thing == null || !Seen.Add(thing))
+            if (thing == null || !this.Seen.Add(thing))
             {
                 return;
             }
@@ -61,7 +61,7 @@ namespace Kerberos.NET.CommandLine
                         return;
                     }
 
-                    ListProperties(value, depth + 1);
+                    this.ListProperties(value, depth + 1);
                 }
                 else
                 {
@@ -86,7 +86,7 @@ namespace Kerberos.NET.CommandLine
                         {
                             this.LoggerWriteLine(depth + 1, string.Format("- {0}", val.GetType().Name));
 
-                            ListProperties(val, depth + 3);
+                            this.ListProperties(val, depth + 3);
                         }
                     }
                     else
@@ -125,7 +125,7 @@ namespace Kerberos.NET.CommandLine
 
             var line = logState.FirstOrDefault(f => f.Key == "{OriginalFormat}").Value?.ToString() ?? "";
 
-            LoggerWriteLine(indent, level, line, logState, exception, labels);
+            this.LoggerWriteLine(indent, level, line, logState, exception, labels);
         }
 
         private void LoggerWriteLine(int indent, string message, params object[] args)
@@ -149,7 +149,7 @@ namespace Kerberos.NET.CommandLine
                 var levelStr = level.ToString();
 
                 this.IO.Writer.Write("[");
-                WriteAsColor(levelStr, color);
+                this.WriteAsColor(levelStr, color);
                 this.IO.Writer.Write("] ".PadRight(9 - levelStr.Length));
             }
 
@@ -182,7 +182,7 @@ namespace Kerberos.NET.CommandLine
 
                     var val = logState?.FirstOrDefault(l => l.Key == substr) ?? default;
 
-                    WriteValue(indent, val, modifier, index);
+                    this.WriteValue(indent, val, modifier, index);
 
                     this.IO.ResetColor();
                     index = -1;
@@ -219,11 +219,11 @@ namespace Kerberos.NET.CommandLine
 
             if (type.IsPrimitive)
             {
-                WriteWithModifier(val.Value, modifier, ConsoleColor.DarkYellow);
+                this.WriteWithModifier(val.Value, modifier, ConsoleColor.DarkYellow);
             }
             else if (type.IsEnum)
             {
-                WriteEnum(val);
+                this.WriteEnum(val);
             }
             else if (Reflect.IsBytes(val.Value, out ReadOnlyMemory<byte> bytes))
             {
@@ -239,16 +239,16 @@ namespace Kerberos.NET.CommandLine
 
                 if (dt.DateTime > DateTime.UnixEpoch)
                 {
-                    WriteWithModifier(val.Value, modifier, ConsoleColor.Green);
+                    this.WriteWithModifier(val.Value, modifier, ConsoleColor.Green);
                 }
                 else
                 {
-                    WriteWithModifier("", modifier, ConsoleColor.Green);
+                    this.WriteWithModifier("", modifier, ConsoleColor.Green);
                 }
             }
             else
             {
-                WriteWithModifier(val.Value, modifier, ConsoleColor.DarkCyan);
+                this.WriteWithModifier(val.Value, modifier, ConsoleColor.DarkCyan);
             }
         }
 
@@ -266,11 +266,11 @@ namespace Kerberos.NET.CommandLine
                         break;
                 }
 
-                WriteAsColor(str, color);
+                this.WriteAsColor(str, color);
             }
             else
             {
-                WriteAsColor(val, color);
+                this.WriteAsColor(val, color);
             }
         }
 
@@ -280,7 +280,7 @@ namespace Kerberos.NET.CommandLine
 
             for (var i = 0; i < values.Count(); i++)
             {
-                WriteAsColor(values.ElementAt(i).Trim(), ConsoleColor.Yellow);
+                this.WriteAsColor(values.ElementAt(i).Trim(), ConsoleColor.Yellow);
 
                 if (i < values.Count() - 1)
                 {

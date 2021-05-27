@@ -80,7 +80,7 @@ namespace Kerberos.NET.Crypto
             this._isDisposed = true;
 
             // Note: don't dispose, as _hAlgorithm comes from a cache (see comment at the field declaration)
-            
+
             if (this.phHash != IntPtr.Zero)
             {
                 BCryptDestroyHash(this.phHash);

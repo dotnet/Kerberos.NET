@@ -1,7 +1,7 @@
-﻿using Kerberos.NET;
+﻿using System.Reflection;
+using Kerberos.NET;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using System.Reflection;
 
 namespace KerbDump
 {

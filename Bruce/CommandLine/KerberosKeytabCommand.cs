@@ -131,7 +131,7 @@ namespace Kerberos.NET.CommandLine
                 props.Add((etype.ToString().Humanize(LetterCasing.Title), etype));
             }
 
-            WriteProperties(props);
+            this.WriteProperties(props);
 
             props = new List<(string key, object value)>
             {
@@ -143,7 +143,7 @@ namespace Kerberos.NET.CommandLine
                 props.Add((ptype.ToString().Humanize(LetterCasing.Title), ptype));
             }
 
-            WriteProperties(props);
+            this.WriteProperties(props);
         }
 
         private async Task DisplayKey()
@@ -212,7 +212,7 @@ namespace Kerberos.NET.CommandLine
 
             if (!this.Offline && string.IsNullOrWhiteSpace(this.Salt))
             {
-                saltInfo = await PingForSalt(client);
+                saltInfo = await this.PingForSalt(client);
             }
 
             byte[] key = null;
@@ -466,7 +466,7 @@ namespace Kerberos.NET.CommandLine
                 }
             }
 
-            WriteProperties(props);
+            this.WriteProperties(props);
         }
     }
 }

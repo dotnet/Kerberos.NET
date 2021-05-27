@@ -5,26 +5,23 @@
   name="KrbDHReplyInfo"
   namespace="Kerberos.NET.Entities">
   <!--
-  
-DHRepInfo ::= SEQUENCE {
-  dhSignedData            [0] IMPLICIT OCTET STRING,
-		   - - Contains a CMS type ContentInfo encoded according
-		   - - to [RFC3852].
-		   - - The contentType field of the type ContentInfo is
-		   - - id-signedData (1.2.840.113549.1.7.2), and the
-		   - - content field is a SignedData.
-		   - - The eContentType field for the type SignedData is
-		   - - id-pkinit-DHKeyData (1.3.6.1.5.2.3.2), and the
-		   - - eContent field contains the DER encoding of the
-		   - - type KDCDHKeyInfo.
-		   - - KDCDHKeyInfo is defined below.
-  serverDHNonce           [1] DHNonce OPTIONAL,
-		   - - Present if and only if dhKeyExpiration is
-		   - - present.
-  ...
-}
-
-  -->
+          DHRepInfo ::= SEQUENCE {
+            dhSignedData            [0] IMPLICIT OCTET STRING,
+          		   - - Contains a CMS type ContentInfo encoded according
+          		   - - to [RFC3852].
+          		   - - The contentType field of the type ContentInfo is
+          		   - - id-signedData (1.2.840.113549.1.7.2), and the
+          		   - - content field is a SignedData.
+          		   - - The eContentType field for the type SignedData is
+          		   - - id-pkinit-DHKeyData (1.3.6.1.5.2.3.2), and the
+          		   - - eContent field contains the DER encoding of the
+          		   - - type KDCDHKeyInfo.
+          		   - - KDCDHKeyInfo is defined below.
+            serverDHNonce           [1] DHNonce OPTIONAL,
+          		   - - Present if and only if dhKeyExpiration is
+          		   - - present.
+            ...
+          }-->
 
   <asn:OctetString name="DHSignedData" implicitTag="0" />
   <asn:OctetString name="ServerDHNonce" explicitTag="1" optional="true" />

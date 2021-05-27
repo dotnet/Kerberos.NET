@@ -16,6 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaPacRequest
     {
+        /*
+          KERB-PA-PAC-REQUEST ::= SEQUENCE { 
+          include-pac[0] BOOLEAN - -If TRUE, and no pac present, include PAC. 
+                                 - -If FALSE, and PAC present, remove PAC 
+          }
+         */
+    
         public bool IncludePac { get; set; }
   
         // Encoding methods

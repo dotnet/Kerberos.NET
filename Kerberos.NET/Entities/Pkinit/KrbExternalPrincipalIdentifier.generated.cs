@@ -16,6 +16,36 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbExternalPrincipalIdentifier
     {
+        /*
+          ExternalPrincipalIdentifier ::= SEQUENCE {
+            subjectName            [0] IMPLICIT OCTET STRING OPTIONAL,
+          		   - - Contains a PKIX type Name encoded according to
+          		   - - [RFC3280].
+          		   - - Identifies the certificate subject by the
+          		   - - distinguished subject name.
+          		   - - REQUIRED when there is a distinguished subject
+          		   - - name present in the certificate.
+           issuerAndSerialNumber   [1] IMPLICIT OCTET STRING OPTIONAL,
+          		   - - Contains a CMS type IssuerAndSerialNumber encoded
+          		   - - according to [RFC3852].
+          		   - - Identifies a certificate of the subject.
+          		   - - REQUIRED for TD-INVALID-CERTIFICATES and
+          		   - - TD-TRUSTED-CERTIFIERS.
+           subjectKeyIdentifier    [2] IMPLICIT OCTET STRING OPTIONAL,
+          		   - - Identifies the subject's public key by a key
+          		   - - identifier.  When an X.509 certificate is
+          		   - - referenced, this key identifier matches the X.509
+          		   - - subjectKeyIdentifier extension value.  When other
+          		   - - certificate formats are referenced, the documents
+          		   - - that specify the certificate format and their use
+          		   - - with the CMS must include details on matching the
+          		   - - key identifier to the appropriate certificate
+          		   - - field.
+          		   - - RECOMMENDED for TD-TRUSTED-CERTIFIERS.
+            ...
+          }
+         */
+    
         public ReadOnlyMemory<byte>? SubjectName { get; set; }
   
         public ReadOnlyMemory<byte>? IssuerAndSerialNumber { get; set; }

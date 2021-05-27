@@ -156,7 +156,7 @@ namespace Kerberos.NET.CommandLine
                     {
                         if (!Reflect.IsEnumerable(prop.PropertyType) &&
                             prop.PropertyType != typeof(RpcSid) &&
-                            !IgnoredProperties.Contains(prop.Name))
+                            !this.IgnoredProperties.Contains(prop.Name))
                         {
                             object value = prop.GetValue(obj);
 
@@ -195,7 +195,7 @@ namespace Kerberos.NET.CommandLine
                 }
             }
 
-            WriteProperties(properties);
+            this.WriteProperties(properties);
 
             if (this.All || this.Groups)
             {

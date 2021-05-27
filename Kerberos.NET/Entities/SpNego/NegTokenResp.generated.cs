@@ -16,6 +16,21 @@ namespace Kerberos.NET.Entities
 {
     public partial class NegTokenResp
     {
+        /*
+          NegTokenResp ::= SEQUENCE {
+              negState       [0] ENUMERATED {
+                  accept-completed    (0),
+                  accept-incomplete   (1),
+                  reject              (2),
+                  request-mic         (3)
+              }                                 OPTIONAL,
+              supportedMech   [1] MechType      OPTIONAL,
+              responseToken   [2] OCTET STRING  OPTIONAL,
+              mechListMIC     [3] OCTET STRING  OPTIONAL,
+              ...
+          }
+         */
+    
         public NegotiateState State { get; set; }
   
         public Oid SupportedMech { get; set; }

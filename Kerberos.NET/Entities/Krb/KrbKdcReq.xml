@@ -5,15 +5,12 @@
   name="KrbKdcReq"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    KDC-REQ         ::= SEQUENCE {
-            pvno            [1] INTEGER (5) ,
-            msg-type        [2] INTEGER,
-            padata          [3] SEQUENCE OF PA-DATA OPTIONAL
-            req-body        [4] KDC-REQ-BODY
-    }
-
-  -->
+          KDC-REQ         ::= SEQUENCE {
+                  pvno            [1] INTEGER (5) ,
+                  msg-type        [2] INTEGER,
+                  padata          [3] SEQUENCE OF PA-DATA OPTIONAL
+                  req-body        [4] KDC-REQ-BODY
+          }-->
 
   <asn:Integer name="ProtocolVersionNumber" explicitTag="1" backingType="int" />
   <asn:Integer name="MessageType" explicitTag="2" backingType="enum" enumType="MessageType" />

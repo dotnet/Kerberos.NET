@@ -17,6 +17,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class NegotiationToken
     {
+        /*
+          NegotiationToken ::= CHOICE {
+              negTokenInit    [0] NegTokenInit,
+              negTokenResp    [1] NegTokenResp
+          }
+         */
+    
         public NegTokenInit InitialToken { get; set; }
   
         public NegTokenResp ResponseToken { get; set; }

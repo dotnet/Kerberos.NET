@@ -16,6 +16,26 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaS4uX509User
     {
+        /*
+
+    PA-S4U-X509-USER::= SEQUENCE {
+      user-id[0] S4UUserID,
+      checksum[1] Checksum              
+    }
+  
+     S4UUserID ::= SEQUENCE {
+        nonce [0] UInt32, - - the nonce in KDC-REQ-BODY
+        cname [1] PrincipalName OPTIONAL, 
+        - - Certificate mapping hints
+        crealm [2] Realm,
+        subject-certificate [3] OCTET STRING OPTIONAL, 
+        options [4] BIT STRING OPTIONAL,
+        ...
+     }
+   
+  
+         */
+    
         public KrbS4uUserId UserId { get; set; }
   
         public KrbChecksum Checksum { get; set; }

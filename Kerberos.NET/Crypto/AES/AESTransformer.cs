@@ -1,15 +1,14 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
-using Kerberos.NET.Entities;
 using System;
 using System.Buffers.Binary;
-using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using Kerberos.NET.Entities;
 
 #pragma warning disable S101 // Types should be named in camel case
 
@@ -40,7 +39,7 @@ namespace Kerberos.NET.Crypto
 
         public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
         {
-            if (key is null)
+            if (key == null)
             {
                 throw new ArgumentNullException(nameof(key));
             }
@@ -52,15 +51,30 @@ namespace Kerberos.NET.Crypto
             );
         }
 
-        protected virtual ReadOnlyMemory<byte> String2Key(ReadOnlyMemory<byte> password, ReadOnlyMemory<byte> salt, ReadOnlyMemory<byte> param)
+        public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey kerberosKey, KeyUsage usage)
         {
-            var passwordBytes = KerberosConstants.UnicodeBytesToUtf8(password);
+            var ke = this.GetOrDeriveKey(kerberosKey, usage, KeyDerivationMode.Ke);
 
-            var iterations = GetIterations(param, 4096);
+            var confounder = this.GenerateRandomBytes(this.ConfounderSize);
 
-            var random = this.PBKDF2(passwordBytes, salt, iterations, this.KeySize);
+            var concatLength = confounder.Length + data.Length;
 
-            return this.DK(random, KerberosConstant, this.KeySize, this.BlockSize);
+            using (var cleartextPool = CryptoPool.Rent<byte>(concatLength))
+            {
+                var cleartext = cleartextPool.Memory.Slice(0, concatLength);
+
+                Concat(confounder.Span, data.Span, cleartext);
+
+                var encrypted = AESCTS.Encrypt(
+                    cleartext,
+                    ke,
+                    AllZerosInitVector
+                );
+
+                var checksum = this.MakeChecksum(cleartext, kerberosKey, usage, KeyDerivationMode.Ki, this.ChecksumSize);
+
+                return Concat(encrypted.Span, checksum.Span);
+            }
         }
 
         protected ReadOnlyMemory<byte> GetOrDeriveKey(KerberosKey kerberosKey, KeyUsage usage, KeyDerivationMode mode)
@@ -77,39 +91,30 @@ namespace Kerberos.NET.Crypto
             );
         }
 
-        public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey kerberosKey, KeyUsage usage)
+        protected static void Concat(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2, Memory<byte> array)
         {
-            var Ke = this.GetOrDeriveKey(kerberosKey, usage, KeyDerivationMode.Ke);
+            s1.CopyTo(array.Span);
+            s2.CopyTo(array.Span.Slice(s1.Length));
+        }
 
-            var confounder = this.GenerateRandomBytes(this.ConfounderSize);
+        protected static ReadOnlyMemory<byte> Concat(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2)
+        {
+            var array = new Memory<byte>(new byte[s1.Length + s2.Length]);
 
-            var concatLength = confounder.Length + data.Length;
+            Concat(s1, s2, array);
 
-            using (var cleartextPool = CryptoPool.Rent<byte>(concatLength))
-            {
-                var cleartext = Concat(confounder.Span, data.Span, cleartextPool.Memory.Slice(0, concatLength));
-
-                var encrypted = AESCTS.Encrypt(
-                    cleartext,
-                    Ke,
-                    AllZerosInitVector
-                );
-
-                var checksum = this.MakeChecksum(cleartext, kerberosKey, usage, KeyDerivationMode.Ki, this.ChecksumSize);
-
-                return Concat(encrypted.Span, checksum.Span);
-            }
+            return array;
         }
 
         public override ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey kerberosKey, KeyUsage usage)
         {
             var cipherLength = cipher.Length - this.ChecksumSize;
 
-            var Ke = this.GetOrDeriveKey(kerberosKey, usage, KeyDerivationMode.Ke);
+            var ke = this.GetOrDeriveKey(kerberosKey, usage, KeyDerivationMode.Ke);
 
             var decrypted = AESCTS.Decrypt(
                 cipher.Slice(0, cipherLength),
-                Ke,
+                ke,
                 AllZerosInitVector
             );
 
@@ -138,6 +143,20 @@ namespace Kerberos.NET.Crypto
             return Hmac(ki, data).Slice(0, hashSize);
         }
 
+        public override ReadOnlyMemory<byte> PseudoRandomFunction(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> input)
+        {
+            // aes-ecb(trunc128(sha-1(input)))
+
+            using (var sha1 = CryptoPal.Platform.Sha1())
+            {
+                var checksum = sha1.ComputeHash(input.Span).Slice(0, AesBlockSize);
+
+                var kp = this.DK(key, PrfConstant, this.KeySize, this.BlockSize);
+
+                return AESCTS.Encrypt(checksum, kp, AllZerosInitVector);
+            }
+        }
+
         protected ReadOnlyMemory<byte> DK(ReadOnlyMemory<byte> key, KeyUsage usage, KeyDerivationMode kdf, int keySize, int blockSize)
         {
             using (var constantPool = CryptoPool.RentUnsafe<byte>(5))
@@ -156,9 +175,25 @@ namespace Kerberos.NET.Crypto
 
         protected ReadOnlyMemory<byte> DK(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> constant, int keySize, int blockSize)
         {
-            //return Random2Key( DR(...) );
+            // return Random2Key( DR(...) );
 
             return this.DR(key, constant, keySize, blockSize);
+        }
+
+        protected virtual ReadOnlyMemory<byte> String2Key(ReadOnlyMemory<byte> password, ReadOnlyMemory<byte> salt, ReadOnlyMemory<byte> param)
+        {
+            if (password.Length <= 0)
+            {
+                throw new ArgumentNullException(nameof(password));
+            }
+
+            var passwordBytes = KerberosConstants.UnicodeBytesToUtf8(password);
+
+            var iterations = GetIterations(param, 4096);
+
+            var random = this.PBKDF2(passwordBytes, salt, iterations, this.KeySize);
+
+            return this.DK(random, KerberosConstant, this.KeySize, this.BlockSize);
         }
 
         protected static int GetIterations(ReadOnlyMemory<byte> param, int defCount)
@@ -187,30 +222,30 @@ namespace Kerberos.NET.Crypto
         {
             var keyBytes = new Memory<byte>(new byte[keySize]);
 
-            ReadOnlyMemory<byte> Ki;
+            ReadOnlyMemory<byte> ki;
 
             if (constant.Length != blockSize)
             {
-                Ki = NFold(constant.Span, blockSize);
+                ki = NFold(constant.Span, blockSize);
             }
             else
             {
-                Ki = constant;
+                ki = constant;
             }
 
             var n = 0;
 
             do
             {
-                Ki = AESCTS.Encrypt(Ki, key, AllZerosInitVector);
+                ki = AESCTS.Encrypt(ki, key, AllZerosInitVector);
 
                 if (n + blockSize >= keySize)
                 {
-                    Ki.CopyTo(keyBytes.Slice(n, keySize - n));
+                    ki.CopyTo(keyBytes.Slice(n, keySize - n));
                     break;
                 }
 
-                Ki.CopyTo(keyBytes.Slice(n, blockSize));
+                ki.CopyTo(keyBytes.Slice(n, blockSize));
 
                 n += blockSize;
             }
@@ -288,21 +323,6 @@ namespace Kerberos.NET.Crypto
             var derivation = CryptoPal.Platform.Rfc2898DeriveBytes();
 
             return derivation.Derive(this.Pbkdf2Hash, passwordBytes, salt, iterations, keySize);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static ReadOnlyMemory<byte> Concat(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2, Memory<byte> array)
-        {
-            s1.CopyTo(array.Span);
-            s2.CopyTo(array.Span.Slice(s1.Length));
-
-            return array;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static ReadOnlyMemory<byte> Concat(ReadOnlySpan<byte> s1, ReadOnlySpan<byte> s2)
-        {
-            return Concat(s1, s2, new Memory<byte>(new byte[s1.Length + s2.Length]));
         }
     }
 }

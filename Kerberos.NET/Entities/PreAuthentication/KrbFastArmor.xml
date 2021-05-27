@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbFastArmor"
+  namespace="Kerberos.NET.Entities">
+<!--
+         KrbFastArmor ::= SEQUENCE {
+            armor-type   [0] Int32,
+                - - Type of the armor.
+            armor-value  [1] OCTET STRING,
+                - - Value of the armor.
+            ...
+        }-->
+
+  <asn:Integer name="Type" explicitTag="0" backingType="enum" enumType="KrbArmorType" />
+  <asn:OctetString name="Value" explicitTag="1" optional="true" />
+</asn:Sequence>

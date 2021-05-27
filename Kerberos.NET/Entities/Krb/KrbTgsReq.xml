@@ -5,10 +5,7 @@
   name="KrbTgsReq"
   namespace="Kerberos.NET.Entities" explicitTag="12">
   <!--
-  
-  TGS-REQ          ::= [APPLICATION 12] KDC-REQ
-  
-  -->
+          TGS-REQ          ::= [APPLICATION 12] KDC-REQ-->
 
   <asn:AsnType name="TgsReq" typeName="KrbKdcReq" />
 </asn:InheritedSequence>

@@ -17,6 +17,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPrincipalName
     {
+        /*
+          PrincipalName   ::= SEQUENCE {
+                name-type       [0] Int32,
+                name-string     [1] SEQUENCE OF KerberosString
+          }
+         */
+    
         public PrincipalNameType Type { get; set; }
     
         public string[] Name { get; set; }

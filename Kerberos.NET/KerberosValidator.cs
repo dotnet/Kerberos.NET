@@ -69,7 +69,7 @@ namespace Kerberos.NET
             {
                 decryptedToken = kerberosRequest.DecryptApReq(this.keytab);
             }
-            catch(SecurityException ex)
+            catch (SecurityException ex)
             {
                 this.logger.WarnCryptographicException(ex, this.keytab);
                 throw;

@@ -5,10 +5,7 @@
   name="KrbAsRep"
   namespace="Kerberos.NET.Entities" explicitTag="11">
   <!--
-  
-  AS-REP          ::= [APPLICATION 11] KDC-REP
-  
-  -->
+            AS-REP          ::= [APPLICATION 11] KDC-REP-->
 
   <asn:AsnType name="Response" typeName="KrbKdcRep" />
 </asn:InheritedSequence>

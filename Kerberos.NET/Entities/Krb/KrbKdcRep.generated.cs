@@ -17,6 +17,22 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbKdcRep
     {
+        /*
+          AS-REP          ::= [APPLICATION 11] KDC-REP
+          
+          TGS-REP         ::= [APPLICATION 13] KDC-REP
+          
+          KDC-REP         ::= SEQUENCE {
+                  pvno            [0] INTEGER (5),
+                  msg-type        [1] INTEGER,
+                  padata          [2] SEQUENCE OF PA-DATA OPTIONAL,
+                  crealm          [3] Realm,
+                  cname           [4] PrincipalName,
+                  ticket          [5] Ticket,
+                  enc-part        [6] EncryptedData
+          }
+         */
+    
         public int ProtocolVersionNumber { get; set; }
   
         public MessageType MessageType { get; set; }

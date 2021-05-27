@@ -5,10 +5,7 @@
   name="KrbAsReq"
   namespace="Kerberos.NET.Entities" explicitTag="10">
   <!--
-  
-  AS-REQ          ::= [APPLICATION 10] KDC-REQ
-  
-  -->
+            AS-REQ          ::= [APPLICATION 10] KDC-REQ-->
 
   <asn:AsnType name="AsReq" typeName="KrbKdcReq" />
 </asn:InheritedSequence>

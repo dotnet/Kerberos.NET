@@ -5,22 +5,19 @@
   name="KrbCredInfo"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    KrbCredInfo     ::= SEQUENCE {
-            key             [0] EncryptionKey,
-            prealm          [1] Realm OPTIONAL,
-            pname           [2] PrincipalName OPTIONAL,
-            flags           [3] TicketFlags OPTIONAL,
-            authtime        [4] KerberosTime OPTIONAL,
-            starttime       [5] KerberosTime OPTIONAL,
-            endtime         [6] KerberosTime OPTIONAL,
-            renew-till      [7] KerberosTime OPTIONAL,
-            srealm          [8] Realm OPTIONAL,
-            sname           [9] PrincipalName OPTIONAL,
-            caddr           [10] HostAddresses OPTIONAL
-    }
-
-  -->
+          KrbCredInfo     ::= SEQUENCE {
+                  key             [0] EncryptionKey,
+                  prealm          [1] Realm OPTIONAL,
+                  pname           [2] PrincipalName OPTIONAL,
+                  flags           [3] TicketFlags OPTIONAL,
+                  authtime        [4] KerberosTime OPTIONAL,
+                  starttime       [5] KerberosTime OPTIONAL,
+                  endtime         [6] KerberosTime OPTIONAL,
+                  renew-till      [7] KerberosTime OPTIONAL,
+                  srealm          [8] Realm OPTIONAL,
+                  sname           [9] PrincipalName OPTIONAL,
+                  caddr           [10] HostAddresses OPTIONAL
+          }-->
 
   <asn:AsnType name="Key" explicitTag="0" typeName="KrbEncryptionKey" />
   <asn:GeneralString name="Realm" explicitTag="1" optional="true" />

@@ -5,14 +5,11 @@
   name="KrbEncryptedData"
   namespace="Kerberos.NET.Entities" >
   <!--
-
-    EncryptedData   ::= SEQUENCE {
-            etype   [0] Int32,
-            kvno    [1] UInt32 OPTIONAL,
-            cipher  [2] OCTET STRING
-    }
-
-  -->
+          EncryptedData   ::= SEQUENCE {
+                  etype   [0] Int32,
+                  kvno    [1] UInt32 OPTIONAL,
+                  cipher  [2] OCTET STRING
+          }-->
 
   <asn:Integer name="EType" explicitTag="0" backingType="enum" enumType="EncryptionType" />
   <asn:Integer name="KeyVersionNumber" explicitTag="1" backingType="int" optional="true" />

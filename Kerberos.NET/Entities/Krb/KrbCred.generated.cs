@@ -17,6 +17,15 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbCred
     {
+        /*
+          KRB-CRED        ::= [APPLICATION 22] SEQUENCE {
+                  pvno            [0] INTEGER (5),
+                  msg-type        [1] INTEGER (22),
+                  tickets         [2] SEQUENCE OF Ticket,
+                  enc-part        [3] EncryptedData
+          }
+         */
+    
         public int ProtocolVersionNumber { get; set; }
   
         public MessageType MessageType { get; set; }

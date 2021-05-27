@@ -5,13 +5,10 @@
   name="KrbPaEncTsEnc"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    PA-ENC-TS-ENC           ::= SEQUENCE {
-          patimestamp     [0] KerberosTime,
-          pausec          [1] Microseconds OPTIONAL
-    }
-    
-  -->
+          PA-ENC-TS-ENC           ::= SEQUENCE {
+                patimestamp     [0] KerberosTime,
+                pausec          [1] Microseconds OPTIONAL
+          }-->
 
   <asn:GeneralizedTime name="PaTimestamp" explicitTag="0" />
   <asn:Integer name="PaUSec" explicitTag="1" backingType="int" optional="true" />

@@ -76,7 +76,7 @@ namespace Kerberos.NET.CommandLine
 
             if (!string.IsNullOrWhiteSpace(this.ServicePrincipalName))
             {
-                await GetServiceTicket(client);
+                await this.GetServiceTicket(client);
             }
 
             this.ListTickets(client.Configuration.Defaults.DefaultCCacheName);
@@ -147,7 +147,7 @@ namespace Kerberos.NET.CommandLine
                 {
                     if (ex is KerberosProtocolException kex && kex?.Error?.ErrorCode == KerberosErrorCode.KRB_AP_ERR_TKT_EXPIRED)
                     {
-                        await PurgeTickets();
+                        await this.PurgeTickets();
                         await client.GetServiceTicket(this.ServicePrincipalName);
                         break;
                     }

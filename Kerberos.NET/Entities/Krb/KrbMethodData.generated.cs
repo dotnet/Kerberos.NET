@@ -18,6 +18,10 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbMethodData
     {
+        /*
+          METHOD-DATA     ::= SEQUENCE OF PA-DATA
+         */
+    
         public KrbPaData[] MethodData { get; set; }
   
 #if DEBUG

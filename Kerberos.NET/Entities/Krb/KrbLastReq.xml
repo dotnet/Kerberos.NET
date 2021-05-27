@@ -5,13 +5,10 @@
   name="KrbLastReq"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    LastReq         ::=     SEQUENCE OF SEQUENCE {
-          lr-type         [0] Int32,
-          lr-value        [1] KerberosTime
-    }
-
-  -->
+          LastReq         ::=     SEQUENCE OF SEQUENCE {
+                lr-type         [0] Int32,
+                lr-value        [1] KerberosTime
+          }-->
 
   <asn:Integer name="Type" explicitTag="0" backingType="int" />
   <asn:GeneralizedTime name="Value" explicitTag="1" />

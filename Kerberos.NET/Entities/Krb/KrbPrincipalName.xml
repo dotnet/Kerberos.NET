@@ -5,13 +5,10 @@
   name="KrbPrincipalName"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    PrincipalName   ::= SEQUENCE {
-          name-type       [0] Int32,
-          name-string     [1] SEQUENCE OF KerberosString
-    }
-    
-  -->
+          PrincipalName   ::= SEQUENCE {
+                name-type       [0] Int32,
+                name-string     [1] SEQUENCE OF KerberosString
+          }-->
 
   <asn:Integer name="Type" explicitTag="0" backingType="enum" enumType="PrincipalNameType" />
 

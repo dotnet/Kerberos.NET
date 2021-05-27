@@ -17,8 +17,24 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbKdcReqBody
     {
-        public KdcOptions KdcOptions { get; set; }
+        /*
+          KDC-REQ-BODY    ::= SEQUENCE {
+                  kdc-options             [0] KDCOptions,
+                  cname                   [1] PrincipalName OPTIONAL
+                  realm                   [2] Realm
+                  sname                   [3] PrincipalName OPTIONAL,
+                  from                    [4] KerberosTime OPTIONAL,
+                  till                    [5] KerberosTime,
+                  rtime                   [6] KerberosTime OPTIONAL,
+                  nonce                   [7] UInt32,
+                  etype                   [8] SEQUENCE OF Int32 
+                  addresses               [9] HostAddresses OPTIONAL,
+                  enc-authorization-data  [10] EncryptedData OPTIONAL
+                  additional-tickets      [11] SEQUENCE OF Ticket OPTIONAL
+          }
+         */
     
+        public KdcOptions KdcOptions { get; set; }
         public KrbPrincipalName CName { get; set; }
   
         public string Realm { get; set; }

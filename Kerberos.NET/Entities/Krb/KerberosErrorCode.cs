@@ -386,5 +386,26 @@ namespace Kerberos.NET.Entities
         /// A reserved Kerberos principal name is used but not supported.
         /// </summary>
         KRB_AP_ERR_PRINCIPAL_RESERVED = 84,
+
+        /// <summary>
+        /// The provided pre-auth data has expired.
+        /// </summary>
+        KDC_ERR_PREAUTH_EXPIRED = 90,
+
+        /// <summary>
+        /// The KDC found the presented pre-auth data incomplete and requires additional information.
+        /// This is common for multi-trip authentication mechanisms.
+        /// </summary>
+        KDC_ERR_MORE_PREAUTH_DATA_REQUIRED = 91,
+
+        /// <summary>
+        /// The client sent an authentication set that the KDC was not expecting.
+        /// </summary>
+        KDC_ERR_PREAUTH_BAD_AUTHENTICATION_SET = 92,
+
+        /// <summary>
+        /// The provided FAST options that were marked as critical are unknown to the KDC and cannot be processed.
+        /// </summary>
+        KDC_ERR_UNKNOWN_CRITICAL_FAST_OPTIONS = 93,
     }
 }

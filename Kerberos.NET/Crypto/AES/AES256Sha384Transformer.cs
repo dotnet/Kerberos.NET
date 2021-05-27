@@ -5,19 +5,23 @@
 
 using System;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace Kerberos.NET.Crypto
 {
     public class AES256Sha384Transformer : Rfc8009Transformer
     {
+        private const int Aes256KeySize = Aes256Sha384KeyLength / 8;
+        private static readonly ReadOnlyMemory<byte> EncTypeName = Encoding.UTF8.GetBytes("aes256-cts-hmac-sha384-192");
+
         public AES256Sha384Transformer()
-            : base(32, "aes256-cts-hmac-sha384-192")
+            : base(Aes256KeySize, EncTypeName)
         {
         }
 
         protected override HashAlgorithmName Pbkdf2Hash => HashAlgorithmName.SHA384;
 
-        public override int ChecksumSize => 24;
+        public override int ChecksumSize => Aes256Sha384ChecksumLength / 8;
 
         public override ChecksumType ChecksumType => ChecksumType.HMAC_SHA384_192_AES256;
 

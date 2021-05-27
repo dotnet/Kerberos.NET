@@ -5,14 +5,13 @@
   name="NegTokenInit"
   namespace="Kerberos.NET.Entities">
   <!--
-    NegTokenInit ::= SEQUENCE {
-        mechTypes       [0] MechTypeList,
-        reqFlags        [1] ContextFlags  OPTIONAL,
-        mechToken       [2] OCTET STRING  OPTIONAL,
-        mechListMIC     [3] OCTET STRING  OPTIONAL,
-        ...
-    }
-  -->
+          NegTokenInit ::= SEQUENCE {
+              mechTypes       [0] MechTypeList,
+              reqFlags        [1] ContextFlags  OPTIONAL,
+              mechToken       [2] OCTET STRING  OPTIONAL,
+              mechListMIC     [3] OCTET STRING  OPTIONAL,
+              ...
+          }-->
 
   <asn:SequenceOf name="MechTypes" explicitTag="0">
     <asn:ObjectIdentifier />

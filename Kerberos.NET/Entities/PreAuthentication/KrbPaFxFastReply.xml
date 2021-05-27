@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Choice
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbPaFxFastReply"
+  namespace="Kerberos.NET.Entities">
+<!--
+          PA-FX-FAST-REPLY ::= CHOICE {
+              armored-data [0] KrbFastArmoredRep,
+              ...
+          }-->
+
+  <asn:AsnType name="ArmoredData" explicitTag="0" typeName="KrbFastArmoredRep" />
+  </asn:Choice>

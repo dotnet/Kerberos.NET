@@ -232,7 +232,7 @@ namespace Kerberos.NET.Credentials
             );
 
             var signer = new CmsSigner(this.Certificate) { IncludeOption = this.IncludeOption };
- 
+
             signed.ComputeSignature(signer, silent: !CanPrompt);
 
             var pk = new KrbPaPkAsReq { SignedAuthPack = signed.Encode() };

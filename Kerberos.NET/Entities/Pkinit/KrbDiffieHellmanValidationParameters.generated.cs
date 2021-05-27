@@ -16,8 +16,14 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbDiffieHellmanValidationParameters
     {
+        /*
+          ValidationParms ::= SEQUENCE {
+              seed             BIT STRING,
+              pgenCounter      INTEGER
+          }
+         */
     
-    public ReadOnlyMemory<byte> Seed { get; set; }
+        public ReadOnlyMemory<byte> Seed { get; set; }
     
         public System.Numerics.BigInteger PGenOutput { get; set; }
   
