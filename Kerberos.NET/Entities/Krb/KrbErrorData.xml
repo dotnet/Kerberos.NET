@@ -5,13 +5,10 @@
   name="KrbErrorData"
   namespace="Kerberos.NET.Entities">
   <!--
-
-    KERB-ERROR-DATA ::= SEQUENCE {
-      data-type [1] INTEGER,
-      data-value [2] OCTET STRING OPTIONAL
-    }
-   
-  -->
+          KERB-ERROR-DATA ::= SEQUENCE {
+                  data-type [1] INTEGER,
+                  data-value [2] OCTET STRING OPTIONAL
+          }-->
   <asn:Integer name="Type" explicitTag="1" backingType="enum" enumType="KrbErrorDataType" />
   <asn:OctetString name="Value" explicitTag="2" />
 </asn:Sequence>

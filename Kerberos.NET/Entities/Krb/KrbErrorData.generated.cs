@@ -16,6 +16,13 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbErrorData
     {
+        /*
+          KERB-ERROR-DATA ::= SEQUENCE {
+                  data-type [1] INTEGER,
+                  data-value [2] OCTET STRING OPTIONAL
+          }
+         */
+    
         public KrbErrorDataType Type { get; set; }
     
         public ReadOnlyMemory<byte> Value { get; set; }
