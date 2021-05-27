@@ -114,6 +114,9 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("rst|reset", Description = "Reset")]
         public bool Reset { get; set; }
 
+        [CommandLineParameter("config", Description = "Config")]
+        public override string ConfigurationPath { get; set; }
+
         public override async Task<bool> Execute()
         {
             if (await base.Execute())
