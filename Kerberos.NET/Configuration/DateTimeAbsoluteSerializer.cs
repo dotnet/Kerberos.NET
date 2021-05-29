@@ -28,14 +28,14 @@ namespace Kerberos.NET.Configuration
 
         public static DateTimeOffset Parse(string stringValue)
         {
-            if (string.Equals("0", stringValue, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals("0", stringValue?.Trim(), StringComparison.OrdinalIgnoreCase))
             {
                 return DateTimeOffset.MaxValue;
             }
 
             foreach (var format in AbsoluteTimeFormats)
             {
-                if (DateTime.TryParseExact(stringValue, format, CultureInfo.InvariantCulture, Styles, out DateTime result))
+                if (DateTime.TryParseExact(stringValue?.Trim(), format, CultureInfo.InvariantCulture, Styles, out DateTime result))
                 {
                     return new DateTimeOffset(result, TimeSpan.Zero);
                 }

@@ -225,7 +225,7 @@ namespace Kerberos.NET.Configuration
         public ICollection<EncryptionType> PermittedEncryptionTypes { get; private set; }
 
         /// <summary>
-        /// If set, determines the base directory where krb5 plugins are located.
+        /// If set, determines the base directory where plugins are located.
         /// </summary>
         [DisplayName("plugin_base_dir")]
         public string PluginBaseDirectory { get; set; }
@@ -247,8 +247,7 @@ namespace Kerberos.NET.Configuration
         public bool Proxiable { get; set; }
 
         /// <summary>
-        /// If this string is set, it determines the domain suffix for single-component hostnames when DNS canonicalization
-        /// is not used (either because dns_canonicalize_hostname is false or because forward canonicalization failed).
+        /// If this string is set, it determines the domain suffix for single-component hostnames.
         /// The default value is the first search domain of the system’s DNS configuration.
         /// </summary>
         [DisplayName("qualify_shortname")]

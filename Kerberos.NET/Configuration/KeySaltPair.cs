@@ -42,7 +42,7 @@ namespace Kerberos.NET.Configuration
 
         public override string ToString()
         {
-            return $"{this.EType}:{this.SaltType}";
+            return $"{this.EType}:{this.SaltType}".ToLowerInvariant().Replace("_", "-");
         }
 
         public override int GetHashCode()
