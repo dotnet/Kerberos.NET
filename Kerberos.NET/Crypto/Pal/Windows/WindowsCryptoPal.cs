@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -19,12 +19,11 @@ namespace Kerberos.NET.Crypto
         }
 
 #if WEAKCRYPTO
-        public override IHashAlgorithm Md4() => new Win32CspMd4();
+        public override IHashAlgorithm Md4() => new Win32CngMd4();
 
-        public override IHashAlgorithm Md5() => new Win32CspMd5();
+        public override IHashAlgorithm Md5() => new Win32CngMd5();
 
         public override IHmacAlgorithm HmacMd5(ReadOnlyMemory<byte> key) => new HmacMd5(key);
-
 #endif
         public override IHmacAlgorithm HmacSha1(ReadOnlyMemory<byte> key) => new HmacSha1(key);
 

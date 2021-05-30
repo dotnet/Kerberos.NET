@@ -34,7 +34,15 @@ namespace Kerberos.NET.Crypto
 
             ref byte rSecret = ref MemoryMarshal.GetReference(secret);
 
-            var status = BCryptCreateHash(this.phAlgorithm, out this.phHash, IntPtr.Zero, 0, ref rSecret, secret.Length, BCryptCreateHashFlags.BCRYPT_HASH_REUSABLE_FLAG);
+            var status = BCryptCreateHash(
+                this.phAlgorithm,
+                out this.phHash,
+                IntPtr.Zero,
+                0,
+                ref rSecret,
+                secret.Length,
+                BCryptCreateHashFlags.BCRYPT_HASH_REUSABLE_FLAG
+            );
 
             ThrowIfNotSuccess(status);
         }

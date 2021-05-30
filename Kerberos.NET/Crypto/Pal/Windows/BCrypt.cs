@@ -184,14 +184,6 @@ namespace Kerberos.NET.Crypto
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct BCryptBuffer
-        {
-            public int CbBuffer;
-            public int BufferType;
-            public IntPtr PvBuffer;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
         public struct BCryptBufferDesc
         {
             public int UlVersion;
