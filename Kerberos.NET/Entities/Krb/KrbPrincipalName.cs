@@ -94,6 +94,21 @@ namespace Kerberos.NET.Entities
 
         public string FullyQualifiedName => MakeFullName(this.Name, this.Type);
 
+        public void Canonicalize(string qualifyShortname)
+        {
+            if (string.IsNullOrWhiteSpace(qualifyShortname) || this.Name.Length <= 1)
+            {
+                return;
+            }
+
+            if (this.Name[1].Contains("."))
+            {
+                return;
+            }
+
+            this.Name[1] = $"{this.Name[1]}.{qualifyShortname}";
+        }
+
         private static string MakeFullName(IEnumerable<string> names, PrincipalNameType type, bool normalizeAlias = false)
         {
             var seperator = NameTypeSeperator[(int)type];

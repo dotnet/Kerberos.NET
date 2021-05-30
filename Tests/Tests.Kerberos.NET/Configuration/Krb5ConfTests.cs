@@ -17,6 +17,18 @@ namespace Tests.Kerberos.NET
     public class Krb5ConfTests : BaseTest
     {
         [TestMethod]
+        public void RealmsDefaultsEmpty()
+        {
+            var config = new Krb5Config();
+
+            config.Realms["foo.com"].DefaultDomain = "foo.com";
+
+            var serialized = config.Serialize();
+
+            Assert.AreEqual("[realms]\r\nfoo.com = {\r\n   default_domain = foo.com\r\n}\r\n\r\n", serialized);
+        }
+
+        [TestMethod]
         public void HandleOptionalValues()
         {
             var conf = new ConfigurationSectionList();

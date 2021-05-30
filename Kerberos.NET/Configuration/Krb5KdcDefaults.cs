@@ -41,6 +41,7 @@ namespace Kerberos.NET.Configuration
         /// If the address contains colons, enclose it in square brackets. If no address is specified, the wildcard address is used. If no port is specified, the standard port (88) is used.
         /// If the KDC daemon fails to bind to any of the specified addresses, it will fail to start. The default is to bind to the wildcard address on the standard port.
         /// </summary>
+        [DefaultValue("127.0.0.1:88")]
         [DisplayName("kdc_listen")]
         public ICollection<string> KdcListenEndpoints { get; private set; }
 
@@ -50,6 +51,7 @@ namespace Kerberos.NET.Configuration
         /// To disable listening on TCP, set this relation to the empty string with kdc_tcp_listen = "". If the KDC daemon fails to bind to any of the specified addresses, it will fail to start.
         /// The default is to bind to the wildcard address on the standard port.
         /// </summary>
+        [DefaultValue("127.0.0.1:88")]
         [DisplayName("kdc_tcp_listen")]
         public ICollection<string> KdcTcpListenEndpoints { get; private set; }
 

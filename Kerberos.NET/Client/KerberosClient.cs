@@ -5,10 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography.Asn1;
 using System.Threading;
@@ -490,6 +488,13 @@ namespace Kerberos.NET.Client
             // if we have to cross realms
 
             var originalServicePrincipalName = KrbPrincipalName.FromString(rst.ServicePrincipalName);
+
+            if (this.Configuration.Defaults.DnsCanonicalizeHostname)
+            {
+                originalServicePrincipalName.Canonicalize(this.Configuration.Defaults.QualifyShortname);
+
+                rst.ServicePrincipalName = originalServicePrincipalName.FullyQualifiedName;
+            }
 
             if (string.IsNullOrWhiteSpace(this.DefaultDomain) &&
                 !string.IsNullOrWhiteSpace(this.ticketCache.DefaultDomain))

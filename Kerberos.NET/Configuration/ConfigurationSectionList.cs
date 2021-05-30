@@ -487,7 +487,14 @@ namespace Kerberos.NET.Configuration
                     sb.AppendFormat("{0} ", ((ICanParseMyself)obj).Serialize());
                 }
 
-                config.Add(new KeyValuePair<string, object>(name, sb.ToString()));
+                var value = sb.ToString();
+
+                var defaultValue = DefaultValue(attributes, genericProp);
+
+                if (!AreEqual(defaultValue, value))
+                {
+                    config.Add(new KeyValuePair<string, object>(name, value));
+                }
             }
             else
             {
@@ -517,7 +524,7 @@ namespace Kerberos.NET.Configuration
 
             if (defaultValue.GetType() == typeof(string) && value.GetType() == typeof(string))
             {
-                return string.Equals((string)defaultValue, (string)value, StringComparison.OrdinalIgnoreCase);
+                return string.Equals(((string)defaultValue)?.Trim(), ((string)value)?.Trim(), StringComparison.OrdinalIgnoreCase);
             }
 
             if (defaultValue.GetType() == typeof(string) && value.GetType() == typeof(TimeSpan))
