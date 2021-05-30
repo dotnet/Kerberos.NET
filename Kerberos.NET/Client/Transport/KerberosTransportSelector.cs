@@ -68,7 +68,7 @@ namespace Kerberos.NET.Transport
 
                 try
                 {
-                    return await transport.SendMessage<T>(domain, encoded, cancellation).ConfigureAwait(true);
+                    return await transport.SendMessage<T>(domain, encoded, cancellation).ConfigureAwait(false);
                 }
                 catch (KerberosTransportException tex)
                 {

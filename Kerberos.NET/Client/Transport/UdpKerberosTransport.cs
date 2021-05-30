@@ -60,11 +60,11 @@ namespace Kerberos.NET.Transport
             {
                 cancellation.ThrowIfCancellationRequested();
 
-                var result = await client.SendAsync(encoded.ToArray(), encoded.Length).ConfigureAwait(true);
+                var result = await client.SendAsync(encoded.ToArray(), encoded.Length).ConfigureAwait(false);
 
                 cancellation.ThrowIfCancellationRequested();
 
-                var response = await client.ReceiveAsync().ConfigureAwait(true);
+                var response = await client.ReceiveAsync().ConfigureAwait(false);
 
                 return Decode<T>(response.Buffer);
             }

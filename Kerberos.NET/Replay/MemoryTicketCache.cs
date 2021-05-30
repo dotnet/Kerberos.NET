@@ -42,7 +42,7 @@ namespace Kerberos.NET
                 }
                 else if (this.RefreshTickets)
                 {
-                    await (this.Refresh?.Invoke(entry)).ConfigureAwait(true);
+                    await (this.Refresh?.Invoke(entry)).ConfigureAwait(false);
                 }
             }
 
@@ -158,7 +158,7 @@ namespace Kerberos.NET
 
         public override async ValueTask<T> GetCacheItemAsync<T>(string key, string container = null)
         {
-            var result = await this.GetCacheItemAsync(key, container).ConfigureAwait(true);
+            var result = await this.GetCacheItemAsync(key, container).ConfigureAwait(false);
 
             return result != null ? (T)result : default;
         }

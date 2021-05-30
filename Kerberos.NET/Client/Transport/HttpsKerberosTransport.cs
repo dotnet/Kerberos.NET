@@ -118,7 +118,7 @@ namespace Kerberos.NET.Transport
             {
                 content.Headers.Add(CorrelationIdHeader, this.ScopeId.ToString());
 
-                var response = await this.Client.PostAsync(kdc, content).ConfigureAwait(true);
+                var response = await this.Client.PostAsync(kdc, content).ConfigureAwait(false);
 
                 this.TryParseRequestId(response);
 
@@ -127,7 +127,7 @@ namespace Kerberos.NET.Transport
                     response.EnsureSuccessStatusCode();
                 }
 
-                var responseBody = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(true);
+                var responseBody = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
 
                 if (!KdcProxyMessage.TryDecode(responseBody, out KdcProxyMessage kdcResponse))
                 {

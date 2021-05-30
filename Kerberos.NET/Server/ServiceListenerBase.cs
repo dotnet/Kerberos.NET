@@ -1,10 +1,11 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,23 +79,35 @@ namespace Kerberos.NET.Server
 
             this.openListeners.Push(socketListener);
 
+            SocketWorkerBase worker = null;
             try
             {
                 while (true)
                 {
-                    var worker = await socketListener.Accept().ConfigureAwait(true);
+                    try
+                    {
+                        worker = await socketListener.Accept().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogWarning(ex, "Accept connection failed with exception");
+                    }
 
                     if (worker == null)
                     {
                         break;
                     }
 
-                    _ = worker.HandleSocket();
+                    try
+                    {
+                        _ = worker.HandleSocket();
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogWarning(ex, "Accept Handle Socket failed with exception");
+                        break;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogWarning(ex, "Accept connection failed with exception");
             }
             finally
             {

@@ -1,9 +1,11 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +15,8 @@ namespace Kerberos.NET.Server
 {
     internal class SocketListener : SocketBase
     {
+        private const int DefaultKdcPort = 88;
+
         private readonly ILogger<SocketListener> logger;
         private readonly Socket listeningSocket;
         private readonly Func<Socket, KdcServerOptions, SocketWorkerBase> workerFunc;
@@ -21,11 +25,9 @@ namespace Kerberos.NET.Server
             : base(options)
         {
             this.logger = options.Log.CreateLoggerSafe<SocketListener>();
-
             this.listeningSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
-            this.listeningSocket.Bind(this.Options.ListeningOn);
-            this.listeningSocket.Listen(this.Options.QueueLength);
+            this.BindSocket();
 
             this.logger.LogInformation(
                 "Listener has started. Endpoint = {Port}; Protocol = {Protocol}",
@@ -36,6 +38,35 @@ namespace Kerberos.NET.Server
             options.Cancellation = new CancellationTokenSource();
 
             this.workerFunc = workerFunc;
+        }
+
+        private void BindSocket()
+        {
+            foreach (var endpoint in this.Options.Configuration.KdcDefaults.KdcTcpListenEndpoints)
+            {
+                this.listeningSocket.Bind(ParseAddress(endpoint));
+            }
+
+            this.listeningSocket.Listen(this.Options.Configuration.KdcDefaults.TcpListenBacklog * 100);
+        }
+
+        private static EndPoint ParseAddress(string endpoint)
+        {
+            var split = endpoint.Split(':');
+
+            if (IPAddress.TryParse(split[0], out IPAddress addr))
+            {
+                if (split.Length == 1)
+                {
+                    return new IPEndPoint(addr, DefaultKdcPort);
+                }
+                else if (split.Length == 2 && int.TryParse(split[1], out int port))
+                {
+                    return new IPEndPoint(addr, port);
+                }
+            }
+
+            throw new FormatException($"Endpoint is malformed: {endpoint}");
         }
 
         public async Task<SocketWorkerBase> Accept()
@@ -49,7 +80,7 @@ namespace Kerberos.NET.Server
 
                 try
                 {
-                    var socket = await this.listeningSocket.AcceptAsync().ConfigureAwait(true);
+                    var socket = await this.listeningSocket.AcceptAsync().ConfigureAwait(false);
 
                     return this.workerFunc(socket, this.Options);
                 }
@@ -66,8 +97,7 @@ namespace Kerberos.NET.Server
                 }
                 catch (Exception ex)
                 {
-                    this.logger.LogTrace(ex, "Accept exception raised");
-                    throw;
+                    this.logger.LogTrace(ex, "Accept exception raised for unknown reason");
                 }
             }
         }

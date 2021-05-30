@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -85,7 +85,7 @@ namespace Kerberos.NET.Server
 
             var apReq = PaDataTgsTicketHandler.ExtractApReq(context);
 
-            context.EvidenceTicketIdentity = await this.RealmService.Principals.FindAsync(apReq.Ticket.SName).ConfigureAwait(true);
+            context.EvidenceTicketIdentity = await this.RealmService.Principals.FindAsync(apReq.Ticket.SName).ConfigureAwait(false);
         }
 
         public override void ValidateTicketRequest(PreAuthenticationContext context)
@@ -179,7 +179,7 @@ namespace Kerberos.NET.Server
                 tgsReq.Body.SName.FullyQualifiedName,
                 tgsReq.Body.Realm);
 
-            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(tgsReq.Body.SName, tgsReq.Body.Realm).ConfigureAwait(true);
+            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(tgsReq.Body.SName, tgsReq.Body.Realm).ConfigureAwait(false);
         }
 
         public override ReadOnlyMemory<byte> ExecuteCore(PreAuthenticationContext context)

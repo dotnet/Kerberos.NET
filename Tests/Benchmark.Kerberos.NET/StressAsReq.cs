@@ -11,6 +11,7 @@ using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Server;
+using Microsoft.Extensions.Logging;
 using Tests.Kerberos.NET;
 
 namespace Benchmark.Kerberos.NET
@@ -31,7 +32,7 @@ namespace Benchmark.Kerberos.NET
 
         private static readonly ConcurrentDictionary<string, KerberosPasswordCredential> Creds = new ConcurrentDictionary<string, KerberosPasswordCredential>();
 
-        private static readonly int ProcessId = Process.GetCurrentProcess().Id;
+        private static readonly int ProcessId = Environment.ProcessId;
 
         private const AuthenticationOptions DefaultAuthentication =
             AuthenticationOptions.IncludePacRequest |
@@ -48,10 +49,14 @@ namespace Benchmark.Kerberos.NET
         [Params(1, 10, 100)]
         public int ConcurrentRequests;
 
-        [Params("RC4", "AES128", "AES256")]
-        public string AlgorithmType;
+        [Params("RC4", "AES128", "AES256", "AESSHA128SHA256", "AESSHA256SHA384")]
+        public string AlgorithmType = "AES256";
 
         public bool DisplayProgress { get; set; }
+
+        internal static readonly string[] AlgorithmTypes = new[] { "RC4", "AES128", "AES256", "AESSHA128SHA256", "AESSHA256SHA384" };
+
+        public ILoggerFactory Logger { get; set; }
 
         [GlobalSetup]
         public Task Setup()
@@ -60,13 +65,14 @@ namespace Benchmark.Kerberos.NET
 
             var options = new ListenerOptions
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, this.Port),
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(),
                 RealmLocator = realm => LocateRealm(realm),
-                QueueLength = 10 * 1000,
-                ReceiveTimeout = TimeSpan.FromMinutes(60),
-                Log = null
+                Log = Logger
             };
+
+            options.Configuration.KdcDefaults.ReceiveTimeout = TimeSpan.FromMinutes(60);
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Clear();
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Add($"127.0.0.1:{this.Port}");
 
             this.listener = new KdcServiceListener(options);
             _ = this.listener.Start();
@@ -93,6 +99,11 @@ namespace Benchmark.Kerberos.NET
         [Benchmark]
         public void RequestTgt()
         {
+            if (this.credential == null)
+            {
+                this.credential = Creds.GetOrAdd(this.AlgorithmType, a => new KerberosPasswordCredential(a + this.user, this.password));
+            }
+
             var requestCounter = 0;
 
             Task.WaitAll(Enumerable.Range(0, this.ConcurrentRequests).Select(taskNum => Task.Run(async () =>

@@ -29,7 +29,7 @@ namespace Kerberos.NET.Server
             this.logger.LogTrace("Message incoming. Request length = {RequestLength}", request.Length);
             this.logger.TraceBinary(request);
 
-            var response = await this.kdc.ProcessMessage(request).ConfigureAwait(true);
+            var response = await this.kdc.ProcessMessage(request).ConfigureAwait(false);
 
             this.logger.LogTrace("Message processed. Response length = {ResponseLength}", response.Length);
 

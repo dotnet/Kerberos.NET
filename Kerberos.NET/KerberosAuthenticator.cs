@@ -50,7 +50,7 @@ namespace Kerberos.NET
 
             var tokenBytes = Convert.FromBase64String(token);
 
-            return await this.Authenticate(tokenBytes).ConfigureAwait(true);
+            return await this.Authenticate(tokenBytes).ConfigureAwait(false);
         }
 
         public virtual async Task<ClaimsIdentity> Authenticate(byte[] token)
@@ -58,7 +58,7 @@ namespace Kerberos.NET
 
         public virtual async Task<ClaimsIdentity> Authenticate(ReadOnlyMemory<byte> token)
         {
-            var data = await this.validator.Validate(token).ConfigureAwait(true);
+            var data = await this.validator.Validate(token).ConfigureAwait(false);
 
             return this.ConvertTicket(data);
         }

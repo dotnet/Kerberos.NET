@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -45,7 +45,7 @@ namespace Kerberos.NET.Client
                 return client;
             }
 
-            return await queue.OpenSocket(connectTimeout).ConfigureAwait(true);
+            return await queue.OpenSocket(connectTimeout).ConfigureAwait(false);
         }
 
         private async Task PollPool()
@@ -59,7 +59,7 @@ namespace Kerberos.NET.Client
                     queue.Poll(this.ScavengeWindow);
                 }
 
-                await Task.Delay(this.ScavengeWindow, this.cts.Token).ConfigureAwait(true);
+                await Task.Delay(this.ScavengeWindow, this.cts.Token).ConfigureAwait(false);
             }
         }
 

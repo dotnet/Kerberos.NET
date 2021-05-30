@@ -63,14 +63,14 @@ namespace Kerberos.NET
             {
                 try
                 {
-                    await this.BackgroundCacheOperation().ConfigureAwait(true);
+                    await this.BackgroundCacheOperation().ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     this.Logger.LogWarning(ex, "Background cache operation failed");
                 }
 
-                await Task.Delay(this.RefreshInterval, this.Cancellation.Token).ConfigureAwait(true);
+                await Task.Delay(this.RefreshInterval, this.Cancellation.Token).ConfigureAwait(false);
             }
         }
 

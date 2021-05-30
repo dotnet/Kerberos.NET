@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -38,12 +38,14 @@ namespace Tests.Kerberos.NET
         {
             var options = new KdcServerOptions
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(CultureInfo.InvariantCulture),
                 IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm, slow),
-                ReceiveTimeout = TimeSpan.FromHours(1)
+                RealmLocator = realm => LocateRealm(realm, slow)
             };
+
+            options.Configuration.KdcDefaults.ReceiveTimeout = TimeSpan.FromHours(1);
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Clear();
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Add($"127.0.0.1:{port}");
 
             KdcServiceListener server = new KdcServiceListener(options);
 
@@ -54,12 +56,14 @@ namespace Tests.Kerberos.NET
         {
             var options = new KdcServerOptions
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, port),
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(CultureInfo.InvariantCulture),
                 IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm, slow),
-                ReceiveTimeout = TimeSpan.FromHours(1)
+                RealmLocator = realm => LocateRealm(realm, slow)
             };
+
+            options.Configuration.KdcDefaults.ReceiveTimeout = TimeSpan.FromHours(1);
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Clear();
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Add($"127.0.0.1:{port}");
 
             var server = new KdcServer(options);
 

@@ -33,18 +33,18 @@ namespace Kerberos.NET.Server
             this.options = options;
             this.logger = options.Log.CreateLoggerSafe<KdcServer>();
 
-            if (options.RegisterDefaultAsReqHandler)
+            if (options.Configuration.KdcDefaults.RegisterDefaultAsReqHandler)
             {
                 this.RegisterMessageHandler(MessageType.KRB_AS_REQ, (message, op) => new KdcAsReqMessageHandler(message, op));
                 this.RegisterPreAuthHandler(PaDataType.PA_ENC_TIMESTAMP, (service) => new PaDataTimestampHandler(service));
 
-                if (options.RegisterDefaultPkInitPreAuthHandler)
+                if (options.Configuration.KdcDefaults.RegisterDefaultPkInitPreAuthHandler)
                 {
                     this.RegisterPreAuthHandler(PaDataType.PA_PK_AS_REQ, (service) => new PaDataPkAsReqHandler(service));
                 }
             }
 
-            if (options.RegisterDefaultTgsReqHandler)
+            if (options.Configuration.KdcDefaults.RegisterDefaultTgsReqHandler)
             {
                 this.RegisterMessageHandler(MessageType.KRB_TGS_REQ, (message, op) => new KdcTgsReqMessageHandler(message, op));
             }
@@ -89,11 +89,11 @@ namespace Kerberos.NET.Server
 
             var tag = KrbMessage.PeekTag(request);
 
-            if (tag == Asn1Tag.Sequence && this.options.ProxyEnabled)
+            if (tag == Asn1Tag.Sequence && this.options.Configuration.KdcDefaults.ProxyEnabled)
             {
                 try
                 {
-                    return await this.ProcessProxyMessageAsync(request).ConfigureAwait(true);
+                    return await this.ProcessProxyMessageAsync(request).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (IsProtocolException(ex))
                 {
@@ -103,7 +103,7 @@ namespace Kerberos.NET.Server
                 }
             }
 
-            return await this.ProcessMessageCoreAsync(request, tag).ConfigureAwait(true);
+            return await this.ProcessMessageCoreAsync(request, tag).ConfigureAwait(false);
         }
 
         private static bool IsProtocolException(Exception ex)
@@ -148,7 +148,7 @@ namespace Kerberos.NET.Server
 
             try
             {
-                return await messageHandler.ExecuteAsync().ConfigureAwait(true);
+                return await messageHandler.ExecuteAsync().ConfigureAwait(false);
             }
             catch (Exception ex) when (IsProtocolException(ex))
             {
@@ -192,7 +192,7 @@ namespace Kerberos.NET.Server
 
             var tag = KrbMessage.PeekTag(unwrapped);
 
-            var response = await this.ProcessMessageCoreAsync(unwrapped, tag).ConfigureAwait(true);
+            var response = await this.ProcessMessageCoreAsync(unwrapped, tag).ConfigureAwait(false);
 
             return EncodeProxyResponse(response, mode);
         }

@@ -179,7 +179,7 @@ namespace Kerberos.NET.CommandLine
                 }
                 else
                 {
-                    path = Krb5Config.DefaultUserConfiguration;
+                    path = Krb5Config.DefaultUserConfigurationPath;
                 }
 
                 File.WriteAllText(path, Krb5ConfigurationSerializer.Serialize(config));
@@ -192,10 +192,10 @@ namespace Kerberos.NET.CommandLine
 
             var props = new List<(string, object)>()
             {
-                (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfiguration),
+                (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfigurationPath),
             };
 
-            if (!Krb5Config.DefaultUserConfiguration.Equals(this.ConfigurationPath, StringComparison.OrdinalIgnoreCase))
+            if (!Krb5Config.DefaultUserConfigurationPath.Equals(this.ConfigurationPath, StringComparison.OrdinalIgnoreCase))
             {
                 props.Add((SR.Resource("CommandLine_ConfigPath_Actual"), this.ConfigurationPath));
             }

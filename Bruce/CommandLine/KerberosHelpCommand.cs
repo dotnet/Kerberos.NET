@@ -73,8 +73,8 @@ namespace Kerberos.NET.CommandLine
             var props = new List<(string, object)>()
             {
                 (SR.Resource("CommandLine_Version"), Version),
-                (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfiguration),
-                (SR.Resource("CommandLine_CachePath"), Krb5Config.DefaultUserCredentialCache),
+                (SR.Resource("CommandLine_ConfigPath"), Krb5Config.DefaultUserConfigurationPath),
+                (SR.Resource("CommandLine_CachePath"), Krb5Config.DefaultUserCredentialCachePath),
             };
 
             this.WriteProperties(props);

@@ -55,7 +55,7 @@ namespace Kerberos.NET.Client
 
                 using (cts.Token.Register(() => tcs.TrySetResult(true)))
                 {
-                    if (connectTask != await Task.WhenAny(connectTask, tcs.Task).ConfigureAwait(true))
+                    if (connectTask != await Task.WhenAny(connectTask, tcs.Task).ConfigureAwait(false))
                     {
                         return false;
                     }

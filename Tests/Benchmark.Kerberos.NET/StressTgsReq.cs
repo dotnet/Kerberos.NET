@@ -28,12 +28,14 @@ namespace Benchmark.Kerberos.NET
 
             var options = new ListenerOptions
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, this.port),
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(),
                 IsDebug = true,
-                RealmLocator = realm => this.LocateRealm(realm),
-                ReceiveTimeout = TimeSpan.FromHours(1)
+                RealmLocator = realm => this.LocateRealm(realm)
             };
+
+            options.Configuration.KdcDefaults.ReceiveTimeout = TimeSpan.FromHours(1);
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Clear();
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Add($"127.0.0.1:{this.port}");
 
             this.listener = new KdcServiceListener(options);
             _ = this.listener.Start();

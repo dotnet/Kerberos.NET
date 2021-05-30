@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -47,25 +47,29 @@ namespace Kerberos.NET.Server
 
             try
             {
-                using (var cancellation = new CancellationTokenSource())
+                do
                 {
-                    do
+                    using (var cancellation = new CancellationTokenSource())
                     {
-                        if (this.Options.Cancellation.Token.IsCancellationRequested)
+                        this.Options.Cancellation.Token.Register(() => cancellation.Cancel());
+
+                        if (cancellation.Token.IsCancellationRequested)
                         {
                             break;
                         }
 
                         using (this.logger.BeginRequestScope(this.Options.NextScopeId()))
                         {
-                            using (var stream = new NetworkStream(this.socket))
+                            using (var stream = new NetworkStream(this.socket, ownsSocket: false))
                             {
-                                await this.ProcessMessage(stream, this.Options.Cancellation.Token).ConfigureAwait(true);
+                                stream.ReadTimeout = (int)this.Options.Configuration.KdcDefaults.ReceiveTimeout.TotalMilliseconds;
+
+                                await this.ProcessMessage(stream, cancellation.Token).ConfigureAwait(false);
                             }
                         }
                     }
-                    while (true);
                 }
+                while (true);
             }
             finally
             {
@@ -77,17 +81,17 @@ namespace Kerberos.NET.Server
 
         private async Task ProcessMessage(NetworkStream stream, CancellationToken cancellation)
         {
-            var messageSizeBytes = await Tcp.ReadFromStream(4, stream, cancellation).ConfigureAwait(true);
+            var messageSizeBytes = await Tcp.ReadFromStream(4, stream, cancellation).ConfigureAwait(false);
 
             var messageSize = (int)messageSizeBytes.AsLong();
 
-            var request = await Tcp.ReadFromStream(messageSize, stream, cancellation).ConfigureAwait(true);
+            var request = await Tcp.ReadFromStream(messageSize, stream, cancellation).ConfigureAwait(false);
 
-            var response = await this.ProcessRequest(request, cancellation).ConfigureAwait(true);
+            var response = await this.ProcessRequest(request, cancellation).ConfigureAwait(false);
 
             response = Tcp.FormatKerberosMessageStream(response);
 
-            await stream.WriteAsync(response.ToArray(), 0, response.Length, cancellation).ConfigureAwait(true);
+            await stream.WriteAsync(response.ToArray(), 0, response.Length, cancellation).ConfigureAwait(false);
         }
 
         protected abstract Task<ReadOnlyMemory<byte>> ProcessRequest(ReadOnlyMemory<byte> request, CancellationToken cancellation);

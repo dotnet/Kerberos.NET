@@ -50,13 +50,13 @@ namespace Kerberos.NET.Transport
         {
             try
             {
-                using (var client = await this.GetClient(domain).ConfigureAwait(true))
+                using (var client = await this.GetClient(domain).ConfigureAwait(false))
                 {
                     var stream = client.GetStream();
 
-                    await WriteMessage(encoded, stream, cancellation).ConfigureAwait(true);
+                    await WriteMessage(encoded, stream, cancellation).ConfigureAwait(false);
 
-                    return await ReadResponse<T>(stream, cancellation).ConfigureAwait(true);
+                    return await ReadResponse<T>(stream, cancellation).ConfigureAwait(false);
                 }
             }
             catch (SocketException sx)
@@ -84,7 +84,7 @@ namespace Kerberos.NET.Transport
 
                 try
                 {
-                    client = await Pool.Request(target, this.ConnectTimeout).ConfigureAwait(true);
+                    client = await Pool.Request(target, this.ConnectTimeout).ConfigureAwait(false);
 
                     if (client != null)
                     {
@@ -120,11 +120,11 @@ namespace Kerberos.NET.Transport
         private static async Task<T> ReadResponse<T>(NetworkStream stream, CancellationToken cancellation)
             where T : Asn1.IAsn1ApplicationEncoder<T>, new()
         {
-            var messageSizeBytes = await Tcp.ReadFromStream(4, stream, cancellation).ConfigureAwait(true);
+            var messageSizeBytes = await Tcp.ReadFromStream(4, stream, cancellation).ConfigureAwait(false);
 
             var messageSize = (int)messageSizeBytes.AsLong();
 
-            var response = await Tcp.ReadFromStream(messageSize, stream, cancellation).ConfigureAwait(true);
+            var response = await Tcp.ReadFromStream(messageSize, stream, cancellation).ConfigureAwait(false);
 
             return Decode<T>(response);
         }
@@ -133,7 +133,7 @@ namespace Kerberos.NET.Transport
         {
             encoded = Tcp.FormatKerberosMessageStream(encoded);
 
-            await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation).ConfigureAwait(true);
+            await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation).ConfigureAwait(false);
         }
     }
 }

@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -87,8 +87,8 @@ namespace Kerberos.NET.Server
             KrbAsReq asReq = (KrbAsReq)context.Message;
             KrbPrincipalName krbtgtName = KrbPrincipalName.WellKnown.Krbtgt(asReq.Body.Realm);
 
-            context.Principal = await this.RealmService.Principals.FindAsync(asReq.Body.CName, asReq.Realm).ConfigureAwait(true);
-            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(krbtgtName, asReq.Realm).ConfigureAwait(true);
+            context.Principal = await this.RealmService.Principals.FindAsync(asReq.Body.CName, asReq.Realm).ConfigureAwait(false);
+            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(krbtgtName, asReq.Realm).ConfigureAwait(false);
         }
 
         public override void ValidateTicketRequest(PreAuthenticationContext preauth)

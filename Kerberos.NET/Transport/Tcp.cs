@@ -37,7 +37,7 @@ namespace Kerberos.NET.Transport
                     read,
                     response.Length - read,
                     cancellation
-                ).ConfigureAwait(true);
+                ).ConfigureAwait(false);
             }
 
             return response;
