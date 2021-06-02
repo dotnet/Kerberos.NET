@@ -75,6 +75,11 @@ namespace Kerberos.NET
         /// </summary>
         public bool? CacheTicket { get; set; }
 
+        public bool CanCacheTicket => this.CacheTicket ?? true &&
+                                      string.IsNullOrWhiteSpace(this.S4uTarget) &&
+                                      this.S4uTicket == null &&
+                                      this.S4uTargetCertificate == null;
+
         public override bool Equals(object obj)
         {
             if (obj is RequestServiceTicket rst)
