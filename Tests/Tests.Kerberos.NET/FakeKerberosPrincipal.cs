@@ -156,21 +156,21 @@ namespace Tests.Kerberos.NET
             {
                 return EncryptionType.RC4_HMAC_NT;
             }
-            else if (principalName.StartsWith("AES128", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return EncryptionType.AES128_CTS_HMAC_SHA1_96;
-            }
             else if (principalName.StartsWith("AES128SHA256", StringComparison.InvariantCultureIgnoreCase))
             {
                 return EncryptionType.AES128_CTS_HMAC_SHA256_128;
             }
-            else if (principalName.StartsWith("AES256", StringComparison.InvariantCultureIgnoreCase))
+            else if (principalName.StartsWith("AES128", StringComparison.InvariantCultureIgnoreCase))
             {
-                return EncryptionType.AES256_CTS_HMAC_SHA1_96;
+                return EncryptionType.AES128_CTS_HMAC_SHA1_96;
             }
             else if (principalName.StartsWith("AES256SHA384", StringComparison.InvariantCultureIgnoreCase))
             {
                 return EncryptionType.AES256_CTS_HMAC_SHA384_192;
+            }
+            else if (principalName.StartsWith("AES256", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return EncryptionType.AES256_CTS_HMAC_SHA1_96;
             }
 
             return EncryptionType.AES256_CTS_HMAC_SHA1_96;

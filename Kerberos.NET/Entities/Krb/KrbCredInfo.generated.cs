@@ -92,7 +92,7 @@ namespace Kerberos.NET.Entities
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             }
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
-            writer.WriteBitString(Flags.AsReadOnly());
+            writer.WriteBitString(Flags.AsReadOnlySpan());
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
 
             if (Asn1Extension.HasValue(AuthTime))

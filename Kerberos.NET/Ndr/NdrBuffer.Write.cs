@@ -76,6 +76,8 @@ namespace Kerberos.NET.Ndr
 
         public Memory<byte> ToMemory(int alignment) => this.ToArray(alignment);
 
+        public Memory<byte> ToMemory() => this.ToMemory(0);
+
         public Span<byte> ToSpan(int alignment = 0) => this.ToArray(alignment);
 
         private byte[] ToArray(int alignment)

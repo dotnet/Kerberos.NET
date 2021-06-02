@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -140,50 +140,55 @@ namespace Kerberos.NET.Crypto
 
             // For each block index, U_0 := Salt || block_index
 
-            byte[] saltWithBlockIndex = new byte[checked(salt.Length + sizeof(uint))];
+            var saltLength = salt.Length + sizeof(uint);
 
-            salt.CopyTo(saltWithBlockIndex);
-
-            for (uint blockIndex = 1; numBytesRemaining > 0; blockIndex++)
+            using (var saltWithBlockIndexRented = CryptoPool.Rent<byte>(checked(saltLength)))
             {
-                // write the block index out as big-endian
+                var saltWithBlockIndex = saltWithBlockIndexRented.Memory.Slice(0, saltLength);
 
-                saltWithBlockIndex[saltWithBlockIndex.Length - 4] = (byte)(blockIndex >> 24);
-                saltWithBlockIndex[saltWithBlockIndex.Length - 3] = (byte)(blockIndex >> 16);
-                saltWithBlockIndex[saltWithBlockIndex.Length - 2] = (byte)(blockIndex >> 8);
-                saltWithBlockIndex[saltWithBlockIndex.Length - 1] = (byte)blockIndex;
+                salt.CopyTo(saltWithBlockIndex);
 
-                // U_1 = PRF(U_0) = PRF(Salt || block_index)
-                // T_blockIndex = U_1
-
-                byte[] u_iter = hmac.ComputeHashArray(saltWithBlockIndex); // this is U_1
-                byte[] t_blockIndex = u_iter;
-
-                for (int iter = 1; iter < iterations; iter++)
+                for (uint blockIndex = 1; numBytesRemaining > 0; blockIndex++)
                 {
-                    u_iter = hmac.ComputeHashArray(u_iter);
+                    // write the block index out as big-endian
 
-                    for (int i = 0; i < u_iter.Length; i++)
+                    saltWithBlockIndex.Span[saltWithBlockIndex.Length - 4] = (byte)(blockIndex >> 24);
+                    saltWithBlockIndex.Span[saltWithBlockIndex.Length - 3] = (byte)(blockIndex >> 16);
+                    saltWithBlockIndex.Span[saltWithBlockIndex.Length - 2] = (byte)(blockIndex >> 8);
+                    saltWithBlockIndex.Span[saltWithBlockIndex.Length - 1] = (byte)blockIndex;
+
+                    // U_1 = PRF(U_0) = PRF(Salt || block_index)
+                    // T_blockIndex = U_1
+
+                    byte[] u_iter = hmac.ComputeHashArray(saltWithBlockIndex); // this is U_1
+                    byte[] t_blockIndex = u_iter;
+
+                    for (int iter = 1; iter < iterations; iter++)
                     {
-                        t_blockIndex[i] ^= u_iter[i];
+                        u_iter = hmac.ComputeHashArray(u_iter);
+
+                        for (int i = 0; i < u_iter.Length; i++)
+                        {
+                            t_blockIndex[i] ^= u_iter[i];
+                        }
+
+                        // At this point, the 'U_iter' variable actually contains U_{iter+1} (due to indexing differences).
                     }
 
-                    // At this point, the 'U_iter' variable actually contains U_{iter+1} (due to indexing differences).
+                    // At this point, we're done iterating on this block, so copy the transformed block into retVal.
+
+                    int numBytesToCopy = Math.Min(numBytesRemaining, t_blockIndex.Length);
+
+                    Buffer.BlockCopy(t_blockIndex, 0, retVal, numBytesWritten, numBytesToCopy);
+
+                    numBytesWritten += numBytesToCopy;
+                    numBytesRemaining -= numBytesToCopy;
                 }
 
-                // At this point, we're done iterating on this block, so copy the transformed block into retVal.
+                // retVal := T_1 || T_2 || ... || T_n, where T_n may be truncated to meet the desired output length
 
-                int numBytesToCopy = Math.Min(numBytesRemaining, t_blockIndex.Length);
-
-                Buffer.BlockCopy(t_blockIndex, 0, retVal, numBytesWritten, numBytesToCopy);
-
-                numBytesWritten += numBytesToCopy;
-                numBytesRemaining -= numBytesToCopy;
+                return retVal;
             }
-
-            // retVal := T_1 || T_2 || ... || T_n, where T_n may be truncated to meet the desired output length
-
-            return retVal;
         }
 
         private static ConstructorInfo TryFindConstructor()

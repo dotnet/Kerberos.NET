@@ -52,7 +52,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger((long)MessageType);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
-            writer.WriteBitString(ApOptions.AsReadOnly());
+            writer.WriteBitString(ApOptions.AsReadOnlySpan());
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             Ticket?.Encode(writer);

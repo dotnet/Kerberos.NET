@@ -4,7 +4,9 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Client;
@@ -56,7 +58,7 @@ namespace Kerberos.NET.Transport
 
                     await WriteMessage(encoded, stream, cancellation).ConfigureAwait(false);
 
-                    return await ReadResponse<T>(stream, cancellation).ConfigureAwait(false);
+                    return await ReadResponse<T>(stream, cancellation, this.ReceiveTimeout).ConfigureAwait(false);
                 }
             }
             catch (SocketException sx)
@@ -117,23 +119,35 @@ namespace Kerberos.NET.Transport
             throw lastThrown;
         }
 
-        private static async Task<T> ReadResponse<T>(NetworkStream stream, CancellationToken cancellation)
+        private static async Task<T> ReadResponse<T>(NetworkStream stream, CancellationToken cancellation, TimeSpan readTimeout)
             where T : Asn1.IAsn1ApplicationEncoder<T>, new()
         {
-            var messageSizeBytes = await Tcp.ReadFromStream(4, stream, cancellation).ConfigureAwait(false);
+            using (var messageSizeBytesRented = CryptoPool.Rent<byte>(4))
+            {
+                var messageSizeBytes = messageSizeBytesRented.Memory.Slice(0, 4);
 
-            var messageSize = (int)messageSizeBytes.AsLong();
+                await Tcp.ReadFromStream(messageSizeBytes, stream, cancellation, readTimeout).ConfigureAwait(false);
 
-            var response = await Tcp.ReadFromStream(messageSize, stream, cancellation).ConfigureAwait(false);
+                var messageSize = BinaryPrimitives.ReadInt32BigEndian(messageSizeBytes.Span);
 
-            return Decode<T>(response);
+                var response = await Tcp.ReadFromStream(messageSize, stream, cancellation, readTimeout).ConfigureAwait(false);
+
+                return Decode<T>(response);
+            }
         }
 
         private static async Task WriteMessage(ReadOnlyMemory<byte> encoded, NetworkStream stream, CancellationToken cancellation)
         {
-            encoded = Tcp.FormatKerberosMessageStream(encoded);
+            var length = encoded.Length + 4;
 
-            await stream.WriteAsync(encoded.ToArray(), 0, encoded.Length, cancellation).ConfigureAwait(false);
+            using (var messageRented = CryptoPool.Rent<byte>(length))
+            {
+                var message = messageRented.Memory.Slice(0, length);
+
+                Tcp.FormatKerberosMessageStream(encoded, message);
+
+                await stream.WriteAsync(message, cancellation).ConfigureAwait(false);
+            }
         }
     }
 }

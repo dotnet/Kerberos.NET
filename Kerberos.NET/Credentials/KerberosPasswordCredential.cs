@@ -12,8 +12,6 @@ namespace Kerberos.NET.Credentials
 {
     public class KerberosPasswordCredential : KerberosCredential
     {
-        private static readonly EncryptionType[] ETypePreference = KerberosConstants.ETypes.ToArray();
-
         private readonly string password;
 
         public KerberosPasswordCredential(string username, string password, string domain = null)
@@ -66,11 +64,16 @@ namespace Kerberos.NET.Credentials
                         var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, this.Domain, new[] { this.UserName });
 
                         var etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
-                        var salt = string.Empty;
+                        string salt = null;
 
                         if (this.Salts != null && this.Salts.Any())
                         {
-                            var etypes = this.Salts.Select(s => s.Key).Intersect(ETypePreference).OrderBy(e => Array.IndexOf(ETypePreference, e));
+                            var etypePreferences = KerberosConstants.GetPreferredETypes(
+                                this.Configuration.Defaults.DefaultTicketEncTypes,
+                                this.Configuration.Defaults.AllowWeakCrypto
+                            ).ToArray();
+
+                            var etypes = this.Salts.Select(s => s.Key).Intersect(etypePreferences).OrderBy(e => Array.IndexOf(etypePreferences, e));
                             var kv = this.Salts.First(s => s.Key == etypes.First());
 
                             etype = kv.Key;

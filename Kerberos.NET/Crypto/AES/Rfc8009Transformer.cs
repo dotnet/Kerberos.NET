@@ -28,6 +28,8 @@ namespace Kerberos.NET.Crypto
             this.encTypeNameBytes = encTypeName;
         }
 
+        protected ReadOnlyMemory<byte> Confounder { get; set; }
+
         protected override ReadOnlyMemory<byte> String2Key(ReadOnlyMemory<byte> password, ReadOnlyMemory<byte> salt, ReadOnlyMemory<byte> param)
         {
             /*
@@ -41,26 +43,34 @@ namespace Kerberos.NET.Crypto
 
             var encLength = this.encTypeNameBytes.Length;
 
-            var saltp = new Memory<byte>(new byte[encLength + 1 + salt.Length]);
+            var saltpLen = encLength + 1 + salt.Length;
 
-            this.encTypeNameBytes.CopyTo(saltp);
-
-            salt.CopyTo(saltp.Slice(encLength + 1));
-
-            byte[] iterations;
-
-            if (param.Length == 0)
+            using (var saltpRented = CryptoPool.Rent<byte>(saltpLen))
             {
-                iterations = new byte[4];
-                DefaultIterations.CopyTo(iterations);
-            }
-            else
-            {
-                iterations = new byte[param.Length];
-                param.CopyTo(iterations);
-            }
+                var saltp = saltpRented.Memory.Slice(0, saltpLen);
 
-            return base.String2Key(password, saltp, iterations);
+                this.encTypeNameBytes.CopyTo(saltp);
+
+                salt.CopyTo(saltp.Slice(encLength + 1));
+
+                var iterationsLen = param.Length == 0 ? 4 : param.Length;
+
+                using (var iterationsRented = CryptoPool.Rent<byte>(iterationsLen))
+                {
+                    var iterations = iterationsRented.Memory.Slice(0, iterationsLen);
+
+                    if (param.Length == 0)
+                    {
+                        DefaultIterations.CopyTo(iterations);
+                    }
+                    else
+                    {
+                        param.CopyTo(iterations);
+                    }
+
+                    return base.String2Key(password, saltp, iterations);
+                }
+            }
         }
 
         public override ReadOnlyMemory<byte> MakeChecksum(
@@ -75,8 +85,6 @@ namespace Kerberos.NET.Crypto
 
             return this.Hmac(ki, data).Slice(0, hashSize);
         }
-
-        protected ReadOnlyMemory<byte> Confounder { get; set; }
 
         public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey kerberosKey, KeyUsage usage)
         {
@@ -107,11 +115,18 @@ namespace Kerberos.NET.Crypto
                     AllZerosInitVector
                 );
 
-                var checksumData = Concat(AllZerosInitVector.Span, encrypted.Span);
+                var checksumDataLength = AllZerosInitVector.Length + encrypted.Length;
 
-                var checksum = this.MakeChecksum(checksumData, kerberosKey, usage, KeyDerivationMode.Ki, this.ChecksumSize);
+                using (var checksumDataRented = CryptoPool.Rent<byte>(checksumDataLength))
+                {
+                    var checksumData = checksumDataRented.Memory.Slice(0, checksumDataLength);
 
-                return Concat(encrypted.Span, checksum.Span);
+                    Concat(AllZerosInitVector.Span, encrypted.Span, checksumData);
+
+                    var checksum = this.MakeChecksum(checksumData, kerberosKey, usage, KeyDerivationMode.Ki, this.ChecksumSize);
+
+                    return Concat(encrypted.Span, checksum.Span);
+                }
             }
         }
 
@@ -122,13 +137,20 @@ namespace Kerberos.NET.Crypto
             var encrypted = cipher.Slice(0, cipherLength);
             var expectedChecksum = cipher.Slice(cipherLength, this.ChecksumSize);
 
-            var checksumData = Concat(AllZerosInitVector.Span, encrypted.Span);
+            var checksumDataLength = AllZerosInitVector.Length + encrypted.Length;
 
-            var actualChecksum = this.MakeChecksum(checksumData, kerberosKey, usage, KeyDerivationMode.Ki, this.ChecksumSize);
-
-            if (!AreEqualSlow(expectedChecksum.Span, actualChecksum.Span))
+            using (var checksumDataRented = CryptoPool.Rent<byte>(checksumDataLength))
             {
-                throw new SecurityException("Invalid checksum");
+                var checksumData = checksumDataRented.Memory.Slice(0, checksumDataLength);
+
+                Concat(AllZerosInitVector.Span, encrypted.Span, checksumData);
+
+                var actualChecksum = this.MakeChecksum(checksumData, kerberosKey, usage, KeyDerivationMode.Ki, this.ChecksumSize);
+
+                if (!AreEqualSlow(expectedChecksum.Span, actualChecksum.Span))
+                {
+                    throw new SecurityException("Invalid checksum");
+                }
             }
 
             var ke = this.GetOrDeriveKey(kerberosKey, usage, KeyDerivationMode.Ke);

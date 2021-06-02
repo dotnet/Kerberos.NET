@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -74,7 +74,6 @@ namespace Kerberos.NET.Ndr
 
         public void Skip(int length) => this.MoveByOffset(length);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Align(int mask)
         {
             if (!this.IsAligned)
@@ -95,7 +94,6 @@ namespace Kerberos.NET.Ndr
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe ReadOnlySpan<byte> MoveByPrimitiveTypeSize<T>()
            where T : unmanaged
         {
@@ -106,7 +104,6 @@ namespace Kerberos.NET.Ndr
             return this.MoveByOffset(size).Span;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Memory<byte> MoveByOffset(int offset)
         {
             if (offset > this.workingBuffer.Length)
@@ -123,7 +120,6 @@ namespace Kerberos.NET.Ndr
             return current;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SizeOf<T>()
             where T : struct
         {

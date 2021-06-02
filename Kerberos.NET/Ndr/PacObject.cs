@@ -11,7 +11,7 @@ namespace Kerberos.NET.Entities.Pac
     {
         public abstract PacType PacType { get; }
 
-        public abstract ReadOnlySpan<byte> Marshal();
+        public abstract ReadOnlyMemory<byte> Marshal();
 
         public abstract void Unmarshal(ReadOnlyMemory<byte> bytes);
 
@@ -23,7 +23,7 @@ namespace Kerberos.NET.Entities.Pac
         {
             if (this.cachedEncodedValue.Length <= 0 || this.IsDirty)
             {
-                this.cachedEncodedValue = this.Marshal().ToArray();
+                this.cachedEncodedValue = this.Marshal();
 
                 this.IsDirty = false;
             }

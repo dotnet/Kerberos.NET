@@ -57,7 +57,7 @@ namespace Kerberos.NET.Entities
             writer.PushSequence(tag);
             
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
-            writer.WriteBitString(FastOptions.AsReadOnly());
+            writer.WriteBitString(FastOptions.AsReadOnlySpan());
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             writer.PushSequence();

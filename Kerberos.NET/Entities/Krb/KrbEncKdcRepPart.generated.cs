@@ -103,7 +103,7 @@ namespace Kerberos.NET.Entities
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 3));
             }
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
-            writer.WriteBitString(Flags.AsReadOnly());
+            writer.WriteBitString(Flags.AsReadOnlySpan());
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 4));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 5));
             writer.WriteGeneralizedTime(AuthTime);

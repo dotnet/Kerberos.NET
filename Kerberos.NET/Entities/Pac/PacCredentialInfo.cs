@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -20,7 +20,7 @@ namespace Kerberos.NET.Entities
 
         public override PacType PacType => PacType.CREDENTIAL_TYPE;
 
-        public override ReadOnlySpan<byte> Marshal()
+        public override ReadOnlyMemory<byte> Marshal()
         {
             using (var buffer = new NdrBuffer())
             {
@@ -28,7 +28,7 @@ namespace Kerberos.NET.Entities
                 buffer.WriteInt32LittleEndian((int)this.EncryptionType);
                 buffer.WriteSpan(this.SerializedData.Span);
 
-                return buffer.ToSpan(alignment: 8);
+                return buffer.ToMemory(alignment: 8);
             }
         }
 

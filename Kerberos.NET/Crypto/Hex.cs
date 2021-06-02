@@ -5,8 +5,7 @@
 
 using System;
 using System.Globalization;
-using System.Linq;
-using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Kerberos.NET.Crypto
@@ -22,7 +21,7 @@ namespace Kerberos.NET.Crypto
 
         public static void DumpHex(this ReadOnlyMemory<byte> bytes, Action<string, int> writeLine, int bytesPerLine = 16)
         {
-            var lines = HexDump(bytes.ToArray(), bytesPerLine).Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = HexDump(bytes.Span, bytesPerLine).Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 
             for (var i = 0; i < lines.Length; i++)
             {
@@ -39,14 +38,26 @@ namespace Kerberos.NET.Crypto
 
         private static unsafe string HexDump(byte* bytes, uint length, int bytesPerLine = 16)
         {
-            var managedBytes = new byte[length];
+            var lengthInt = (int)length;
 
-            Marshal.Copy((IntPtr)bytes, managedBytes, 0, (int)length);
+            using (var pool = CryptoPool.Rent<byte>(lengthInt))
+            {
+                var managedBytes = pool.Memory.Slice(0, lengthInt);
 
-            return HexDump(managedBytes, bytesPerLine);
+                var span = new Span<byte>(bytes, lengthInt);
+
+                span.CopyTo(managedBytes.Span);
+
+                return HexDump(managedBytes.Span, bytesPerLine);
+            }
         }
 
         public static string HexDump(this byte[] bytes, int bytesPerLine = 16)
+        {
+            return HexDump((ReadOnlySpan<byte>)bytes, bytesPerLine);
+        }
+
+        public static string HexDump(this ReadOnlySpan<byte> bytes, int bytesPerLine = 16)
         {
             if (bytes == null)
             {
@@ -57,15 +68,40 @@ namespace Kerberos.NET.Crypto
 
             for (int line = 0; line < bytes.Length; line += bytesPerLine)
             {
-                var lineBytes = bytes.Skip(line).Take(bytesPerLine).ToArray();
+                int bytesToRead = bytes.Length - line;
+
+                var lineBytes = bytes.Slice(line, bytesToRead > bytesPerLine ? bytesPerLine : bytesToRead);
 
                 sb.AppendFormat(CultureInfo.InvariantCulture, "{0:x8} ", line);
 
-                sb.Append(string.Join(" ", lineBytes.Select(b => HEX_INDEX[b]).ToArray()).PadRight((bytesPerLine * 3)));
+                for (var i = 0; i < lineBytes.Length; i++)
+                {
+                    var b = lineBytes[i];
+
+                    sb.Append(HEX_INDEX[b]);
+
+                    sb.Append(" ");
+                }
+
+                var padding = lineBytes.Length - bytesPerLine;
+
+                if (padding > 0)
+                {
+                    for (var i = 0; i < padding; i++)
+                    {
+                        sb.Append("   ");
+                    }
+                }
 
                 sb.Append(" ");
 
-                sb.Append(new string(lineBytes.Select(b => char.IsControl((char)b) ? '.' : (char)b).ToArray()));
+                for (var i = 0; i < lineBytes.Length; i++)
+                {
+                    var b = lineBytes[i];
+
+                    sb.Append(char.IsControl((char)b) ? '.' : (char)b);
+                }
+
                 sb.AppendLine();
             }
 
@@ -88,7 +124,7 @@ namespace Kerberos.NET.Crypto
 
             int len = hash.Length * (spaces ? 3 : 2);
 
-            StringBuilder result = new StringBuilder(len);
+            var result = new StringBuilder(len);
 
             var lineCounter = 0;
 
