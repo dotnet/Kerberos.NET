@@ -509,7 +509,7 @@ namespace Kerberos.NET.Client
             {
                 KrbEncTgsRepPart encKdcRepPart = null;
                 KrbEncryptionKey sessionKey;
-                KerberosClientCacheEntry serviceTicketCacheEntry;
+                KerberosClientCacheEntry serviceTicketCacheEntry = default;
 
                 if (this.KdcOptions == 0)
                 {
@@ -542,10 +542,13 @@ namespace Kerberos.NET.Client
 
                     // first of all, do we already have the ticket?
 
-                    serviceTicketCacheEntry = this.Cache.GetCacheItem<KerberosClientCacheEntry>(
-                        originalServicePrincipalName.FullyQualifiedName,
-                        rst.S4uTarget
-                    );
+                    if (rst.CanCacheTicket)
+                    {
+                        serviceTicketCacheEntry = this.Cache.GetCacheItem<KerberosClientCacheEntry>(
+                            originalServicePrincipalName.FullyQualifiedName,
+                            rst.S4uTarget
+                        );
+                    }
 
                     bool cacheResult = false;
 
@@ -634,7 +637,7 @@ namespace Kerberos.NET.Client
                         receivedRequestedTicket = true;
                     }
 
-                    if (cacheResult)
+                    if (cacheResult && rst.CanCacheTicket)
                     {
                         // regardless of what state we're in we got a valuable ticket
                         // that can be used in future requests
