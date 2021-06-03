@@ -82,5 +82,20 @@ namespace KerbDump.Properties {
                 this["ShouldRemember"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int SecretType
+        {
+            get
+            {
+                return ((int)(this["SecretType"]));
+            }
+            set
+            {
+                this["SecretType"] = value;
+            }
+        }
     }
 }
