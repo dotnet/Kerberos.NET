@@ -34,7 +34,6 @@ namespace KerbDump
 
         private readonly Font DefaultTreeFont;
         private readonly int splitter1Default;
-        private readonly int splitter2Default;
 
         public Form1()
         {
@@ -44,7 +43,6 @@ namespace KerbDump
             this.InitializeComponent();
 
             this.DefaultTreeFont = new Font(this.treeView1.Font.FontFamily, this.treeView1.Font.Size, FontStyle.Italic);
-            this.txtDump.ReadOnly = true;
 
             this.exportMenu.Items.Add("Export to WireShark", null, this.ExportWireshark);
             this.exportMenu.Items.Add("Export to Keytab", null, this.ExportKeytab);
@@ -58,7 +56,6 @@ namespace KerbDump
             };
 
             this.splitter1Default = this.splitContainer1.SplitterDistance;
-            this.splitter2Default = this.splitContainer2.SplitterDistance;
 
             this.splitContainer1.DoubleClick += (s, e) =>
             {
@@ -69,18 +66,6 @@ namespace KerbDump
                 else
                 {
                     this.splitContainer1.SplitterDistance = this.splitter1Default;
-                }
-            };
-
-            this.splitContainer2.DoubleClick += (s, e) =>
-            {
-                if (this.splitContainer2.SplitterDistance >= this.splitter2Default)
-                {
-                    this.splitContainer2.SplitterDistance = 5;
-                }
-                else
-                {
-                    this.splitContainer2.SplitterDistance = this.splitter2Default;
                 }
             };
 
@@ -181,7 +166,14 @@ namespace KerbDump
 
             if (!string.IsNullOrWhiteSpace(this.hostName))
             {
-                this.btnRequest.Text = string.Format(RequestTemplateText, this.hostName);
+                var hostLabel = this.hostName.Split('.').First();
+
+                if (hostLabel.Length > 15)
+                {
+                    hostLabel = hostLabel.Substring(0, 15) + "...";
+                }
+
+                this.btnRequest.Text = string.Format(RequestTemplateText, hostLabel);
             }
             else
             {
@@ -372,10 +364,6 @@ namespace KerbDump
 
         private void DisplayDeconstructed(string ticket, string label)
         {
-            this.label2.Text = label;
-
-            this.txtDump.Text = ticket;
-
             this.CreateTreeView(ticket, label);
         }
 
@@ -610,19 +598,23 @@ namespace KerbDump
 
             var sb = new StringBuilder();
 
+            sb.Append("Decoding Failed. \r\n\r\n");
+
             if (ex is AggregateException agg)
             {
                 foreach (var aggEx in agg.InnerExceptions)
                 {
-                    sb.AppendFormat("{0}\r\n\r\n", aggEx);
+                    sb.AppendFormat("{0}\r\n\r\n", aggEx.Message);
                 }
             }
             else
             {
-                sb.Append(ex.ToString());
+                sb.Append(ex.Message);
             }
 
-            this.txtDump.Text = sb.ToString();
+            MessageBox.Show(this, sb.ToString(), ex.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            //this.treeView1.Nodes.Add(sb.ToString());
         }
 
         private void RequestLocalTicket()
@@ -852,10 +844,8 @@ namespace KerbDump
         private void btnClear_Click(object sender, EventArgs e)
         {
             this.splitContainer1.SplitterDistance = this.splitter1Default;
-            this.splitContainer2.SplitterDistance = this.splitter2Default;
 
             this.txtTicket.Text = "";
-            this.txtDump.Text = "";
             this.txtHost.Text = "";
             this.txtKey.Text = "";
             this.chkEncodedKey.Checked = false;
@@ -954,13 +944,19 @@ namespace KerbDump
             {
                 this.chkEncodedKey.Visible = true;
                 this.txtHost.Visible = true;
-                this.label4.Visible = false;
+                this.label4.Visible = true;
             }
             else
             {
                 this.chkEncodedKey.Visible = false;
                 this.txtHost.Visible = false;
+                this.label4.Visible = false;
             }
+        }
+
+        private void splitContainer2_Panel2_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 

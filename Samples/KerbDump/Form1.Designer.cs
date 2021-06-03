@@ -30,6 +30,7 @@
         {
             this.button1 = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.label2 = new System.Windows.Forms.Label();
             this.ddlKeyType = new System.Windows.Forms.ComboBox();
             this.chkRemember = new System.Windows.Forms.CheckBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -38,10 +39,7 @@
             this.txtKey = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.txtTicket = new System.Windows.Forms.TextBox();
-            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.txtDump = new System.Windows.Forms.TextBox();
             this.treeView1 = new System.Windows.Forms.TreeView();
-            this.label2 = new System.Windows.Forms.Label();
             this.btnDecodeLocal = new System.Windows.Forms.Button();
             this.btnLoadKeytab = new System.Windows.Forms.Button();
             this.lblKeytab = new System.Windows.Forms.Label();
@@ -52,10 +50,6 @@
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
-            this.splitContainer2.Panel1.SuspendLayout();
-            this.splitContainer2.Panel2.SuspendLayout();
-            this.splitContainer2.SuspendLayout();
             this.SuspendLayout();
             // 
             // button1
@@ -75,12 +69,13 @@
             this.splitContainer1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.splitContainer1.Location = new System.Drawing.Point(14, 14);
+            this.splitContainer1.Location = new System.Drawing.Point(1, 14);
             this.splitContainer1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
             // 
+            this.splitContainer1.Panel1.Controls.Add(this.label2);
             this.splitContainer1.Panel1.Controls.Add(this.ddlKeyType);
             this.splitContainer1.Panel1.Controls.Add(this.chkRemember);
             this.splitContainer1.Panel1.Controls.Add(this.label4);
@@ -92,12 +87,23 @@
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
-            this.splitContainer1.Panel2.Controls.Add(this.label2);
-            this.splitContainer1.Size = new System.Drawing.Size(1573, 526);
-            this.splitContainer1.SplitterDistance = 278;
+            this.splitContainer1.Panel2.Controls.Add(this.treeView1);
+            this.splitContainer1.Size = new System.Drawing.Size(1600, 526);
+            this.splitContainer1.SplitterDistance = 282;
             this.splitContainer1.SplitterWidth = 5;
             this.splitContainer1.TabIndex = 2;
+            // 
+            // label2
+            // 
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(4, 317);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(53, 15);
+            this.label2.TabIndex = 9;
+            this.label2.Text = "Key Type";
             // 
             // ddlKeyType
             // 
@@ -107,9 +113,9 @@
             this.ddlKeyType.Items.AddRange(new object[] {
             "Password",
             "Kerberos Key"});
-            this.ddlKeyType.Location = new System.Drawing.Point(4, 342);
+            this.ddlKeyType.Location = new System.Drawing.Point(4, 338);
             this.ddlKeyType.Name = "ddlKeyType";
-            this.ddlKeyType.Size = new System.Drawing.Size(271, 23);
+            this.ddlKeyType.Size = new System.Drawing.Size(275, 23);
             this.ddlKeyType.TabIndex = 8;
             this.ddlKeyType.SelectedIndexChanged += new System.EventHandler(this.ddlKeyType_SelectedIndexChanged);
             // 
@@ -120,7 +126,7 @@
             this.chkRemember.AutoSize = true;
             this.chkRemember.Checked = true;
             this.chkRemember.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkRemember.Location = new System.Drawing.Point(4, 496);
+            this.chkRemember.Location = new System.Drawing.Point(4, 499);
             this.chkRemember.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkRemember.Name = "chkRemember";
             this.chkRemember.Size = new System.Drawing.Size(84, 19);
@@ -133,7 +139,7 @@
             this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(4, 443);
+            this.label4.Location = new System.Drawing.Point(4, 446);
             this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(32, 15);
@@ -144,115 +150,70 @@
             // 
             this.txtHost.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtHost.Location = new System.Drawing.Point(4, 462);
+            this.txtHost.Location = new System.Drawing.Point(4, 465);
             this.txtHost.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.txtHost.Name = "txtHost";
             this.txtHost.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtHost.Size = new System.Drawing.Size(270, 23);
+            this.txtHost.Size = new System.Drawing.Size(274, 23);
             this.txtHost.TabIndex = 5;
             // 
             // chkEncodedKey
             // 
-            this.chkEncodedKey.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.chkEncodedKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.chkEncodedKey.AutoSize = true;
-            this.chkEncodedKey.Location = new System.Drawing.Point(169, 496);
+            this.chkEncodedKey.Location = new System.Drawing.Point(142, 499);
             this.chkEncodedKey.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkEncodedKey.Name = "chkEncodedKey";
-            this.chkEncodedKey.Size = new System.Drawing.Size(105, 19);
+            this.chkEncodedKey.Size = new System.Drawing.Size(136, 19);
             this.chkEncodedKey.TabIndex = 4;
-            this.chkEncodedKey.Text = "Key is Encoded";
+            this.chkEncodedKey.Text = "Password is Encoded";
             this.chkEncodedKey.UseVisualStyleBackColor = true;
             // 
             // txtKey
             // 
             this.txtKey.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtKey.Location = new System.Drawing.Point(4, 371);
+            this.txtKey.Location = new System.Drawing.Point(4, 368);
             this.txtKey.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.txtKey.Multiline = true;
             this.txtKey.Name = "txtKey";
             this.txtKey.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtKey.Size = new System.Drawing.Size(271, 69);
+            this.txtKey.Size = new System.Drawing.Size(275, 69);
             this.txtKey.TabIndex = 2;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(4, 14);
+            this.label1.Location = new System.Drawing.Point(4, 1);
             this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(87, 15);
+            this.label1.Size = new System.Drawing.Size(102, 15);
             this.label1.TabIndex = 1;
-            this.label1.Text = "Encoded Ticket";
+            this.label1.Text = "Encoded Message";
             // 
             // txtTicket
             // 
             this.txtTicket.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtTicket.Location = new System.Drawing.Point(4, 32);
+            this.txtTicket.Location = new System.Drawing.Point(4, 24);
             this.txtTicket.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.txtTicket.Multiline = true;
             this.txtTicket.Name = "txtTicket";
             this.txtTicket.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtTicket.Size = new System.Drawing.Size(270, 287);
+            this.txtTicket.Size = new System.Drawing.Size(274, 287);
             this.txtTicket.TabIndex = 0;
-            // 
-            // splitContainer2
-            // 
-            this.splitContainer2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.splitContainer2.Location = new System.Drawing.Point(7, 32);
-            this.splitContainer2.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.splitContainer2.Name = "splitContainer2";
-            // 
-            // splitContainer2.Panel1
-            // 
-            this.splitContainer2.Panel1.Controls.Add(this.txtDump);
-            // 
-            // splitContainer2.Panel2
-            // 
-            this.splitContainer2.Panel2.Controls.Add(this.treeView1);
-            this.splitContainer2.Size = new System.Drawing.Size(1271, 472);
-            this.splitContainer2.SplitterDistance = 418;
-            this.splitContainer2.SplitterWidth = 5;
-            this.splitContainer2.TabIndex = 4;
-            // 
-            // txtDump
-            // 
-            this.txtDump.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtDump.Location = new System.Drawing.Point(0, 3);
-            this.txtDump.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.txtDump.Multiline = true;
-            this.txtDump.Name = "txtDump";
-            this.txtDump.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtDump.Size = new System.Drawing.Size(413, 464);
-            this.txtDump.TabIndex = 1;
             // 
             // treeView1
             // 
             this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.treeView1.Location = new System.Drawing.Point(4, 3);
+            this.treeView1.Location = new System.Drawing.Point(0, 0);
             this.treeView1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.treeView1.Name = "treeView1";
-            this.treeView1.Size = new System.Drawing.Size(832, 464);
+            this.treeView1.Size = new System.Drawing.Size(1307, 523);
             this.treeView1.TabIndex = 3;
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(4, 14);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(88, 15);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "Decoded Ticket";
             // 
             // btnDecodeLocal
             // 
@@ -338,18 +299,12 @@
             this.Controls.Add(this.button1);
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "Form1";
-            this.Text = "Decode Kerberos Ticket";
+            this.Text = "Decode Kerberos Message";
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel1.PerformLayout();
             this.splitContainer1.Panel2.ResumeLayout(false);
-            this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
-            this.splitContainer2.Panel1.ResumeLayout(false);
-            this.splitContainer2.Panel1.PerformLayout();
-            this.splitContainer2.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
-            this.splitContainer2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -359,16 +314,12 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.TextBox txtTicket;
-        private System.Windows.Forms.TextBox txtDump;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox txtKey;
         private System.Windows.Forms.CheckBox chkEncodedKey;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox txtHost;
         private System.Windows.Forms.Button btnDecodeLocal;
-        private System.Windows.Forms.TreeView treeView1;
-        private System.Windows.Forms.SplitContainer splitContainer2;
         private System.Windows.Forms.Button btnLoadKeytab;
         private System.Windows.Forms.Label lblKeytab;
         private System.Windows.Forms.Button btnClear;
@@ -376,6 +327,8 @@
         private System.Windows.Forms.CheckBox chkRemember;
         private System.Windows.Forms.Button btnExport;
         private System.Windows.Forms.ComboBox ddlKeyType;
+        private System.Windows.Forms.TreeView treeView1;
+        private System.Windows.Forms.Label label2;
     }
 }
 
