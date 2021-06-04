@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -33,7 +34,6 @@ namespace KerbDump
 
         private readonly Font DefaultTreeFont;
         private readonly int splitter1Default;
-        private readonly int splitter2Default;
 
         public Form1()
         {
@@ -43,10 +43,12 @@ namespace KerbDump
             this.InitializeComponent();
 
             this.DefaultTreeFont = new Font(this.treeView1.Font.FontFamily, this.treeView1.Font.Size, FontStyle.Italic);
-            this.txtDump.ReadOnly = true;
 
             this.exportMenu.Items.Add("Export to WireShark", null, this.ExportWireshark);
             this.exportMenu.Items.Add("Export to Keytab", null, this.ExportKeytab);
+
+            this.ddlKeyType.SelectedIndex = 0;
+            this.ddlKeyType.DropDownStyle = ComboBoxStyle.DropDownList;
 
             this.btnExport.Click += (s, e) =>
             {
@@ -54,7 +56,6 @@ namespace KerbDump
             };
 
             this.splitter1Default = this.splitContainer1.SplitterDistance;
-            this.splitter2Default = this.splitContainer2.SplitterDistance;
 
             this.splitContainer1.DoubleClick += (s, e) =>
             {
@@ -65,18 +66,6 @@ namespace KerbDump
                 else
                 {
                     this.splitContainer1.SplitterDistance = this.splitter1Default;
-                }
-            };
-
-            this.splitContainer2.DoubleClick += (s, e) =>
-            {
-                if (this.splitContainer2.SplitterDistance >= this.splitter2Default)
-                {
-                    this.splitContainer2.SplitterDistance = 5;
-                }
-                else
-                {
-                    this.splitContainer2.SplitterDistance = this.splitter2Default;
                 }
             };
 
@@ -159,6 +148,7 @@ namespace KerbDump
             this.txtKey.Text = this.Unprotect(Settings.Default.Secret);
             this.chkEncodedKey.Checked = Settings.Default.IsSecretEncoded;
             this.txtHost.Text = Settings.Default.Host;
+            this.ddlKeyType.SelectedIndex = Settings.Default.SecretType;
 
             this.button1_Click(this, EventArgs.Empty);
         }
@@ -176,7 +166,14 @@ namespace KerbDump
 
             if (!string.IsNullOrWhiteSpace(this.hostName))
             {
-                this.btnRequest.Text = string.Format(RequestTemplateText, this.hostName);
+                var hostLabel = this.hostName.Split('.').First();
+
+                if (hostLabel.Length > 15)
+                {
+                    hostLabel = hostLabel.Substring(0, 15) + "...";
+                }
+
+                this.btnRequest.Text = string.Format(RequestTemplateText, hostLabel);
             }
             else
             {
@@ -246,28 +243,63 @@ namespace KerbDump
 
             if (key == null)
             {
-                if (this.chkEncodedKey.Checked)
+                if (string.Equals("Password", this.ddlKeyType.SelectedItem?.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
-                    var bytes = Convert.FromBase64String(this.txtKey.Text);
-
-                    key = new KeyTable(
-                        new KerberosKey(
-                            password: bytes,
-                            principal: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
-                            host: host
-                        )
-                    );
+                    key = this.EncodePassword(domain, host);
                 }
                 else
                 {
-                    key = new KeyTable(
-                        new KerberosKey(
-                            this.txtKey.Text,
-                            principalName: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
-                            host: string.IsNullOrWhiteSpace(host) ? null : host
-                        )
-                    );
+                    key = this.EncodeKerberosKey();
                 }
+            }
+
+            return key;
+        }
+
+        private KeyTable EncodeKerberosKey()
+        {
+            var bytes = Convert.FromBase64String(this.txtKey.Text);
+
+            var keys = new List<KerberosKey>();
+
+            foreach (EncryptionType etype in Enum.GetValues(typeof(EncryptionType)))
+            {
+                if (CryptoService.SupportsEType(etype, allowWeakCrypto: true) && etype != EncryptionType.NULL)
+                {
+                    var transformer = CryptoService.CreateTransform(etype);
+
+                    keys.Add(new KerberosKey(key: bytes.Take(transformer.KeySize).ToArray(), etype: etype));
+                }
+            }
+
+            return new KeyTable(keys.ToArray());
+        }
+
+        private KeyTable EncodePassword(string domain, string host)
+        {
+            KeyTable key;
+
+            if (this.chkEncodedKey.Checked)
+            {
+                var bytes = Convert.FromBase64String(this.txtKey.Text);
+
+                key = new KeyTable(
+                    new KerberosKey(
+                        password: bytes,
+                        principal: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
+                        host: host
+                    )
+                );
+            }
+            else
+            {
+                key = new KeyTable(
+                    new KerberosKey(
+                        this.txtKey.Text,
+                        principalName: new PrincipalName(PrincipalNameType.NT_SRV_HST, domain, new[] { Environment.MachineName }),
+                        host: string.IsNullOrWhiteSpace(host) ? null : host
+                    )
+                );
             }
 
             return key;
@@ -296,6 +328,7 @@ namespace KerbDump
                 Settings.Default.Secret = this.Protect(this.txtKey.Text);
                 Settings.Default.IsSecretEncoded = this.chkEncodedKey.Checked;
                 Settings.Default.Host = this.txtHost.Text;
+                Settings.Default.SecretType = this.ddlKeyType.SelectedIndex;
 
                 Settings.Default.Save();
             }
@@ -331,10 +364,6 @@ namespace KerbDump
 
         private void DisplayDeconstructed(string ticket, string label)
         {
-            this.label2.Text = label;
-
-            this.txtDump.Text = ticket;
-
             this.CreateTreeView(ticket, label);
         }
 
@@ -569,19 +598,23 @@ namespace KerbDump
 
             var sb = new StringBuilder();
 
+            sb.Append("Decoding Failed. \r\n\r\n");
+
             if (ex is AggregateException agg)
             {
                 foreach (var aggEx in agg.InnerExceptions)
                 {
-                    sb.AppendFormat("{0}\r\n\r\n", aggEx);
+                    sb.AppendFormat("{0}\r\n\r\n", aggEx.Message);
                 }
             }
             else
             {
-                sb.Append(ex.ToString());
+                sb.Append(ex.Message);
             }
 
-            this.txtDump.Text = sb.ToString();
+            MessageBox.Show(this, sb.ToString(), ex.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            //this.treeView1.Nodes.Add(sb.ToString());
         }
 
         private void RequestLocalTicket()
@@ -811,10 +844,8 @@ namespace KerbDump
         private void btnClear_Click(object sender, EventArgs e)
         {
             this.splitContainer1.SplitterDistance = this.splitter1Default;
-            this.splitContainer2.SplitterDistance = this.splitter2Default;
 
             this.txtTicket.Text = "";
-            this.txtDump.Text = "";
             this.txtHost.Text = "";
             this.txtKey.Text = "";
             this.chkEncodedKey.Checked = false;
@@ -905,6 +936,27 @@ namespace KerbDump
                 writer.Write(Hex.DumpHex(Encoding.ASCII.GetBytes(header.ToString())));
                 writer.Flush();
             }
+        }
+
+        private void ddlKeyType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (ddlKeyType.SelectedIndex == 0) // password
+            {
+                this.chkEncodedKey.Visible = true;
+                this.txtHost.Visible = true;
+                this.label4.Visible = true;
+            }
+            else
+            {
+                this.chkEncodedKey.Visible = false;
+                this.txtHost.Visible = false;
+                this.label4.Visible = false;
+            }
+        }
+
+        private void splitContainer2_Panel2_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 
