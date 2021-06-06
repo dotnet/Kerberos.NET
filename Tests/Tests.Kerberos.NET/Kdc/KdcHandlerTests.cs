@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET;
 using Kerberos.NET.Client;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
@@ -84,7 +85,8 @@ namespace Tests.Kerberos.NET
                         EncryptionType.AES256_CTS_HMAC_SHA1_96,
                         "CORP.IDENTITYINTERVENTION.COMfake@CORP2.IDENTITYINTERVENTION.COM"
                     )
-                }
+                },
+                Configuration = Krb5Config.Default()
             };
 
             var asReq = KrbAsReq.CreateAsReq(

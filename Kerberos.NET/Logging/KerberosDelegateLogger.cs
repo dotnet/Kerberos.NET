@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using LogFunc = System.Action<
     System.Diagnostics.TraceLevel,
@@ -133,36 +132,17 @@ namespace Kerberos.NET.Logging
                     this.log(level, this.categoryName, eventId.Id, this.state, state, exception, formatter(state, exception));
                 }
 
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 private static TraceLevel ConvertLogLevel(LogLevel logLevel)
                 {
-                    TraceLevel level;
-
-                    switch (logLevel)
+                    return logLevel switch
                     {
-                        case LogLevel.Trace:
-                        case LogLevel.Debug:
-                            level = TraceLevel.Verbose;
-                            break;
-                        case LogLevel.Information:
-                            level = TraceLevel.Info;
-                            break;
-                        case LogLevel.Warning:
-                            level = TraceLevel.Warning;
-                            break;
-                        case LogLevel.Error:
-                        case LogLevel.Critical:
-                            level = TraceLevel.Error;
-                            break;
-                        case LogLevel.None:
-                            level = TraceLevel.Off;
-                            break;
-                        default:
-                            level = TraceLevel.Verbose;
-                            break;
-                    }
-
-                    return level;
+                        LogLevel.Trace or LogLevel.Debug => TraceLevel.Verbose,
+                        LogLevel.Information => TraceLevel.Info,
+                        LogLevel.Warning => TraceLevel.Warning,
+                        LogLevel.Error or LogLevel.Critical => TraceLevel.Error,
+                        LogLevel.None => TraceLevel.Off,
+                        _ => TraceLevel.Verbose,
+                    };
                 }
             }
         }

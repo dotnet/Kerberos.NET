@@ -15,6 +15,9 @@ namespace Kerberos.NET.Entities
     {
         internal const int ApplicationTagValue = 14;
 
+        private static readonly Oid Kerberos5Oid = new Oid(MechType.KerberosV5);
+        private static readonly Oid SPNegoOid = new Oid(MechType.SPNEGO);
+
         public KrbApReq()
         {
             this.ProtocolVersionNumber = 5;
@@ -97,8 +100,5 @@ namespace Kerberos.NET.Entities
 
             return GssApiToken.Encode(SPNegoOid, negoToken);
         }
-
-        private static readonly Oid Kerberos5Oid = new Oid(MechType.KerberosV5);
-        private static readonly Oid SPNegoOid = new Oid(MechType.SPNEGO);
     }
 }

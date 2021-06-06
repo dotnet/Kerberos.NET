@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -153,7 +152,6 @@ namespace Kerberos.NET.Server
             GC.SuppressFinalize(this);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool IsSocketError(SocketError errorCode)
         {
             return errorCode == SocketError.ConnectionReset ||
@@ -161,7 +159,6 @@ namespace Kerberos.NET.Server
                    errorCode == SocketError.ConnectionAborted;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool IsSocketAbort(SocketError errorCode)
         {
             return errorCode == SocketError.OperationAborted ||

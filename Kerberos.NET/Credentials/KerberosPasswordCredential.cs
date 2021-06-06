@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using Kerberos.NET.Client;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 
@@ -63,7 +64,7 @@ namespace Kerberos.NET.Credentials
                     {
                         var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, this.Domain, new[] { this.UserName });
 
-                        var etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
+                        EncryptionType etype = this.Configuration?.Defaults?.DefaultTicketEncTypes?.First() ?? KerberosConstants.GetPreferredETypes().First();
                         string salt = null;
 
                         if (this.Salts != null && this.Salts.Any())
@@ -73,8 +74,14 @@ namespace Kerberos.NET.Credentials
                                 this.Configuration.Defaults.AllowWeakCrypto
                             ).ToArray();
 
-                            var etypes = this.Salts.Select(s => s.Key).Intersect(etypePreferences).OrderBy(e => Array.IndexOf(etypePreferences, e));
-                            var kv = this.Salts.First(s => s.Key == etypes.First());
+                            var preferredEtypes = this.Salts.Select(s => s.Key).Intersect(etypePreferences).OrderBy(e => Array.IndexOf(etypePreferences, e));
+
+                            if (!preferredEtypes.Any())
+                            {
+                                throw new KerberosPolicyException(PaDataType.PA_ENC_TIMESTAMP);
+                            }
+
+                            var kv = this.Salts.First(s => s.Key == preferredEtypes.First());
 
                             etype = kv.Key;
                             salt = kv.Value;

@@ -5,10 +5,10 @@
 
 using System;
 using System.Globalization;
-using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Server;
 
@@ -36,31 +36,36 @@ namespace Tests.Kerberos.NET
 
         public static TcpKdcListener StartTcpListener(int port, bool slow = false)
         {
-            var options = new KdcServerOptions
+            KdcServerOptions options = null;
+
+            options = new KdcServerOptions
             {
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(CultureInfo.InvariantCulture),
                 IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm, slow)
+                RealmLocator = realm => LocateRealm(realm, slow, options.Configuration)
             };
 
             options.Configuration.KdcDefaults.ReceiveTimeout = TimeSpan.FromHours(1);
             options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Clear();
             options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Add($"127.0.0.1:{port}");
 
-            KdcServiceListener server = new KdcServiceListener(options);
+            var server = new KdcServiceListener(options);
 
             return new TcpKdcListener(server);
         }
 
-        public static KdcListener StartListener(int port, bool slow = false)
+        public static KdcListener StartListener(int port, bool slow = false, bool allowWeakCrypto = false)
         {
-            var options = new KdcServerOptions
+            KdcServerOptions options = null;
+
+            options = new KdcServerOptions
             {
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(CultureInfo.InvariantCulture),
                 IsDebug = true,
-                RealmLocator = realm => LocateRealm(realm, slow)
+                RealmLocator = realm => LocateRealm(realm, slow, options.Configuration)
             };
 
+            options.Configuration.Defaults.AllowWeakCrypto = allowWeakCrypto;
             options.Configuration.KdcDefaults.ReceiveTimeout = TimeSpan.FromHours(1);
             options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Clear();
             options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Add($"127.0.0.1:{port}");
@@ -80,9 +85,9 @@ namespace Tests.Kerberos.NET
             return await this.server.ProcessMessage(req);
         }
 
-        public static IRealmService LocateRealm(string realm, bool slow = false)
+        public static IRealmService LocateRealm(string realm, bool slow = false, Krb5Config config = null)
         {
-            IRealmService service = new FakeRealmService(realm);
+            IRealmService service = new FakeRealmService(realm, config);
 
             if (slow)
             {

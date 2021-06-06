@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 
@@ -33,6 +34,11 @@ namespace Kerberos.NET.Server
         /// This realm may have one or more trust relationships to other realms.
         /// </summary>
         ITrustedRealmService TrustedRealms { get; }
+
+        /// <summary>
+        /// Provides access to the KDC configuration values.
+        /// </summary>
+        Krb5Config Configuration { get; }
 
         /// <summary>
         /// Returns the current time in UTC.

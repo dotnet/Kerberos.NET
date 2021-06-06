@@ -41,7 +41,7 @@ namespace Kerberos.NET.Server
 
             foreach (EncryptionType type in Enum.GetValues(typeof(EncryptionType)))
             {
-                if (!CryptoService.SupportsEType(type))
+                if (!CryptoService.SupportsEType(type, this.Service.Configuration.Defaults.AllowWeakCrypto))
                 {
                     continue;
                 }

@@ -25,6 +25,8 @@ namespace Kerberos.NET.Crypto
 
         public override ChecksumType ChecksumType => ChecksumType.HMAC_SHA384_192_AES256;
 
+        public override EncryptionType EType => EncryptionType.AES256_CTS_HMAC_SHA384_192;
+
         protected override ReadOnlyMemory<byte> Hmac(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
         {
             var hmac = CryptoPal.Platform.HmacSha384(key);

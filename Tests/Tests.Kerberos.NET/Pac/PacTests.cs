@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -187,6 +187,8 @@ namespace Tests.Kerberos.NET
             public override int KeySize => 32;
 
             public override ChecksumType ChecksumType => (ChecksumType)(-1);
+
+            public override EncryptionType EType => (EncryptionType)(-1);
 
             public override ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage)
             {

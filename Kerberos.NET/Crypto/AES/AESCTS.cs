@@ -4,7 +4,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
 #pragma warning disable S101 // Types should be named in camel case
@@ -105,7 +104,6 @@ namespace Kerberos.NET.Crypto
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool CalculateLength(int len, out int padSize, out int maxLength)
         {
             padSize = BlockSize - (len % BlockSize);
@@ -115,7 +113,6 @@ namespace Kerberos.NET.Crypto
             return len >= BlockSize;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ReadOnlyMemory<byte> Depad(ReadOnlyMemory<byte> ciphertext, int padSize)
         {
             var offset = ciphertext.Length - TwoBlockSizes + padSize;
@@ -123,7 +120,6 @@ namespace Kerberos.NET.Crypto
             return ciphertext.Slice(offset, BlockSize);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SwapLastTwoBlocks(Span<byte> data)
         {
             var blockOne = data.Length - TwoBlockSizes;

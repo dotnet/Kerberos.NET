@@ -284,7 +284,7 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         [DefaultValue("P-256 P-384 P-521")]
         [DisplayName("spake_preauth_groups")]
-        public ICollection<SpakePreAuthGroupType> SpakePreAuthGroups { get; private set;  }
+        public ICollection<SpakePreAuthGroupType> SpakePreAuthGroups { get; private set; }
 
         /// <summary>
         /// Sets the default lifetime for initial ticket requests. The default value is 1 day.

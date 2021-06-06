@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -22,6 +22,8 @@ namespace Kerberos.NET.Crypto
         public abstract int KeySize { get; }
 
         public abstract ChecksumType ChecksumType { get; }
+
+        public abstract EncryptionType EType { get; }
 
         public virtual ReadOnlyMemory<byte> GenerateKey()
         {

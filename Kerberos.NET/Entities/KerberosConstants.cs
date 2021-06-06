@@ -6,7 +6,6 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using Kerberos.NET.Crypto;
@@ -31,7 +30,7 @@ namespace Kerberos.NET.Entities
             EncryptionType.RC4_HMAC_OLD_EXP
         };
 
-        internal static IEnumerable<EncryptionType> GetPreferredETypes(IEnumerable<EncryptionType> etypes = null, bool allowWeakCrypto = false)
+        public static IEnumerable<EncryptionType> GetPreferredETypes(IEnumerable<EncryptionType> etypes = null, bool allowWeakCrypto = false)
         {
             if (etypes == null)
             {
@@ -47,7 +46,7 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        internal static EncryptionType? GetPreferredEType(IEnumerable<EncryptionType> etypes)
+        public static EncryptionType? GetPreferredEType(IEnumerable<EncryptionType> etypes)
         {
             foreach (var etype in etypes)
             {
@@ -62,9 +61,9 @@ namespace Kerberos.NET.Entities
             return null;
         }
 
-        internal static Guid GetRequestActivityId() => Guid.NewGuid();
+        public static Guid GetRequestActivityId() => Guid.NewGuid();
 
-        internal static int GetNonce()
+        public static int GetNonce()
         {
             var bytes = new byte[4];
             Rng.GetBytes(bytes);
@@ -81,7 +80,6 @@ namespace Kerberos.NET.Entities
             return skewed <= skew;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TimeEquals(DateTimeOffset left, DateTimeOffset right)
         {
             var leftUsec = left.Ticks % TickUSec;
@@ -90,7 +88,6 @@ namespace Kerberos.NET.Entities
             return leftUsec == rightUsec;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Now(out DateTimeOffset time, out int usec)
         {
             var nowTicks = DateTimeOffset.UtcNow.Ticks;
@@ -100,21 +97,11 @@ namespace Kerberos.NET.Entities
             time = new DateTimeOffset(nowTicks - usec, TimeSpan.Zero);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Now(out DateTimeOffset time, out int? usec)
-        {
-            Now(out time, out int usecExplicit);
-
-            usec = usecExplicit;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlyMemory<byte> UnicodeBytesToUtf8(ReadOnlyMemory<byte> str)
         {
             return Encoding.Convert(Encoding.Unicode, Encoding.UTF8, str.ToArray(), 0, str.Length);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlyMemory<byte> UnicodeStringToUtf8(string str)
         {
             return UnicodeBytesToUtf8(Encoding.Unicode.GetBytes(str));

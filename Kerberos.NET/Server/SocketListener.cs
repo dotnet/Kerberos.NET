@@ -81,7 +81,7 @@ namespace Kerberos.NET.Server
                 if (s[lastColonPos - 1] == ']')
                 {
                     addressLength = lastColonPos;
-                }                
+                }
                 else if (s.Slice(0, lastColonPos).LastIndexOf(':') == -1)
                 {
                     addressLength = lastColonPos;
