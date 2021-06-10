@@ -182,18 +182,25 @@ namespace Kerberos.NET.Entities
         {
             switch (obj)
             {
+                case PrincipalName principal:
+                    {
+                        var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
+                        var otherName = MakeFullName(principal.Name, principal.Type, normalizeAlias: true);
+
+                        return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
+                    }
+
                 case KrbPrincipalName other:
                     {
                         var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
                         var otherName = MakeFullName(other.Name, other.Type, normalizeAlias: true);
 
-                        return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
-                    }
+                        if (string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            return true;
+                        }
 
-                case PrincipalName principal:
-                    {
-                        var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
-                        var otherName = MakeFullName(principal.Names, principal.NameType, normalizeAlias: true);
+                        otherName = MakeFullName(other.Name, this.Type, normalizeAlias: true);
 
                         return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
                     }

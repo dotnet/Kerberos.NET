@@ -655,7 +655,7 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Key List.
+        ///   Looks up a localized string similar to Keys in File.
         /// </summary>
         internal static string CommandLine_KerberosKeytab_Keys {
             get {

@@ -64,7 +64,7 @@ namespace Kerberos.NET.Crypto
 
             salt.Append(key.PrincipalName.Realm);
 
-            foreach (var name in key.PrincipalName.Names)
+            foreach (var name in key.PrincipalName.Name)
             {
                 salt.Append(name);
             }
@@ -79,7 +79,7 @@ namespace Kerberos.NET.Crypto
             // Ex: REALM.COMusername
 
             salt.Append(key.PrincipalName.Realm.ToUpperInvariant());
-            salt.Append(key.PrincipalName.Names.First());
+            salt.Append(key.PrincipalName.Name.First());
         }
 
         private static void GenerateActiveDirectoryServiceSalt(KerberosKey key, StringBuilder salt)

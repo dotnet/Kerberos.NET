@@ -364,7 +364,7 @@
     <value>Key Length</value>
   </data>
   <data name="CommandLine_KerberosKeytab_Keys" xml:space="preserve">
-    <value>Key List</value>
+    <value>Keys in File</value>
   </data>
   <data name="CommandLine_KerberosKeytab_KeyVersion" xml:space="preserve">
     <value>Key Version</value>

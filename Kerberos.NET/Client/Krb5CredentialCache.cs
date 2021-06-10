@@ -234,7 +234,9 @@ namespace Kerberos.NET.Client
 
         private Krb5Credential FindCredential(string key)
         {
-            return this.Credentials.FirstOrDefault(c => c.Server.FullyQualifiedName == key);
+            var lookupPrincipal = KrbPrincipalName.FromString(key);
+
+            return this.Credentials.FirstOrDefault(c => c.Server.Equals(lookupPrincipal));
         }
 
         internal bool Contains(TicketCacheEntry entry)
@@ -336,17 +338,17 @@ namespace Kerberos.NET.Client
 
         private void ParseConfiguration(Krb5Credential cred)
         {
-            if (cred.Server.Names.Count < 2)
+            if (cred.Server.Name.Length < 2)
             {
                 return;
             }
 
-            if (!"krb5_ccache_conf_data".Equals(cred.Server.Names[0], StringComparison.OrdinalIgnoreCase))
+            if (!"krb5_ccache_conf_data".Equals(cred.Server.Name[0], StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            switch (cred.Server.Names[1])
+            switch (cred.Server.Name[1])
             {
                 case "fast_avail":
                     this.FastAvailable = "yes".Equals(Encoding.UTF8.GetString(cred.Ticket.ToArray()), StringComparison.OrdinalIgnoreCase);
@@ -461,12 +463,12 @@ namespace Kerberos.NET.Client
 
         private static void WritePrincipal(PrincipalName principal, NdrBuffer buffer)
         {
-            buffer.WriteInt32BigEndian((int)principal.NameType);
-            buffer.WriteInt32BigEndian(principal.Names.Count);
+            buffer.WriteInt32BigEndian((int)principal.Type);
+            buffer.WriteInt32BigEndian(principal.Name.Length);
 
             WriteData(Encoding.UTF8.GetBytes(principal.Realm), buffer);
 
-            foreach (var name in principal.Names)
+            foreach (var name in principal.Name)
             {
                 WriteData(Encoding.UTF8.GetBytes(name), buffer);
             }
@@ -477,13 +479,13 @@ namespace Kerberos.NET.Client
             var type = (PrincipalNameType)buffer.ReadInt32BigEndian();
             var count = buffer.ReadInt32BigEndian();
 
-            var realmData = ReadData(buffer);
+            var (length, value) = ReadData(buffer);
 
             string realm = string.Empty;
 
-            if (realmData.length > 0)
+            if (length > 0)
             {
-                realm = Encoding.UTF8.GetString(realmData.value.ToArray());
+                realm = Encoding.UTF8.GetString(value.ToArray());
             }
 
             var components = new List<string>();
