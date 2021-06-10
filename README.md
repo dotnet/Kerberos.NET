@@ -36,13 +36,13 @@ See this [blog post on how to use the tool](https://syfuhs.net/bruce-a-command-l
 
 View and modify krb5 config files.
 
-![image](https://user-images.githubusercontent.com/1210849/119711341-47504b80-be14-11eb-8088-5455c668e05d.png)
+![image](https://user-images.githubusercontent.com/1210849/121562980-d5106700-c9ce-11eb-9282-c0892c20bd1b.png)
 
 #### kdecode
 
 Decode Kerberos/Negotiate tickets and optionally decrypt if you know the secrets.
 
-![image](https://user-images.githubusercontent.com/1210849/119711367-533c0d80-be14-11eb-98d2-97fb4ff9a627.png)
+![image](https://user-images.githubusercontent.com/1210849/121563156-01c47e80-c9cf-11eb-8104-664f02cf7136.png)
 
 #### kdestroy
 
@@ -247,9 +247,9 @@ This library comes with an optional utility to decode service tickets. It's easy
 
 You can launch it using the Bruce tool with `bruce kdecode`.
 
-![](docs/kerbDump.png?raw=true)
+![image](https://user-images.githubusercontent.com/1210849/121563338-2caed280-c9cf-11eb-9367-ded36e7b8851.png)
 
-Here's a sample of what a sample ticket looks like:
+The decoder will convert the Kerberos ticket into a structured tree view. The process is Kerberos ASN.1 => JSON (😨) => Tree View rendering. Here's the intermediate JSON that shows you all the information available to you in the ticket.
 
 ```js
 {
