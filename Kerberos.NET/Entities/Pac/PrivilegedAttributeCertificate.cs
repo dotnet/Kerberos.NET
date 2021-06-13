@@ -114,6 +114,7 @@ namespace Kerberos.NET.Entities
 
             // { PacType.DEVICE_INFO, typeof(PacLogonInfo) },
             { PacType.DEVICE_CLAIMS, typeof(ClaimsSetMetadata) },
+            { PacType.TICKET_CHECKSUM, typeof(PacSignature) }
         };
 
         private readonly Dictionary<PacType, PacObject> attributes = new Dictionary<PacType, PacObject>();
@@ -141,7 +142,7 @@ namespace Kerberos.NET.Entities
             {
                 signature = this.ProcessSignature(sig, type);
 
-                if (!this.Mode.HasFlag(SignatureMode.Kdc) && type == PacType.PRIVILEGE_SERVER_CHECKSUM)
+                if (!this.Mode.HasFlag(SignatureMode.Kdc) && type == PacType.PRIVILEGE_SERVER_CHECKSUM || type == PacType.TICKET_CHECKSUM)
                 {
                     signature.Ignored = true;
                 }
@@ -163,6 +164,10 @@ namespace Kerberos.NET.Entities
             if (type == PacType.PRIVILEGE_SERVER_CHECKSUM)
             {
                 signature.SignatureData = this.ServerSignature.Signature;
+            }
+            else if (type == PacType.TICKET_CHECKSUM)
+            {
+                // The ticket itself is needed for the SignatureData
             }
             else
             {
