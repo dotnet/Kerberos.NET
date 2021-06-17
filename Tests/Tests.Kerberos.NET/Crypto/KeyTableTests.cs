@@ -106,6 +106,31 @@ namespace Tests.Kerberos.NET
             }
         }
 
+        [TestMethod]
+        public void EncodeDecodeEmptyKey()
+        {
+            var kt = new KeyTable(
+                new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96,
+                    principal: PrincipalName.FromKrbPrincipalName(KrbPrincipalName.FromString("user@domain.com"), "domain.com")),
+                null,
+                new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96,
+                    principal: PrincipalName.FromKrbPrincipalName(KrbPrincipalName.FromString("user@domain.com"), "domain.com"))
+            );
+
+            var buffer = new MemoryStream();
+
+            using (var writer = new BinaryWriter(buffer))
+            {
+                kt.Write(writer);
+            }
+
+            var arr = buffer.ToArray();
+
+            var kt2 = new KeyTable(arr);
+
+            Assert.AreEqual(2, kt2.Entries.Count);
+        }
+
         private static void AssertKeytablesAreEqual(KeyTable keytable, KeyTable secondKeyTable)
         {
             for (var i = 0; i < keytable.Entries.Count; i++)

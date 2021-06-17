@@ -16,16 +16,11 @@ namespace Kerberos.NET.Crypto
     {
         public KeyEntry(KerberosKey key)
         {
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
-
             this.Key = key;
-            this.Principal = key.PrincipalName;
-            this.EncryptionType = key.EncryptionType;
-            this.Version = key.Version ?? 5;
-            this.Timestamp = DateTimeOffset.UtcNow;
+            this.Principal = key?.PrincipalName;
+            this.EncryptionType = key?.EncryptionType;
+            this.Version = key?.Version ?? 5;
+            this.Timestamp = DateTimeOffset.MinValue;
         }
 
         public KeyEntry(BinaryReader reader, int version)
@@ -35,7 +30,17 @@ namespace Kerberos.NET.Crypto
                 throw new ArgumentNullException(nameof(reader));
             }
 
-            this.Length = ReadInt32(reader);
+            var length = ReadInt32(reader);
+
+            if (length <= 0)
+            {
+                length *= -1;
+
+                reader.BaseStream.Seek(length, SeekOrigin.Current);
+                return;
+            }
+
+            this.Length = length;
 
             var startPosition = reader.BaseStream.Position;
 
@@ -90,12 +95,22 @@ namespace Kerberos.NET.Crypto
             {
                 var key = this;
 
-                WritePrincipal(writer, key.Principal);
-                WriteDateTime(writer, key.Timestamp);
-                writer.Write(new byte[] { (byte)key.Version });
-                WriteKey(writer, key.Key);
+                if (key.Key != null)
+                {
+                    WritePrincipal(writer, key.Principal);
+                    WriteDateTime(writer, key.Timestamp);
+                    writer.Write(new byte[] { (byte)key.Version });
+                    WriteKey(writer, key.Key);
 
-                WriteInt32(finalWriter, (int)writer.BaseStream.Length);
+                    WriteInt32(finalWriter, (int)writer.BaseStream.Length);
+                }
+                else
+                {
+                    const int placeholderLength = 16;
+
+                    writer.Write(new byte[placeholderLength]);
+                    WriteInt32(finalWriter, -placeholderLength);
+                }
 
                 finalWriter.Write(buffer.ToArray());
             }
