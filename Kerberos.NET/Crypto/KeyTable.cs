@@ -43,7 +43,12 @@ namespace Kerberos.NET.Crypto
         {
             while (reader.BytesAvailable() > 0)
             {
-                this.Entries.Add(new KeyEntry(reader, this.KerberosVersion));
+                var entry = new KeyEntry(reader, this.KerberosVersion);
+
+                if (entry.Length > 0)
+                {
+                    this.Entries.Add(entry);
+                }
             }
         }
 
