@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -46,6 +46,11 @@ namespace Kerberos.NET.Server
         /// The session key used to protect tickets as they're returned to the client.
         /// </summary>
         public KerberosKey EncryptedPartKey { get; set; }
+
+        /// <summary>
+        /// Optionally specify the encryption type to be used to encrypt the enc-part if it's different from <see cref="EncryptedPartKey" />
+        /// </summary>
+        public EncryptionType? EncryptedPartEType { get; set; }
 
         /// <summary>
         /// Indicates whether the handler has decided if it has enough information

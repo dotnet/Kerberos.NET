@@ -188,7 +188,7 @@ namespace Tests.Kerberos.NET
 
             public override ChecksumType ChecksumType => (ChecksumType)(-1);
 
-            public override EncryptionType EType => (EncryptionType)(-1);
+            public override EncryptionType EncryptionType => (EncryptionType)(-1);
 
             public override ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> cipher, KerberosKey key, KeyUsage usage)
             {

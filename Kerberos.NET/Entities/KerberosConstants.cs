@@ -6,6 +6,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Kerberos.NET.Crypto;
@@ -19,7 +20,7 @@ namespace Kerberos.NET.Entities
         private static readonly RandomNumberGenerator Rng = RandomNumberGenerator.Create();
         public static readonly DateTimeOffset EndOfTime = new DateTimeOffset(642720196850000000, TimeSpan.Zero);
 
-        public static IEnumerable<EncryptionType> ETypes = new[]
+        private static IEnumerable<EncryptionType> knownETypes = new[]
         {
             EncryptionType.AES256_CTS_HMAC_SHA384_192,
             EncryptionType.AES128_CTS_HMAC_SHA256_128,
@@ -30,11 +31,30 @@ namespace Kerberos.NET.Entities
             EncryptionType.RC4_HMAC_OLD_EXP
         };
 
+        public static IEnumerable<EncryptionType> KnownETypes
+        {
+            get => knownETypes;
+            set => knownETypes = value ?? new EncryptionType[0];
+        }
+
+        public static EncryptionType? GetPreferredEType(IEnumerable<EncryptionType> requestedETypes, IEnumerable<EncryptionType> supportedETypes, bool allowWeakCrypto)
+        {
+            foreach (var req in requestedETypes)
+            {
+                if (supportedETypes.Contains(req) && CryptoService.SupportsEType(req, allowWeakCrypto))
+                {
+                    return req;
+                }
+            }
+
+            return supportedETypes.FirstOrDefault();
+        }
+
         public static IEnumerable<EncryptionType> GetPreferredETypes(IEnumerable<EncryptionType> etypes = null, bool allowWeakCrypto = false)
         {
             if (etypes == null)
             {
-                etypes = ETypes;
+                etypes = KnownETypes;
             }
 
             foreach (var etype in etypes)
@@ -46,13 +66,13 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        public static EncryptionType? GetPreferredEType(IEnumerable<EncryptionType> etypes)
+        public static EncryptionType? GetPreferredEType(IEnumerable<EncryptionType> etypes, bool allowWeakCrypto)
         {
             foreach (var etype in etypes)
             {
                 // client sent the etypes they support in preferred order
 
-                if (CryptoService.SupportsEType(etype))
+                if (CryptoService.SupportsEType(etype, allowWeakCrypto))
                 {
                     return etype;
                 }

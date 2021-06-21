@@ -23,7 +23,7 @@ namespace Kerberos.NET.Crypto
 
         public abstract ChecksumType ChecksumType { get; }
 
-        public abstract EncryptionType EType { get; }
+        public abstract EncryptionType EncryptionType { get; }
 
         public virtual ReadOnlyMemory<byte> GenerateKey()
         {

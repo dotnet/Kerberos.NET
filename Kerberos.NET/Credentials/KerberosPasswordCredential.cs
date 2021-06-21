@@ -8,6 +8,7 @@ using System.Linq;
 using Kerberos.NET.Client;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Credentials
 {
@@ -64,12 +65,16 @@ namespace Kerberos.NET.Credentials
                     {
                         var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, this.Domain, new[] { this.UserName });
 
-                        EncryptionType etype = this.Configuration?.Defaults?.DefaultTicketEncTypes?.First() ?? KerberosConstants.GetPreferredETypes().First();
+                        EncryptionType? etype = GetPreferredEType(
+                            this.Configuration.Defaults.DefaultTicketEncTypes,
+                            this.Configuration.Defaults.AllowWeakCrypto
+                        );
+
                         string salt = null;
 
                         if (this.Salts != null && this.Salts.Any())
                         {
-                            var etypePreferences = KerberosConstants.GetPreferredETypes(
+                            var etypePreferences = GetPreferredETypes(
                                 this.Configuration.Defaults.DefaultTicketEncTypes,
                                 this.Configuration.Defaults.AllowWeakCrypto
                             ).ToArray();
@@ -87,10 +92,20 @@ namespace Kerberos.NET.Credentials
                             salt = kv.Value;
                         }
 
+                        if (etype is null)
+                        {
+                            etype = GetPreferredETypes(allowWeakCrypto: this.Configuration.Defaults.AllowWeakCrypto).FirstOrDefault();
+                        }
+
+                        if (etype is null)
+                        {
+                            throw new NotSupportedException("Cannot agree on EType");
+                        }
+
                         this.cacheKey = new KerberosKey(
                             this.password,
                             principalName: principalName,
-                            etype: etype,
+                            etype: etype.Value,
                             saltType: SaltType.ActiveDirectoryUser,
                             salt: salt
                         );

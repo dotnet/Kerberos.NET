@@ -26,7 +26,7 @@ namespace Kerberos.NET.Crypto
 
         public override ChecksumType ChecksumType => ChecksumType.KERB_CHECKSUM_HMAC_MD5;
 
-        public override EncryptionType EType => EncryptionType.RC4_HMAC_NT;
+        public override EncryptionType EncryptionType => EncryptionType.RC4_HMAC_NT;
 
         public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
         {

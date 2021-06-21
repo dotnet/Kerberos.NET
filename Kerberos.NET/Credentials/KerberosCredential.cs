@@ -24,7 +24,13 @@ namespace Kerberos.NET.Credentials
 
         public abstract bool SupportsOptimisticPreAuthentication { get; }
 
-        public Krb5Config Configuration { get; set; }
+        private Krb5Config config;
+
+        public Krb5Config Configuration
+        {
+            get => this.config ??= Krb5Config.CurrentUser();
+            set => this.config = value;
+        }
 
         public virtual void TransformKdcReq(KrbKdcReq req)
         {

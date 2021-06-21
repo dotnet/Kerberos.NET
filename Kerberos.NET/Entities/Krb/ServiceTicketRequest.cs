@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -36,6 +36,11 @@ namespace Kerberos.NET.Entities
         /// The session key that will encrypt the ticket when sent to the client
         /// </summary>
         public KerberosKey EncryptedPartKey { get; set; }
+
+        /// <summary>
+        /// Optionally specificy the EType used to encrypt the enc-part other than what is specified in <see cref="EncryptedPartKey" />
+        /// </summary>
+        public EncryptionType? EncryptedPartEType { get; set; }
 
         /// <summary>
         /// The service principal for which the ticket will be issued against

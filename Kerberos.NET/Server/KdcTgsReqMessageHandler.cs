@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Server
 {
@@ -265,6 +266,7 @@ namespace Kerberos.NET.Server
                 KdcAuthorizationKey = context.EvidenceTicketKey,
                 Principal = context.Principal,
                 EncryptedPartKey = context.EncryptedPartKey,
+                EncryptedPartEType = context.EncryptedPartEType,
                 ServicePrincipal = context.ServicePrincipal,
                 ServicePrincipalKey = serviceKey,
                 RealmName = tgsReq.Body.Realm,
@@ -277,7 +279,11 @@ namespace Kerberos.NET.Server
                 Now = now,
                 Nonce = tgsReq.Body.Nonce,
                 IncludePac = context.IncludePac ?? false,
-                PreferredClientEType = KerberosConstants.GetPreferredEType(tgsReq.Body.EType),
+                PreferredClientEType = GetPreferredEType(
+                    tgsReq.Body.EType,
+                    this.RealmService.Configuration.Defaults.PermittedEncryptionTypes,
+                    this.RealmService.Configuration.Defaults.AllowWeakCrypto
+                ),
             };
 
             // this is set here instead of in GenerateServiceTicket because GST is used by unit tests to

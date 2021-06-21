@@ -117,7 +117,7 @@ namespace Tests.Kerberos.NET
             saltType: SaltType.ActiveDirectoryUser
         );
 
-        private readonly ConcurrentDictionary<string, KerberosKey> KeyCache = new ConcurrentDictionary<string, KerberosKey>();
+        private static readonly ConcurrentDictionary<string, KerberosKey> KeyCache = new ConcurrentDictionary<string, KerberosKey>();
 
         public KerberosKey RetrieveLongTermCredential()
         {

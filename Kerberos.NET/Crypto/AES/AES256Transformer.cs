@@ -18,6 +18,6 @@ namespace Kerberos.NET.Crypto
 
         public override ChecksumType ChecksumType => ChecksumType.HMAC_SHA1_96_AES256;
 
-        public override EncryptionType EType => EncryptionType.AES256_CTS_HMAC_SHA1_96;
+        public override EncryptionType EncryptionType => EncryptionType.AES256_CTS_HMAC_SHA1_96;
     }
 }

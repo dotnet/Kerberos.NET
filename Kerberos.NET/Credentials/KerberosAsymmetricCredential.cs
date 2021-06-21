@@ -265,7 +265,7 @@ namespace Kerberos.NET.Credentials
 
                 if (parametersAreCached)
                 {
-                    var etype = KerberosConstants.GetPreferredEType(body.EType);
+                    var etype = KerberosConstants.GetPreferredEType(body.EType, this.Configuration.Defaults.AllowWeakCrypto);
 
                     if (etype is null)
                     {

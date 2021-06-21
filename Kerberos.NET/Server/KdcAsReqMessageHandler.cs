@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Server
 {
@@ -168,6 +169,7 @@ namespace Kerberos.NET.Server
             {
                 Principal = context.Principal,
                 EncryptedPartKey = context.EncryptedPartKey,
+                EncryptedPartEType = context.EncryptedPartEType,
                 ServicePrincipal = context.ServicePrincipal,
                 Addresses = asReq.Body.Addresses,
                 Nonce = asReq.Body.Nonce,
@@ -176,7 +178,11 @@ namespace Kerberos.NET.Server
                 EndTime = asReq.Body.Till,
                 MaximumTicketLifetime = this.RealmService.Settings.SessionLifetime,
                 Flags = TicketFlags.Initial | KrbKdcRep.DefaultFlags,
-                PreferredClientEType = KerberosConstants.GetPreferredEType(asReq.Body.EType),
+                PreferredClientEType = GetPreferredEType(
+                    asReq.Body.EType,
+                    this.RealmService.Configuration.Defaults.PermittedEncryptionTypes,
+                    this.RealmService.Configuration.Defaults.AllowWeakCrypto
+                ),
             };
 
             if (context.ClientAuthority != PaDataType.PA_NONE)

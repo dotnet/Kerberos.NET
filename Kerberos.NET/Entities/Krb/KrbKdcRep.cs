@@ -61,6 +61,7 @@ namespace Kerberos.NET.Entities
                 EncPart = KrbEncryptedData.Encrypt(
                     encKdcRepPart.EncodeApplication(),
                     request.EncryptedPartKey,
+                    request.EncryptedPartEType,
                     keyUsage
                 )
             };

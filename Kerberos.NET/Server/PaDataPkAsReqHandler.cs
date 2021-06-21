@@ -114,7 +114,11 @@ namespace Kerberos.NET.Server
 
             var derivedKey = agreement.GenerateAgreement();
 
-            var preferredEType = KerberosConstants.GetPreferredEType(asReq.Body.EType);
+            var preferredEType = KerberosConstants.GetPreferredEType(
+                asReq.Body.EType,
+                this.Service.Configuration.Defaults.PermittedEncryptionTypes,
+                this.Service.Configuration.Defaults.AllowWeakCrypto
+            );
 
             if (preferredEType is null)
             {

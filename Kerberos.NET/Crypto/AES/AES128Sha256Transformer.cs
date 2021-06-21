@@ -25,7 +25,7 @@ namespace Kerberos.NET.Crypto
 
         public override ChecksumType ChecksumType => ChecksumType.HMAC_SHA256_128_AES128;
 
-        public override EncryptionType EType => EncryptionType.AES128_CTS_HMAC_SHA256_128;
+        public override EncryptionType EncryptionType => EncryptionType.AES128_CTS_HMAC_SHA256_128;
 
         protected override ReadOnlyMemory<byte> Hmac(ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> data)
         {
