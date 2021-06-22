@@ -1,10 +1,11 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
 using Kerberos.NET.Crypto;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Entities
 {
@@ -50,7 +51,7 @@ namespace Kerberos.NET.Entities
                 throw new ArgumentNullException(nameof(encTicketPart));
             }
 
-            KerberosConstants.Now(out DateTimeOffset timestamp, out int usec);
+            Now(out DateTimeOffset timestamp, out int usec);
 
             var encPart = new KrbEncKrbCredPart
             {

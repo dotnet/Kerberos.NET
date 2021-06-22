@@ -10,6 +10,7 @@ using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Credentials
 {
@@ -219,7 +220,7 @@ namespace Kerberos.NET.Credentials
                 throw OnlyKeyAgreementSupportedException();
             }
 
-            KerberosConstants.Now(out DateTimeOffset ctime, out int usec);
+            Now(out DateTimeOffset ctime, out int usec);
 
             authPack.PKAuthenticator.CTime = ctime;
             authPack.PKAuthenticator.CuSec = usec;
@@ -265,7 +266,7 @@ namespace Kerberos.NET.Credentials
 
                 if (parametersAreCached)
                 {
-                    var etype = KerberosConstants.GetPreferredEType(body.EType, this.Configuration.Defaults.AllowWeakCrypto);
+                    var etype = GetPreferredEType(body.EType, this.Configuration.Defaults.AllowWeakCrypto);
 
                     if (etype is null)
                     {

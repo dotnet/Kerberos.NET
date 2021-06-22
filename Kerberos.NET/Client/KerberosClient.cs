@@ -17,6 +17,7 @@ using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
 using Microsoft.Extensions.Logging;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Client
 {
@@ -215,7 +216,7 @@ namespace Kerberos.NET.Client
         /// </summary>
         public Guid ScopeId
         {
-            get => this.scopeId ?? (this.scopeId = KerberosConstants.GetRequestActivityId()).Value;
+            get => this.scopeId ?? (this.scopeId = GetRequestActivityId()).Value;
             set => this.scopeId = value;
         }
 

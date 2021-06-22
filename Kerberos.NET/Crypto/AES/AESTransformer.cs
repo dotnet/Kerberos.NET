@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -9,6 +9,7 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 #pragma warning disable S101 // Types should be named in camel case
 
@@ -187,7 +188,7 @@ namespace Kerberos.NET.Crypto
                 throw new ArgumentNullException(nameof(password));
             }
 
-            var passwordBytes = KerberosConstants.UnicodeBytesToUtf8(password);
+            var passwordBytes = UnicodeBytesToUtf8(password);
 
             var iterations = GetIterations(param, 4096);
 

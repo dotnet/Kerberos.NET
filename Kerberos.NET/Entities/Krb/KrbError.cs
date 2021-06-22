@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Cryptography.Asn1;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Entities
 {
@@ -32,7 +33,7 @@ namespace Kerberos.NET.Entities
 
         public void StampServerTime()
         {
-            KerberosConstants.Now(out DateTimeOffset stime, out int usec);
+            Now(out DateTimeOffset stime, out int usec);
 
             this.STime = stime;
             this.Cusec = usec;

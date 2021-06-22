@@ -39,7 +39,7 @@ namespace Kerberos.NET.Credentials
                 throw new ArgumentNullException(nameof(req));
             }
 
-            var ts = KrbPaEncTsEnc.Now();
+            var ts = KrbPaEncTsEnc.CreateForNow();
 
             var tsEncoded = ts.Encode();
 

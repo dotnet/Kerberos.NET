@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 using Kerberos.NET.Asn1;
 using Kerberos.NET.Crypto;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Entities
 {
@@ -61,12 +62,12 @@ namespace Kerberos.NET.Entities
             {
                 CName = tgsRep.CName,
                 Realm = ticket.Realm,
-                SequenceNumber = KerberosConstants.GetNonce(),
+                SequenceNumber = GetNonce(),
                 Subkey = KrbEncryptionKey.Generate(authenticatorKey.EncryptionType),
                 Checksum = KrbChecksum.EncodeDelegationChecksum(new DelegationInfo(rst))
             };
 
-            KerberosConstants.Now(out DateTimeOffset ctime, out int usec);
+            Now(out DateTimeOffset ctime, out int usec);
 
             authenticator.CTime = ctime;
             authenticator.CuSec = usec;

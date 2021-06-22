@@ -6,7 +6,7 @@
 using System;
 using System.Linq;
 using System.Text;
-using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Crypto
 {
@@ -19,7 +19,7 @@ namespace Kerberos.NET.Crypto
                 return key.SaltBytes;
             }
 
-            return KerberosConstants.UnicodeStringToUtf8(GenerateSalt(key));
+            return UnicodeStringToUtf8(GenerateSalt(key));
         }
 
         public static string GenerateSalt(KerberosKey key)

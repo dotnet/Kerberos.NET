@@ -6,14 +6,14 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Crypto
 {
     public abstract class KerberosCryptoTransformer
     {
         private static readonly RandomNumberGenerator RNG = RandomNumberGenerator.Create();
-        protected static readonly ReadOnlyMemory<byte> PrfConstant = KerberosConstants.UnicodeStringToUtf8("prf");
+        protected static readonly ReadOnlyMemory<byte> PrfConstant = UnicodeStringToUtf8("prf");
 
         public abstract int ChecksumSize { get; }
 

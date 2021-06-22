@@ -6,8 +6,8 @@
 using System;
 using System.Threading;
 using Kerberos.NET.Configuration;
-using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Server
 {
@@ -55,6 +55,6 @@ namespace Kerberos.NET.Server
         /// <summary>
         /// The function that generates the next logged transaction Id for each request.
         /// </summary>
-        public Func<Guid> NextScopeId { get; set; } = KerberosConstants.GetRequestActivityId;
+        public Func<Guid> NextScopeId { get; set; } = GetRequestActivityId;
     }
 }

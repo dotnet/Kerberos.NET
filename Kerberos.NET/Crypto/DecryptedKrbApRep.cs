@@ -1,10 +1,11 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
 using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Crypto
 {
@@ -45,7 +46,7 @@ namespace Kerberos.NET.Crypto
                 this.ValidateTicketSkew(now, this.Skew, ctime);
             }
 
-            if (KerberosConstants.TimeEquals(this.CTime, this.Response.CTime))
+            if (TimeEquals(this.CTime, this.Response.CTime))
             {
                 throw new KerberosValidationException(
                     $"CTime does not match. Sent: {this.CTime.Ticks}; Received: {this.Response.CTime.Ticks}",

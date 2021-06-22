@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Crypto
 {
@@ -30,7 +31,7 @@ namespace Kerberos.NET.Crypto
         private byte[] passwordBytes;
 
         public KerberosKey(KrbEncryptionKey key)
-            : this(key: key?.KeyValue.ToArray(), etype: key.EType)
+            : this(key: key.KeyValue.ToArray(), etype: key.EType)
         {
         }
 
@@ -124,7 +125,7 @@ namespace Kerberos.NET.Crypto
             {
                 if (this.saltBytes == null && !string.IsNullOrEmpty(this.Salt))
                 {
-                    this.saltBytes = KerberosConstants.UnicodeStringToUtf8(this.Salt).ToArray();
+                    this.saltBytes = UnicodeStringToUtf8(this.Salt).ToArray();
                 }
 
                 return this.saltBytes;
