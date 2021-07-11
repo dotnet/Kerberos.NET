@@ -862,7 +862,7 @@ namespace <xsl:value-of select="@namespace" />
     <xsl:param name="name" select="@name"/>
     <xsl:variable name="nullable" select="@optional | parent::asn:Choice"/>
     <xsl:if test="1" xml:space="preserve">
-            <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteBitString(<xsl:call-template name="MaybeImplicitCallP"/><xsl:value-of select="$name"/><xsl:if test="$nullable">.Value</xsl:if><xsl:if test="not(@treatAsEnum)">.Span</xsl:if><xsl:if test="@treatAsEnum">.AsReadOnly()</xsl:if>);</xsl:if>
+            <xsl:value-of select="$indent"/><xsl:value-of select="$writerName"/>.WriteBitString(<xsl:call-template name="MaybeImplicitCallP"/><xsl:value-of select="$name"/><xsl:if test="$nullable">.Value</xsl:if><xsl:if test="not(@treatAsEnum)">.Span</xsl:if><xsl:if test="@treatAsEnum">.AsReadOnlySpan()</xsl:if>);</xsl:if>
   </xsl:template>
 
   <xsl:template match="asn:BitString" mode="DecodeSimpleValue" xml:space="default">

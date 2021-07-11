@@ -1,9 +1,10 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Server
@@ -35,7 +36,7 @@ namespace Kerberos.NET.Server
             var principal = preauth.Principal;
             var cred = principal.RetrieveLongTermCredential();
 
-            var timestamp = asReq.DecryptTimestamp(cred);
+            var timestamp = asReq.DecryptTimestamp(cred, out EncryptionType etype);
 
             if (timestamp == DateTimeOffset.MinValue)
             {
@@ -57,6 +58,7 @@ namespace Kerberos.NET.Server
             }
 
             preauth.EncryptedPartKey = cred;
+            preauth.EncryptedPartEType = etype;
             preauth.ClientAuthority = PaDataType.PA_ENC_TIMESTAMP;
 
             return null;

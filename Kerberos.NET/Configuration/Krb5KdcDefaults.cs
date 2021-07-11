@@ -3,6 +3,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 
@@ -18,9 +19,9 @@ namespace Kerberos.NET.Configuration
         public int MaxDatagramReplySize { get; set; }
 
         /// <summary>
-        /// Set the size of the listen queue length for the KDC daemon. The value may be limited by OS settings. The default value is 5.
+        /// Set the size of the listen queue length for the KDC daemon. The value may be limited by OS settings. The default value is 1000.
         /// </summary>
-        [DefaultValue(5)]
+        [DefaultValue(1000)]
         [DisplayName("kdc_tcp_listen_backlog")]
         public int TcpListenBacklog { get; set; }
 
@@ -68,5 +69,40 @@ namespace Kerberos.NET.Configuration
         /// </summary>
         [DisplayName("restrict_anonymous_to_tgt")]
         public bool RestrictAnonymousToTicketGrantingTicketService { get; set; }
+
+        /// <summary>
+        /// Indicates whether the KDC will parse [MS-KKDCP] messages.
+        /// </summary>
+        [DefaultValue(true)]
+        [DisplayName("kdc_proxy_enabled")]
+        public bool ProxyEnabled { get; set; }
+
+        /// <summary>
+        /// Indicates whether the KDC will automatically register an AS-REQ message handler.
+        /// </summary>
+        [DefaultValue(true)]
+        [DisplayName("kdc_register_as_req")]
+        public bool RegisterDefaultAsReqHandler { get; set; }
+
+        /// <summary>
+        /// Indicates whether the KDC will automatically register a TGS-REQ message handler.
+        /// </summary>
+        [DefaultValue(true)]
+        [DisplayName("kdc_reqister_tgs_req")]
+        public bool RegisterDefaultTgsReqHandler { get; set; }
+
+        /// <summary>
+        /// Indicates whether the KDC will automatically register the PKINIT pre-auth handler.
+        /// </summary>
+        [DefaultValue(true)]
+        [DisplayName("kdc_register_pkinit")]
+        public bool RegisterDefaultPkInitPreAuthHandler { get; set; }
+
+        /// <summary>
+        /// The amount of time the KDC should wait receiving a request before timing out.
+        /// </summary>
+        [DefaultValue("30s")]
+        [DisplayName("kdc_receive_timeout")]
+        public TimeSpan ReceiveTimeout { get; set; }
     }
 }

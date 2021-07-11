@@ -39,6 +39,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        [ExpectedException(typeof(KerberosPolicyException))]
         public async Task E2E_ClientWantsWeakCrypto()
         {
             var port = NextPort();
@@ -61,7 +62,7 @@ namespace Tests.Kerberos.NET
         {
             var port = NextPort();
 
-            using (var listener = StartListener(port))
+            using (var listener = StartListener(port, allowWeakCrypto: true))
             {
                 await RequestAndValidateTickets(
                     listener,

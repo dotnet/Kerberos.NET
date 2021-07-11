@@ -13,6 +13,7 @@ using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Server
 {
@@ -114,7 +115,11 @@ namespace Kerberos.NET.Server
 
             var derivedKey = agreement.GenerateAgreement();
 
-            var preferredEType = KerberosConstants.GetPreferredEType(asReq.Body.EType);
+            var preferredEType = GetPreferredEType(
+                asReq.Body.EType,
+                this.Service.Configuration.Defaults.PermittedEncryptionTypes,
+                this.Service.Configuration.Defaults.AllowWeakCrypto
+            );
 
             if (preferredEType is null)
             {
@@ -255,7 +260,7 @@ namespace Kerberos.NET.Server
                 }
             }
 
-            if (!KerberosConstants.WithinSkew(this.Service.Now(), authenticator.CTime, authenticator.CuSec, this.Service.Settings.MaximumSkew))
+            if (!WithinSkew(this.Service.Now(), authenticator.CTime, authenticator.CuSec, this.Service.Settings.MaximumSkew))
             {
                 throw new KerberosValidationException($"PKAuthenticator time skew too great");
             }

@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -109,11 +109,11 @@ namespace Kerberos.NET.Server
 
                 this.ExecutePreValidate(context);
 
-                await this.QueryPreValidateAsync(context).ConfigureAwait(true);
+                await this.QueryPreValidateAsync(context).ConfigureAwait(false);
 
                 this.ValidateTicketRequest(context);
 
-                await this.QueryPreExecuteAsync(context).ConfigureAwait(true);
+                await this.QueryPreExecuteAsync(context).ConfigureAwait(false);
 
                 return this.ExecuteCore(context);
             }

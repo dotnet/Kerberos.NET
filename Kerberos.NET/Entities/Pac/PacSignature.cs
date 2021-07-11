@@ -58,7 +58,7 @@ namespace Kerberos.NET.Entities.Pac
         [KerberosIgnore]
         public bool Ignored { get; internal set; }
 
-        public override ReadOnlySpan<byte> Marshal()
+        public override ReadOnlyMemory<byte> Marshal()
         {
             using (var buffer = new NdrBuffer())
             {
@@ -70,7 +70,7 @@ namespace Kerberos.NET.Entities.Pac
                     buffer.WriteInt16LittleEndian(this.RODCIdentifier);
                 }
 
-                return buffer.ToSpan();
+                return buffer.ToMemory();
             }
         }
 

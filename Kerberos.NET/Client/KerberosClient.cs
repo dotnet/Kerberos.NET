@@ -17,6 +17,7 @@ using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
 using Microsoft.Extensions.Logging;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Client
 {
@@ -215,7 +216,7 @@ namespace Kerberos.NET.Client
         /// </summary>
         public Guid ScopeId
         {
-            get => this.scopeId ?? (this.scopeId = KerberosConstants.GetRequestActivityId()).Value;
+            get => this.scopeId ?? (this.scopeId = GetRequestActivityId()).Value;
             set => this.scopeId = value;
         }
 
@@ -351,7 +352,7 @@ namespace Kerberos.NET.Client
                 {
                     // Authenticate to the KDC and if it succeeds break out of the retry loop
 
-                    await this.RequestTgt(credential).ConfigureAwait(true);
+                    await this.RequestTgt(credential).ConfigureAwait(false);
                     succeeded = true;
                     break;
                 }
@@ -560,7 +561,7 @@ namespace Kerberos.NET.Client
 
                         rst.Realm = ResolveKdcTarget(tgtEntry);
 
-                        serviceTicketCacheEntry = await this.RequestTgs(rst, tgtEntry, cancellation).ConfigureAwait(true);
+                        serviceTicketCacheEntry = await this.RequestTgs(rst, tgtEntry, cancellation).ConfigureAwait(false);
 
                         cacheResult = rst.CacheTicket ?? true;
                     }
@@ -789,7 +790,7 @@ namespace Kerberos.NET.Client
                     UserToUserTicket = u2uServerTicket
                 },
                 this.cancellation.Token
-            ).ConfigureAwait(true);
+            ).ConfigureAwait(false);
 
             return session.ApReq;
         }
@@ -892,7 +893,7 @@ namespace Kerberos.NET.Client
 
                 this.logger.LogInformation("Ticket for {CName} to {SName} is renewing because it's expiring in {TTL}", cname, sname, entry.TimeToLive);
 
-                await this.RenewTicket(sname).ConfigureAwait(true);
+                await this.RenewTicket(sname).ConfigureAwait(false);
             }
         }
 
@@ -944,7 +945,7 @@ namespace Kerberos.NET.Client
                 rst.Realm,
                 encodedTgs,
                 cancellation
-            ).ConfigureAwait(true);
+            ).ConfigureAwait(false);
 
             var entry = new KerberosClientCacheEntry
             {
@@ -1011,7 +1012,7 @@ namespace Kerberos.NET.Client
             var tgsRep = await this.transport.SendMessage<KrbTgsRep>(
                 tgs.Body.Realm,
                 encodedTgs
-            ).ConfigureAwait(true);
+            ).ConfigureAwait(false);
 
             var encKdcRepPart = tgsRep.EncPart.Decrypt(
                 subkey.AsKey(),
@@ -1055,7 +1056,7 @@ namespace Kerberos.NET.Client
                 asReqMessage.Body.Nonce
             );
 
-            var asRep = await this.transport.SendMessage<KrbAsRep>(credential.Domain, asReq).ConfigureAwait(true);
+            var asRep = await this.transport.SendMessage<KrbAsRep>(credential.Domain, asReq).ConfigureAwait(false);
 
             var decrypted = credential.DecryptKdcRep(
                 asRep,

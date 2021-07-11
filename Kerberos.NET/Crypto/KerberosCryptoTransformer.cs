@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -6,14 +6,14 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Crypto
 {
     public abstract class KerberosCryptoTransformer
     {
         private static readonly RandomNumberGenerator RNG = RandomNumberGenerator.Create();
-        protected static readonly ReadOnlyMemory<byte> PrfConstant = KerberosConstants.UnicodeStringToUtf8("prf");
+        protected static readonly ReadOnlyMemory<byte> PrfConstant = UnicodeStringToUtf8("prf");
 
         public abstract int ChecksumSize { get; }
 
@@ -22,6 +22,8 @@ namespace Kerberos.NET.Crypto
         public abstract int KeySize { get; }
 
         public abstract ChecksumType ChecksumType { get; }
+
+        public abstract EncryptionType EncryptionType { get; }
 
         public virtual ReadOnlyMemory<byte> GenerateKey()
         {

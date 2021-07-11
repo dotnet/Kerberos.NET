@@ -73,44 +73,48 @@ namespace Kerberos.NET.Configuration
         [DisplayName("logging")]
         public Krb5Logging Logging { get; private set; }
 
-        public static string UserConfigurationPath
-        {
-            get
-            {
-                var config = Environment.ExpandEnvironmentVariables("%KRB5_CONFIG%");
+        public static string UserConfigurationPath => GetFilePath(
+            envVar: "%KRB5_CONFIG%",
+            winPath: "%APPDATA%\\Kerberos.NET\\",
+            osxPath: "Library/Preferences/Kerberos.NET/",
+            linuxPath: "/etc/"
+        );
 
-                if (!string.IsNullOrWhiteSpace(config) && !"%KRB5_CONFIG%".Equals(config, StringComparison.Ordinal))
-                {
-                    return config;
-                }
-                else if (OSPlatform.IsWindows)
-                {
-                    return Environment.ExpandEnvironmentVariables("%APPDATA%\\Kerberos.NET\\");
-                }
-                else if (OSPlatform.IsOsX)
-                {
-                    return "Library/Preferences/Kerberos.NET/";
-                }
-                else if (OSPlatform.IsLinux)
-                {
-                    return "/etc/";
-                }
+        public static string ServiceConfigurationPath => GetFilePath(
+            envVar: "%KRB5_KDC_PROFILE%",
+            winPath: "%APPDATA%\\Kerberos.NET\\",
+            osxPath: "Library/Preferences/Kerberos.NET/",
+            linuxPath: "/var/krb5kdc"
+        );
 
-                return string.Empty;
-            }
-        }
+        public static string DefaultUserConfigurationPath => Path.Combine(UserConfigurationPath, "krb5.conf");
 
-        public static string DefaultUserConfiguration => Path.Combine(UserConfigurationPath, "krb5.conf");
+        public static string DefaultUserCredentialCachePath => Path.Combine(UserConfigurationPath, ".krb5cc");
 
-        public static string DefaultUserCredentialCache => Path.Combine(UserConfigurationPath, ".krb5cc");
+        public static string DefaultKdcConfigurationPath => Path.Combine(ServiceConfigurationPath, "kdc.conf");
 
         public static Krb5Config Parse(string config) => Krb5ConfigurationSerializer.Deserialize(config).ToConfigObject();
+
+        public static Krb5Config Kdc(string path = null)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = DefaultKdcConfigurationPath;
+            }
+
+            if (File.Exists(path))
+            {
+                return Krb5ConfigurationSerializer.Deserialize(File.ReadAllText(path)).ToConfigObject();
+            }
+
+            return Default();
+        }
 
         public static Krb5Config CurrentUser(string path = null)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = DefaultUserConfiguration;
+                path = DefaultUserConfigurationPath;
             }
 
             if (File.Exists(path))
@@ -131,6 +135,30 @@ namespace Kerberos.NET.Configuration
         public string Serialize(Krb5ConfigurationSerializationConfig serializationConfig)
         {
             return Krb5ConfigurationSerializer.Serialize(this, serializationConfig);
+        }
+
+        private static string GetFilePath(string envVar, string winPath, string osxPath, string linuxPath)
+        {
+            var config = Environment.ExpandEnvironmentVariables(envVar);
+
+            if (!string.IsNullOrWhiteSpace(config) && !envVar.Equals(config, StringComparison.Ordinal))
+            {
+                return config;
+            }
+            else if (OSPlatform.IsWindows)
+            {
+                return Environment.ExpandEnvironmentVariables(winPath);
+            }
+            else if (OSPlatform.IsOsX)
+            {
+                return osxPath;
+            }
+            else if (OSPlatform.IsLinux)
+            {
+                return linuxPath;
+            }
+
+            return string.Empty;
         }
     }
 }

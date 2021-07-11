@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -39,14 +39,16 @@ namespace Kerberos.NET.Entities
             return func(decrypted);
         }
 
-        public static KrbEncryptedData Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)
+        public static KrbEncryptedData Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage) => Encrypt(data, key, key.EncryptionType, usage);
+
+        public static KrbEncryptedData Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, EncryptionType? etype, KeyUsage usage)
         {
             if (key == null)
             {
                 throw new ArgumentNullException(nameof(key));
             }
 
-            var crypto = CryptoService.CreateTransform(key.EncryptionType);
+            var crypto = CryptoService.CreateTransform(etype ?? key.EncryptionType);
 
             if (crypto == null)
             {
@@ -58,7 +60,7 @@ namespace Kerberos.NET.Entities
             return new KrbEncryptedData
             {
                 Cipher = cipher,
-                EType = key.EncryptionType,
+                EType = etype ?? key.EncryptionType,
                 KeyVersionNumber = key.Version
             };
         }

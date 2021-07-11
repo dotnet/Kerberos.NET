@@ -10,6 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET.Asn1;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Entities
 {
@@ -77,16 +78,16 @@ namespace Kerberos.NET.Entities
 
             var body = new KrbKdcReqBody
             {
-                EType = KerberosConstants.GetPreferredETypes(config.Defaults.DefaultTgsEncTypes, config.Defaults.AllowWeakCrypto).ToArray(),
+                EType = GetPreferredETypes(config.Defaults.DefaultTgsEncTypes, config.Defaults.AllowWeakCrypto).ToArray(),
                 KdcOptions = rst.KdcOptions,
-                Nonce = KerberosConstants.GetNonce(),
+                Nonce = GetNonce(),
                 Realm = rst.Realm,
                 SName = new KrbPrincipalName()
                 {
                     Type = PrincipalNameType.NT_SRV_INST,
                     Name = sname
                 },
-                Till = KerberosConstants.EndOfTime,
+                Till = EndOfTime,
                 CName = rst.CNameHint
             };
 
@@ -196,7 +197,7 @@ namespace Kerberos.NET.Entities
             {
                 CName = kdcRep.CName,
                 Realm = kdcRep.CRealm,
-                SequenceNumber = KerberosConstants.GetNonce(),
+                SequenceNumber = GetNonce(),
                 Checksum = checksum
             };
 
@@ -205,7 +206,7 @@ namespace Kerberos.NET.Entities
             sessionKey.Usage = KeyUsage.EncTgsRepPartSubSessionKey;
             authenticator.Subkey = sessionKey;
 
-            KerberosConstants.Now(out DateTimeOffset ctime, out int usec);
+            Now(out DateTimeOffset ctime, out int usec);
 
             authenticator.CTime = ctime;
             authenticator.CuSec = usec;

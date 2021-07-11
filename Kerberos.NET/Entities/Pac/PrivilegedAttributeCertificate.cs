@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities.Pac;
 using Kerberos.NET.Ndr;
@@ -405,7 +406,8 @@ namespace Kerberos.NET.Entities
                 buffers[i] = pacBuffer;
             }
 
-            using (var buffer = new NdrBuffer(new Memory<byte>(new byte[offset]), align: false))
+            using (var bufferRented = CryptoPool.Rent<byte>(offset))
+            using (var buffer = new NdrBuffer(bufferRented.Memory.Slice(0, offset), align: false))
             {
                 buffer.WriteInt32LittleEndian(pacCount);
                 buffer.WriteInt32LittleEndian(PAC_VERSION);

@@ -86,7 +86,7 @@ namespace Kerberos.NET
 
             if (this.ValidateAfterDecrypt > 0)
             {
-                await this.Validate(decryptedToken).ConfigureAwait(true);
+                await this.Validate(decryptedToken).ConfigureAwait(false);
             }
 
             return decryptedToken;
@@ -128,11 +128,11 @@ namespace Kerberos.NET
                 decryptedToken.Validate(this.ValidateAfterDecrypt);
                 replayDetected = false;
             }
-            else if (!await this.tokenCache.Contains(entry).ConfigureAwait(true))
+            else if (!await this.tokenCache.Contains(entry).ConfigureAwait(false))
             {
                 decryptedToken.Validate(this.ValidateAfterDecrypt);
 
-                if (await this.tokenCache.Add(entry).ConfigureAwait(true))
+                if (await this.tokenCache.Add(entry).ConfigureAwait(false))
                 {
                     replayDetected = false;
                 }

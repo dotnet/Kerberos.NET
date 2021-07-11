@@ -5,15 +5,15 @@
 
 using System;
 using System.Linq;
+using Kerberos.NET.Client;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Credentials
 {
     public class KerberosPasswordCredential : KerberosCredential
     {
-        private static readonly EncryptionType[] ETypePreference = KerberosConstants.ETypes.ToArray();
-
         private readonly string password;
 
         public KerberosPasswordCredential(string username, string password, string domain = null)
@@ -65,22 +65,47 @@ namespace Kerberos.NET.Credentials
                     {
                         var principalName = new PrincipalName(PrincipalNameType.NT_PRINCIPAL, this.Domain, new[] { this.UserName });
 
-                        var etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
-                        var salt = string.Empty;
+                        EncryptionType? etype = GetPreferredEType(
+                            this.Configuration.Defaults.DefaultTicketEncTypes,
+                            this.Configuration.Defaults.AllowWeakCrypto
+                        );
+
+                        string salt = null;
 
                         if (this.Salts != null && this.Salts.Any())
                         {
-                            var etypes = this.Salts.Select(s => s.Key).Intersect(ETypePreference).OrderBy(e => Array.IndexOf(ETypePreference, e));
-                            var kv = this.Salts.First(s => s.Key == etypes.First());
+                            var etypePreferences = GetPreferredETypes(
+                                this.Configuration.Defaults.DefaultTicketEncTypes,
+                                this.Configuration.Defaults.AllowWeakCrypto
+                            ).ToArray();
+
+                            var preferredEtypes = this.Salts.Select(s => s.Key).Intersect(etypePreferences).OrderBy(e => Array.IndexOf(etypePreferences, e));
+
+                            if (!preferredEtypes.Any())
+                            {
+                                throw new KerberosPolicyException(PaDataType.PA_ENC_TIMESTAMP);
+                            }
+
+                            var kv = this.Salts.First(s => s.Key == preferredEtypes.First());
 
                             etype = kv.Key;
                             salt = kv.Value;
                         }
 
+                        if (etype is null)
+                        {
+                            etype = GetPreferredETypes(allowWeakCrypto: this.Configuration.Defaults.AllowWeakCrypto).FirstOrDefault();
+                        }
+
+                        if (etype is null)
+                        {
+                            throw new NotSupportedException("Cannot agree on EType");
+                        }
+
                         this.cacheKey = new KerberosKey(
                             this.password,
                             principalName: principalName,
-                            etype: etype,
+                            etype: etype.Value,
                             saltType: SaltType.ActiveDirectoryUser,
                             salt: salt
                         );

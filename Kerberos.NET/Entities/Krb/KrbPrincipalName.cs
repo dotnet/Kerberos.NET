@@ -80,6 +80,22 @@ namespace Kerberos.NET.Entities
             { "msdtc", HostServiceName }
         });
 
+        private static readonly ReadOnlyMemory<string> NameTypeSeperator = new[]
+        {
+            "@", // NT_UNKNOWN = 0,
+            "@", // NT_PRINCIPAL = 1,
+            "/", // NT_SRV_INST = 2,
+            "/", // NT_SRV_HST = 3,
+            "/", // NT_SRV_XHST = 4,
+            "@", // NT_UID = 5,
+            ",", // NT_X500_PRINCIPAL = 6,
+            "@", // NT_SMTP_NAME = 7,
+            "@", // 8
+            "@", // 9
+            "@", // NT_ENTERPRISE = 10,
+            "/"  // NT_WELLKNOWN = 11
+        };
+
         internal PrincipalName ToKeyPrincipal()
         {
             string realm = string.Empty;
@@ -111,7 +127,7 @@ namespace Kerberos.NET.Entities
 
         private static string MakeFullName(IEnumerable<string> names, PrincipalNameType type, bool normalizeAlias = false)
         {
-            var seperator = NameTypeSeperator[(int)type];
+            var seperator = NameTypeSeperator.Span[(int)type];
 
             using (var enumerator = names.GetEnumerator())
             {
@@ -162,38 +178,29 @@ namespace Kerberos.NET.Entities
             }
         }
 
-        private static readonly string[] NameTypeSeperator = new[]
-        {
-            "@", // NT_UNKNOWN = 0,
-            "@", // NT_PRINCIPAL = 1,
-            "/", // NT_SRV_INST = 2,
-            "/", // NT_SRV_HST = 3,
-            "/", // NT_SRV_XHST = 4,
-            "@", // NT_UID = 5,
-            ",", // NT_X500_PRINCIPAL = 6,
-            "@", // NT_SMTP_NAME = 7,
-            "@", // 8
-            "@", // 9
-            "@", // NT_ENTERPRISE = 10,
-            "/"  // NT_WELLKNOWN = 11
-        };
-
         public bool Matches(object obj)
         {
             switch (obj)
             {
+                case PrincipalName principal:
+                    {
+                        var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
+                        var otherName = MakeFullName(principal.Name, principal.Type, normalizeAlias: true);
+
+                        return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
+                    }
+
                 case KrbPrincipalName other:
                     {
                         var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
                         var otherName = MakeFullName(other.Name, other.Type, normalizeAlias: true);
 
-                        return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
-                    }
+                        if (string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            return true;
+                        }
 
-                case PrincipalName principal:
-                    {
-                        var thisName = MakeFullName(this.Name, this.Type, normalizeAlias: true);
-                        var otherName = MakeFullName(principal.Names, principal.NameType, normalizeAlias: true);
+                        otherName = MakeFullName(other.Name, this.Type, normalizeAlias: true);
 
                         return string.Equals(otherName, thisName, StringComparison.InvariantCultureIgnoreCase);
                     }
@@ -212,16 +219,13 @@ namespace Kerberos.NET.Entities
         {
             get
             {
-                switch (this.Type)
+                return this.Type switch
                 {
-                    case PrincipalNameType.NT_SRV_HST:
-                    case PrincipalNameType.NT_SRV_INST:
-                    case PrincipalNameType.NT_SRV_XHST:
-                        return true;
-
-                    default:
-                        return false;
-                }
+                    PrincipalNameType.NT_SRV_HST or
+                    PrincipalNameType.NT_SRV_INST or
+                    PrincipalNameType.NT_SRV_XHST => true,
+                    _ => false,
+                };
             }
         }
 
@@ -238,7 +242,7 @@ namespace Kerberos.NET.Entities
 
             var actualType = type ?? TryDetectType(principal);
 
-            var splitOn = NameTypeSeperator[(int)actualType][0];
+            var splitOn = NameTypeSeperator.Span[(int)actualType][0];
 
             if (splitOn == '@')
             {

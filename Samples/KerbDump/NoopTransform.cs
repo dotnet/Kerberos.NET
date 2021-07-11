@@ -13,6 +13,8 @@ namespace KerbDump
 
         public override ChecksumType ChecksumType => ChecksumType.HMAC_SHA1_96_AES128;
 
+        public override EncryptionType EncryptionType => EncryptionType.NULL;
+
         public override ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, KerberosKey key, KeyUsage usage)
         {
             return data;

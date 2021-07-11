@@ -67,7 +67,7 @@ namespace Kerberos.NET.Entities.Pac
             Debug.Assert(this.conformance == this.SubAuthorityCount);
 
             this.IdentifierAuthority = buffer.ReadStruct<RpcSidIdentifierAuthority>();
-            this.SubAuthority = buffer.ReadFixedPrimitiveArray<uint>(this.SubAuthorityCount).AsMemory();
+            this.SubAuthority = buffer.ReadFixedPrimitiveArray<uint>(this.SubAuthorityCount).ToArray();
         }
 
         public SecurityIdentifier ToSecurityIdentifier()

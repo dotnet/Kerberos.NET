@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Server
 {
@@ -85,7 +86,7 @@ namespace Kerberos.NET.Server
 
             var apReq = PaDataTgsTicketHandler.ExtractApReq(context);
 
-            context.EvidenceTicketIdentity = await this.RealmService.Principals.FindAsync(apReq.Ticket.SName).ConfigureAwait(true);
+            context.EvidenceTicketIdentity = await this.RealmService.Principals.FindAsync(apReq.Ticket.SName).ConfigureAwait(false);
         }
 
         public override void ValidateTicketRequest(PreAuthenticationContext context)
@@ -179,7 +180,7 @@ namespace Kerberos.NET.Server
                 tgsReq.Body.SName.FullyQualifiedName,
                 tgsReq.Body.Realm);
 
-            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(tgsReq.Body.SName, tgsReq.Body.Realm).ConfigureAwait(true);
+            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(tgsReq.Body.SName, tgsReq.Body.Realm).ConfigureAwait(false);
         }
 
         public override ReadOnlyMemory<byte> ExecuteCore(PreAuthenticationContext context)
@@ -265,6 +266,7 @@ namespace Kerberos.NET.Server
                 KdcAuthorizationKey = context.EvidenceTicketKey,
                 Principal = context.Principal,
                 EncryptedPartKey = context.EncryptedPartKey,
+                EncryptedPartEType = context.EncryptedPartEType,
                 ServicePrincipal = context.ServicePrincipal,
                 ServicePrincipalKey = serviceKey,
                 RealmName = tgsReq.Body.Realm,
@@ -277,7 +279,11 @@ namespace Kerberos.NET.Server
                 Now = now,
                 Nonce = tgsReq.Body.Nonce,
                 IncludePac = context.IncludePac ?? false,
-                PreferredClientEType = KerberosConstants.GetPreferredEType(tgsReq.Body.EType),
+                PreferredClientEType = GetPreferredEType(
+                    tgsReq.Body.EType,
+                    this.RealmService.Configuration.Defaults.PermittedEncryptionTypes,
+                    this.RealmService.Configuration.Defaults.AllowWeakCrypto
+                ),
             };
 
             // this is set here instead of in GenerateServiceTicket because GST is used by unit tests to

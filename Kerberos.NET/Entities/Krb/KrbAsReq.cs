@@ -9,6 +9,7 @@ using System.Linq;
 using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Entities
 {
@@ -57,9 +58,9 @@ namespace Kerberos.NET.Entities
                 {
                     Addresses = IncludeAddresses(config),
                     CName = ExtractCName(credential),
-                    EType = KerberosConstants.GetPreferredETypes(config.Defaults.DefaultTicketEncTypes, config.Defaults.AllowWeakCrypto).ToArray(),
+                    EType = GetPreferredETypes(config.Defaults.DefaultTicketEncTypes, config.Defaults.AllowWeakCrypto).ToArray(),
                     KdcOptions = kdcOptions,
-                    Nonce = KerberosConstants.GetNonce(),
+                    Nonce = GetNonce(),
                     RTime = CalculateRenewTime(kdcOptions, config),
                     Realm = credential.Domain,
                     SName = new KrbPrincipalName
@@ -88,7 +89,7 @@ namespace Kerberos.NET.Entities
             }
             else
             {
-                return KerberosConstants.EndOfTime;
+                return EndOfTime;
             }
         }
 
@@ -105,7 +106,7 @@ namespace Kerberos.NET.Entities
             }
             else
             {
-                return KerberosConstants.EndOfTime;
+                return EndOfTime;
             }
         }
 

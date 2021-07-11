@@ -61,7 +61,7 @@ namespace Kerberos.NET.Client
                 var client = new TcpSocket(this);
 #pragma warning restore CA2000 // Dispose objects before losing scope
 
-                connected = await client.Connect(this.target, connectTimeout).ConfigureAwait(true);
+                connected = await client.Connect(this.target, connectTimeout).ConfigureAwait(false);
 
                 if (connected)
                 {

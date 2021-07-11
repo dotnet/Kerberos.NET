@@ -11,6 +11,7 @@ using Kerberos.NET.Asn1;
 using Kerberos.NET.Dns;
 using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
+using static Kerberos.NET.BinaryExtensions;
 
 namespace Kerberos.NET.Transport
 {
@@ -60,11 +61,11 @@ namespace Kerberos.NET.Transport
             {
                 cancellation.ThrowIfCancellationRequested();
 
-                var result = await client.SendAsync(encoded.ToArray(), encoded.Length).ConfigureAwait(true);
+                var result = await client.SendAsync(TryGetArrayFast(encoded), encoded.Length).ConfigureAwait(false);
 
                 cancellation.ThrowIfCancellationRequested();
 
-                var response = await client.ReceiveAsync().ConfigureAwait(true);
+                var response = await client.ReceiveAsync().ConfigureAwait(false);
 
                 return Decode<T>(response.Buffer);
             }

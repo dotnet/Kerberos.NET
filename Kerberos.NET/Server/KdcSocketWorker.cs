@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -27,9 +27,8 @@ namespace Kerberos.NET.Server
         protected override async Task<ReadOnlyMemory<byte>> ProcessRequest(ReadOnlyMemory<byte> request, CancellationToken cancellation)
         {
             this.logger.LogTrace("Message incoming. Request length = {RequestLength}", request.Length);
-            this.logger.TraceBinary(request);
 
-            var response = await this.kdc.ProcessMessage(request).ConfigureAwait(true);
+            var response = await this.kdc.ProcessMessage(request).ConfigureAwait(false);
 
             this.logger.LogTrace("Message processed. Response length = {ResponseLength}", response.Length);
 

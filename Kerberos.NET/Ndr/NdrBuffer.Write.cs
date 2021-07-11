@@ -8,7 +8,6 @@ using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -35,7 +34,6 @@ namespace Kerberos.NET.Ndr
             this.MoveByOffset(0);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Span<byte> MoveWriteHead(int length)
         {
             this.EnsureBufferCapacity(length);
@@ -76,6 +74,8 @@ namespace Kerberos.NET.Ndr
 
         public Memory<byte> ToMemory(int alignment) => this.ToArray(alignment);
 
+        public Memory<byte> ToMemory() => this.ToMemory(0);
+
         public Span<byte> ToSpan(int alignment = 0) => this.ToArray(alignment);
 
         private byte[] ToArray(int alignment)
@@ -94,7 +94,6 @@ namespace Kerberos.NET.Ndr
             this.WriteSpan(memory.Span);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSpan(ReadOnlySpan<byte> val)
         {
             val.CopyTo(this.MoveWriteHead(val.Length));
@@ -110,7 +109,6 @@ namespace Kerberos.NET.Ndr
             this.MoveWriteHead(1)[0] = val;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe Span<byte> MoveWriteHeadByPrimitiveTypeSize<T>()
            where T : unmanaged
         {

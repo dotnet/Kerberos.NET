@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -25,6 +25,8 @@ namespace Kerberos.NET.Crypto
         public override int KeySize => HashSize;
 
         public override ChecksumType ChecksumType => ChecksumType.KERB_CHECKSUM_HMAC_MD5;
+
+        public override EncryptionType EncryptionType => EncryptionType.RC4_HMAC_NT;
 
         public override ReadOnlyMemory<byte> String2Key(KerberosKey key)
         {

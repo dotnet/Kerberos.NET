@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Server
 {
@@ -87,8 +88,8 @@ namespace Kerberos.NET.Server
             KrbAsReq asReq = (KrbAsReq)context.Message;
             KrbPrincipalName krbtgtName = KrbPrincipalName.WellKnown.Krbtgt(asReq.Body.Realm);
 
-            context.Principal = await this.RealmService.Principals.FindAsync(asReq.Body.CName, asReq.Realm).ConfigureAwait(true);
-            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(krbtgtName, asReq.Realm).ConfigureAwait(true);
+            context.Principal = await this.RealmService.Principals.FindAsync(asReq.Body.CName, asReq.Realm).ConfigureAwait(false);
+            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(krbtgtName, asReq.Realm).ConfigureAwait(false);
         }
 
         public override void ValidateTicketRequest(PreAuthenticationContext preauth)
@@ -168,6 +169,7 @@ namespace Kerberos.NET.Server
             {
                 Principal = context.Principal,
                 EncryptedPartKey = context.EncryptedPartKey,
+                EncryptedPartEType = context.EncryptedPartEType,
                 ServicePrincipal = context.ServicePrincipal,
                 Addresses = asReq.Body.Addresses,
                 Nonce = asReq.Body.Nonce,
@@ -176,7 +178,11 @@ namespace Kerberos.NET.Server
                 EndTime = asReq.Body.Till,
                 MaximumTicketLifetime = this.RealmService.Settings.SessionLifetime,
                 Flags = TicketFlags.Initial | KrbKdcRep.DefaultFlags,
-                PreferredClientEType = KerberosConstants.GetPreferredEType(asReq.Body.EType),
+                PreferredClientEType = GetPreferredEType(
+                    asReq.Body.EType,
+                    this.RealmService.Configuration.Defaults.PermittedEncryptionTypes,
+                    this.RealmService.Configuration.Defaults.AllowWeakCrypto
+                ),
             };
 
             if (context.ClientAuthority != PaDataType.PA_NONE)

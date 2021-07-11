@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -17,5 +17,7 @@ namespace Kerberos.NET.Crypto
         }
 
         public override ChecksumType ChecksumType => ChecksumType.HMAC_SHA1_96_AES128;
+
+        public override EncryptionType EncryptionType => EncryptionType.AES128_CTS_HMAC_SHA1_96;
     }
 }

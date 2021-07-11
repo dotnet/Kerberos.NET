@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -21,7 +21,7 @@ namespace Kerberos.NET.Entities
 
     public class UpnDomainInfo : PacObject
     {
-        public override ReadOnlySpan<byte> Marshal()
+        public override ReadOnlyMemory<byte> Marshal()
         {
             using (var buffer = new NdrBuffer())
             {
@@ -42,7 +42,7 @@ namespace Kerberos.NET.Entities
                 buffer.WriteInt16LittleEndian(0);
                 buffer.WriteFixedPrimitiveArray(domainBytes);
 
-                return buffer.ToSpan(alignment: 8);
+                return buffer.ToMemory(alignment: 8);
             }
         }
 

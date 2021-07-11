@@ -210,7 +210,7 @@ namespace Kerberos.NET.Crypto
 
         private static void WritePrincipal(BinaryWriter writer, PrincipalName principal)
         {
-            var components = principal.Names.SelectMany(s => s.Split('/'));
+            var components = principal.Name.SelectMany(s => s.Split('/'));
 
             WriteInt16(writer, (short)components.Count());
 
@@ -221,7 +221,7 @@ namespace Kerberos.NET.Crypto
                 WriteString(writer, component);
             }
 
-            WriteInt32(writer, (int)principal.NameType);
+            WriteInt32(writer, (int)principal.Type);
         }
 
         private static void WriteKey(BinaryWriter writer, KerberosKey key)

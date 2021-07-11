@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -55,6 +55,10 @@ namespace Kerberos.NET.Server
 
         public void Stop()
         {
+            this.Options.Cancellation.Cancel();
+
+            this.logger.LogInformation("Service Listener stopping...");
+
             while (this.openListeners.Count != 0)
             {
                 SocketListener listener = this.openListeners.Pop();
@@ -66,6 +70,8 @@ namespace Kerberos.NET.Server
 
         private void StartListenerThreads(SocketListener listener)
         {
+            // listener is the thing on port 88 waiting for clients to make the first connection
+
             _ = this.AcceptConnections(listener);
         }
 
@@ -78,23 +84,48 @@ namespace Kerberos.NET.Server
 
             this.openListeners.Push(socketListener);
 
+            SocketWorkerBase worker;
+
             try
             {
-                while (true)
+                while (!this.Options.Cancellation.IsCancellationRequested)
                 {
-                    var worker = await socketListener.Accept().ConfigureAwait(true);
+                    try
+                    {
+                        // socketListener will wait until a client connects and accept's the connection
+                        // accept transfers the connection to a separate socket and hands it off to
+                        // a worker that will continue listening on that socket and process
+                        // messages until the socket is closed by the client or timeout
+
+                        worker = await socketListener.Accept().ConfigureAwait(false);
+
+                        // worker will spin until the socket is closed or timed out allowing
+                        // clients to reuse existing socket connections to the KDC
+
+                        _ = worker.HandleSocket();
+                    }
+                    catch (SocketException sx)
+                        when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
+                    {
+                        this.logger.LogTrace(sx, "Accept exception raised by socket with code {Error}", sx.SocketErrorCode);
+                        continue;
+                    }
+                    catch (ObjectDisposedException ex)
+                    {
+                        this.logger.LogTrace(ex, "Accept exception raised because object was used after dispose");
+                        continue;
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogTrace(ex, "Accept exception raised for unknown reason");
+                        break;
+                    }
 
                     if (worker == null)
                     {
                         break;
                     }
-
-                    _ = worker.HandleSocket();
                 }
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogWarning(ex, "Accept connection failed with exception");
             }
             finally
             {
@@ -119,6 +150,19 @@ namespace Kerberos.NET.Server
         {
             this.Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        internal static bool IsSocketError(SocketError errorCode)
+        {
+            return errorCode == SocketError.ConnectionReset ||
+                   errorCode == SocketError.Shutdown ||
+                   errorCode == SocketError.ConnectionAborted;
+        }
+
+        internal static bool IsSocketAbort(SocketError errorCode)
+        {
+            return errorCode == SocketError.OperationAborted ||
+                   errorCode == SocketError.Interrupted;
         }
     }
 }

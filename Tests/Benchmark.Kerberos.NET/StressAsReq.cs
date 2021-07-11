@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Server;
+using Kerberos.NET.Transport;
+using Microsoft.Extensions.Logging;
 using Tests.Kerberos.NET;
 
 namespace Benchmark.Kerberos.NET
 {
-    //[EtwProfiler]
+    [EtwProfiler]
     [RankColumn]
     //[RPlotExporter]
     //[ConcurrencyVisualizerProfiler]
@@ -31,7 +32,7 @@ namespace Benchmark.Kerberos.NET
 
         private static readonly ConcurrentDictionary<string, KerberosPasswordCredential> Creds = new ConcurrentDictionary<string, KerberosPasswordCredential>();
 
-        private static readonly int ProcessId = Process.GetCurrentProcess().Id;
+        private static readonly int ProcessId = Environment.ProcessId;
 
         private const AuthenticationOptions DefaultAuthentication =
             AuthenticationOptions.IncludePacRequest |
@@ -48,10 +49,12 @@ namespace Benchmark.Kerberos.NET
         [Params(1, 10, 100)]
         public int ConcurrentRequests;
 
-        [Params("RC4", "AES128", "AES256")]
-        public string AlgorithmType;
+        [Params("RC4", "AES128", "AES256", "AES128SHA256", "AES256SHA384")]
+        public string AlgorithmType = "AES256";
 
         public bool DisplayProgress { get; set; }
+
+        public ILoggerFactory Logger { get; set; }
 
         [GlobalSetup]
         public Task Setup()
@@ -60,13 +63,15 @@ namespace Benchmark.Kerberos.NET
 
             var options = new ListenerOptions
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, this.Port),
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(),
                 RealmLocator = realm => LocateRealm(realm),
-                QueueLength = 10 * 1000,
-                ReceiveTimeout = TimeSpan.FromMinutes(60),
-                Log = null
+                Log = Logger
             };
+
+            options.Configuration.KdcDefaults.TcpListenBacklog = int.MaxValue;
+            options.Configuration.KdcDefaults.ReceiveTimeout = TimeSpan.FromSeconds(15);
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Clear();
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Add($"127.0.0.1:{this.Port}");
 
             this.listener = new KdcServiceListener(options);
             _ = this.listener.Start();
@@ -81,6 +86,8 @@ namespace Benchmark.Kerberos.NET
         private ReadOnlySequence<byte> asReq;
         private KerberosPasswordCredential credential;
 
+        public int Successes;
+
         [GlobalCleanup]
         public void Teardown()
         {
@@ -93,24 +100,48 @@ namespace Benchmark.Kerberos.NET
         [Benchmark]
         public void RequestTgt()
         {
+            TcpKerberosTransport.MaxPoolSize = this.ConcurrentRequests * 2;
+
+            if (this.credential == null)
+            {
+                this.credential = Creds.GetOrAdd(this.AlgorithmType, a => new KerberosPasswordCredential(a + this.user, this.password));
+            }
+
             var requestCounter = 0;
 
-            Task.WaitAll(Enumerable.Range(0, this.ConcurrentRequests).Select(taskNum => Task.Run(async () =>
+            try
             {
-                var client = new KerberosClient();
-
-                client.PinKdc(this.credential.Domain, $"{this.overrideKdc}:{this.Port}");
-
-                for (var i = 0; i < this.AuthenticationAttempts; i++)
+                Task.WaitAll(Enumerable.Range(0, this.ConcurrentRequests).Select(taskNum => Task.Run(async () =>
                 {
-                    await client.Authenticate(this.credential);
+                    var client = new KerberosClient();
 
-                    if (this.DisplayProgress)
+                    client.Transports.OfType<UdpKerberosTransport>().FirstOrDefault().Enabled = false;
+                    client.Transports.OfType<HttpsKerberosTransport>().FirstOrDefault().Enabled = false;
+
+                    client.PinKdc(this.credential.Domain, $"{this.overrideKdc}:{this.Port}");
+
+                    for (var i = 0; i < this.AuthenticationAttempts; i++)
                     {
-                        CountItOut(ref requestCounter);
+                        try
+                        {
+                            await client.Authenticate(this.credential);
+
+                            Interlocked.Increment(ref Successes);
+
+                            if (this.DisplayProgress)
+                            {
+                                CountItOut(ref requestCounter);
+                            }
+                        }
+                        catch (Exception)
+                        {
+                        }
                     }
-                }
-            })).ToArray());
+                })).ToArray());
+            }
+            catch
+            {
+            }
         }
 
         private static void CountItOut(ref int requestCounter)

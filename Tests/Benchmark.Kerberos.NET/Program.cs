@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Running;
+using Kerberos.NET.Logging;
 using Microsoft.Win32.SafeHandles;
 
 namespace Benchmark.Kerberos.NET
@@ -15,7 +16,8 @@ namespace Benchmark.Kerberos.NET
         None,
         Stress,
         Timing,
-        DH
+        DH,
+        Pac
     }
 
     internal class CommandLineParameters
@@ -37,6 +39,8 @@ namespace Benchmark.Kerberos.NET
         public int? WorkerCount { get; set; }
 
         public int? RequestCount { get; set; }
+
+        public bool DisplayProgress { get; set; }
 
         public override string ToString()
         {
@@ -75,6 +79,11 @@ namespace Benchmark.Kerberos.NET
             if (this.RequestCount > 0)
             {
                 parameters.Add($"-requests {this.RequestCount}");
+            }
+
+            if (this.DisplayProgress)
+            {
+                parameters.Add("-progress true");
             }
 
             return string.Join(" ", parameters);
@@ -121,6 +130,10 @@ namespace Benchmark.Kerberos.NET
                         cmd.IsServer = true;
                         cmd.ServerIdentifier = val;
                         break;
+
+                    case "-progress":
+                        cmd.DisplayProgress = true;
+                        break;
                 }
             }
 
@@ -161,6 +174,12 @@ namespace Benchmark.Kerberos.NET
                 return;
             }
 
+            if (cmd.Benchmark == BenchmarkType.Pac)
+            {
+                BenchmarkRunner.Run<PacEncodingBenchmarks>();
+                return;
+            }
+
             Console.WriteLine($"Command Line: {cmd}");
 
             if (cmd.IsServer)
@@ -168,6 +187,8 @@ namespace Benchmark.Kerberos.NET
                 await StartServer();
 
                 StartClients(cmd);
+
+                Console.WriteLine("All clients started");
             }
 
             if (cmd.IsClient)
@@ -175,11 +196,32 @@ namespace Benchmark.Kerberos.NET
                 BeginClient(cmd);
             }
 
-            var waits = ProcessWaits.Select(p => new ProcessWaitHandle(p)).ToArray();
+            var list = SplitList(ProcessWaits.Select(p => new ProcessWaitHandle(p)).ToList(), 64);
 
-            WaitHandle.WaitAll(waits);
+            foreach (var waits in list)
+            {
+                if (waits.Count > 0)
+                {
+                    WaitHandle.WaitAll(waits.ToArray());
+                }
+            }
 
             Teardown();
+
+            Console.WriteLine("Tearing down");
+
+            if (cmd.IsServer)
+            {
+                Console.ReadKey();
+            }
+        }
+
+        public static IEnumerable<List<T>> SplitList<T>(List<T> locations, int size)
+        {
+            for (int i = 0; i < locations.Count; i += size)
+            {
+                yield return locations.GetRange(i, Math.Min(size, locations.Count - i));
+            }
         }
 
         private class ProcessWaitHandle : WaitHandle
@@ -206,10 +248,34 @@ namespace Benchmark.Kerberos.NET
                 Stresser.Port = cmd.Port.Value;
             }
 
+            Stresser.DisplayProgress = cmd.DisplayProgress;
+
             Stresser.ConcurrentRequests = cmd.ThreadCount ?? 1;
             Stresser.AuthenticationAttempts = cmd.RequestCount ?? 1000;
 
-            Stresser.RequestTgt();
+            var sw = Stopwatch.StartNew();
+
+            try
+            {
+                Stresser.RequestTgt();
+            }
+            catch (AggregateException agg)
+            {
+                foreach (var ex in agg.InnerExceptions)
+                {
+                    Console.WriteLine("[Client] " + ex);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[Client] " + ex);
+            }
+
+            var elapsed = sw.Elapsed;
+
+            sw.Stop();
+
+            Console.WriteLine($"Client completed {Stresser.Successes}/{Stresser.ConcurrentRequests * Stresser.AuthenticationAttempts} requests in {elapsed}");
         }
 
         private static void StartClients(CommandLineParameters cmd)
@@ -234,7 +300,8 @@ namespace Benchmark.Kerberos.NET
             WaitForAllProcessesToStart.Set();
         }
 
-        private static readonly HashSet<Process> ProcessWaits = new HashSet<Process>();
+
+        private static readonly List<Process> ProcessWaits = new List<Process>();
 
         private static Process StartClientProcess(CommandLineParameters cmd)
         {
@@ -251,6 +318,19 @@ namespace Benchmark.Kerberos.NET
 
         private static async Task StartServer()
         {
+            Stresser.Logger = new KerberosDelegateLogger(
+                (level, cateogry, id, scopeState, logState, exception, log)
+                    =>
+                {
+                    if (level == TraceLevel.Verbose)
+                    {
+                        return;
+                    }
+
+                    Console.WriteLine($"[{level}] {log} {exception}");
+                }
+            );
+
             await Stresser.Setup();
         }
     }

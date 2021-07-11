@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -61,6 +61,7 @@ namespace Kerberos.NET.Entities
                 EncPart = KrbEncryptedData.Encrypt(
                     encKdcRepPart.EncodeApplication(),
                     request.EncryptedPartKey,
+                    request.EncryptedPartEType,
                     keyUsage
                 )
             };
@@ -155,7 +156,7 @@ namespace Kerberos.NET.Entities
                     new KrbPaData
                     {
                         Type = PaDataType.PA_SUPPORTED_ETYPES,
-                        Value = request.Principal.SupportedEncryptionTypes.AsReadOnly(littleEndian: true).AsMemory()
+                        Value = request.Principal.SupportedEncryptionTypes.AsReadOnlyMemory(littleEndian: true)
                     }
                 }
             };

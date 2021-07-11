@@ -31,12 +31,12 @@ namespace Kerberos.NET
                 throw new ArgumentNullException(nameof(entry));
             }
 
-            return await this.cache.AddAsync(entry).ConfigureAwait(true);
+            return await this.cache.AddAsync(entry).ConfigureAwait(false);
         }
 
         public async Task<bool> Contains(TicketCacheEntry entry)
         {
-            var got = await this.cache.GetCacheItemAsync(entry?.Key).ConfigureAwait(true);
+            var got = await this.cache.GetCacheItemAsync(entry?.Key).ConfigureAwait(false);
 
             return got != null;
         }

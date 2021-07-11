@@ -5,6 +5,7 @@
 
 using System;
 using Kerberos.NET.Entities;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Crypto
 {
@@ -75,7 +76,7 @@ namespace Kerberos.NET.Crypto
 
         protected virtual void ValidateTicketSkew(DateTimeOffset now, TimeSpan skew, DateTimeOffset ctime)
         {
-            if (!KerberosConstants.WithinSkew(now, ctime, 0, skew))
+            if (!WithinSkew(now, ctime, 0, skew))
             {
                 throw new KerberosValidationException(
                     $"Token window is greater than allowed skew. Start: {ctime}; End: {now}; Allowed Skew: {skew}",

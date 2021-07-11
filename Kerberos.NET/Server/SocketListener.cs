@@ -1,9 +1,12 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +16,8 @@ namespace Kerberos.NET.Server
 {
     internal class SocketListener : SocketBase
     {
+        private const int DefaultKdcPort = 88;
+
         private readonly ILogger<SocketListener> logger;
         private readonly Socket listeningSocket;
         private readonly Func<Socket, KdcServerOptions, SocketWorkerBase> workerFunc;
@@ -22,10 +27,12 @@ namespace Kerberos.NET.Server
         {
             this.logger = options.Log.CreateLoggerSafe<SocketListener>();
 
-            this.listeningSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            // open the port 88 socket here so it can start listening
 
-            this.listeningSocket.Bind(this.Options.ListeningOn);
-            this.listeningSocket.Listen(this.Options.QueueLength);
+            this.listeningSocket = BindSocket(
+                this.Options.Configuration.KdcDefaults.KdcTcpListenEndpoints,
+                this.Options.Configuration.KdcDefaults.TcpListenBacklog
+            );
 
             this.logger.LogInformation(
                 "Listener has started. Endpoint = {Port}; Protocol = {Protocol}",
@@ -38,6 +45,66 @@ namespace Kerberos.NET.Server
             this.workerFunc = workerFunc;
         }
 
+        private static Socket BindSocket(IEnumerable<string> endpoints, int backlog)
+        {
+            var listeningSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+
+            foreach (var endpoint in endpoints)
+            {
+                listeningSocket.Bind(ParseAddress(endpoint));
+            }
+
+            listeningSocket.Listen(backlog * 1000);
+
+            return listeningSocket;
+        }
+
+        private static EndPoint ParseAddress(string endpoint)
+        {
+            if (TryParse(endpoint, DefaultKdcPort, out IPEndPoint result))
+            {
+                return result;
+            }
+
+            throw new FormatException($"Endpoint is malformed: {endpoint}");
+        }
+
+        private static bool TryParse(string addr, int defaultPort, out IPEndPoint result)
+        {
+            var s = addr.AsSpan();
+
+            int addressLength = s.Length;
+            int lastColonPos = s.LastIndexOf(':');
+
+            if (lastColonPos > 0)
+            {
+                if (s[lastColonPos - 1] == ']')
+                {
+                    addressLength = lastColonPos;
+                }
+                else if (s.Slice(0, lastColonPos).LastIndexOf(':') == -1)
+                {
+                    addressLength = lastColonPos;
+                }
+            }
+
+            if (IPAddress.TryParse(s.Slice(0, addressLength).ToString(), out IPAddress address))
+            {
+                uint port = (uint)defaultPort;
+
+                if (addressLength == s.Length ||
+                    (uint.TryParse(s.Slice(addressLength + 1).ToString(), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= IPEndPoint.MaxPort))
+
+                {
+                    result = new IPEndPoint(address, (int)port);
+                    return true;
+                }
+            }
+
+            result = null;
+            return false;
+        }
+
         public async Task<SocketWorkerBase> Accept()
         {
             while (true)
@@ -47,28 +114,13 @@ namespace Kerberos.NET.Server
                     return null;
                 }
 
-                try
-                {
-                    var socket = await this.listeningSocket.AcceptAsync().ConfigureAwait(true);
+                // on every loop we wait until a new connection comes in and then accept that connection
+                // so the worker can process all messages on that socket
 
-                    return this.workerFunc(socket, this.Options);
-                }
-                catch (SocketException sx)
-                    when (IsSocketAbort(sx.SocketErrorCode) || IsSocketError(sx.SocketErrorCode))
-                {
-                    this.logger.LogTrace(sx, "Accept exception raised by socket with code {Error}", sx.SocketErrorCode);
-                    throw;
-                }
-                catch (ObjectDisposedException ex)
-                {
-                    this.logger.LogTrace(ex, "Accept exception raised because object was used after dispose");
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    this.logger.LogTrace(ex, "Accept exception raised");
-                    throw;
-                }
+                var socket = await this.listeningSocket.AcceptAsync()
+                                                       .ConfigureAwait(false);
+
+                return this.workerFunc(socket, this.Options);
             }
         }
 

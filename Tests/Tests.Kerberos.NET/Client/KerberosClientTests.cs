@@ -74,11 +74,11 @@ namespace Tests.Kerberos.NET
         {
             using (var client = new KerberosClient())
             {
-                var udp = client.Transports.OfType<HttpsKerberosTransport>().FirstOrDefault();
+                var https = client.Transports.OfType<HttpsKerberosTransport>().FirstOrDefault();
 
-                Assert.IsNotNull(udp);
+                Assert.IsNotNull(https);
 
-                Assert.IsTrue(udp.Enabled);
+                Assert.IsTrue(https.Enabled);
             }
         }
 

@@ -27,26 +27,31 @@ namespace Kerberos.NET.Crypto.Pal
             // K1 = HMAC-SHA-256(key, 0x00000001 | label | 0x00 | k)
             // length(0x00000001 | 0x00 | k) = 9
 
-            Memory<byte> input = new byte[salt.Length + 9];
+            var inputLength = salt.Length + 9;
 
-            input.Span[3] = 1; // 0x00000001
-
-            salt.CopyTo(input.Slice(4)); // label
-
-            IHmacAlgorithm hmac;
-
-            if (algName == HashAlgorithmName.SHA256)
+            using (var inputRented = CryptoPool.Rent<byte>(inputLength))
             {
-                hmac = CryptoPal.Platform.HmacSha256(passwordBytes);
-            }
-            else
-            {
-                hmac = CryptoPal.Platform.HmacSha384(passwordBytes);
-            }
+                var input = inputRented.Memory.Slice(0, inputLength);
 
-            BinaryPrimitives.WriteInt32BigEndian(input.Span.Slice(input.Length - 4), k);
+                input.Span[3] = 1; // 0x00000001
 
-            return hmac.ComputeHash(input).Slice(0, keySize);
+                salt.CopyTo(input.Slice(4)); // label
+
+                IHmacAlgorithm hmac;
+
+                if (algName == HashAlgorithmName.SHA256)
+                {
+                    hmac = CryptoPal.Platform.HmacSha256(passwordBytes);
+                }
+                else
+                {
+                    hmac = CryptoPal.Platform.HmacSha384(passwordBytes);
+                }
+
+                BinaryPrimitives.WriteInt32BigEndian(input.Span.Slice(input.Length - 4), k);
+
+                return hmac.ComputeHash(input).Slice(0, keySize);
+            }
         }
     }
 }

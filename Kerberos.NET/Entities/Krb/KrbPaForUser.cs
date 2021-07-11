@@ -7,6 +7,7 @@ using System;
 using System.Buffers.Binary;
 using System.Security;
 using Kerberos.NET.Crypto;
+using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Entities
 {
@@ -62,7 +63,7 @@ namespace Kerberos.NET.Entities
 
         private static void Concat(Memory<byte> checksumData, string value, ref int position)
         {
-            KerberosConstants.UnicodeStringToUtf8(value).CopyTo(checksumData.Slice(position, value.Length));
+            UnicodeStringToUtf8(value).CopyTo(checksumData.Slice(position, value.Length));
 
             position += value.Length;
         }
