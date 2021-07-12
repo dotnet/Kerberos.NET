@@ -19,6 +19,8 @@ namespace Kerberos.NET.Entities
         UPN_DOMAIN_INFO = 12,
         CLIENT_CLAIMS = 13,
         DEVICE_INFO = 14,
-        DEVICE_CLAIMS = 15
+        DEVICE_CLAIMS = 15,
+        
+        TICKET_CHECKSUM = 16
     }
 }
