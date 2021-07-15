@@ -117,6 +117,9 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("config", Description = "Config")]
         public override string ConfigurationPath { get; set; }
 
+        [CommandLineParameter("password", Description = "Password")]
+        public string Password { get; set; }
+
         public override async Task<bool> Execute()
         {
             if (await base.Execute())
@@ -297,9 +300,14 @@ namespace Kerberos.NET.CommandLine
             }
             else
             {
-                this.Write(SR.Resource("CommandLine_KInit_PassPrompt", this.PrincipalName));
+                string password = this.Password;
 
-                var password = this.ReadMasked();
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    this.Write(SR.Resource("CommandLine_KInit_PassPrompt", this.PrincipalName));
+
+                    password = this.ReadMasked();
+                }
 
                 if (string.IsNullOrWhiteSpace(password))
                 {

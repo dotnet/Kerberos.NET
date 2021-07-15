@@ -216,6 +216,9 @@
   <data name="CommandLine_KerberosInitCommand_Certificate" xml:space="preserve">
     <value>Locate a certificate and use PKINIT to authenticate the user.</value>
   </data>
+  <data name="CommandLine_KerberosInitCommand_Config" xml:space="preserve">
+    <value>Provide the path to a configuration to use for initialization.</value>
+  </data>
   <data name="CommandLine_KerberosInitCommand_CredNotFound" xml:space="preserve">
     <value>Error: Credential not found</value>
   </data>
@@ -254,6 +257,9 @@
   </data>
   <data name="CommandLine_KerberosInitCommand_NoProxy" xml:space="preserve">
     <value>Do not request a proxiable ticket.</value>
+  </data>
+  <data name="CommandLine_KerberosInitCommand_Password" xml:space="preserve">
+    <value>Optionally provide the password to authenticate the user.</value>
   </data>
   <data name="CommandLine_KerberosInitCommand_Proxy" xml:space="preserve">
     <value>Request a proxiable ticket.</value>

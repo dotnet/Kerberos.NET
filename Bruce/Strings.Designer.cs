@@ -358,6 +358,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Provide the path to a configuration to use for initialization..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Config {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Config", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error: Credential not found.
         /// </summary>
         internal static string CommandLine_KerberosInitCommand_CredNotFound {
@@ -471,6 +480,15 @@ namespace Kerberos.NET.CommandLine {
         internal static string CommandLine_KerberosInitCommand_NoProxy {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosInitCommand_NoProxy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Optionally provide the password to authenticate the user..
+        /// </summary>
+        internal static string CommandLine_KerberosInitCommand_Password {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosInitCommand_Password", resourceCulture);
             }
         }
         
