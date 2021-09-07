@@ -40,7 +40,10 @@ namespace Kerberos.NET.Server
                 this.listeningSocket.ProtocolType
             );
 
-            options.Cancellation = new CancellationTokenSource();
+            if (options.Cancellation == null)
+            {
+                options.Cancellation = new CancellationTokenSource();
+            }
 
             this.workerFunc = workerFunc;
         }

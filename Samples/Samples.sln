@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31105.61
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KerberosKdcHostApp", "KerberosKdcHostApp\KerberosKdcHostApp.csproj", "{BED628D0-501B-474E-A962-C8682569AEEF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KerberosClientApp", "KerberosClientApp\KerberosClientApp.csproj", "{8286A775-3017-4ED0-A683-B00D2F15688A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kerberos.NET", "..\Kerberos.NET\Kerberos.NET.csproj", "{E9A49B3A-8A6B-4132-BDB9-3C093439B1E6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.Kerberos.NET", "..\Tests\Tests.Kerberos.NET\Tests.Kerberos.NET.csproj", "{BBDF879D-276B-4B33-9908-69DB94364CD7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BED628D0-501B-474E-A962-C8682569AEEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BED628D0-501B-474E-A962-C8682569AEEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BED628D0-501B-474E-A962-C8682569AEEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BED628D0-501B-474E-A962-C8682569AEEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8286A775-3017-4ED0-A683-B00D2F15688A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8286A775-3017-4ED0-A683-B00D2F15688A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8286A775-3017-4ED0-A683-B00D2F15688A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8286A775-3017-4ED0-A683-B00D2F15688A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9A49B3A-8A6B-4132-BDB9-3C093439B1E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9A49B3A-8A6B-4132-BDB9-3C093439B1E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9A49B3A-8A6B-4132-BDB9-3C093439B1E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9A49B3A-8A6B-4132-BDB9-3C093439B1E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBDF879D-276B-4B33-9908-69DB94364CD7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBDF879D-276B-4B33-9908-69DB94364CD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBDF879D-276B-4B33-9908-69DB94364CD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBDF879D-276B-4B33-9908-69DB94364CD7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BA9FB600-4679-44F0-8F5A-AB14611462EE}
+	EndGlobalSection
+EndGlobal

@@ -1,10 +1,9 @@
-﻿using Kerberos.NET.Server;
+﻿using System;
+using System.Threading.Tasks;
+using Kerberos.NET.Server;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using System;
-using System.Net;
-using System.Threading.Tasks;
 using Tests.Kerberos.NET;
 
 namespace KerberosKdcHostApp
@@ -24,15 +23,19 @@ namespace KerberosKdcHostApp
 
             var logger = (ILoggerFactory)host.Services.GetService(typeof(ILoggerFactory));
 
-            KdcServiceListener listener = new KdcServiceListener(new ListenerOptions
+            var options = new ListenerOptions
             {
-                ListeningOn = new IPEndPoint(IPAddress.Loopback, 8888),
                 Log = logger,
                 DefaultRealm = "corp2.identityintervention.com".ToUpper(),
                 IsDebug = true,
-                RealmLocator = realm => new FakeRealmService(realm),
-                ReceiveTimeout = TimeSpan.FromHours(1)
-            });
+                RealmLocator = realm => new FakeRealmService(realm)
+            };
+
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Clear();
+            options.Configuration.KdcDefaults.KdcTcpListenEndpoints.Add("127.0.0.1:8888");
+            options.Configuration.KdcDefaults.ReceiveTimeout = TimeSpan.FromHours(1);
+
+            var listener = new KdcServiceListener(options);
 
             await listener.Start();
 

@@ -22,6 +22,9 @@ namespace KerberosClientApp
     {
         static async Task Main(string[] args)
         {
+            // NOTE: this code is pretty ugly and isn't updated anymore.
+            // Any samples for client should be taken from the Bruce commands.
+
             bool prompt = ReadString("prompt", "y", args, required: false, reader: () => { W(); return null; }).Equals("y", StringComparison.InvariantCultureIgnoreCase);
 
             var cert = SelectCertificate(args, prompt);
