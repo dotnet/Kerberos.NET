@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -23,9 +23,11 @@ namespace Kerberos.NET.Win32
             this.context = new SspiSecurityContext(Credential.Current(), package);
         }
 
-        public byte[] RequestToken()
+        public byte[] SessionKey => this.context.QueryContextAttributeSession();
+
+        public byte[] RequestToken(byte[] serverResponse = null)
         {
-            var status = this.context.InitializeSecurityContext(this.spn, null, out byte[] clientRequest);
+            var status = this.context.InitializeSecurityContext(this.spn, serverResponse, out byte[] clientRequest);
 
             if (status == ContextStatus.Error)
             {
