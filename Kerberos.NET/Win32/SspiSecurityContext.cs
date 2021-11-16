@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -102,6 +102,41 @@ namespace Kerberos.NET.Win32
             }
 
             return strValue;
+        }
+
+        public unsafe byte[] QueryContextAttributeSession()
+        {
+            SecPkgContext_SessionKey pBuffer = default;
+            SecStatus status;
+            byte[] bytes = null;
+            
+            RuntimeHelpers.PrepareConstrainedRegions();
+            try
+            {
+            }
+            finally
+            {
+                try
+                {
+                    status = QueryContextAttributesSession(ref this.securityContext, SecurityContextAttribute.SECPKG_ATTR_SESSION_KEY, ref pBuffer);
+
+                    if (status == SecStatus.SEC_E_OK)
+                    {
+                        bytes = new Span<byte>(pBuffer.SessionKey, (int)pBuffer.SessionKeyLength).ToArray();
+                    }
+                }
+                finally
+                {
+                    ThrowIfError(FreeContextBuffer(pBuffer.SessionKey));
+                }
+            }
+
+            if (status != SecStatus.SEC_E_UNSUPPORTED_FUNCTION && status > SecStatus.SEC_E_ERROR)
+            {
+                throw new Win32Exception((int)status);
+            }
+
+            return bytes;
         }
 
         private static void ThrowIfError(uint result)

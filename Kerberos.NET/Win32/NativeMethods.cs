@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -110,6 +110,13 @@ namespace Kerberos.NET.Win32
             ref SECURITY_HANDLE phContext,
             SecurityContextAttribute ulAttribute,
             ref SecPkgContext_SecString pBuffer
+        );
+
+        [DllImport(SECUR32, SetLastError = true, EntryPoint = "QueryContextAttributes", CharSet = CharSet.Unicode)]
+        internal static extern SecStatus QueryContextAttributesSession(
+            ref SECURITY_HANDLE phContext,
+            SecurityContextAttribute ulAttribute,
+            ref SecPkgContext_SessionKey pBuffer
         );
 
         [DllImport(SECUR32)]
@@ -543,6 +550,13 @@ namespace Kerberos.NET.Win32
         internal struct SecPkgContext_SecString
         {
             public void* sValue;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal unsafe struct SecPkgContext_SessionKey
+        {
+            public uint SessionKeyLength;
+            public void* SessionKey;
         }
     }
 }
