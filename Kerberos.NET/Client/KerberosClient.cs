@@ -385,6 +385,13 @@ namespace Kerberos.NET.Client
                         continue;
                     }
 
+                    if (pex?.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_C_PRINCIPAL_UNKNOWN &&
+                        credential.PrincipalNameType == PrincipalNameType.NT_ENTERPRISE)
+                    {
+                        credential.PrincipalNameType = PrincipalNameType.NT_PRINCIPAL;
+                        continue;
+                    }
+
                     // in this case we don't know what it was so bail
 
                     this.logger.LogKerberosProtocolException(pex);

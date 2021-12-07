@@ -24,6 +24,7 @@ namespace Tests.Kerberos.NET
     public abstract class KdcListenerTestBase : BaseTest
     {
         protected const string AdminAtCorpUserName = "administrator@corp.identityintervention.com";
+        protected const string AdminFallbackAtCorpUserName = "administrator-fallback@corp.identityintervention.com";
         protected const string TestAtCorpUserName = "testuser@corp.identityintervention.com";
         protected const string FakeAdminAtCorpPassword = "P@ssw0rd!";
         protected const string FakeAppServiceSpn = "host/appservice.corp.identityintervention.com";
@@ -146,6 +147,15 @@ namespace Tests.Kerberos.NET
                 );
 
                 await ValidateTicket(ticket, includePac: includePac, spn: spn, mutualAuth: mutualAuth);
+            }
+
+            if (user.Contains("-fallback"))
+            {
+                Assert.AreEqual(PrincipalNameType.NT_PRINCIPAL, kerbCred.PrincipalNameType);
+            }
+            else
+            {
+                Assert.AreEqual(PrincipalNameType.NT_ENTERPRISE, kerbCred.PrincipalNameType);
             }
         }
 

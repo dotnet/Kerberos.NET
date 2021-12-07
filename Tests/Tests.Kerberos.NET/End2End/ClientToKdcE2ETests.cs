@@ -424,6 +424,24 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public async Task E2E_NameTypeFallback()
+        {
+            var port = NextPort();
+
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    listener,
+                    AdminFallbackAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    encodeNego: false,
+                    mutualAuth: false
+                );
+            }
+        }
+
+        [TestMethod]
         public async Task E2E_S4U()
         {
             var port = NextPort();

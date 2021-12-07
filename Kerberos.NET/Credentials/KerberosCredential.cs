@@ -32,6 +32,14 @@ namespace Kerberos.NET.Credentials
             set => this.config = value;
         }
 
+        private PrincipalNameType? nameType;
+
+        public PrincipalNameType PrincipalNameType
+        {
+            get => this.nameType ?? this.Configuration.Defaults.DefaultNameType;
+            set => this.nameType = value;
+        }
+
         public virtual void TransformKdcReq(KrbKdcReq req)
         {
             if (req == null)

@@ -141,7 +141,7 @@ namespace Kerberos.NET.Entities
 
             return KrbPrincipalName.FromString(
                 credential.UserName,
-                credential.Configuration.Defaults.DefaultNameType,
+                credential.PrincipalNameType,
                 credential.Domain
             );
         }
