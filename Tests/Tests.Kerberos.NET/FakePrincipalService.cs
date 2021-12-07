@@ -32,9 +32,19 @@ namespace Tests.Kerberos.NET
         {
             IKerberosPrincipal principal = null;
 
-            if (principalName.FullyQualifiedName.EndsWith(this.realm, StringComparison.InvariantCultureIgnoreCase) ||
+            bool fallback = false;
+
+            if (principalName.FullyQualifiedName.Contains("-fallback", StringComparison.OrdinalIgnoreCase) &&
+                principalName.Type == PrincipalNameType.NT_ENTERPRISE)
+            {
+                principal = null;
+                fallback = true;
+            }
+
+            if ((principalName.FullyQualifiedName.EndsWith(this.realm, StringComparison.InvariantCultureIgnoreCase) ||
                 principalName.FullyQualifiedName.StartsWith("krbtgt", StringComparison.InvariantCultureIgnoreCase) ||
                 principalName.Type == PrincipalNameType.NT_PRINCIPAL)
+                && !fallback)
             {
                 principal = new FakeKerberosPrincipal(principalName.FullyQualifiedName);
             }
