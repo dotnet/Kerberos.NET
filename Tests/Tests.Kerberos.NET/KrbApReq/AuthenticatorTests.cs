@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -29,7 +29,7 @@ namespace Tests.Kerberos.NET
             "RXlv1dmdYUHwQ3M";
 
         [TestMethod]
-        public async Task AuthenticatorGetsAsRep()
+        public async Task AuthenticatorGetsApRep()
         {
             var authenticator = new KerberosAuthenticator(
                 new KerberosValidator(new KeyTable(ReadDataFile("sample.keytab")))

@@ -77,15 +77,6 @@ namespace Kerberos.NET
 
             SetMinimumIdentity(krbApReq, claims);
 
-            string apRep = null;
-
-            if (krbApReq.Options.HasFlag(ApOptions.MutualRequired))
-            {
-                var apRepEncoded = krbApReq.CreateResponseMessage().EncodeApplication();
-
-                apRep = Convert.ToBase64String(apRepEncoded.ToArray());
-            }
-
             return new KerberosIdentity(
                 claims,
                 "Kerberos",
@@ -93,7 +84,7 @@ namespace Kerberos.NET
                 ClaimTypes.Role,
                 restrictions,
                 this.validator.ValidateAfterDecrypt,
-                apRep
+                krbApReq
             );
         }
 

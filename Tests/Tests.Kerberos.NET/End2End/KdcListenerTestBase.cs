@@ -83,7 +83,8 @@ namespace Tests.Kerberos.NET
             string spn = FakeAppServiceSpn,
             KeyAgreementAlgorithm keyAgreement = KeyAgreementAlgorithm.DiffieHellmanModp14,
             bool allowWeakCrypto = false,
-            bool useWeakCrypto = false
+            bool useWeakCrypto = false,
+            bool mutualAuth = true
         )
         {
             KerberosCredential kerbCred;
@@ -117,11 +118,11 @@ namespace Tests.Kerberos.NET
                     new RequestServiceTicket
                     {
                         ServicePrincipalName = spn,
-                        ApOptions = ApOptions.MutualRequired
+                        ApOptions = mutualAuth ? ApOptions.MutualRequired : 0
                     }
                 );
 
-                await ValidateTicket(ticket, includePac: includePac, spn: spn);
+                await ValidateTicket(ticket, includePac: includePac, spn: spn, mutualAuth: mutualAuth);
 
                 await client.RenewTicket();
 
@@ -129,22 +130,22 @@ namespace Tests.Kerberos.NET
                     new RequestServiceTicket
                     {
                         ServicePrincipalName = spn,
-                        ApOptions = ApOptions.MutualRequired
+                        ApOptions = mutualAuth ? ApOptions.MutualRequired : 0
                     }
                 );
 
-                await ValidateTicket(ticket, encodeNego, includePac: includePac, spn: spn);
+                await ValidateTicket(ticket, encodeNego, includePac: includePac, spn: spn, mutualAuth: mutualAuth);
 
                 ticket = await client.GetServiceTicket(
                     new RequestServiceTicket
                     {
                         ServicePrincipalName = spn,
-                        ApOptions = ApOptions.MutualRequired,
+                        ApOptions = mutualAuth ? ApOptions.MutualRequired : 0,
                         S4uTarget = s4u
                     }
                 );
 
-                await ValidateTicket(ticket, includePac: includePac, spn: spn);
+                await ValidateTicket(ticket, includePac: includePac, spn: spn, mutualAuth: mutualAuth);
             }
         }
 
@@ -152,7 +153,8 @@ namespace Tests.Kerberos.NET
             ApplicationSessionContext context,
             bool encodeNego = false,
             bool includePac = true,
-            string spn = FakeAppServiceSpn
+            string spn = FakeAppServiceSpn,
+            bool mutualAuth = true
         )
         {
             if (context == null)
@@ -202,9 +204,18 @@ namespace Tests.Kerberos.NET
                 Assert.IsNull(sidClaim);
             }
 
-            var sessionKey = context.AuthenticateServiceResponse(validated.ApRep);
+            if (mutualAuth)
+            {
+                var sessionKey = context.AuthenticateServiceResponse(validated.ApRep);
 
-            Assert.IsNotNull(sessionKey);
+                Assert.IsNotNull(sessionKey);
+            }
+            else
+            {
+                Assert.IsNull(validated.ApRep);
+            }
+
+            Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(context.SessionKey.KeyValue.Span, validated.SessionKey.Span));
         }
 
         protected static async Task MultithreadedRequests(
