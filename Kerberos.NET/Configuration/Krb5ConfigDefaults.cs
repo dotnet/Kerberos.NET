@@ -314,5 +314,12 @@ namespace Kerberos.NET.Configuration
         [DefaultValue(true)]
         [DisplayName("request_pac")]
         public bool RequestPac { get; set; }
+
+        /// <summary>
+        /// Indicates whether the client should request a PAC during AS-REQ. Default is true.
+        /// </summary>
+        [DefaultValue(PrincipalNameType.NT_ENTERPRISE)]
+        [DisplayName("default_name_type")]
+        public PrincipalNameType DefaultNameType { get; set; }
     }
 }

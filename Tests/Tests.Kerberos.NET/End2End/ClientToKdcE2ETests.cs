@@ -387,6 +387,43 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public async Task E2E_WithNegotiate_NoMutual()
+        {
+            var port = NextPort();
+
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    listener,
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    encodeNego: true,
+                    mutualAuth: false
+                );
+            }
+        }
+
+
+        [TestMethod]
+        public async Task E2E_NoMutual()
+        {
+            var port = NextPort();
+
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    listener,
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    encodeNego: false,
+                    mutualAuth: false
+                );
+            }
+        }
+
+        [TestMethod]
         public async Task E2E_S4U()
         {
             var port = NextPort();

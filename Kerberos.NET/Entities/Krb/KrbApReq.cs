@@ -63,9 +63,13 @@ namespace Kerberos.NET.Entities
                 CName = tgsRep.CName,
                 Realm = ticket.Realm,
                 SequenceNumber = GetNonce(),
-                Subkey = KrbEncryptionKey.Generate(authenticatorKey.EncryptionType),
                 Checksum = KrbChecksum.EncodeDelegationChecksum(new DelegationInfo(rst))
             };
+
+            if (rst.ApOptions.HasFlag(ApOptions.MutualRequired))
+            {
+                authenticator.Subkey = KrbEncryptionKey.Generate(authenticatorKey.EncryptionType);
+            }
 
             Now(out DateTimeOffset ctime, out int usec);
 

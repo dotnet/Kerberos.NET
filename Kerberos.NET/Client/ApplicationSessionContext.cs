@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -23,9 +23,19 @@ namespace Kerberos.NET.Client
 
         public KrbEncryptionKey AuthenticateServiceResponse(string asRepEncoded)
         {
-            var apRep = KrbApRep.DecodeApplication(Convert.FromBase64String(asRepEncoded));
+            return AuthenticateServiceResponse(Convert.FromBase64String(asRepEncoded));
+        }
 
-            var decrypted = new DecryptedKrbApRep(apRep) { CTime = this.CTime, CuSec = this.CuSec, SequenceNumber = this.SequenceNumber };
+        public KrbEncryptionKey AuthenticateServiceResponse(ReadOnlyMemory<byte> apRepBytes)
+        {
+            var apRep = KrbApRep.DecodeApplication(apRepBytes);
+
+            var decrypted = new DecryptedKrbApRep(apRep)
+            {
+                CTime = this.CTime,
+                CuSec = this.CuSec,
+                SequenceNumber = this.SequenceNumber
+            };
 
             decrypted.Decrypt(this.SessionKey.AsKey());
 
