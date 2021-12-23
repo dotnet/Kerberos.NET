@@ -61,10 +61,30 @@ namespace Kerberos.NET.Entities
             authenticator = new KrbAuthenticator
             {
                 CName = tgsRep.CName,
-                Realm = ticket.Realm,
-                SequenceNumber = GetNonce(),
-                Checksum = KrbChecksum.EncodeDelegationChecksum(new DelegationInfo(rst))
+                Realm = ticket.Realm
             };
+
+            if (rst.AuthenticatorChecksum != null)
+            {
+                authenticator.Checksum = rst.AuthenticatorChecksum;
+            }
+            else if (!rst.AuthenticatorChecksumSource.IsEmpty)
+            {
+                authenticator.Checksum = KrbChecksum.Create(
+                    rst.AuthenticatorChecksumSource,
+                    authenticatorKey,
+                    KeyUsage.AuthenticatorChecksum
+                );
+            }
+            else if (rst.GssContextFlags != GssContextEstablishmentFlag.GSS_C_NONE)
+            {
+                authenticator.Checksum = KrbChecksum.EncodeDelegationChecksum(new DelegationInfo(rst));
+            }
+
+            if (rst.IncludeSequenceNumber ?? true)
+            {
+                authenticator.SequenceNumber = GetNonce();
+            }
 
             if (rst.ApOptions.HasFlag(ApOptions.MutualRequired))
             {

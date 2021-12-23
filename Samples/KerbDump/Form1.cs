@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using KerbDump.Properties;
@@ -69,6 +70,20 @@ namespace KerbDump
                 }
             };
 
+            DecodeEvent += (s, e) =>
+            {
+                if (this.IsHandleCreated)
+                {
+                    this.Invoke((MethodInvoker)delegate ()
+                    {
+                        this.lblDecode.Text = $"Decoding 0x{e.Start:x4} - 0x{e.End:x4}";
+                    });
+                }
+            };
+
+            this.lblDecode.Text = "";
+            this.lblKeytab.Text = "";
+
             CryptoService.RegisterCryptographicAlgorithm(EncryptionType.NULL, () => new NoopTransform());
 
             this.SetHost();
@@ -76,8 +91,43 @@ namespace KerbDump
             this.txtHost.TextChanged += this.Host_Changed;
 
             this.txtHost.Text = this.hostName;
+        }
 
-            this.TryLoadPersistedSettings();
+        public string Ticket
+        {
+            get => this.txtTicket.Text;
+            set => this.txtTicket.Text = value;
+        }
+
+        public bool Persistent { get; set; } = true;
+
+        private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            if (this.Persistent)
+            {
+                this.TryLoadPersistedSettings();
+            }
+            else if (!string.IsNullOrWhiteSpace(this.Ticket))
+            {
+                this.chkRemember.Checked = false;
+                this.button1_Click(sender, e);
+            }
+
+            if (this.IsHandleCreated)
+            {
+                this.Invoke((MethodInvoker)delegate ()
+                {
+                    this.TopMost = true;
+                    this.TopMost = false;
+                });
+            }
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            this.cancellation.Cancel();
         }
 
         private void CopyNodeValue(object sender, EventArgs e)
@@ -185,7 +235,7 @@ namespace KerbDump
         {
             try
             {
-                this.Decode().Wait();
+                this.Decode();
             }
             catch (Exception ex)
             {
@@ -193,7 +243,7 @@ namespace KerbDump
             }
         }
 
-        private async Task Decode()
+        private void Decode()
         {
             if (this.chkRemember.Checked)
             {
@@ -209,20 +259,13 @@ namespace KerbDump
                 return;
             }
 
-            string ticket;
-
-            if (string.IsNullOrWhiteSpace(this.txtKey.Text) && this.table == null)
+            if (!string.IsNullOrWhiteSpace(this.txtKey.Text) || this.table != null)
             {
-                ticket = this.Decode(this.txtTicket.Text);
-            }
-            else
-            {
-                var key = this.CreateKeytab();
-
-                ticket = await this.Decode(this.txtTicket.Text, key);
+                this.decryptDecoded = true;
+                this.key = this.CreateKeytab();
             }
 
-            this.DisplayDeconstructed(ticket, "Decoded Message");
+            this.Decode(this.txtTicket.Text);
         }
 
         private KeyTable CreateKeytab()
@@ -367,13 +410,13 @@ namespace KerbDump
             this.CreateTreeView(ticket, label);
         }
 
-        private async Task<string> Decode(string ticket, KeyTable key)
+        private bool decryptDecoded = false;
+        private KeyTable key = null;
+        private byte[] ticketBytes = null;
+
+        private async Task<string> DecryptMessage(KeyTable key)
         {
-            ticket = StripWhitespace(ticket);
-
             var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.Pac };
-
-            var ticketBytes = Convert.FromBase64String(ticket);
 
             var decrypted = await validator.Validate(ticketBytes);
 
@@ -556,19 +599,162 @@ namespace KerbDump
             }
         }
 
-        private string Decode(string ticket)
+        private void Decode(string ticket)
         {
-            ticket = StripWhitespace(ticket);
+            this.treeView1.Nodes.Clear();
 
-            var ticketBytes = Convert.FromBase64String(ticket);
+            DecodeMessage(ticket).ContinueWith(async t =>
+            {
+                try
+                {
+                    string ticket;
 
-            var request = MessageParser.Parse(ticketBytes);
+                    if (decryptDecoded)
+                    {
+                        ticket = await DecryptMessage(key);
+                    }
+                    else
+                    {
+                        ticket = FormatTicket();
+                    }
 
-            var keytab = this.GenerateFormattedKeyTable(this.table);
+                    this.Invoke((MethodInvoker)delegate ()
+                    {
+                        this.DisplayDeconstructed(ticket, "Decoded Message");
+                    });
+                }
+                catch (Exception ex)
+                {
+                    this.ShowError(ex);
+                }
+            });
+        }
 
-            var obj = new { Request = request, KeyTable = keytab };
+        private string FormatTicket()
+        {
+            if (this.ticketBytes == null)
+            {
+                return null;
+            }
+
+            var request = MessageParser.Parse(this.ticketBytes);
+
+            var obj = new Dictionary<string, object>()
+            {
+                { "Request", request }
+            };
+
+            var nego = request as NegotiateContextToken;
+
+            if (nego?.Token.InitialToken.MechToken != null)
+            {
+                obj["Negotiate"] = MessageParser.Parse(nego.Token.InitialToken.MechToken.Value);
+            }
+
+            obj["Keytab"] = this.GenerateFormattedKeyTable(this.table);
 
             return this.FormatSerialize(obj);
+        }
+
+        private class DecodeEventArgs : EventArgs
+        {
+            public int Start { get; set; }
+            public int End { get; set; }
+        }
+
+        private delegate void DecodeStep(object sender, DecodeEventArgs e);
+        private static event DecodeStep DecodeEvent;
+
+        private Task DecodeMessage(string ticket)
+        {
+            return Task.Run(() => this.ticketBytes = DecodeInternal(ticket));
+        }
+
+        private byte[] DecodeInternal(string ticket)
+        {
+            if (!TryDecodeHex(ticket, out byte[] ticketBytes))
+            {
+                if (!TryDecodeBase64(ticket, out ticketBytes))
+                {
+                    throw new FormatException("Unknown Kerberos message format");
+                }
+            }
+
+            for (var i = 0; i < ticketBytes.Length; i++)
+            {
+                if (this.cancellation.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                var forwards = new ReadOnlyMemory<byte>(ticketBytes).Slice(i);
+
+                for (var j = forwards.Length; j > 0; j--)
+                {
+                    if (this.cancellation.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    var backwards = forwards.Slice(0, j);
+
+                    try
+                    {
+                        Debug.WriteLine($"Trying {i}-{j}");
+                        DecodeEvent?.Invoke(null, new DecodeEventArgs { Start = i, End = j });
+                        var decoded = MessageParser.Parse(backwards);
+                        return backwards.ToArray();
+                    }
+                    catch (Exception e) when (e is not InvalidOperationException)
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static bool TryDecodeHex(string ticket, out byte[] ticketBytes)
+        {
+            ticketBytes = null;
+
+            try
+            {
+                ticket = StripWhitespace(ticket);
+                ticketBytes = StringToByteArray(ticket);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static byte[] StringToByteArray(string hex)
+        {
+            return Enumerable.Range(0, hex.Length)
+                             .Where(x => x % 2 == 0)
+                             .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
+                             .ToArray();
+        }
+
+        private static bool TryDecodeBase64(string ticket, out byte[] ticketBytes)
+        {
+            ticketBytes = null;
+
+            try
+            {
+                ticket = StripWhitespace(ticket);
+
+                ticketBytes = Convert.FromBase64String(ticket);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void btnDecodeLocal_Click(object sender, EventArgs e)
@@ -635,6 +821,11 @@ namespace KerbDump
 
         private void CreateTreeView(string json, string label)
         {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return;
+            }
+
             this.treeView1.BeginUpdate();
 
             this.treeView1.Nodes.Clear();

@@ -160,5 +160,109 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(AuthorizationDataType.AdAndOr, decoded.AuthorizationData[0].Type);
             Assert.AreEqual("blah@blah.com", decoded.CName.FullyQualifiedName);
         }
+
+        [TestMethod]
+        public void AuthenticatorChecksum_GssDefaults()
+        {
+            var rst = new RequestServiceTicket { };
+            KrbApReq apreq = GenerateApReq(rst, out KrbAuthenticator authenticator);
+
+            Assert.IsNotNull(apreq);
+            Assert.IsNotNull(authenticator);
+            Assert.IsNotNull(authenticator.Checksum);
+            Assert.AreEqual((ChecksumType)32771, authenticator.Checksum.Type);
+        }
+
+        [TestMethod]
+        public void AuthenticatorChecksum_GssEmpty()
+        {
+            var rst = new RequestServiceTicket { GssContextFlags = GssContextEstablishmentFlag.GSS_C_NONE };
+            KrbApReq apreq = GenerateApReq(rst, out KrbAuthenticator authenticator);
+
+            Assert.IsNotNull(apreq);
+            Assert.IsNotNull(authenticator);
+            Assert.IsNull(authenticator.Checksum);
+        }
+
+        [TestMethod]
+        public void AuthenticatorChecksum_AppChecksum()
+        {
+            var rst = new RequestServiceTicket
+            {
+                AuthenticatorChecksum = new KrbChecksum
+                {
+                    Type = ChecksumType.HMAC_SHA256_128_AES128,
+                    Checksum = new byte[245]
+                }
+            };
+
+            KrbApReq apreq = GenerateApReq(rst, out KrbAuthenticator authenticator);
+
+            Assert.IsNotNull(apreq);
+            Assert.IsNotNull(authenticator);
+            Assert.IsNotNull(authenticator.Checksum);
+
+            Assert.AreEqual(ChecksumType.HMAC_SHA256_128_AES128, authenticator.Checksum.Type);
+
+            Assert.IsTrue(
+                KerberosCryptoTransformer.AreEqualSlow(
+                    new byte[245],
+                    authenticator.Checksum.Checksum.Span
+                )
+            );
+        }
+
+        [TestMethod]
+        public void AuthenticatorChecksum_ChecksumSource()
+        {
+            var key = new KerberosKey(key: new byte[32], etype: EncryptionType.AES256_CTS_HMAC_SHA1_96);
+
+            var rst = new RequestServiceTicket { AuthenticatorChecksumSource = new byte[345] };
+            KrbApReq apreq = GenerateApReq(rst, out KrbAuthenticator authenticator);
+
+            Assert.IsNotNull(apreq);
+            Assert.IsNotNull(authenticator);
+            Assert.IsNotNull(authenticator.Checksum);
+
+            var expected = KrbChecksum.Create(
+                rst.AuthenticatorChecksumSource,
+                key,
+                KeyUsage.AuthenticatorChecksum
+            );
+
+            Assert.IsTrue(
+                KerberosCryptoTransformer.AreEqualSlow(
+                    expected.Checksum.Span,
+                    authenticator.Checksum.Checksum.Span
+                )
+            );
+        }
+
+        private static KrbApReq GenerateApReq(RequestServiceTicket rst, out KrbAuthenticator authenticator)
+        {
+            var key = new KerberosKey(key: new byte[32], etype: EncryptionType.AES256_CTS_HMAC_SHA1_96);
+
+            var now = DateTimeOffset.UtcNow;
+            var notBefore = now.AddMinutes(-5);
+            var notAfter = now.AddMinutes(55);
+            var renewUntil = now.AddMinutes(555);
+
+            var tgsRep = KrbTgsRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            {
+                EncryptedPartKey = key,
+                Principal = new FakeKerberosPrincipal("test@test.com"),
+                ServicePrincipal = new FakeKerberosPrincipal("host/test.com"),
+                ServicePrincipalKey = key,
+                IncludePac = false,
+                RealmName = "test.com",
+                Now = now,
+                StartTime = notBefore,
+                EndTime = notAfter,
+                RenewTill = renewUntil,
+                Flags = TicketFlags.Renewable
+            });
+
+            return KrbApReq.CreateApReq(tgsRep, key, rst, out authenticator);
+        }
     }
 }

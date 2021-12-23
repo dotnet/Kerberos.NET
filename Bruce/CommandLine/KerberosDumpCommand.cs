@@ -23,6 +23,10 @@ namespace Kerberos.NET.CommandLine
         {
         }
 
+
+        [CommandLineParameter("ticket", Description = "Ticket")]
+        public string Ticket { get; set; }
+
         public override Task<bool> Execute()
         {
             if (!OSPlatform.IsWindows)
@@ -30,7 +34,11 @@ namespace Kerberos.NET.CommandLine
                 return Task.FromResult(false);
             }
 
-            using (var form = new Form1())
+            using (var form = new Form1()
+            {
+                Ticket = this.Ticket,
+                Persistent = string.IsNullOrWhiteSpace(this.Ticket)
+            })
             {
                 Application.Run(form);
             }

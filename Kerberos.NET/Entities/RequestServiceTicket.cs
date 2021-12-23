@@ -71,6 +71,22 @@ namespace Kerberos.NET
         public Krb5Config Configuration { get; set; }
 
         /// <summary>
+        /// Indicates whether the AP-REQ should include a sequence number.
+        /// Default behavior is to include the sequece number.
+        /// </summary>
+        public bool? IncludeSequenceNumber { get; set; }
+
+        /// <summary>
+        /// Optionally provide the application value over which to generate an authenticator checksum.
+        /// </summary>
+        public ReadOnlyMemory<byte> AuthenticatorChecksumSource { get; set; }
+
+        /// <summary>
+        /// Optionally provide an application checksum for the checksum.
+        /// </summary>
+        public KrbChecksum AuthenticatorChecksum { get; set; }
+
+        /// <summary>
         /// Indicates whether the client should cache the ticket. Default null indicates the client should decide.
         /// </summary>
         public bool? CacheTicket { get; set; }
