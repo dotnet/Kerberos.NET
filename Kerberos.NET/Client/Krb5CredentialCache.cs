@@ -218,7 +218,7 @@ namespace Kerberos.NET.Client
                 KdcResponse = new KrbTgsRep
                 {
                     Ticket = KrbTicket.DecodeApplication(cred.Ticket),
-                    CName = KrbPrincipalName.FromString(cred.Client.FullyQualifiedName),
+                    CName = KrbPrincipalName.FromString(cred.Client.FullyQualifiedName, cred.Client.Type),
                     CRealm = cred.Client.Realm,
                     EncPart = new KrbEncryptedData { }
                 },

@@ -42,6 +42,12 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("get", Description = "Get")]
         public string ServicePrincipalName { get; set; }
 
+        [CommandLineParameter("dump", Description = "Dump")]
+        public string DumpServicePrincipalName { get; set; }
+
+        [CommandLineParameter("negotiate", Description = "Negotiate")]
+        public bool DumpAsNegotiate { get; set; }
+
         [CommandLineParameter("d|debug", Description = "DescribeClient")]
         public bool DescribeClient { get; set; }
 
@@ -79,6 +85,11 @@ namespace Kerberos.NET.CommandLine
                 await this.GetServiceTicket(client);
             }
 
+            if (!string.IsNullOrWhiteSpace(this.DumpServicePrincipalName))
+            {
+                await this.DumpServiceTicket(client);
+            }
+
             this.ListTickets(client.Configuration.Defaults.DefaultCCacheName);
 
             if (this.DescribeClient)
@@ -92,6 +103,26 @@ namespace Kerberos.NET.CommandLine
             }
 
             return true;
+        }
+
+        private async Task DumpServiceTicket(KerberosClient client)
+        {
+            var rep = await client.GetServiceTicket(this.DumpServicePrincipalName);
+
+            string apreq;
+
+            if (this.DumpAsNegotiate)
+            {
+                apreq = Convert.ToBase64String(rep.EncodeGssApi().ToArray());
+            }
+            else
+            {
+                apreq = Convert.ToBase64String(rep.EncodeApplication().ToArray());
+            }
+
+            var command = new KerberosDumpCommand(CommandLineParameters.Parse($"kdecode --ticket \"{apreq}\""));
+
+            await command.Execute();
         }
 
         private void ShowTgtDetails(KerberosClient client)
