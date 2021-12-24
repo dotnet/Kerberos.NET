@@ -16,7 +16,7 @@ namespace KerbDump
             AppDomain.CurrentDomain.AssemblyLoad += CurrentDomain_AssemblyLoad;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new DecoderForm());
         }
 
         private static void CurrentDomain_AssemblyLoad(object sender, AssemblyLoadEventArgs args)

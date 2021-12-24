@@ -34,7 +34,7 @@ namespace Kerberos.NET.CommandLine
                 return Task.FromResult(false);
             }
 
-            using (var form = new Form1()
+            using (var form = new DecoderForm()
             {
                 Ticket = this.Ticket,
                 Persistent = string.IsNullOrWhiteSpace(this.Ticket)
