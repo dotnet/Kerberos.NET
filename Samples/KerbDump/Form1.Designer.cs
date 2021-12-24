@@ -1,6 +1,6 @@
 ﻿namespace KerbDump
 {
-    partial class Form1
+    partial class DecoderForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.button1 = new System.Windows.Forms.Button();
+            this.btnDecode = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.label2 = new System.Windows.Forms.Label();
             this.ddlKeyType = new System.Windows.Forms.ComboBox();
@@ -39,7 +39,7 @@
             this.txtKey = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.txtTicket = new System.Windows.Forms.TextBox();
-            this.treeView1 = new System.Windows.Forms.TreeView();
+            this.MessageView = new KerbDump.MessageTreeView();
             this.btnDecodeLocal = new System.Windows.Forms.Button();
             this.btnLoadKeytab = new System.Windows.Forms.Button();
             this.lblKeytab = new System.Windows.Forms.Label();
@@ -53,17 +53,17 @@
             this.splitContainer1.SuspendLayout();
             this.SuspendLayout();
             // 
-            // button1
+            // btnDecode
             // 
-            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button1.Location = new System.Drawing.Point(1640, 773);
-            this.button1.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(174, 36);
-            this.button1.TabIndex = 1;
-            this.button1.Text = "Decode";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.btnDecode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnDecode.Location = new System.Drawing.Point(1640, 773);
+            this.btnDecode.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
+            this.btnDecode.Name = "btnDecode";
+            this.btnDecode.Size = new System.Drawing.Size(174, 36);
+            this.btnDecode.TabIndex = 1;
+            this.btnDecode.Text = "Decode";
+            this.btnDecode.UseVisualStyleBackColor = true;
+            this.btnDecode.Click += new System.EventHandler(this.btnDecode_Click);
             // 
             // splitContainer1
             // 
@@ -88,7 +88,7 @@
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.treeView1);
+            this.splitContainer1.Panel2.Controls.Add(this.MessageView);
             this.splitContainer1.Size = new System.Drawing.Size(1829, 701);
             this.splitContainer1.SplitterDistance = 322;
             this.splitContainer1.SplitterWidth = 6;
@@ -198,6 +198,7 @@
             this.txtTicket.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtTicket.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.txtTicket.Location = new System.Drawing.Point(5, 32);
             this.txtTicket.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
             this.txtTicket.Multiline = true;
@@ -206,16 +207,15 @@
             this.txtTicket.Size = new System.Drawing.Size(313, 381);
             this.txtTicket.TabIndex = 0;
             // 
-            // treeView1
+            // MessageView
             // 
-            this.treeView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.MessageView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.treeView1.Location = new System.Drawing.Point(0, 0);
-            this.treeView1.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
-            this.treeView1.Name = "treeView1";
-            this.treeView1.Size = new System.Drawing.Size(1484, 696);
-            this.treeView1.TabIndex = 3;
+            this.MessageView.Location = new System.Drawing.Point(3, 0);
+            this.MessageView.Name = "MessageView";
+            this.MessageView.Size = new System.Drawing.Size(1482, 703);
+            this.MessageView.TabIndex = 0;
             // 
             // btnDecodeLocal
             // 
@@ -298,7 +298,7 @@
             this.lblDecode.TabIndex = 10;
             this.lblDecode.Text = "Decoding...";
             // 
-            // Form1
+            // DecoderForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -311,9 +311,9 @@
             this.Controls.Add(this.btnLoadKeytab);
             this.Controls.Add(this.btnDecodeLocal);
             this.Controls.Add(this.splitContainer1);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btnDecode);
             this.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
-            this.Name = "Form1";
+            this.Name = "DecoderForm";
             this.Text = "Decode Kerberos Message";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -328,7 +328,7 @@
         }
 
         #endregion
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btnDecode;
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.TextBox txtTicket;
         private System.Windows.Forms.Label label1;
@@ -344,9 +344,9 @@
         private System.Windows.Forms.CheckBox chkRemember;
         private System.Windows.Forms.Button btnExport;
         private System.Windows.Forms.ComboBox ddlKeyType;
-        private System.Windows.Forms.TreeView treeView1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label lblDecode;
+        private MessageTreeView MessageView;
     }
 }
 

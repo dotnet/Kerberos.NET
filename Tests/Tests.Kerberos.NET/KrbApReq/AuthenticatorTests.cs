@@ -174,6 +174,31 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public void AuthenticatorChecksum_NonceDefaults()
+        {
+            var rst = new RequestServiceTicket { };
+            KrbApReq apreq = GenerateApReq(rst, out KrbAuthenticator authenticator);
+
+            Assert.IsNotNull(apreq);
+            Assert.IsNotNull(authenticator);
+            Assert.IsNotNull(authenticator.Checksum);
+            Assert.IsNotNull(authenticator.SequenceNumber);
+            Assert.AreNotEqual(0, authenticator.SequenceNumber.Value);
+        }
+
+        [TestMethod]
+        public void AuthenticatorChecksum_NoNonce()
+        {
+            var rst = new RequestServiceTicket { IncludeSequenceNumber = false };
+            KrbApReq apreq = GenerateApReq(rst, out KrbAuthenticator authenticator);
+
+            Assert.IsNotNull(apreq);
+            Assert.IsNotNull(authenticator);
+            Assert.IsNotNull(authenticator.Checksum);
+            Assert.IsNull(authenticator.SequenceNumber);
+        }
+
+        [TestMethod]
         public void AuthenticatorChecksum_GssEmpty()
         {
             var rst = new RequestServiceTicket { GssContextFlags = GssContextEstablishmentFlag.GSS_C_NONE };
