@@ -451,7 +451,7 @@ namespace KerbDump
 
             var obj = new Dictionary<string, object>()
             {
-                { "Request", request }
+                { $"Request (Length = {this.ticketBytes.Length})", request }
             };
 
             var nego = request as NegotiateContextToken;
@@ -481,18 +481,29 @@ namespace KerbDump
                 }
             }
 
-            for (var i = 0; i < ticketBytes.Length; i++)
-            {
-                if (this.cancellation.IsCancellationRequested)
-                {
-                    break;
-                }
+            bool handleCreated = this.IsHandleCreated;
 
+            byte[] result = null;
+
+            Parallel.For(
+                0,
+                ticketBytes.Length,
+                new ParallelOptions { CancellationToken = this.cancellation.Token },
+                (i, state) =>
+            {
                 var forwards = new ReadOnlyMemory<byte>(ticketBytes)[i..];
+
+                if (handleCreated)
+                {
+                    this.Invoke((MethodInvoker)delegate ()
+                    {
+                        this.lblDecode.Text = $"Decoding 0x{i:x4}";
+                    });
+                }
 
                 for (var j = forwards.Length; j > 0; j--)
                 {
-                    if (this.cancellation.IsCancellationRequested)
+                    if (state.IsStopped)
                     {
                         break;
                     }
@@ -501,18 +512,12 @@ namespace KerbDump
 
                     try
                     {
-                        if (this.IsHandleCreated)
-                        {
-                            this.Invoke((MethodInvoker)delegate ()
-                            {
-                                this.lblDecode.Text = $"Decoding 0x{i:x4} - 0x{j:x4}";
-                            });
-                        }
-
                         var decoded = MessageParser.Parse(backwards);
-                        if (decoded != null)
+
+                        if (decoded != null && !state.IsStopped)
                         {
-                            return backwards.ToArray();
+                            result = backwards.ToArray();
+                            state.Stop();
                         }
                     }
                     catch (Exception e) when (e is not InvalidOperationException)
@@ -520,9 +525,9 @@ namespace KerbDump
                         continue;
                     }
                 }
-            }
+            });
 
-            return null;
+            return result;
         }
 
         private static bool TryDecodeHex(string ticket, out byte[] ticketBytes)
@@ -541,7 +546,7 @@ namespace KerbDump
             }
         }
 
-        public static byte[] StringToByteArray(string hex)
+        private static byte[] StringToByteArray(string hex)
         {
             return Enumerable.Range(0, hex.Length)
                              .Where(x => x % 2 == 0)
@@ -590,7 +595,7 @@ namespace KerbDump
 
         private void ShowError(Exception ex)
         {
-            this.MessageView.Reset(); ;
+            this.MessageView.Reset();
 
             var sb = new StringBuilder();
 
@@ -784,11 +789,6 @@ namespace KerbDump
                 this.txtHost.Visible = false;
                 this.label4.Visible = false;
             }
-        }
-
-        private void splitContainer2_Panel2_Paint(object sender, PaintEventArgs e)
-        {
-
         }
     }
 }

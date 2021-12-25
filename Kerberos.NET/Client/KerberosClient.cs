@@ -560,7 +560,7 @@ namespace Kerberos.NET.Client
 
                     bool cacheResult = false;
 
-                    if (serviceTicketCacheEntry.KdcResponse == null || !this.CacheServiceTickets)
+                    if (!serviceTicketCacheEntry.IsValid(ignoreExpiration: rst.CanRetrieveExpiredTickets) || !this.CacheServiceTickets)
                     {
                         // nope, try and request it from the KDC that issued the TGT
 
@@ -588,6 +588,10 @@ namespace Kerberos.NET.Client
                         VerifyNonces(serviceTicketCacheEntry.Nonce, encKdcRepPart.Nonce);
 
                         serviceTicketCacheEntry.Flags = encKdcRepPart.Flags;
+                        serviceTicketCacheEntry.AuthTime = encKdcRepPart.AuthTime;
+                        serviceTicketCacheEntry.StartTime = encKdcRepPart.StartTime ?? DateTimeOffset.MinValue;
+                        serviceTicketCacheEntry.EndTime = encKdcRepPart.EndTime;
+                        serviceTicketCacheEntry.RenewTill = encKdcRepPart.RenewTill;
 
                         sessionKey = encKdcRepPart.Key;
                         respondedSName = encKdcRepPart.SName;
@@ -850,6 +854,12 @@ namespace Kerberos.NET.Client
                     Value = new KerberosClientCacheEntry
                     {
                         SessionKey = sessionKey,
+                        AuthTime = kdcRepData.AuthTime,
+                        StartTime = kdcRepData.StartTime,
+                        EndTime = kdcRepData.EndTime,
+                        RenewTill = kdcRepData.RenewTill,
+                        Flags = kdcRepData.Flags,
+                        SName = kdcRepData.SName,
                         KdcResponse = new KrbTgsRep
                         {
                             Ticket = ticket,
@@ -934,12 +944,13 @@ namespace Kerberos.NET.Client
         )
         {
             this.logger.LogInformation(
-                "Requesting TGS for {SPN}; TGT Realm = {TGTRealm}; TGT Service = {TGTService}; S4U = {S4U}; S4UTicket = {S4UTicketSPN}",
+                "Requesting TGS for {SPN}; TGT Realm = {TGTRealm}; TGT Service = {TGTService}; S4U = {S4U}; S4UTicket = {S4UTicketSPN}; KDC Flags = {KDCFlags}",
                 rst.ServicePrincipalName,
                 tgtEntry.KdcResponse.CRealm,
                 tgtEntry.KdcResponse.Ticket.SName.FullyQualifiedName,
                 rst.S4uTarget,
-                rst.S4uTicket?.SName
+                rst.S4uTicket?.SName,
+                rst.KdcOptions
             );
 
             var tgsReq = KrbTgsReq.CreateTgsReq(rst, tgtEntry.SessionKey, tgtEntry.KdcResponse, out KrbEncryptionKey sessionKey);

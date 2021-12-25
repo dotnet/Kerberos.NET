@@ -199,7 +199,7 @@ namespace Kerberos.NET.CommandLine
 
             var ticketCache = new Krb5TicketCache(path);
 
-            var tickets = ticketCache.Krb5Cache.Credentials.ToArray();
+            var tickets = ticketCache.Krb5Cache.Credentials.Where(c => c.EndTime >= DateTimeOffset.UtcNow).ToArray();
 
             this.WriteLine(string.Format("{0}: {{TicketCount}}", SR.Resource("CommandLine_KList_Count")), tickets.Length);
             this.WriteLine();
@@ -233,7 +233,7 @@ namespace Kerberos.NET.CommandLine
 
                     if (first)
                     {
-                        key = ticketEntryNumber + key.Substring(ticketEntryNumber.Length);
+                        key = ticketEntryNumber + key[ticketEntryNumber.Length..];
 
                         first = false;
                     }

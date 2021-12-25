@@ -228,7 +228,11 @@ namespace Kerberos.NET.Client
                     KeyValue = cred.KeyBlock.Value
                 },
                 Flags = cred.Flags,
-                SName = KrbPrincipalName.FromString(cred.Server.FullyQualifiedName)
+                SName = KrbPrincipalName.FromString(cred.Server.FullyQualifiedName),
+                AuthTime = cred.AuthTime,
+                StartTime = cred.StartTime,
+                EndTime = cred.EndTime,
+                RenewTill = cred.RenewTill <= DateTimeOffset.MinValue ? null : cred.RenewTill
             };
         }
 
