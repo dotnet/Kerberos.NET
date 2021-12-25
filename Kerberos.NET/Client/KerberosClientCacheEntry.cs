@@ -20,6 +20,21 @@ namespace Kerberos.NET.Client
 
         public TicketFlags Flags { get; set; }
 
+        public DateTimeOffset AuthTime { get; set; }
+
+        public DateTimeOffset? StartTime { get; set; }
+
+        public DateTimeOffset EndTime { get; set; }
+
+        public DateTimeOffset? RenewTill { get; set; }
+
+        public bool IsValid(bool ignoreExpiration = false)
+        {
+            return this.KdcResponse != null &&
+                  (ignoreExpiration || (this.StartTime <= DateTimeOffset.UtcNow &&
+                                        this.EndTime >= DateTimeOffset.UtcNow));
+        }
+
         public override bool Equals(object obj)
         {
             if (obj is KerberosClientCacheEntry entry)
@@ -52,12 +67,40 @@ namespace Kerberos.NET.Client
                 return false;
             }
 
+            if (other.AuthTime != this.AuthTime)
+            {
+                return false;
+            }
+
+            if (other.StartTime != this.StartTime)
+            {
+                return false;
+            }
+
+            if (other.EndTime != this.EndTime)
+            {
+                return false;
+            }
+
+            if (other.RenewTill != this.RenewTill)
+            {
+                return false;
+            }
+
             return true;
         }
 
         public override int GetHashCode()
         {
-            return EntityHashCode.GetHashCode(this.KdcResponse, this.SessionKey, this.Nonce);
+            return EntityHashCode.GetHashCode(
+                this.KdcResponse,
+                this.SessionKey,
+                this.Nonce,
+                this.AuthTime,
+                this.StartTime,
+                this.EndTime,
+                this.RenewTill
+            );
         }
 
         public static bool operator ==(KerberosClientCacheEntry left, KerberosClientCacheEntry right)

@@ -87,6 +87,11 @@ namespace Kerberos.NET
         public KrbChecksum AuthenticatorChecksum { get; set; }
 
         /// <summary>
+        /// Indicates whether the client should attempt to use tickets that are already expired.
+        /// </summary>
+        public bool CanRetrieveExpiredTickets { get; set; }
+
+        /// <summary>
         /// Indicates whether the client should cache the ticket. Default null indicates the client should decide.
         /// </summary>
         public bool? CacheTicket { get; set; }

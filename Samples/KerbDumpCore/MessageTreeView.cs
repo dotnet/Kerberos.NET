@@ -331,7 +331,12 @@ namespace KerbDump
             {
                 Reflect.IsBytes(value, out ReadOnlyMemory<byte> mem);
 
+                writer.WriteStartObject();
+                writer.WritePropertyName("Length");
+                writer.WriteValue(mem.Length);
+                writer.WritePropertyName("Value");
                 writer.WriteValue(Convert.ToBase64String(mem.ToArray()));
+                writer.WriteEndObject();
             }
         }
 

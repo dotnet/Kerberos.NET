@@ -3,15 +3,15 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Kerberos.NET;
 using Kerberos.NET.Client;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Tests.Kerberos.NET
 {
@@ -127,12 +127,31 @@ namespace Tests.Kerberos.NET
         {
             using (var client = new KerberosClient() { Cache = new Krb5TicketCache(FilePath) })
             {
-                var apReq = await client.GetServiceTicket("krbtgt/IPA.IDENTITYINTERVENTION.COM");
+                var rep = await client.GetServiceTicket(new RequestServiceTicket
+                {
+                    ServicePrincipalName = "krbtgt/IPA.IDENTITYINTERVENTION.COM",
+                    CanRetrieveExpiredTickets = true
+                });
+
+                var apReq = rep.ApReq;
 
                 Assert.IsNotNull(apReq);
                 Assert.IsNotNull(apReq.Authenticator);
                 Assert.IsNotNull(apReq.Ticket);
                 Assert.AreEqual("krbtgt@IPA.IDENTITYINTERVENTION.COM", apReq.Ticket.SName.FullyQualifiedName);
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(AggregateException))]
+        public async Task ClientCannotGetExpiredCachedItem()
+        {
+            using (var client = new KerberosClient() { Cache = new Krb5TicketCache(FilePath) })
+            {
+                await client.GetServiceTicket(new RequestServiceTicket
+                {
+                    ServicePrincipalName = "krbtgt/IPA.IDENTITYINTERVENTION.COM"
+                });
             }
         }
     }
