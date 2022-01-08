@@ -54,6 +54,9 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("tgt", Description = "ShowTgt")]
         public bool ShowTgt { get; set; }
 
+        [CommandLineParameter("renew", Description = "RenewTicket")]
+        public bool RenewTgt { get; set; }
+
         public override async Task<bool> Execute()
         {
             if (await base.Execute())
@@ -90,6 +93,11 @@ namespace Kerberos.NET.CommandLine
                 await this.DumpServiceTicket(client);
             }
 
+            if (this.RenewTgt)
+            {
+                await this.RenewServiceTicket(client);
+            }
+
             this.ListTickets(client.Configuration.Defaults.DefaultCCacheName);
 
             if (this.DescribeClient)
@@ -103,6 +111,14 @@ namespace Kerberos.NET.CommandLine
             }
 
             return true;
+        }
+
+        private async Task RenewServiceTicket(KerberosClient client)
+        {
+            await ExecuteWithErrorHandling(
+                client,
+                async c => await c.RenewTicket()
+            );
         }
 
         private async Task DumpServiceTicket(KerberosClient client)
@@ -154,11 +170,11 @@ namespace Kerberos.NET.CommandLine
             this.IO.ListProperties(client);
         }
 
-        private async Task GetServiceTicket(KerberosClient client)
+        private async Task ExecuteWithErrorHandling(KerberosClient client, Func<KerberosClient, Task> function)
         {
             try
             {
-                await client.GetServiceTicket(this.ServicePrincipalName);
+                await function(client);
             }
             catch (AggregateException aex)
             {
@@ -191,6 +207,14 @@ namespace Kerberos.NET.CommandLine
             {
                 this.WriteLine();
             }
+        }
+
+        private async Task GetServiceTicket(KerberosClient client)
+        {
+            await ExecuteWithErrorHandling(
+                client,
+                async c => await c.GetServiceTicket(this.ServicePrincipalName)
+            );
         }
 
         private void ListTickets(string cache)

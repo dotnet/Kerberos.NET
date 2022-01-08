@@ -1040,7 +1040,7 @@ namespace Kerberos.NET.Client
                 new RequestServiceTicket
                 {
                     ServicePrincipalName = spn,
-                    KdcOptions = this.KdcOptions | KdcOptions.Renew | KdcOptions.RenewableOk,
+                    KdcOptions = ReconcileKdcFlags(this.KdcOptions, entry.Flags) | KdcOptions.Renew | KdcOptions.RenewableOk,
                     Realm = ResolveKdcTarget(entry)
                 },
                 entry.SessionKey,
