@@ -567,6 +567,7 @@ namespace Kerberos.NET.Client
                         var tgtEntry = this.CopyTicket(tgtCacheName);
 
                         rst.Realm = ResolveKdcTarget(tgtEntry);
+                        rst.KdcOptions = ReconcileKdcFlags(rst.KdcOptions, tgtEntry.Flags);
 
                         serviceTicketCacheEntry = await this.RequestTgs(rst, tgtEntry, cancellation).ConfigureAwait(false);
 
@@ -684,6 +685,28 @@ namespace Kerberos.NET.Client
                     CuSec = authenticator.CuSec,
                     SequenceNumber = authenticator.SequenceNumber
                 };
+            }
+        }
+
+        private static KdcOptions ReconcileKdcFlags(KdcOptions options, TicketFlags ticketFlags)
+        {
+            SetKdcOptionsFlag(ticketFlags, TicketFlags.Forwardable, KdcOptions.Forwardable, ref options);
+            SetKdcOptionsFlag(ticketFlags, TicketFlags.Forwarded, KdcOptions.Forwarded, ref options);
+            SetKdcOptionsFlag(ticketFlags, TicketFlags.Renewable, KdcOptions.Renewable, ref options);
+
+            return options;
+        }
+
+        private static void SetKdcOptionsFlag(
+            TicketFlags ticketFlags,
+            TicketFlags ticketFlag,
+            KdcOptions kdcFlag,
+            ref KdcOptions options
+        )
+        {
+            if ((ticketFlags & ticketFlag) == 0)
+            {
+                options &= ~kdcFlag;
             }
         }
 
@@ -1017,7 +1040,7 @@ namespace Kerberos.NET.Client
                 new RequestServiceTicket
                 {
                     ServicePrincipalName = spn,
-                    KdcOptions = this.KdcOptions | KdcOptions.Renew | KdcOptions.RenewableOk,
+                    KdcOptions = ReconcileKdcFlags(this.KdcOptions, entry.Flags) | KdcOptions.Renew | KdcOptions.RenewableOk,
                     Realm = ResolveKdcTarget(entry)
                 },
                 entry.SessionKey,

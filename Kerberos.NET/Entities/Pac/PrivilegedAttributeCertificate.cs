@@ -126,6 +126,7 @@ namespace Kerberos.NET.Entities
 
             if (!KnownTypes.TryGetValue(type, out Type pacObjectType))
             {
+                this.Attributes[type] = new UnknownPacObject(type, pacInfoBuffer);
                 return;
             }
 
