@@ -219,6 +219,7 @@ namespace Kerberos.NET.CommandLine
             SetClientProperty(this.Renew, client, AuthenticationOptions.Renew);
             SetClientProperty(this.Renewable, client, AuthenticationOptions.Renewable);
             SetClientProperty(this.Canonicalize, client, AuthenticationOptions.Canonicalize);
+            SetClientProperty(this.Forward, client, AuthenticationOptions.Forwardable);
 
             if (this.RenewLifetime.HasValue)
             {

@@ -12,9 +12,9 @@ namespace Tests.Kerberos.NET
 {
     public class BaseCryptoTest
     {
-        protected static byte[] HexToByte(string hex)
+        public static byte[] HexToByte(string hex)
         {
-            hex = hex?.Replace(" ", string.Empty).Replace("0x", string.Empty).Replace(",", string.Empty);
+            hex = hex?.Replace(" ", string.Empty).Replace(Environment.NewLine, string.Empty).Replace("0x", string.Empty).Replace(",", string.Empty).Trim();
 
             return Enumerable.Range(0, hex.Length)
                      .Where(x => x % 2 == 0)
