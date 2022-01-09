@@ -27,6 +27,8 @@ namespace Kerberos.NET.Crypto
 
         public KrbAuthenticator Authenticator { get; private set; }
 
+        public KrbTicket EncryptedTicket => this.token.Ticket;
+
         public KrbEncTicketPart Ticket { get; private set; }
 
         public KrbEncKrbCredPart DelegationTicket { get; private set; }

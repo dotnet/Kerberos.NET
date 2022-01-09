@@ -56,12 +56,10 @@ namespace Kerberos.NET.Entities
                 throw new ArgumentNullException(nameof(authenticatorKey));
             }
 
-            var ticket = tgsRep.Ticket;
-
             authenticator = new KrbAuthenticator
             {
                 CName = tgsRep.CName,
-                Realm = ticket.Realm
+                Realm = tgsRep.CRealm
             };
 
             if (rst.AuthenticatorChecksum != null)
@@ -98,7 +96,7 @@ namespace Kerberos.NET.Entities
 
             var apReq = new KrbApReq
             {
-                Ticket = ticket,
+                Ticket = tgsRep.Ticket,
                 ApOptions = rst.ApOptions,
                 Authenticator = KrbEncryptedData.Encrypt(
                     authenticator.EncodeApplication(),

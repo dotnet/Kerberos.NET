@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.Asn1;
 using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET.Asn1;
 using Kerberos.NET.Configuration;
@@ -60,6 +61,11 @@ namespace Kerberos.NET.Entities
             if (rst.KdcOptions.HasFlag(KdcOptions.EncTktInSkey) && rst.UserToUserTicket != null)
             {
                 additionalTickets.Add(rst.UserToUserTicket);
+            }
+
+            if (!string.IsNullOrWhiteSpace(rst.S4uTarget) && rst.S4uTicket != null)
+            {
+                throw new InvalidOperationException(SR.Resource("S4uTargetTicketBothPresent"));
             }
 
             if (!string.IsNullOrWhiteSpace(rst.S4uTarget))

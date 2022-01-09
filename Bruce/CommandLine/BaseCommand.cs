@@ -11,8 +11,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Humanizer;
 using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
+using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Reflection;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.CommandLine
@@ -633,6 +636,55 @@ namespace Kerberos.NET.CommandLine
             finally
             {
                 io.HookCtrlC(false);
+            }
+        }
+
+        private static readonly HashSet<string> IgnoredProperties = new HashSet<string>
+        {
+            "PacType",
+            "Reserved3",
+            "NameLength",
+            "UpnLength",
+            "UpnOffset",
+            "DnsDomainNameLength",
+            "DnsDomainNameOffset",
+            "ApReq",
+            "SessionKey",
+            "Ticket",
+            "Authenticator",
+            "SName",
+            "EncryptedPart"
+        };
+
+        public static void GetObjectProperties(object[] objects, List<(string, object)> properties)
+        {
+            foreach (var obj in objects)
+            {
+                if (obj == null)
+                {
+                    continue;
+                }
+
+                properties.Add((null, obj.GetType().Name.Humanize(LetterCasing.Title)));
+
+                var props = obj.GetType().GetProperties();
+
+                foreach (var prop in props)
+                {
+                    if (!Reflect.IsEnumerable(prop.PropertyType) &&
+                        prop.PropertyType != typeof(RpcSid) &&
+                        !IgnoredProperties.Contains(prop.Name))
+                    {
+                        object value = prop.GetValue(obj);
+
+                        if (value is RpcFileTime ft)
+                        {
+                            value = (DateTimeOffset)ft;
+                        }
+
+                        properties.Add((prop.Name.Humanize(LetterCasing.Title), value));
+                    }
+                }
             }
         }
     }

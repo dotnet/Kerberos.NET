@@ -85,7 +85,8 @@ namespace Tests.Kerberos.NET
             KeyAgreementAlgorithm keyAgreement = KeyAgreementAlgorithm.DiffieHellmanModp14,
             bool allowWeakCrypto = false,
             bool useWeakCrypto = false,
-            bool mutualAuth = true
+            bool mutualAuth = true,
+            KrbTicket s4uTicket = null
         )
         {
             KerberosCredential kerbCred;
@@ -142,7 +143,8 @@ namespace Tests.Kerberos.NET
                     {
                         ServicePrincipalName = spn,
                         ApOptions = mutualAuth ? ApOptions.MutualRequired : 0,
-                        S4uTarget = s4u
+                        S4uTarget = s4u,
+                        S4uTicket = s4uTicket
                     }
                 );
 

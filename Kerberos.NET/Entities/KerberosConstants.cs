@@ -88,7 +88,7 @@ namespace Kerberos.NET.Entities
             var bytes = new byte[4];
             Rng.GetBytes(bytes);
 
-            return BinaryPrimitives.ReadInt32BigEndian(bytes);
+            return BinaryPrimitives.ReadInt32BigEndian(bytes) & 0x7fffffff;
         }
 
         public static bool WithinSkew(DateTimeOffset now, DateTimeOffset ctime, int usec, TimeSpan skew)
@@ -102,8 +102,8 @@ namespace Kerberos.NET.Entities
 
         public static bool TimeEquals(DateTimeOffset left, DateTimeOffset right)
         {
-            var leftUsec = left.Ticks % TickUSec;
-            var rightUsec = right.Ticks % TickUSec;
+            var leftUsec = left.Ticks / (TickUSec * 10);
+            var rightUsec = right.Ticks / (TickUSec * 10);
 
             return leftUsec == rightUsec;
         }
@@ -112,7 +112,7 @@ namespace Kerberos.NET.Entities
         {
             var nowTicks = DateTimeOffset.UtcNow.Ticks;
 
-            usec = (int)nowTicks % TickUSec;
+            usec = (int)(nowTicks % TickUSec);
 
             time = new DateTimeOffset(nowTicks - usec, TimeSpan.Zero);
         }

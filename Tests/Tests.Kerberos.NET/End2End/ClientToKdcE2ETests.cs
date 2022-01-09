@@ -5,6 +5,7 @@
 
 using System;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using Kerberos.NET;
 using Kerberos.NET.Client;
@@ -454,6 +455,25 @@ namespace Tests.Kerberos.NET
                     FakeAdminAtCorpPassword,
                     $"127.0.0.1:{port}",
                     s4u: "blah@corp.identityintervention.com"
+                );
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public async Task E2E_S4U_BothTargetAndTicket()
+        {
+            var port = NextPort();
+
+            using (var listener = StartListener(port))
+            {
+                await RequestAndValidateTickets(
+                    listener,
+                    AdminAtCorpUserName,
+                    FakeAdminAtCorpPassword,
+                    $"127.0.0.1:{port}",
+                    s4u: "blah@corp.identityintervention.com",
+                    s4uTicket: new KrbTicket()
                 );
             }
         }

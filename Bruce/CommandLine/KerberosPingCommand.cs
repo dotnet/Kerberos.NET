@@ -3,23 +3,21 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
-using Kerberos.NET.Transport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Kerberos.NET.CommandLine
 {
     [CommandLineCommand("kping|ping", Description = "KerberosPing")]
-    public class KerberosPing : BaseCommand
+    public class KerberosPingCommand : BaseCommand
     {
-        public KerberosPing(CommandLineParameters parameters)
+        public KerberosPingCommand(CommandLineParameters parameters)
             : base(parameters)
         {
         }
@@ -82,42 +80,22 @@ namespace Kerberos.NET.CommandLine
                     return false;
                 }
             }
-
-            credential.Configuration = client.Configuration;
-
-            var asReqMessage = KrbAsReq.CreateAsReq(credential, AuthenticationOptions.Renewable);
-
-            var asReq = asReqMessage.EncodeApplication();
-
-            var transport = new KerberosTransportSelector(
-                new IKerberosTransport[]
-                {
-                    new TcpKerberosTransport(logger),
-                    new UdpKerberosTransport(logger),
-                    new HttpsKerberosTransport(logger)
-                },
-                client.Configuration,
-                logger
-            )
-            {
-                ConnectTimeout = TimeSpan.FromSeconds(5)
-            };
-
             try
             {
-                var asRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq);
+                var result = await KerberosPing.Ping(credential, client);
 
-                if (asRep?.Ticket != null)
+                if (result.AsRep != null)
                 {
                     this.IO.WriteAsColor("  Danger: ", ConsoleColor.Red);
-                    this.WriteLine("The principal {PrincipalName} does not require pre-authentication", asRep.CName.FullyQualifiedName);
+                    this.WriteLine("The principal {PrincipalName} does not require pre-authentication", result.AsRep.CName.FullyQualifiedName);
                     this.WriteLine();
                     this.WriteLine(1, "Pre-authentication should be enabled ASAP");
                 }
-            }
-            catch (KerberosProtocolException pex)
-            {
-                this.WritePreAuthRequirement(credential, pex, asReqMessage);
+
+                else
+                {
+                    this.WritePreAuthRequirement(credential, result.Error, result.AsReq);
+                }
             }
             catch (AggregateException gex)
             {
@@ -155,34 +133,34 @@ namespace Kerberos.NET.CommandLine
             }
         }
 
-        private void WritePreAuthRequirement(KerberosPasswordCredential credential, KerberosProtocolException pex, KrbAsReq asreq)
+        private void WritePreAuthRequirement(KerberosPasswordCredential credential, KrbError error, KrbAsReq asreq)
         {
             if (this.Verbose)
             {
                 this.WriteLine();
             }
 
-            this.WriteLine(1, "{ErrorCode}: {ErrorText}", pex.Error.ErrorCode, pex.Error.ETextWithoutCode() ?? "(no message)");
+            this.WriteLine(1, "{ErrorCode}: {ErrorText}", error.ErrorCode, error.ETextWithoutCode() ?? "(no message)");
             this.WriteLine();
 
-            if (!string.IsNullOrWhiteSpace(pex.Error.Realm))
+            if (!string.IsNullOrWhiteSpace(error.Realm))
             {
-                this.WriteLine(1, " Realm: {Realm}", pex.Error.Realm);
+                this.WriteLine(1, " Realm: {Realm}", error.Realm);
             }
 
-            if (pex.Error.CName != null)
+            if (error.CName != null)
             {
-                this.WriteLine(1, " Client: {CName}", pex.Error.CName.FullyQualifiedName);
+                this.WriteLine(1, " Client: {CName}", error.CName.FullyQualifiedName);
             }
 
-            if (pex.Error.SName != null)
+            if (error.SName != null)
             {
-                this.WriteLine(1, "Server: {SName}", pex.Error.SName.FullyQualifiedName);
+                this.WriteLine(1, "Server: {SName}", error.SName.FullyQualifiedName);
             }
 
             this.WriteLine();
 
-            if (pex.Error.ErrorCode == KerberosErrorCode.KDC_ERR_ETYPE_NOSUPP)
+            if (error.ErrorCode == KerberosErrorCode.KDC_ERR_ETYPE_NOSUPP)
             {
                 this.IO.WriteAsColor("   Error: ", ConsoleColor.Red);
                 this.WriteLine("Client requested the following ETypes but the KDC cannot support any of them.");
@@ -209,14 +187,14 @@ namespace Kerberos.NET.CommandLine
                 return;
             }
 
-            if (pex.Error.ErrorCode == KerberosErrorCode.KDC_ERR_POLICY &&
-                pex.Error.EData.HasValue &&
-                KrbErrorData.CanDecode(pex.Error.EData.Value))
+            if (error.ErrorCode == KerberosErrorCode.KDC_ERR_POLICY &&
+                error.EData.HasValue &&
+                KrbErrorData.CanDecode(error.EData.Value))
             {
-                var decoded = KrbErrorData.Decode(pex.Error.EData.Value);
+                var decoded = KrbErrorData.Decode(error.EData.Value);
                 var ext = decoded.DecodeExtendedError();
 
-                this.WriteLine(1, pex.Message);
+                this.WriteLine(1, error.EText);
                 this.WriteLine();
                 this.WriteLine(1, "Status: {Status}", ext.Status);
                 this.WriteLine(1, " Flags: {Flags}", ext.Flags);
@@ -224,17 +202,17 @@ namespace Kerberos.NET.CommandLine
                 return;
             }
 
-            if (pex.Error.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
+            if (error.ErrorCode != KerberosErrorCode.KDC_ERR_PREAUTH_REQUIRED)
             {
-                if (pex.Error.EData.HasValue)
+                if (error.EData.HasValue)
                 {
-                    this.WriteLine(1, "{EData}", pex.Error.EData);
+                    this.WriteLine(1, "{EData}", error.EData);
                 }
 
                 return;
             }
 
-            var paData = pex?.Error?.DecodePreAuthentication();
+            var paData = error?.DecodePreAuthentication();
 
             if (paData != null)
             {

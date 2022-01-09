@@ -180,6 +180,8 @@ namespace Kerberos.NET.Client
             set => this.transport.ReceiveTimeout = value;
         }
 
+        public int MaximumReferralLoops { get; set; } = 10;
+
         /// <summary>
         /// Indicates whether the client should cache service tickets.
         /// Ticket-Granting-Tickets are always cached.
@@ -495,13 +497,13 @@ namespace Kerberos.NET.Client
             // holding it here because the request may need intermediate tickets
             // if we have to cross realms
 
-            var originalServicePrincipalName = KrbPrincipalName.FromString(rst.ServicePrincipalName);
+            var requestedServicePrincipalName = KrbPrincipalName.FromString(rst.ServicePrincipalName);
 
             if (this.Configuration.Defaults.DnsCanonicalizeHostname)
             {
-                originalServicePrincipalName.Canonicalize(this.Configuration.Defaults.QualifyShortname);
+                requestedServicePrincipalName.Canonicalize(this.Configuration.Defaults.QualifyShortname);
 
-                rst.ServicePrincipalName = originalServicePrincipalName.FullyQualifiedName;
+                rst.ServicePrincipalName = requestedServicePrincipalName.FullyQualifiedName;
             }
 
             if (string.IsNullOrWhiteSpace(this.DefaultDomain) &&
@@ -516,7 +518,6 @@ namespace Kerberos.NET.Client
             using (this.logger.BeginRequestScope(this.ScopeId))
             {
                 KrbEncTgsRepPart encKdcRepPart = null;
-                KrbEncryptionKey sessionKey;
                 KerberosClientCacheEntry serviceTicketCacheEntry = default;
 
                 if (this.KdcOptions == 0)
@@ -544,6 +545,8 @@ namespace Kerberos.NET.Client
                     rst.Configuration = this.Configuration;
                 }
 
+                int referralCount = 0;
+
                 do
                 {
                     cancellation.ThrowIfCancellationRequested();
@@ -553,14 +556,14 @@ namespace Kerberos.NET.Client
                     if (rst.CanCacheTicket)
                     {
                         serviceTicketCacheEntry = this.Cache.GetCacheItem<KerberosClientCacheEntry>(
-                            originalServicePrincipalName.FullyQualifiedName,
+                            requestedServicePrincipalName.FullyQualifiedName,
                             rst.S4uTarget
                         );
                     }
 
                     bool cacheResult = false;
 
-                    if (!serviceTicketCacheEntry.IsValid(ignoreExpiration: rst.CanRetrieveExpiredTickets) || !this.CacheServiceTickets)
+                    if (!serviceTicketCacheEntry.IsValid(ignoreExpiration: rst.CanRetrieveExpiredTickets) || !this.CacheServiceTickets || !rst.CanCacheTicket)
                     {
                         // nope, try and request it from the KDC that issued the TGT
 
@@ -571,20 +574,11 @@ namespace Kerberos.NET.Client
 
                         serviceTicketCacheEntry = await this.RequestTgs(rst, tgtEntry, cancellation).ConfigureAwait(false);
 
-                        cacheResult = rst.CacheTicket ?? true;
-                    }
-
-                    // we got a ticket of some sort from the cache or the KDC
-
-                    KrbPrincipalName respondedSName;
-
-                    if (serviceTicketCacheEntry.KdcResponse?.EncPart?.Cipher.Length > 0)
-                    {
                         encKdcRepPart = serviceTicketCacheEntry.KdcResponse.EncPart.Decrypt(
-                            serviceTicketCacheEntry.SessionKey.AsKey(),
-                            serviceTicketCacheEntry.SessionKey.Usage,
-                            d => KrbEncTgsRepPart.DecodeApplication(d)
-                        );
+                           serviceTicketCacheEntry.SessionKey.AsKey(),
+                           serviceTicketCacheEntry.SessionKey.Usage,
+                           d => KrbEncTgsRepPart.DecodeApplication(d)
+                       );
 
                         VerifyNonces(serviceTicketCacheEntry.Nonce, encKdcRepPart.Nonce);
 
@@ -593,30 +587,25 @@ namespace Kerberos.NET.Client
                         serviceTicketCacheEntry.StartTime = encKdcRepPart.StartTime ?? DateTimeOffset.MinValue;
                         serviceTicketCacheEntry.EndTime = encKdcRepPart.EndTime;
                         serviceTicketCacheEntry.RenewTill = encKdcRepPart.RenewTill;
+                        serviceTicketCacheEntry.SessionKey = encKdcRepPart.Key;
+                        serviceTicketCacheEntry.SName = encKdcRepPart.SName;
 
-                        sessionKey = encKdcRepPart.Key;
-                        respondedSName = encKdcRepPart.SName;
-                    }
-                    else
-                    {
-                        // cache shortcut when using krb5cc
-                        sessionKey = serviceTicketCacheEntry.SessionKey;
-                        respondedSName = serviceTicketCacheEntry.SName;
+                        cacheResult = rst.CacheTicket ?? true;
                     }
 
                     receivedRequestedTicket = false;
 
                     // is it a realm referral
 
-                    if (originalServicePrincipalName.Name.Length == 1 &&
-                        respondedSName.FullyQualifiedName.StartsWith(originalServicePrincipalName.FullyQualifiedName, StringComparison.InvariantCultureIgnoreCase))
+                    if (requestedServicePrincipalName.Name.Length == 1 &&
+                        serviceTicketCacheEntry.SName.FullyQualifiedName.StartsWith(requestedServicePrincipalName.FullyQualifiedName, StringComparison.InvariantCultureIgnoreCase))
                     {
                         // It's not a realm referral but it is the singly-named thing we asked for (e.g. "krbtgt")
 
                         receivedRequestedTicket = true;
                     }
-                    else if (!respondedSName.Matches(originalServicePrincipalName) &&
-                             respondedSName.IsKrbtgt())
+                    else if (!serviceTicketCacheEntry.SName.Matches(requestedServicePrincipalName) &&
+                             serviceTicketCacheEntry.SName.IsKrbtgt())
                     {
                         // it is a realm referral and we need to chase it
 
@@ -625,14 +614,14 @@ namespace Kerberos.NET.Client
                         if (string.IsNullOrWhiteSpace(referral) ||
                             encKdcRepPart.SName.Matches(KrbPrincipalName.FromString(referral, PrincipalNameType.NT_SRV_INST)))
                         {
-                            referral = originalServicePrincipalName.FullyQualifiedName;
+                            referral = requestedServicePrincipalName.FullyQualifiedName;
                         }
 
                         rst.ServicePrincipalName = referral;
 
                         receivedRequestedTicket = false;
 
-                        tgtCacheName = respondedSName.FullyQualifiedName;
+                        tgtCacheName = serviceTicketCacheEntry.SName.FullyQualifiedName;
 
                         var usage = serviceTicketCacheEntry.SessionKey.Usage;
 
@@ -650,14 +639,14 @@ namespace Kerberos.NET.Client
                         receivedRequestedTicket = true;
                     }
 
-                    if (cacheResult && rst.CanCacheTicket)
+                    if (cacheResult && (rst.CanCacheTicket || serviceTicketCacheEntry.SName.IsKrbtgt()))
                     {
                         // regardless of what state we're in we got a valuable ticket
                         // that can be used in future requests
 
                         this.Cache.Add(new TicketCacheEntry
                         {
-                            Key = respondedSName.FullyQualifiedName,
+                            Key = serviceTicketCacheEntry.SName.FullyQualifiedName,
                             Container = rst.S4uTarget,
                             RenewUntil = encKdcRepPart.RenewTill,
                             Expires = encKdcRepPart.EndTime,
@@ -668,7 +657,12 @@ namespace Kerberos.NET.Client
                     // if we didn't receive the ticket we requested but got a referral
                     // we need to kick off a new request
                 }
-                while (!receivedRequestedTicket);
+                while (!receivedRequestedTicket && ++referralCount < this.MaximumReferralLoops);
+
+                if (referralCount >= this.MaximumReferralLoops)
+                {
+                    throw new KerberosProtocolException(KerberosErrorCode.KRB_AP_PATH_NOT_ACCEPTED, SR.Resource("ChasedReferralTooFar"));
+                }
 
                 // finally we got what we asked for
 
@@ -676,11 +670,11 @@ namespace Kerberos.NET.Client
                 {
                     ApReq = KrbApReq.CreateApReq(
                         serviceTicketCacheEntry.KdcResponse,
-                        sessionKey.AsKey(),
+                        serviceTicketCacheEntry.SessionKey.AsKey(),
                         rst,
                         out KrbAuthenticator authenticator
                     ),
-                    SessionKey = authenticator.Subkey ?? sessionKey,
+                    SessionKey = authenticator.Subkey ?? serviceTicketCacheEntry.SessionKey,
                     CTime = authenticator.CTime,
                     CuSec = authenticator.CuSec,
                     SequenceNumber = authenticator.SequenceNumber
@@ -773,7 +767,7 @@ namespace Kerberos.NET.Client
 
         private static string TryFindReferralShortcut(KrbEncTgsRepPart encKdcRepPart)
         {
-            var svrReferralPaData = encKdcRepPart.EncryptedPaData?.MethodData?.FirstOrDefault(d => d.Type == PaDataType.PA_SVR_REFERRAL_INFO);
+            var svrReferralPaData = encKdcRepPart?.EncryptedPaData?.MethodData?.FirstOrDefault(d => d.Type == PaDataType.PA_SVR_REFERRAL_INFO);
 
             if (svrReferralPaData == null)
             {

@@ -46,7 +46,7 @@ namespace Kerberos.NET.Crypto
                 this.ValidateTicketSkew(now, this.Skew, ctime);
             }
 
-            if (TimeEquals(this.CTime, this.Response.CTime))
+            if (!TimeEquals(this.CTime, this.Response.CTime))
             {
                 throw new KerberosValidationException(
                     $"CTime does not match. Sent: {this.CTime.Ticks}; Received: {this.Response.CTime.Ticks}",

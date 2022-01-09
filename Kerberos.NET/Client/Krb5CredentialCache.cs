@@ -167,26 +167,15 @@ namespace Kerberos.NET.Client
 
             if (entry.Value is KerberosClientCacheEntry entryValue)
             {
-                KrbEncryptionKey sessionKey;
-
-                if (entryValue.KdcResponse is KrbAsRep asRep)
+                if (entryValue.KdcResponse is KrbAsRep asRep && !this.Credentials.Any())
                 {
-                    sessionKey = entryValue.SessionKey;
-
-                    if (!this.Credentials.Any())
-                    {
-                        this.DefaultPrincipalName = FromResponse(asRep, asRep.CName);
-                    }
-                }
-                else
-                {
-                    sessionKey = entryValue.SessionKey;
+                    this.DefaultPrincipalName = FromResponse(asRep, asRep.CName);
                 }
 
                 this.Credentials.Add(new Krb5Credential
                 {
                     Ticket = entryValue.KdcResponse.Ticket.EncodeApplication(),
-                    KeyBlock = new KeyValuePair<EncryptionType, ReadOnlyMemory<byte>>(sessionKey.EType, sessionKey.KeyValue),
+                    KeyBlock = new KeyValuePair<EncryptionType, ReadOnlyMemory<byte>>(entryValue.SessionKey.EType, entryValue.SessionKey.KeyValue),
                     Client = FromResponse(entryValue.KdcResponse, entryValue.KdcResponse.CName),
                     Server = FromResponse(entryValue.KdcResponse, entryValue.KdcResponse.Ticket.SName),
                     AuthData = new List<KrbAuthorizationData>(),

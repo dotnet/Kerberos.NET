@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Entities.Pac;
@@ -21,13 +22,24 @@ namespace Kerberos.NET
         private const string CERT_AUTHORITY = "CERTIFICATE AUTHORITY";
         private const string AD_AUTHORITY = "AD AUTHORITY";
 
+        private readonly IS4UProvider s4uProvider;
         private readonly IKerberosValidator validator;
 
         public UserNameFormat UserNameFormat { get; set; } = UserNameFormat.UserPrincipalName;
 
-        public KerberosAuthenticator(KeyTable keytab, ILoggerFactory logger = null)
+        public KerberosAuthenticator(string upn, KeyTable keytab, Krb5Config config, ILoggerFactory logger = null)
             : this(new KerberosValidator(keytab, logger))
         {
+            if (!string.IsNullOrWhiteSpace(upn))
+            {
+                this.s4uProvider = new S4UProvider(upn, keytab, config, logger);
+            }
+        }
+
+        public KerberosAuthenticator(KeyTable keytab, ILoggerFactory logger = null)
+            : this(null, keytab, null, logger)
+        {
+
         }
 
         public KerberosAuthenticator(IKerberosValidator validator)
@@ -78,13 +90,17 @@ namespace Kerberos.NET
             SetMinimumIdentity(krbApReq, claims);
 
             return new KerberosIdentity(
-                claims,
-                "Kerberos",
-                ClaimTypes.NameIdentifier,
-                ClaimTypes.Role,
-                restrictions,
-                this.validator.ValidateAfterDecrypt,
-                krbApReq
+                new KerberosIdentityResult
+                {
+                    UserClaims = claims,
+                    AuthenticationType = "Kerberos",
+                    NameType = ClaimTypes.NameIdentifier,
+                    RoleType = ClaimTypes.Role,
+                    Restrictions = restrictions,
+                    ValidationMode = this.validator.ValidateAfterDecrypt,
+                    KrbApReq = krbApReq,
+                    S4uProvider = this.s4uProvider
+                }
             );
         }
 
