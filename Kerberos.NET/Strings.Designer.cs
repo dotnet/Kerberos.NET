@@ -19,7 +19,7 @@ namespace Kerberos.NET {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Strings {
@@ -120,6 +120,15 @@ namespace Kerberos.NET {
         internal static string ArgumentOutOfRange_NeedNonNegNum {
             get {
                 return ResourceManager.GetString("ArgumentOutOfRange_NeedNonNegNum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The client has been referred to too many realms before it could find the requested service principal.
+        /// </summary>
+        internal static string ChasedReferralTooFar {
+            get {
+                return ResourceManager.GetString("ChasedReferralTooFar", resourceCulture);
             }
         }
         
@@ -921,6 +930,15 @@ namespace Kerberos.NET {
         internal static string ObjectDisposed_Generic {
             get {
                 return ResourceManager.GetString("ObjectDisposed_Generic", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Both the S4UTarget and S4UTicket properties are present on the service ticket request which is not allowed. Set S4UTarget for invoking the S4USelf flow or otherwise set S4UTicket for the S4UProxy (constrained delegation) flow..
+        /// </summary>
+        internal static string S4uTargetTicketBothPresent {
+            get {
+                return ResourceManager.GetString("S4uTargetTicketBothPresent", resourceCulture);
             }
         }
     }

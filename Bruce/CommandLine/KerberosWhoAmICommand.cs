@@ -106,18 +106,7 @@ namespace Kerberos.NET.CommandLine
             }
         }
 
-        private readonly HashSet<string> IgnoredProperties = new HashSet<string>
-        {
-            "PacType",
-            "Reserved3",
-            "NameLength",
-            "UpnLength",
-            "UpnOffset",
-            "DnsDomainNameLength",
-            "DnsDomainNameOffset",
-        };
-
-        private void DescribeTicket(KerberosIdentity identity)
+        internal void DescribeTicket(KerberosIdentity identity)
         {
             this.WriteLine();
 
@@ -141,34 +130,7 @@ namespace Kerberos.NET.CommandLine
                     pac.CredentialType
                 };
 
-                foreach (var obj in objects)
-                {
-                    if (obj == null)
-                    {
-                        continue;
-                    }
-
-                    properties.Add((null, obj.GetType().Name.Humanize(LetterCasing.Title)));
-
-                    var props = obj.GetType().GetProperties();
-
-                    foreach (var prop in props)
-                    {
-                        if (!Reflect.IsEnumerable(prop.PropertyType) &&
-                            prop.PropertyType != typeof(RpcSid) &&
-                            !this.IgnoredProperties.Contains(prop.Name))
-                        {
-                            object value = prop.GetValue(obj);
-
-                            if (value is RpcFileTime ft)
-                            {
-                                value = (DateTimeOffset)ft;
-                            }
-
-                            properties.Add((prop.Name.Humanize(LetterCasing.Title), value));
-                        }
-                    }
-                }
+                GetObjectProperties(objects, properties);
             }
 
             if (this.All || this.Claims)

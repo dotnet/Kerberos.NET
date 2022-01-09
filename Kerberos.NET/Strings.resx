@@ -405,4 +405,10 @@
   <data name="KRB_ERROR_KDC_ERR_PUBLIC_KEY_ENCRYPTION_NOT_SUPPORTED" xml:space="preserve">
     <value>The KDC does not support public key encryption for PKINIT</value>
   </data>
+  <data name="ChasedReferralTooFar" xml:space="preserve">
+    <value>The client has been referred to too many realms before it could find the requested service principal</value>
+  </data>
+  <data name="S4uTargetTicketBothPresent" xml:space="preserve">
+    <value>Both the S4UTarget and S4UTicket properties are present on the service ticket request which is not allowed. Set S4UTarget for invoking the S4USelf flow or otherwise set S4UTicket for the S4UProxy (constrained delegation) flow.</value>
+  </data>
 </root>

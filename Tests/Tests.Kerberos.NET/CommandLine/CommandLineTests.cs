@@ -114,7 +114,7 @@ namespace Tests.Kerberos.NET
             var types = LoadTypes();
             var io = InputControl.Default();
 
-            Assert.AreEqual(9, types.Count());
+            Assert.AreEqual(10, types.Count());
 
             foreach (var type in types)
             {
