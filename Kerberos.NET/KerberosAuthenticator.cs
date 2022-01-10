@@ -22,7 +22,7 @@ namespace Kerberos.NET
         private const string CERT_AUTHORITY = "CERTIFICATE AUTHORITY";
         private const string AD_AUTHORITY = "AD AUTHORITY";
 
-        private readonly IS4UProvider s4uProvider;
+        private readonly IS4UProviderFactory s4uProvider;
         private readonly IKerberosValidator validator;
 
         public UserNameFormat UserNameFormat { get; set; } = UserNameFormat.UserPrincipalName;
@@ -32,7 +32,7 @@ namespace Kerberos.NET
         {
             if (!string.IsNullOrWhiteSpace(upn))
             {
-                this.s4uProvider = new S4UProvider(upn, keytab, config, logger);
+                this.s4uProvider = new S4UProviderFactory(upn, keytab, config, logger);
             }
         }
 
@@ -99,7 +99,7 @@ namespace Kerberos.NET
                     Restrictions = restrictions,
                     ValidationMode = this.validator.ValidateAfterDecrypt,
                     KrbApReq = krbApReq,
-                    S4uProvider = this.s4uProvider
+                    S4uProviderFactory = this.s4uProvider
                 }
             );
         }

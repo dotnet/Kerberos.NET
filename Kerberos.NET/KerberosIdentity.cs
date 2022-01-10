@@ -31,12 +31,12 @@ namespace Kerberos.NET
 
         public DecryptedKrbApReq KrbApReq { get; set; }
 
-        public IS4UProvider S4uProvider { get; set; }
+        public IS4UProviderFactory S4uProviderFactory { get; set; }
     }
 
     public class KerberosIdentity : ClaimsIdentity
     {
-        private readonly IS4UProvider s4uProvider;
+        private readonly IS4UProviderFactory s4uProviderFactory;
         private readonly DecryptedKrbApReq krbApReq;
 
         internal KerberosIdentity(KerberosIdentityResult identity)
@@ -53,7 +53,7 @@ namespace Kerberos.NET
             }
 
             this.SessionKey = identity.KrbApReq.SessionKey.GetKey();
-            this.s4uProvider = identity.S4uProvider;
+            this.s4uProviderFactory = identity.S4uProviderFactory;
             this.krbApReq = identity.KrbApReq;
         }
 
@@ -87,16 +87,14 @@ namespace Kerberos.NET
             CancellationToken cancellation = default
         )
         {
-            if (this.s4uProvider == null)
+            if (this.s4uProviderFactory == null)
             {
                 throw new InvalidOperationException("S4U is not configured for this identity");
             }
 
-            //rst.S4uTarget = rst.ServicePrincipalName;
-            rst.S4uTicket = this.krbApReq.EncryptedTicket;
-            rst.KdcOptions |= KdcOptions.CNameInAdditionalTicket;
+            var provider = this.s4uProviderFactory.CreateProvider(this.krbApReq);
 
-            return await this.s4uProvider.GetServiceTicket(rst, cancellation);
+            return await provider.GetServiceTicket(rst, cancellation);
         }
     }
 }
