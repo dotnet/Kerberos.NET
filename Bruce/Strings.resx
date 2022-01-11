@@ -177,6 +177,30 @@
   <data name="CommandLine_KerberosConfigCommand_Config" xml:space="preserve">
     <value>Provide a path to a particular configuration file.</value>
   </data>
+  <data name="CommandLine_KerberosConstrainedDelegationCommand_Delegated" xml:space="preserve">
+    <value>The Service Principal Name of the backend service that should receive the delegated ticket.</value>
+  </data>
+  <data name="CommandLine_KerberosConstrainedDelegationCommand_Help" xml:space="preserve">
+    <value>Display this help text.</value>
+  </data>
+  <data name="CommandLine_KerberosConstrainedDelegationCommand_Realm" xml:space="preserve">
+    <value>Realm of the client for authentication.</value>
+  </data>
+  <data name="CommandLine_KerberosConstrainedDelegationCommand_ServicePrincipalName" xml:space="preserve">
+    <value>The Service Principal Name of the middle box.</value>
+  </data>
+  <data name="CommandLine_KerberosConstrainedDelegationCommand_ServicePrincipalNamePassword" xml:space="preserve">
+    <value>The password for the Service Principal of the middle box.</value>
+  </data>
+  <data name="CommandLine_KerberosConstrainedDelegationCommand_ServicePrincipalSamAccountName" xml:space="preserve">
+    <value>The sAMAccountName of the Service Principal of the middle box.</value>
+  </data>
+  <data name="CommandLine_KerberosConstrainedDelegationCommand_UserPrincipalName" xml:space="preserve">
+    <value>User Principal Name for client authentication.</value>
+  </data>
+  <data name="CommandLine_KerberosConstrainedDelegationCommand_Verbose" xml:space="preserve">
+    <value>Display additional logging data for each stage during execution.</value>
+  </data>
   <data name="CommandLine_KerberosDecode" xml:space="preserve">
     <value>Launch a GUI to decode Kerberos tickets.</value>
   </data>

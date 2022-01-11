@@ -19,7 +19,7 @@ namespace Kerberos.NET.CommandLine {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Strings {
@@ -237,6 +237,78 @@ namespace Kerberos.NET.CommandLine {
         internal static string CommandLine_KerberosConfigCommand_Config {
             get {
                 return ResourceManager.GetString("CommandLine_KerberosConfigCommand_Config", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Service Principal Name of the backend service that should receive the delegated ticket..
+        /// </summary>
+        internal static string CommandLine_KerberosConstrainedDelegationCommand_Delegated {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConstrainedDelegationCommand_Delegated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display this help text..
+        /// </summary>
+        internal static string CommandLine_KerberosConstrainedDelegationCommand_Help {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConstrainedDelegationCommand_Help", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Realm of the client for authentication..
+        /// </summary>
+        internal static string CommandLine_KerberosConstrainedDelegationCommand_Realm {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConstrainedDelegationCommand_Realm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Service Principal Name of the middle box..
+        /// </summary>
+        internal static string CommandLine_KerberosConstrainedDelegationCommand_ServicePrincipalName {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConstrainedDelegationCommand_ServicePrincipalName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The password for the Service Principal of the middle box..
+        /// </summary>
+        internal static string CommandLine_KerberosConstrainedDelegationCommand_ServicePrincipalNamePassword {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConstrainedDelegationCommand_ServicePrincipalNamePassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The sAMAccountName of the Service Principal of the middle box..
+        /// </summary>
+        internal static string CommandLine_KerberosConstrainedDelegationCommand_ServicePrincipalSamAccountName {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConstrainedDelegationCommand_ServicePrincipalSamAccountName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User Principal Name for client authentication..
+        /// </summary>
+        internal static string CommandLine_KerberosConstrainedDelegationCommand_UserPrincipalName {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConstrainedDelegationCommand_UserPrincipalName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display additional logging data for each stage during execution..
+        /// </summary>
+        internal static string CommandLine_KerberosConstrainedDelegationCommand_Verbose {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConstrainedDelegationCommand_Verbose", resourceCulture);
             }
         }
         

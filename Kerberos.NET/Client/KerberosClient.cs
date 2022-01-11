@@ -567,7 +567,15 @@ namespace Kerberos.NET.Client
                     {
                         // nope, try and request it from the KDC that issued the TGT
 
+                        logger.LogInformation("Cache did not contain a valid ticket for {Spn}", requestedServicePrincipalName.FullyQualifiedName);
+
                         var tgtEntry = this.CopyTicket(tgtCacheName);
+
+                        logger.LogInformation(
+                            "Using TGT from {CRealm} to {Realm}",
+                            tgtEntry.KdcResponse.CRealm,
+                            tgtEntry.KdcResponse.Ticket.SName.FullyQualifiedName
+                        );
 
                         rst.Realm = ResolveKdcTarget(tgtEntry);
                         rst.KdcOptions = ReconcileKdcFlags(rst.KdcOptions, tgtEntry.Flags);
@@ -601,6 +609,11 @@ namespace Kerberos.NET.Client
                         serviceTicketCacheEntry.SName.FullyQualifiedName.StartsWith(requestedServicePrincipalName.FullyQualifiedName, StringComparison.InvariantCultureIgnoreCase))
                     {
                         // It's not a realm referral but it is the singly-named thing we asked for (e.g. "krbtgt")
+                        logger.LogInformation(
+                            "A service principal was found {Spn}: {SName}",
+                            requestedServicePrincipalName.FullyQualifiedName,
+                            serviceTicketCacheEntry.SName.FullyQualifiedName
+                        );
 
                         receivedRequestedTicket = true;
                     }
@@ -631,10 +644,21 @@ namespace Kerberos.NET.Client
                         {
                             serviceTicketCacheEntry.SessionKey.Usage = usage;
                         }
+
+                        logger.LogInformation(
+                            "Referral is required for {Spn} => {Referral}",
+                            requestedServicePrincipalName.FullyQualifiedName,
+                            tgtCacheName
+                        );
                     }
                     else
                     {
                         // it's actually the ticket we requested
+
+                        logger.LogInformation(
+                            "A ticket was retrieved for {Spn}",
+                            serviceTicketCacheEntry.SName.FullyQualifiedName
+                        );
 
                         receivedRequestedTicket = true;
                     }
@@ -661,7 +685,15 @@ namespace Kerberos.NET.Client
 
                 if (referralCount >= this.MaximumReferralLoops)
                 {
-                    throw new KerberosProtocolException(KerberosErrorCode.KRB_AP_PATH_NOT_ACCEPTED, SR.Resource("ChasedReferralTooFar"));
+                    var ex = new KerberosProtocolException(KerberosErrorCode.KRB_AP_PATH_NOT_ACCEPTED, SR.Resource("ChasedReferralTooFar"));
+
+                    logger.LogWarning(
+                        ex,
+                        "Have to bail out because too many referrals were issued (referral loop?): {Count}",
+                        referralCount
+                    );
+
+                    throw ex;
                 }
 
                 // finally we got what we asked for
@@ -966,11 +998,18 @@ namespace Kerberos.NET.Client
                 tgtEntry.KdcResponse.CRealm,
                 tgtEntry.KdcResponse.Ticket.SName.FullyQualifiedName,
                 rst.S4uTarget,
-                rst.S4uTicket?.SName,
+                rst.S4uTicket?.SName?.FullyQualifiedName,
                 rst.KdcOptions
             );
 
             var tgsReq = KrbTgsReq.CreateTgsReq(rst, tgtEntry.SessionKey, tgtEntry.KdcResponse, out KrbEncryptionKey sessionKey);
+
+            this.logger.LogDebug(
+                "TGT EType = {TGTEType}; TGS Session Key = {TGSEType}; PAData = {PADataTypes}",
+                tgtEntry.SessionKey.EType,
+                sessionKey.EType,
+                tgsReq.PaData.Select(s => s.Type).ToArray()
+            );
 
             var encodedTgs = tgsReq.EncodeApplication();
 
@@ -989,7 +1028,13 @@ namespace Kerberos.NET.Client
                 Nonce = tgsReq.Body.Nonce
             };
 
-            this.logger.LogInformation("TGS-REP for {SPN}", tgsRep.Ticket.SName.FullyQualifiedName);
+            this.logger.LogInformation(
+                "TGS-REP for {SPN}; CName = {CName}; CRealm = {CRealm}; PAData = {PADataTypes}",
+                tgsRep.Ticket.SName.FullyQualifiedName,
+                tgsRep.CName.FullyQualifiedName,
+                tgsRep.CRealm,
+                tgsRep.PaData?.Select(s => s.Type)?.ToArray()
+            );
 
             return entry;
         }

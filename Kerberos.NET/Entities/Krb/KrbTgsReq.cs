@@ -53,6 +53,11 @@ namespace Kerberos.NET.Entities
                 throw new ArgumentNullException(nameof(tgtSessionKey));
             }
 
+            if (string.IsNullOrWhiteSpace(rst.ServicePrincipalName))
+            {
+                throw new ArgumentNullException(nameof(rst.ServicePrincipalName));
+            }
+
             var sname = rst.ServicePrincipalName.Split('/', '@');
             var tgt = kdcRep.Ticket;
 

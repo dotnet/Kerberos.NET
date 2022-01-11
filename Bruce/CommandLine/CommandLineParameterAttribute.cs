@@ -26,5 +26,7 @@ namespace Kerberos.NET.CommandLine
         public bool Required { get; set; }
 
         public bool EnforceCasing { get; set; } = true;
+
+        public bool Hidden { get; set; }
     }
 }

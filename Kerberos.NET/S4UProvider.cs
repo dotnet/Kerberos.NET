@@ -4,10 +4,10 @@
 // -----------------------------------------------------------------------
 
 using Kerberos.NET.Client;
-using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
-using Microsoft.Extensions.Logging;
+using Kerberos.NET.Entities;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,27 +15,44 @@ namespace Kerberos.NET
 {
     internal class S4UProvider : IS4UProvider
     {
-        private readonly string upn;
-        private readonly KeyTable keytab;
-        private readonly Krb5Config config;
-        private readonly ILoggerFactory logger;
+        private readonly KerberosClient client;
+        private readonly KerberosCredential credential;
+        private readonly DecryptedKrbApReq krbApReq;
 
-
-        public S4UProvider(string upn, KeyTable keytab, Krb5Config config = null, ILoggerFactory logger = null)
+        public S4UProvider(KerberosClient client, KerberosCredential credential, DecryptedKrbApReq krbApReq)
         {
-            this.upn = upn;
-            this.keytab = keytab;
-            this.config = config;
-            this.logger = logger;
+            this.client = client;
+            this.credential = credential;
+            this.krbApReq = krbApReq;
         }
 
         public async Task<ApplicationSessionContext> GetServiceTicket(RequestServiceTicket rst, CancellationToken cancellation)
         {
-            var client = new KerberosClient(this.config, this.logger) { CacheInMemory = true };
+            rst.S4uTarget = null;
+            rst.S4uTicket = this.krbApReq.EncryptedTicket;
+            rst.KdcOptions |= KdcOptions.CNameInAdditionalTicket;
 
-            await client.Authenticate(new KeytabCredential(this.upn, this.keytab));
+            bool retried = false;
 
-            return await client.GetServiceTicket(rst, cancellation);
+            while (true)
+            {
+                try
+                {
+                    return await client.GetServiceTicket(rst, cancellation);
+                }
+                catch (InvalidOperationException)
+                {
+                    if (retried)
+                    {
+                        break;
+                    }
+
+                    await client.Authenticate(this.credential);
+                    retried = true;
+                }
+            }
+
+            return null;
         }
     }
 }

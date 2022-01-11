@@ -1,7 +1,8 @@
 ﻿using Kerberos.NET.Client;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
-using System;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -21,22 +22,22 @@ namespace Kerberos.NET.CommandLine.CommandLine
             Description = "UserPrincipalName")]
         public override string PrincipalName { get; set; }
 
-        [CommandLineParameter("realm", Description = "Realm")]
+        [CommandLineParameter("realm", Description = "Realm", Required = true)]
         public override string Realm { get; set; }
 
         [CommandLineParameter("verbose", Description = "Verbose")]
         public override bool Verbose { get; set; }
 
-        [CommandLineParameter("spn", Description = "ServicePrincipalName")]
+        [CommandLineParameter("spn", Description = "ServicePrincipalName", Required = true)]
         public string ServicePrincipalName { get; set; }
 
-        [CommandLineParameter("spn-pass", Description = "ServicePrincipalNamePassword")]
+        [CommandLineParameter("spn-pass", Description = "ServicePrincipalNamePassword", Required = true)]
         public string ServicePrincipalNamePassword { get; set; }
 
-        [CommandLineParameter("sam", Description = "SamAccountName")]
-        public string SamAccountName { get; set; }
+        [CommandLineParameter("spn-sam", Description = "ServicePrincipalSamAccountName", Required = true)]
+        public string ServicePrincipalSamAccountName { get; set; }
 
-        [CommandLineParameter("delegated", Description = "Delegated")]
+        [CommandLineParameter("delegated", Description = "Delegated", Required = true)]
         public string Delegated { get; set; }
 
         public override async Task<bool> Execute()
@@ -46,36 +47,37 @@ namespace Kerberos.NET.CommandLine.CommandLine
                 return true;
             }
 
-            this.WriteLine();
-
             var client = this.CreateClient(verbose: this.Verbose);
+            ILoggerFactory logger = this.Verbose ? this.IO.CreateVerboseLogger(true) : null;
 
-            this.WriteLine(3, "Double Hop: {Client} => {MiddleBox} => {Backend}", client.UserPrincipalName, this.ServicePrincipalName, this.Delegated);
+            this.WriteLine();
+            this.WriteLine(2, "Double Hop: {Client} => {MiddleBox} => {Backend}", client.UserPrincipalName, this.ServicePrincipalName, this.Delegated);
             this.WriteLine();
 
             var serviceTicket = await client.GetServiceTicket(new RequestServiceTicket { ServicePrincipalName = this.ServicePrincipalName });
 
+            if (this.Verbose)
+            {
+                this.WriteLine();
+            }
+
             this.WriteHeader("======== Client ========");
             this.WriteLine();
 
-            this.WriteLine(3, "{User} @ {Realm} => {Spn}", client.UserPrincipalName, client.DefaultDomain, serviceTicket.ApReq.Ticket.SName.FullyQualifiedName);
+            this.WriteLine(2, "{User} @ {Realm} => {Spn}", client.UserPrincipalName, client.DefaultDomain, serviceTicket.ApReq.Ticket.SName.FullyQualifiedName);
             this.WriteLine();
 
             this.WriteHeader("======== Middle box ========");
 
-            var serviceCred = new KerberosPasswordCredential(this.SamAccountName, this.ServicePrincipalNamePassword, serviceTicket.ApReq.Ticket.Realm);
+            if (this.Verbose)
+            {
+                this.WriteLine();
+            }
 
-            var ping = await KerberosPing.Ping(serviceCred, client);
-
-            serviceCred.IncludePreAuthenticationHints(ping.Error.DecodePreAuthentication());
-
-            var keytab = new KeyTable(serviceCred.CreateKey());
-
-            var authenticator = new KerberosAuthenticator(this.SamAccountName, keytab, client.Configuration);
-
-            var identity = await authenticator.Authenticate(serviceTicket.ApReq.EncodeGssApi()) as KerberosIdentity;
+            var identity = await this.ProcessAsMiddleBox(client.Configuration, logger, serviceTicket);
 
             var whoami = this.CreateCommand<KerberosWhoAmI>();
+            whoami.Verbose = this.Verbose;
             whoami.All = true;
             whoami.DescribeTicket(identity);
 
@@ -83,11 +85,32 @@ namespace Kerberos.NET.CommandLine.CommandLine
 
             this.WriteHeader("======== Backend ========");
 
+            if (this.Verbose)
+            {
+                this.WriteLine();
+            }
+
             var delegated = await identity.GetDelegatedServiceTicket(this.Delegated);
 
             this.DescribeApReq(delegated);
 
             return true;
+        }
+
+        private async Task<KerberosIdentity> ProcessAsMiddleBox(Krb5Config config, ILoggerFactory logger, ApplicationSessionContext serviceTicket)
+        {
+            var serviceCred = new KerberosPasswordCredential(this.ServicePrincipalSamAccountName, this.ServicePrincipalNamePassword, serviceTicket.ApReq.Ticket.Realm);
+
+            var ping = await KerberosPing.Ping(serviceCred, config, logger);
+
+            serviceCred.IncludePreAuthenticationHints(ping.Error.DecodePreAuthentication());
+
+            var keytab = new KeyTable(serviceCred.CreateKey());
+
+            var authenticator = new KerberosAuthenticator(this.ServicePrincipalSamAccountName, keytab, config, logger);
+
+            var identity = await authenticator.Authenticate(serviceTicket.ApReq.EncodeGssApi()) as KerberosIdentity;
+            return identity;
         }
 
         private void DescribeApReq(ApplicationSessionContext delegated)
@@ -106,7 +129,7 @@ namespace Kerberos.NET.CommandLine.CommandLine
                     delegated.ApReq.Authenticator,
                     delegated.SessionKey
                 },
-            properties
+                properties
             );
 
             this.WriteProperties(properties);

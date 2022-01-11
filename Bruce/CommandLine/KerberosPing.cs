@@ -1,4 +1,5 @@
 ﻿using Kerberos.NET.Client;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
@@ -19,9 +20,9 @@ namespace Kerberos.NET.CommandLine
 
     internal static class KerberosPing
     {
-        public static async Task<PingResult> Ping(KerberosCredential credential, KerberosClient client, ILoggerFactory logger = null)
+        public static async Task<PingResult> Ping(KerberosCredential credential, Krb5Config config, ILoggerFactory logger = null)
         {
-            credential.Configuration = client.Configuration;
+            credential.Configuration = config;
 
             var asReqMessage = KrbAsReq.CreateAsReq(credential, AuthenticationOptions.Renewable);
 
@@ -34,7 +35,7 @@ namespace Kerberos.NET.CommandLine
                     new UdpKerberosTransport(logger),
                     new HttpsKerberosTransport(logger)
                 },
-                client.Configuration,
+                config,
                 logger
             )
             {

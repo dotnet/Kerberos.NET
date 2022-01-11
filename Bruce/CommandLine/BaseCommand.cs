@@ -52,6 +52,9 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("h|help|?", Description = "Help")]
         public bool Help { get; protected set; }
 
+        [CommandLineParameter("resource-label", Description = "ResourceLabel", Hidden = true)]
+        public bool ResourceLabel { get; set; }
+
         protected virtual KerberosClient CreateClient(string configValue = null, bool verbose = false)
         {
             Krb5Config config;
@@ -111,7 +114,7 @@ namespace Kerberos.NET.CommandLine
             {
                 var attr = prop.GetCustomAttribute<CommandLineParameterAttribute>();
 
-                if (attr == null)
+                if (attr == null || attr.Hidden)
                 {
                     continue;
                 }
@@ -358,7 +361,7 @@ namespace Kerberos.NET.CommandLine
 
             var desc = SR.Resource(descName);
 
-            if (string.Equals(descName, desc, StringComparison.InvariantCultureIgnoreCase))
+            if (string.Equals(descName, desc, StringComparison.InvariantCultureIgnoreCase) && !this.ResourceLabel)
             {
                 sb.Append(attr.Description);
             }

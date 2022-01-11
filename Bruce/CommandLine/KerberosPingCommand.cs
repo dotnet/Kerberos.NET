@@ -82,7 +82,7 @@ namespace Kerberos.NET.CommandLine
             }
             try
             {
-                var result = await KerberosPing.Ping(credential, client);
+                var result = await KerberosPing.Ping(credential, client.Configuration, logger);
 
                 if (result.AsRep != null)
                 {
