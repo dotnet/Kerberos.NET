@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -164,6 +165,11 @@ namespace Kerberos.NET.Client
             throw null;
         }
 
+        public override IEnumerable<object> GetAll()
+        {
+            return this.cache.GetAllItems();
+        }
+
         public override object GetCacheItem(string key, string container = null)
         {
             this.ReadCache();
@@ -211,6 +217,11 @@ namespace Kerberos.NET.Client
         public override ValueTask<T> GetCacheItemAsync<T>(string key, string container = null)
         {
             return new ValueTask<T>(this.GetCacheItem<T>(key, container));
+        }
+
+        public override void PurgeTickets()
+        {
+            File.Delete(this.filePath);
         }
     }
 }

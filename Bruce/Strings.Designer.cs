@@ -1132,6 +1132,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Branch Id.
+        /// </summary>
+        internal static string CommandLine_KList_BranchId {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_BranchId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Client.
         /// </summary>
         internal static string CommandLine_KList_Client {
@@ -1177,6 +1186,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to KDC Called.
+        /// </summary>
+        internal static string CommandLine_KList_KdcCalled {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_KdcCalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Renew Until.
         /// </summary>
         internal static string CommandLine_KList_RenewTime {
@@ -1191,6 +1209,15 @@ namespace Kerberos.NET.CommandLine {
         internal static string CommandLine_KList_Server {
             get {
                 return ResourceManager.GetString("CommandLine_KList_Server", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Session Key Type.
+        /// </summary>
+        internal static string CommandLine_KList_SessionEType {
+            get {
+                return ResourceManager.GetString("CommandLine_KList_SessionEType", resourceCulture);
             }
         }
         

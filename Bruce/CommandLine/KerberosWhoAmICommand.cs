@@ -3,17 +3,14 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
-using System;
+using Kerberos.NET.Client;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.Pac;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Humanizer;
-using Kerberos.NET.Client;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Entities.Pac;
-using Kerberos.NET.Reflection;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -64,6 +61,12 @@ namespace Kerberos.NET.CommandLine
 
         private async Task S4u2Self(KerberosClient client)
         {
+            if (client.Cache is LsaCredentialCache)
+            {
+                this.WriteLineError("The whoami command isn't supported with the LSA Cache");
+                return;
+            }
+
             var myTgtEntry = client.Cache.GetCacheItem<KerberosClientCacheEntry>($"krbtgt/{client.DefaultDomain}");
 
             var myTgt = myTgtEntry.KdcResponse?.Ticket;

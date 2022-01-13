@@ -41,14 +41,34 @@ namespace Kerberos.NET.Entities
 
         public static KrbCred WrapTicket(KrbTicket ticket, KrbEncTicketPart encTicketPart)
         {
+            return WrapTicket(
+                ticket,
+                new KrbCredInfo
+                {
+                    Key = encTicketPart.Key,
+                    AuthTime = encTicketPart.AuthTime,
+                    EndTime = encTicketPart.EndTime,
+                    Flags = encTicketPart.Flags,
+                    PName = encTicketPart.CName,
+                    Realm = encTicketPart.CRealm,
+                    RenewTill = encTicketPart.RenewTill,
+                    SName = ticket.SName,
+                    SRealm = ticket.Realm,
+                    StartTime = encTicketPart.StartTime,
+                }
+            );
+        }
+
+        public static KrbCred WrapTicket(KrbTicket ticket, KrbCredInfo credInfo)
+        {
             if (ticket is null)
             {
                 throw new ArgumentNullException(nameof(ticket));
             }
 
-            if (encTicketPart is null)
+            if (credInfo is null)
             {
-                throw new ArgumentNullException(nameof(encTicketPart));
+                throw new ArgumentNullException(nameof(credInfo));
             }
 
             Now(out DateTimeOffset timestamp, out int usec);
@@ -57,22 +77,7 @@ namespace Kerberos.NET.Entities
             {
                 Timestamp = timestamp,
                 USec = usec,
-                TicketInfo = new[]
-                {
-                    new KrbCredInfo
-                    {
-                        Key = encTicketPart.Key,
-                        AuthTime = encTicketPart.AuthTime,
-                        EndTime = encTicketPart.EndTime,
-                        Flags = encTicketPart.Flags,
-                        PName = encTicketPart.CName,
-                        Realm = encTicketPart.CRealm,
-                        RenewTill = encTicketPart.RenewTill,
-                        SName = ticket.SName,
-                        SRealm = ticket.Realm,
-                        StartTime = encTicketPart.StartTime,
-                    }
-                }
+                TicketInfo = new[] { credInfo }
             };
 
             var cred = new KrbCred

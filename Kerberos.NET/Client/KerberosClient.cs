@@ -756,17 +756,25 @@ namespace Kerberos.NET.Client
                     case "API":
                     case "DIR":
                     case "KEYRING":
-                    case "MSLSA":
                         // treat as memory
                         this.cacheSet = true;
                         break;
-
+                    case "MSLSA":
+                        this.SetLsaCache();
+                        break;
                     case "FILE":
                     default:
                         this.SetFileCache(path);
                         break;
                 }
             }
+        }
+
+        private void SetLsaCache()
+        {
+            this.Cache = new LsaCredentialCache(this.Configuration, this.loggerFactory);
+
+            this.cacheSet = true;
         }
 
         private void SetFileCache(string cachePath)
@@ -874,50 +882,7 @@ namespace Kerberos.NET.Client
                 var ticket = krbCred.Tickets[i];
                 var ticketInfo = credPart.TicketInfo[i];
 
-                var key = new byte[ticketInfo.Key.KeyValue.Length];
-                ticketInfo.Key.KeyValue.CopyTo(key);
-
-                var usage = KeyUsage.EncTgsRepPartSessionKey;
-
-                var sessionKey = new KrbEncryptionKey { EType = ticketInfo.Key.EType, Usage = usage, KeyValue = key };
-
-                var kdcRepData = new KrbEncTgsRepPart
-                {
-                    AuthTime = ticketInfo.AuthTime ?? DateTimeOffset.UtcNow,
-                    EndTime = ticketInfo.EndTime ?? DateTimeOffset.MaxValue,
-                    Flags = ticketInfo.Flags,
-                    Key = sessionKey,
-                    Nonce = credPart.Nonce ?? 0,
-                    Realm = ticketInfo.Realm,
-                    RenewTill = ticketInfo.RenewTill,
-                    SName = ticketInfo.SName,
-                    StartTime = ticketInfo.StartTime ?? DateTimeOffset.MinValue,
-                    LastReq = Array.Empty<KrbLastReq>()
-                };
-
-                this.Cache.Add(new TicketCacheEntry
-                {
-                    Key = ticket.SName.FullyQualifiedName,
-                    Expires = ticketInfo.EndTime ?? DateTimeOffset.MaxValue,
-                    RenewUntil = ticketInfo.RenewTill,
-                    Value = new KerberosClientCacheEntry
-                    {
-                        SessionKey = sessionKey,
-                        AuthTime = kdcRepData.AuthTime,
-                        StartTime = kdcRepData.StartTime,
-                        EndTime = kdcRepData.EndTime,
-                        RenewTill = kdcRepData.RenewTill,
-                        Flags = kdcRepData.Flags,
-                        SName = kdcRepData.SName,
-                        KdcResponse = new KrbTgsRep
-                        {
-                            Ticket = ticket,
-                            CName = ticketInfo.PName,
-                            CRealm = ticketInfo.Realm,
-                            EncPart = KrbEncryptedData.Encrypt(kdcRepData.EncodeApplication(), sessionKey.AsKey(), usage)
-                        }
-                    }
-                });
+                this.Cache.Add(TicketCacheEntry.ConvertKrbCredToCacheEntry(credPart, ticket, ticketInfo));
             }
         }
 
@@ -1118,7 +1083,13 @@ namespace Kerberos.NET.Client
                 {
                     SessionKey = encKdcRepPart.Key,
                     Flags = encKdcRepPart.Flags,
-                    KdcResponse = kdcRep
+                    KdcResponse = kdcRep,
+
+                    AuthTime = encKdcRepPart.AuthTime,
+                    StartTime = encKdcRepPart.StartTime ?? DateTimeOffset.MinValue,
+                    EndTime = encKdcRepPart.EndTime,
+                    RenewTill = encKdcRepPart.RenewTill,
+                    SName = encKdcRepPart.SName
                 }
             });
         }

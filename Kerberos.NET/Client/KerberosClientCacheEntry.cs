@@ -28,6 +28,12 @@ namespace Kerberos.NET.Client
 
         public DateTimeOffset? RenewTill { get; set; }
 
+        public int BranchId { get; set; }
+
+        public string KdcCalled { get; set; }
+
+        public int CacheFlags { get; set; }
+
         public bool IsValid(bool ignoreExpiration = false)
         {
             return this.KdcResponse != null &&

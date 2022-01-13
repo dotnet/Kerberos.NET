@@ -3,6 +3,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using Kerberos.NET.Client;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -34,18 +35,20 @@ namespace Kerberos.NET.CommandLine
                 client.Configuration.Defaults.DefaultCCacheName = this.Cache;
             }
 
-            this.PurgeTickets(client.Configuration.Defaults.DefaultCCacheName);
+            this.PurgeTickets(client);
 
             return true;
         }
 
-        private void PurgeTickets(string cache)
+        private void PurgeTickets(KerberosClient client)
         {
-            TicketCacheBase.TryParseCacheType(cache, out _, out string path);
-
             try
             {
-                File.Delete(Environment.ExpandEnvironmentVariables(path));
+                if (client.Cache is ITicketCache2 cache)
+                {
+                    cache.PurgeTickets();
+                }
+
                 this.WriteLine(SR.Resource("CommandLine_KerberosDestroy_Deleted"));
             }
             catch (Exception ex)
