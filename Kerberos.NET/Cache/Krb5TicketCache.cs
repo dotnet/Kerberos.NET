@@ -3,13 +3,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using Kerberos.NET.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using Kerberos.NET.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Client
 {
@@ -19,8 +19,6 @@ namespace Kerberos.NET.Client
         private const int E_SHARINGVIOLATION = unchecked((int)0x80070020);
         private readonly string filePath;
         private readonly Krb5CredentialCache cache;
-
-        private readonly object fileSync = new object();
 
         public Krb5TicketCache(string filePath, ILoggerFactory logger = null)
             : this(logger)
@@ -54,6 +52,8 @@ namespace Kerberos.NET.Client
 
         public Krb5CredentialCache Krb5Cache => this.cache;
 
+        public bool PersistChanges { get; set; } = true;
+
         private void ReadCache(byte[] cache)
         {
             if (cache == null || cache.Length <= 0)
@@ -66,27 +66,33 @@ namespace Kerberos.NET.Client
 
         private void ReadCache()
         {
+            using (var fileHandle = this.OpenFile())
+            {
+                this.ReadCache(fileHandle);
+            }
+        }
+
+        private void ReadCache(FileStream fileHandle)
+        {
             if (string.IsNullOrWhiteSpace(this.filePath))
             {
                 return;
             }
 
-            using (var file = this.OpenFile())
+            var cache = new byte[fileHandle.Length];
+
+            int offset = 0;
+            int read;
+
+            do
             {
-                var cache = new byte[file.Length];
+                read = fileHandle.Read(cache, offset, cache.Length - offset);
 
-                int offset = 0, read = 0;
-
-                do
-                {
-                    read = file.Read(cache, offset, cache.Length - offset);
-
-                    offset += read;
-                }
-                while (read > 0);
-
-                this.ReadCache(cache);
+                offset += read;
             }
+            while (read > 0);
+
+            this.ReadCache(cache);
         }
 
         public override bool Add(TicketCacheEntry entry)
@@ -96,34 +102,34 @@ namespace Kerberos.NET.Client
                 throw new ArgumentNullException(nameof(entry));
             }
 
-            this.ReadCache();
+            using (var fileHandle = this.OpenFile(write: this.PersistChanges))
+            {
+                this.ReadCache(fileHandle);
 
-            this.cache.Add(entry);
+                this.cache.Add(entry);
 
-            this.WriteCache();
+                if (this.PersistChanges)
+                {
+                    this.WriteCache(fileHandle);
+                }
+            }
 
             return true;
         }
 
-        private void WriteCache()
+        private void WriteCache(FileStream fileHandle)
         {
             if (string.IsNullOrWhiteSpace(this.filePath))
             {
                 return;
             }
 
-            lock (this.fileSync)
-            {
-                using (var stream = this.OpenFile(write: true))
-                {
-                    byte[] bytes = this.Serialize();
+            byte[] bytes = this.Serialize();
 
-                    stream.Seek(0, SeekOrigin.Begin);
+            fileHandle.Seek(0, SeekOrigin.Begin);
 
-                    stream.Write(bytes, 0, bytes.Length);
-                    stream.Flush();
-                }
-            }
+            fileHandle.Write(bytes, 0, bytes.Length);
+            fileHandle.Flush();
         }
 
         public byte[] Serialize()
@@ -133,7 +139,7 @@ namespace Kerberos.NET.Client
 
         private FileStream OpenFile(bool write = false)
         {
-            var max = 10;
+            var max = 100;
 
             for (var i = 1; i <= max; i++)
             {
@@ -141,11 +147,11 @@ namespace Kerberos.NET.Client
                 {
                     if (write)
                     {
-                        return File.Open(this.filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                        return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
                     }
                     else
                     {
-                        return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.None);
+                        return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read);
                     }
                 }
                 catch (IOException ioex)
@@ -172,8 +178,6 @@ namespace Kerberos.NET.Client
 
         public override object GetCacheItem(string key, string container = null)
         {
-            this.ReadCache();
-
             return this.cache.GetCacheItem(key);
         }
 
@@ -194,9 +198,12 @@ namespace Kerberos.NET.Client
                 throw new ArgumentNullException(nameof(entry));
             }
 
-            this.ReadCache();
+            using (var fileHandle = this.OpenFile())
+            {
+                this.ReadCache(fileHandle);
 
-            return this.cache.Contains(entry);
+                return this.cache.Contains(entry);
+            }
         }
 
         public override ValueTask<bool> AddAsync(TicketCacheEntry entry)

@@ -77,30 +77,7 @@ namespace Tests.Kerberos.NET
             {
                 Assert.IsNotNull(cache);
 
-                cache.Add(new TicketCacheEntry
-                {
-                    Key = "krbtgt/bar.com",
-                    Value = new KerberosClientCacheEntry
-                    {
-                        KdcResponse = new KrbAsRep
-                        {
-                            CName = KrbPrincipalName.FromString("user@bar.com"),
-                            CRealm = "bar.com",
-                            Ticket = new KrbTicket
-                            {
-                                Realm = "bar.com",
-                                SName = KrbPrincipalName.FromString("krbtgt/bar.com"),
-                                EncryptedPart = new KrbEncryptedData
-                                {
-                                    EType = EncryptionType.AES128_CTS_HMAC_SHA1_96,
-                                    Cipher = Array.Empty<byte>()
-                                }
-                            }
-                        },
-                        SessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96),
-                        SName = KrbPrincipalName.FromString("krbtgt/bar.com")
-                    }
-                });
+                cache.Add(CreateCacheEntry());
 
                 using (var secondCache = new Krb5TicketCache(tmp))
                 {
@@ -120,6 +97,34 @@ namespace Tests.Kerberos.NET
                     File.Delete(tmp);
                 }
             }
+        }
+
+        private static TicketCacheEntry CreateCacheEntry(string key = "krbtgt/bar.com")
+        {
+            return new TicketCacheEntry
+            {
+                Key = key,
+                Value = new KerberosClientCacheEntry
+                {
+                    KdcResponse = new KrbAsRep
+                    {
+                        CName = KrbPrincipalName.FromString("user@bar.com"),
+                        CRealm = "bar.com",
+                        Ticket = new KrbTicket
+                        {
+                            Realm = "bar.com",
+                            SName = KrbPrincipalName.FromString(key),
+                            EncryptedPart = new KrbEncryptedData
+                            {
+                                EType = EncryptionType.AES128_CTS_HMAC_SHA1_96,
+                                Cipher = Array.Empty<byte>()
+                            }
+                        }
+                    },
+                    SessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96),
+                    SName = KrbPrincipalName.FromString(key)
+                }
+            };
         }
 
         [TestMethod]
@@ -152,6 +157,50 @@ namespace Tests.Kerberos.NET
                 {
                     ServicePrincipalName = "krbtgt/IPA.IDENTITYINTERVENTION.COM"
                 });
+            }
+        }
+
+        [TestMethod]
+        public void CanConcurrentlyReadCacheFile()
+        {
+            Parallel.For(0, 1000, _ =>
+            {
+                using (var cache = new Krb5TicketCache(FilePath))
+                {
+                    var item = cache.GetCacheItem("krbtgt/IPA.IDENTITYINTERVENTION.COM");
+
+                    Assert.IsNotNull(item);
+                }
+            });
+        }
+
+        [TestMethod]
+        public void CanConcurrentReadAndWriteCacheFile()
+        {
+            var tmp = Path.GetTempFileName();
+
+            try
+            {
+                Parallel.For(0, 1000, i =>
+                {
+                    using (var cache = new Krb5TicketCache(tmp) { PersistChanges = false })
+                    {
+                        var key = $"krbtgt/IPA-{i}.IDENTITYINTERVENTION.COM";
+
+                        cache.Add(CreateCacheEntry(key));
+
+                        var item = cache.GetCacheItem(key);
+
+                        Assert.IsNotNull(item);
+                    }
+                });
+            }
+            finally
+            {
+                if (File.Exists(tmp))
+                {
+                    File.Delete(tmp);
+                }
             }
         }
     }
