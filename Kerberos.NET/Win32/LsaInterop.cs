@@ -3,11 +3,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using Kerberos.NET.Client;
+using Kerberos.NET.Entities;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
-using Kerberos.NET.Entities;
 using static Kerberos.NET.Win32.NativeMethods;
 
 namespace Kerberos.NET.Win32
@@ -188,53 +190,48 @@ namespace Kerberos.NET.Win32
 
             LsaBufferSafeHandle profileBuffer = null;
 
-            using (var pool = CryptoPool.Rent<byte>(bufferSize))
+            WithFixedBuffer(bufferSize, (p, _) =>
             {
-                var buffer = pool.Memory.Slice(0, bufferSize);
-
                 try
                 {
-                    fixed (byte* pBuffer = &MemoryMarshal.GetReference(buffer.Span))
-                    {
-                        KERB_INTERACTIVE_LOGON* pLogon = (KERB_INTERACTIVE_LOGON*)pBuffer;
+                    var pLogon = (KERB_INTERACTIVE_LOGON*)p;
 
-                        pLogon->MessageType = KERB_LOGON_SUBMIT_TYPE.KerbInteractiveLogon;
+                    pLogon->MessageType = KERB_LOGON_SUBMIT_TYPE.KerbInteractiveLogon;
 
-                        int offset = Marshal.SizeOf(typeof(KERB_INTERACTIVE_LOGON));
+                    int offset = Marshal.SizeOf(typeof(KERB_INTERACTIVE_LOGON));
 
-                        SetString(realm, (IntPtr)pLogon, ref pLogon->LogonDomainName, ref offset);
-                        SetString(username, (IntPtr)pLogon, ref pLogon->UserName, ref offset);
-                        SetString(password, (IntPtr)pLogon, ref pLogon->Password, ref offset);
+                    SetString(realm, pLogon, ref pLogon->LogonDomainName, ref offset);
+                    SetString(username, pLogon, ref pLogon->UserName, ref offset);
+                    SetString(password, pLogon, ref pLogon->Password, ref offset);
 
-                        var tokenSource = new TOKEN_SOURCE() { SourceName = Encoding.UTF8.GetBytes("kerb.net") };
+                    var tokenSource = new TOKEN_SOURCE() { SourceName = Encoding.UTF8.GetBytes("kerb.net") };
 
-                        int profileLength = 0;
+                    int profileLength = 0;
 
-                        int result = LsaLogonUser(
-                             this.lsaHandle,
-                             ref originName,
-                             SECURITY_LOGON_TYPE.NewCredentials,
-                             this.negotiateAuthPackage,
-                             pLogon,
-                             bufferSize,
-                             IntPtr.Zero,
-                             ref tokenSource,
-                             out profileBuffer,
-                             ref profileLength,
-                             out this.luid,
-                             out this.impersonationContext,
-                             out IntPtr pQuotas,
-                             out int subStatus
-                         );
+                    int result = LsaLogonUser(
+                         this.lsaHandle,
+                         ref originName,
+                         SECURITY_LOGON_TYPE.NewCredentials,
+                         this.negotiateAuthPackage,
+                         pLogon,
+                         bufferSize,
+                         IntPtr.Zero,
+                         ref tokenSource,
+                         out profileBuffer,
+                         ref profileLength,
+                         out this.luid,
+                         out this.impersonationContext,
+                         out IntPtr pQuotas,
+                         out int subStatus
+                     );
 
-                        LsaThrowIfError(result);
-                    }
+                    LsaThrowIfError(result);
                 }
                 finally
                 {
                     profileBuffer?.Dispose();
                 }
-            }
+            });
 
             // this call to impersonate will set the current thread token to be the token out of LsaLogonUser
             // do we need to do anything special if this gets used within an async context?
@@ -248,26 +245,50 @@ namespace Kerberos.NET.Win32
         /// <param name="luid">The Logon Id of the cache to be purged.</param>
         public unsafe void PurgeTicketCache(long luid = 0)
         {
-            var purgeRequest = new KERB_PURGE_TKT_CACHE_EX_REQUEST
+            WithFixedBuffer(Marshal.SizeOf(typeof(KERB_PURGE_TKT_CACHE_EX_REQUEST)), (p, bufferSize) =>
             {
-                MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbPurgeTicketCacheExMessage,
-                Flags = 1,
-                LogonId = luid
-            };
+                var pPurgeRequest = (KERB_PURGE_TKT_CACHE_EX_REQUEST*)p;
 
-            var bufferSize = Marshal.SizeOf(typeof(KERB_PURGE_TKT_CACHE_EX_REQUEST));
+                pPurgeRequest->MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbPurgeTicketCacheExMessage;
+                pPurgeRequest->Flags = 1;
+                pPurgeRequest->LogonId = luid;
 
-            using (var pool = CryptoPool.Rent<byte>(bufferSize))
+                this.LsaCallAuthenticationPackage(pPurgeRequest, bufferSize);
+            });
+        }
+
+        /// <summary>
+        /// Get a list of tickets from within the current logon session or that of the passed in LUID.
+        /// </summary>
+        /// <param name="luid">The Logon Id of the cache to be purged.</param>
+        /// <returns>Returns a list of cache entries</returns>
+        public unsafe IEnumerable<KerberosClientCacheEntry> GetTicketCache(long luid = 0)
+        {
+            return WithFixedBuffer(Marshal.SizeOf(typeof(KERB_QUERY_TKT_CACHE_REQUEST)), (p, bufferSize) =>
             {
-                var buffer = pool.Memory.Slice(0, bufferSize);
+                var pRequest = (KERB_QUERY_TKT_CACHE_REQUEST*)p;
 
-                fixed (void* pBuffer = &MemoryMarshal.GetReference(buffer.Span))
+                pRequest->MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbQueryTicketCacheEx3Message;
+                pRequest->LogonId = luid;
+
+                var response = this.LsaCallAuthenticationPackageWithReturn(pRequest, bufferSize);
+
+                return WithFixedBuffer(response, p =>
                 {
-                    Marshal.StructureToPtr(purgeRequest, (IntPtr)pBuffer, false);
+                    var pCacheResponse = (KERB_QUERY_TKT_CACHE_EX3_RESPONSE*)p;
 
-                    this.LsaCallAuthenticationPackage(pBuffer, bufferSize);
-                }
-            }
+                    var cacheResult = new List<KerberosClientCacheEntry>();
+
+                    for (var i = 0; i < pCacheResponse->CountOfTickets; i++)
+                    {
+                        var ticket = (&pCacheResponse->Tickets)[i];
+
+                        cacheResult.Add(ticket.ToCacheEntry());
+                    }
+
+                    return cacheResult;
+                });
+            });
         }
 
         /// <summary>
@@ -282,30 +303,94 @@ namespace Kerberos.NET.Win32
                 throw new ArgumentNullException(nameof(krbCred));
             }
 
+            var size = Marshal.SizeOf(typeof(KERB_SUBMIT_TKT_REQUEST));
+
             var krbCredBytes = krbCred.EncodeApplication();
 
-            var ticketRequest = new KERB_SUBMIT_TKT_REQUEST
+            WithFixedBuffer(size + krbCredBytes.Length, (p, bufferSize) =>
             {
-                MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbSubmitTicketMessage,
-                KerbCredSize = krbCredBytes.Length,
-                KerbCredOffset = Marshal.SizeOf(typeof(KERB_SUBMIT_TKT_REQUEST)),
-                LogonId = luid
-            };
+                var pRequest = (KERB_SUBMIT_TKT_REQUEST*)p;
 
-            var bufferSize = ticketRequest.KerbCredOffset + krbCredBytes.Length;
+                pRequest->MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbSubmitTicketMessage;
+                pRequest->KerbCredSize = krbCredBytes.Length;
+                pRequest->KerbCredOffset = size;
+                pRequest->LogonId = luid;
 
+                krbCredBytes.Span.CopyTo(new Span<byte>(pRequest, bufferSize).Slice(size));
+
+                this.LsaCallAuthenticationPackage(pRequest, bufferSize);
+            });
+        }
+
+        /// <summary>
+        /// Get a Kerberos ticket for the provided SPN from teh current session or that of the passed in LUID.
+        /// </summary>
+        /// <param name="spn">The SPN to get a ticket against.</param>
+        /// <param name="luid">The logon session</param>
+        /// <returns>Returns a KrbCred containing the ticket and session key</returns>
+        public unsafe KrbCred GetTicket(string spn, long luid = 0)
+        {
+            if (string.IsNullOrWhiteSpace(spn))
+            {
+                throw new ArgumentNullException(nameof(spn));
+            }
+
+            int requestSize = sizeof(KERB_RETRIEVE_TKT_REQUEST);
+
+            return WithFixedBuffer(
+                requestSize + (spn.Length * 2),
+                (p, bufferSize) =>
+            {
+                var pRequest = (KERB_RETRIEVE_TKT_REQUEST*)p;
+
+                pRequest->MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbRetrieveEncodedTicketMessage;
+                pRequest->LogonId = luid;
+                pRequest->CacheOptions = KerberosCacheOptions.KERB_RETRIEVE_TICKET_AS_KERB_CRED;
+
+                SetString(spn, pRequest, ref pRequest->TargetName, ref requestSize);
+
+                var response = this.LsaCallAuthenticationPackageWithReturn(pRequest, bufferSize);
+
+                return WithFixedBuffer(response, p =>
+                {
+                    var pResponse = (KERB_RETRIEVE_TKT_RESPONSE*)p;
+
+                    var cred = new Span<byte>(pResponse->Ticket.EncodedTicket, pResponse->Ticket.EncodedTicketSize);
+
+                    return KrbCred.DecodeApplication(cred.ToArray());
+                });
+            });
+        }
+
+        private static unsafe TRet WithFixedBuffer<TRet>(LsaBufferSafeHandle handle, Func<IntPtr, TRet> func)
+        {
+            fixed (void* respBytes = &MemoryMarshal.GetReference(handle.AsSpan()))
+            {
+                return func((IntPtr)respBytes);
+            }
+        }
+
+        private static unsafe TRet WithFixedBuffer<TRet>(int bufferSize, Func<IntPtr, int, TRet> func)
+        {
             using (var pool = CryptoPool.Rent<byte>(bufferSize))
             {
                 var buffer = pool.Memory.Slice(0, bufferSize);
 
                 fixed (void* pBuffer = &MemoryMarshal.GetReference(buffer.Span))
                 {
-                    Marshal.StructureToPtr(ticketRequest, (IntPtr)pBuffer, false);
-                    krbCredBytes.Span.CopyTo(buffer.Span.Slice(ticketRequest.KerbCredOffset));
-
-                    this.LsaCallAuthenticationPackage(pBuffer, bufferSize);
+                    return func((IntPtr)pBuffer, bufferSize);
                 }
             }
+        }
+
+        private static unsafe void WithFixedBuffer(int bufferSize, Action<IntPtr, int> func)
+        {
+            WithFixedBuffer<object>(bufferSize, (p, s) =>
+            {
+                func(p, s);
+
+                return null;
+            });
         }
 
         private unsafe void LsaCallAuthenticationPackage(void* pBuffer, int bufferSize)
@@ -314,18 +399,7 @@ namespace Kerberos.NET.Win32
 
             try
             {
-                var result = NativeMethods.LsaCallAuthenticationPackage(
-                    this.lsaHandle,
-                    this.selectedAuthPackage,
-                    pBuffer,
-                    bufferSize,
-                    out returnBuffer,
-                    out int returnBufferLength,
-                    out int protocolStatus
-                );
-
-                LsaThrowIfError(result);
-                LsaThrowIfError(protocolStatus);
+                returnBuffer = LsaCallAuthenticationPackageWithReturn(pBuffer, bufferSize);
             }
             finally
             {
@@ -333,13 +407,33 @@ namespace Kerberos.NET.Win32
             }
         }
 
-        private static unsafe void SetString(string value, IntPtr messageBase, ref UNICODE_STRING unicodeString, ref int offset)
+        private unsafe LsaBufferSafeHandle LsaCallAuthenticationPackageWithReturn(void* pBuffer, int bufferSize)
+        {
+            var result = NativeMethods.LsaCallAuthenticationPackage(
+                this.lsaHandle,
+                this.selectedAuthPackage,
+                pBuffer,
+                bufferSize,
+                out LsaBufferSafeHandle returnBuffer,
+                out int returnBufferLength,
+                out int protocolStatus
+            );
+
+            LsaThrowIfError(result);
+            LsaThrowIfError(protocolStatus);
+
+            returnBuffer.BufferLength = returnBufferLength;
+
+            return returnBuffer;
+        }
+
+        private static unsafe void SetString(string value, void* messageBase, ref UNICODE_STRING unicodeString, ref int offset)
         {
             unicodeString = new UNICODE_STRING
             {
                 Length = (ushort)(value.Length * 2),
                 MaximumLength = (ushort)((value.Length * 2) + 2),
-                Buffer = IntPtr.Add(messageBase, offset)
+                Buffer = IntPtr.Add((IntPtr)messageBase, offset)
             };
 
             var buffer = new Span<byte>((void*)unicodeString.Buffer, unicodeString.Length);

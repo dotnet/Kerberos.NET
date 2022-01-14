@@ -474,6 +474,9 @@
   <data name="CommandLine_KInit_PassPrompt" xml:space="preserve">
     <value>Password for {0}: </value>
   </data>
+  <data name="CommandLine_KList_BranchId" xml:space="preserve">
+    <value>Branch Id</value>
+  </data>
   <data name="CommandLine_KList_Client" xml:space="preserve">
     <value>Client</value>
   </data>
@@ -489,11 +492,17 @@
   <data name="CommandLine_KList_Flags" xml:space="preserve">
     <value>Flags</value>
   </data>
+  <data name="CommandLine_KList_KdcCalled" xml:space="preserve">
+    <value>KDC Called</value>
+  </data>
   <data name="CommandLine_KList_RenewTime" xml:space="preserve">
     <value>Renew Until</value>
   </data>
   <data name="CommandLine_KList_Server" xml:space="preserve">
     <value>Server</value>
+  </data>
+  <data name="CommandLine_KList_SessionEType" xml:space="preserve">
+    <value>Session Key Type</value>
   </data>
   <data name="CommandLine_KList_Start" xml:space="preserve">
     <value>Start Time</value>

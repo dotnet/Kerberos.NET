@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -108,6 +109,11 @@ namespace Kerberos.NET
             return this.cache.ContainsKey(entry.Computed);
         }
 
+        public override IEnumerable<object> GetAll()
+        {
+            return this.cache.Values.Select(v => v.Value).AsEnumerable();
+        }
+
         public override ValueTask<object> GetCacheItemAsync(string key, string container = null)
         {
             return new ValueTask<object>(this.GetCacheItem(key, container));
@@ -161,6 +167,11 @@ namespace Kerberos.NET
             var result = await this.GetCacheItemAsync(key, container).ConfigureAwait(false);
 
             return result != null ? (T)result : default;
+        }
+
+        public override void PurgeTickets()
+        {
+            this.cache.Clear();
         }
 
         [DebuggerDisplay("{Key}; E: {Expiration}; R: {RenewUntil};")]

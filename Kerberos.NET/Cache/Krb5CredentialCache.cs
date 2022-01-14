@@ -193,15 +193,25 @@ namespace Kerberos.NET.Client
             return new PrincipalName(asRep.CName.Type, asRep.CRealm, name.Name);
         }
 
+        internal IEnumerable<object> GetAllItems()
+        {
+            return this.Credentials.Select(c => CredToCacheEntry(c));
+        }
+
         internal object GetCacheItem(string key)
         {
             Krb5Credential cred = this.FindCredential(key);
 
             if (cred is null)
             {
-                return cred;
+                return null;
             }
 
+            return CredToCacheEntry(cred);
+        }
+
+        private static object CredToCacheEntry(Krb5Credential cred)
+        {
             return new KerberosClientCacheEntry
             {
                 KdcResponse = new KrbTgsRep

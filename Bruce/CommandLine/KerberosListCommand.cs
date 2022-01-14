@@ -3,13 +3,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using Kerberos.NET.Client;
+using Kerberos.NET.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using Kerberos.NET.Client;
-using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -98,7 +98,7 @@ namespace Kerberos.NET.CommandLine
                 await this.RenewServiceTicket(client);
             }
 
-            this.ListTickets(client.Configuration.Defaults.DefaultCCacheName);
+            this.ListTickets(client);
 
             if (this.DescribeClient)
             {
@@ -217,13 +217,20 @@ namespace Kerberos.NET.CommandLine
             );
         }
 
-        private void ListTickets(string cache)
+        private void ListTickets(KerberosClient client)
         {
-            TicketCacheBase.TryParseCacheType(cache, out _, out string path);
+            IEnumerable<KerberosClientCacheEntry> cache;
 
-            var ticketCache = new Krb5TicketCache(path);
+            if (client.Cache is ITicketCache2 cache2)
+            {
+                cache = cache2.GetAll().Cast<KerberosClientCacheEntry>();
+            }
+            else
+            {
+                cache = Array.Empty<KerberosClientCacheEntry>();
+            }
 
-            var tickets = ticketCache.Krb5Cache.Credentials.Where(c => c.EndTime >= DateTimeOffset.UtcNow).ToArray();
+            var tickets = cache.Where(c => c.EndTime > DateTimeOffset.UtcNow).ToArray();
 
             this.WriteLine(string.Format("{0}: {{TicketCount}}", SR.Resource("CommandLine_KList_Count")), tickets.Length);
             this.WriteLine();
@@ -232,18 +239,33 @@ namespace Kerberos.NET.CommandLine
             {
                 var ticket = tickets[i];
 
-                KrbTicket decodedTicket = TryParseTicket(ticket.Ticket);
+                KrbTicket decodedTicket = ticket.KdcResponse.Ticket;
 
                 var properties = new List<(string, (string, object[]))>
                 {
-                    (SR.Resource("CommandLine_KList_Client"), ("{CName} @ {Realm}", new[] { ticket.Client.FullyQualifiedName, ticket.Client.Realm })),
-                    (SR.Resource("CommandLine_KList_Server"), ("{SName} @ {Realm}", new[] { ticket.Server.FullyQualifiedName, ticket.Server.Realm })),
+                    (SR.Resource("CommandLine_KList_Client"), ("{CName} @ {Realm}", new[] { ticket.KdcResponse.CName.FullyQualifiedName, ticket.KdcResponse.CRealm })),
+                    (SR.Resource("CommandLine_KList_Server"), ("{SName} @ {Realm}", new[] { ticket.SName.FullyQualifiedName, ticket.KdcResponse.Ticket.Realm })),
                     (SR.Resource("CommandLine_KList_TicketEType"), ("{EType} ({ETypeInt})", new object[] { decodedTicket?.EncryptedPart?.EType, (int)decodedTicket?.EncryptedPart?.EType })),
                     (SR.Resource("CommandLine_KList_Flags"), ("{FlagsHex:x} -> {Flags}", new object[] { (uint)ticket.Flags, ticket.Flags })),
                     (SR.Resource("CommandLine_KList_Start"), ("{StartTime}", new object[] { ticket.AuthTime.ToLocalTime() })),
                     (SR.Resource("CommandLine_KList_End"), ("{EndTime}", new object[] { ticket.EndTime.ToLocalTime() })),
-                    (SR.Resource("CommandLine_KList_RenewTime"), ("{RenewTime}", new object[] { ticket.RenewTill.ToLocalTime() }))
+                    (SR.Resource("CommandLine_KList_RenewTime"), ("{RenewTime}", new object[] { ticket.RenewTill?.ToLocalTime() })),
                 };
+
+                if (ticket.SessionKey != null)
+                {
+                    properties.Add((SR.Resource("CommandLine_KList_SessionEType"), ("{EType} ({ETypeInt})", new object[] { ticket.SessionKey.EType, (int)ticket.SessionKey.EType })));
+                }
+
+                if (ticket.BranchId > 0)
+                {
+                    properties.Add((SR.Resource("CommandLine_KList_BranchId"), ("{BranchHex:x} -> {Branch}", new object[] { (uint)ticket.Flags, ticket.Flags })));
+                }
+
+                if (!string.IsNullOrWhiteSpace(ticket.KdcCalled))
+                {
+                    properties.Add((SR.Resource("CommandLine_KList_KdcCalled"), ("{Kdc}", new object[] { ticket.KdcCalled })));
+                }
 
                 var ticketEntryNumber = string.Format("#{0}>", i);
 

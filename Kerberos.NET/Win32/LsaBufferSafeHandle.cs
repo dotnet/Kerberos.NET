@@ -18,6 +18,15 @@ namespace Kerberos.NET.Win32
 
         public override bool IsInvalid => this.handle == IntPtr.Zero;
 
+        public int BufferLength { get; set; }
+
+        public unsafe void* GetVoid()
+        {
+            return (void*)this.DangerousGetHandle();
+        }
+
+        public unsafe Span<byte> AsSpan() => new(this.GetVoid(), this.BufferLength);
+
         protected override bool ReleaseHandle()
         {
             var result = LsaFreeReturnBuffer(this.handle);

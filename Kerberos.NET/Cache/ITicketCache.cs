@@ -4,10 +4,22 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Kerberos.NET
 {
+    public interface ITicketCache2 : ITicketCache
+    {
+        void PurgeTickets();
+
+        Task PurgeTicketsAsync();
+
+        IEnumerable<object> GetAll();
+
+        Task<IEnumerable<object>> GetAllAsync();
+    }
+
     public interface ITicketCache
     {
         bool RefreshTickets { get; set; }

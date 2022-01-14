@@ -3,6 +3,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using Kerberos.NET.Client;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -238,6 +241,11 @@ namespace Kerberos.NET.Win32
             public ushort Length;
             public ushort MaximumLength;
             public IntPtr Buffer;
+
+            public override string ToString()
+            {
+                return Marshal.PtrToStringUni(this.Buffer, this.Length / 2);
+            }
         }
 
         [Flags]
@@ -310,6 +318,156 @@ namespace Kerberos.NET.Win32
                     HighPart = (Int32)(luid >> 32)
                 };
             }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_QUERY_TKT_CACHE_REQUEST
+        {
+            public KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+            public LUID LogonId;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct KERB_QUERY_TKT_CACHE_EX3_RESPONSE
+        {
+            public KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+            public int CountOfTickets;
+            public KERB_TICKET_CACHE_INFO_EX3 Tickets;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct KERB_TICKET_CACHE_INFO_EX3
+        {
+            public UNICODE_STRING ClientName;
+            public UNICODE_STRING ClientRealm;
+            public UNICODE_STRING ServerName;
+            public UNICODE_STRING ServerRealm;
+            public long StartTime;
+            public long EndTime;
+            public long RenewTime;
+            public int EncryptionType;
+            public int TicketFlags;
+            public int SessionKeyType;
+            public int BranchId;
+            public int CacheFlags;
+            public UNICODE_STRING KdcCalled;
+
+            public KerberosClientCacheEntry ToCacheEntry() => new()
+            {
+                AuthTime = DateTimeOffset.FromFileTime(this.StartTime),
+                StartTime = DateTimeOffset.FromFileTime(this.StartTime),
+                EndTime = DateTimeOffset.FromFileTime(this.EndTime),
+                Flags = (TicketFlags)this.TicketFlags,
+                RenewTill = DateTimeOffset.FromFileTime(this.RenewTime),
+                SName = KrbPrincipalName.FromString(this.ServerName.ToString()),
+                SessionKey = new KrbEncryptionKey { EType = (EncryptionType)this.SessionKeyType },
+                BranchId = this.BranchId,
+                KdcCalled = this.KdcCalled.ToString(),
+                CacheFlags = this.CacheFlags,
+                KdcResponse = new KrbKdcRep
+                {
+                    CRealm = this.ClientRealm.ToString(),
+                    CName = KrbPrincipalName.FromString(this.ClientName.ToString()),
+                    Ticket = new KrbTicket
+                    {
+                        SName = KrbPrincipalName.FromString(this.ServerName.ToString()),
+                        Realm = this.ServerRealm.ToString(),
+                        EncryptedPart = new KrbEncryptedData { EType = (EncryptionType)this.EncryptionType }
+                    }
+                }
+            };
+        }
+
+        public enum KerberosCacheOptions
+        {
+            /// <summary>
+            /// Always request a new ticket; do not search the cache.
+            /// If a ticket is obtained, the Kerberos authentication package returns STATUS_SUCCESS in the ProtocolStatus parameter of the LsaCallAuthenticationPackage function.
+            /// </summary>
+            KERB_RETRIEVE_TICKET_DONT_USE_CACHE = 1,
+
+            /// <summary>
+            /// Return only a previously cached ticket.
+            /// If such a ticket is not found, the Kerberos authentication package returns STATUS_OBJECT_NAME_NOT_FOUND in the ProtocolStatus parameter of the LsaCallAuthenticationPackage function.
+            /// </summary>
+            KERB_RETRIEVE_TICKET_USE_CACHE_ONLY = 2,
+
+            /// <summary>
+            /// Use the CredentialsHandle member instead of LogonId to identify the logon session. The credential handle is used as the client credential for which the ticket is retrieved
+            /// Note This option is not available for 32-bit Windows-based applications running on 64-bit Windows.
+            /// </summary>
+            KERB_RETRIEVE_TICKET_USE_CREDHANDLE = 4,
+
+            /// <summary>
+            /// Return the ticket as a Kerberos credential. The Kerberos ticket is defined in Internet RFC 4120 as KRB_CRED. For more information, see http://www.ietf.org.
+            /// </summary>
+            KERB_RETRIEVE_TICKET_AS_KERB_CRED = 8,
+
+            /// <summary>
+            /// Not implemented.
+            /// </summary>
+            KERB_RETRIEVE_TICKET_WITH_SEC_CRED = 10,
+
+            /// <summary>
+            /// Return the ticket that is currently in the cache. If the ticket is not in the cache, it is requested and then cached.
+            /// This flag should not be used with the KERB_RETRIEVE_TICKET_DONT_USE_CACHE flag.
+            /// Windows XP with SP1 and earlier and Windows Server 2003:  This option is not available.
+            /// </summary>
+            KERB_RETRIEVE_TICKET_CACHE_TICKET = 20,
+
+            /// <summary>
+            /// Return a fresh ticket with maximum allowed time by the policy. The ticker is cached afterwards.
+            /// Use of this flag implies that KERB_RETRIEVE_TICKET_USE_CACHE_ONLY is not set and KERB_RETRIEVE_TICKET_CACHE_TICKET is set.
+            /// Windows Vista, Windows Server 2008, Windows XP with SP1 and earlier and Windows Server 2003:  This option is not available.
+            /// </summary>
+            KERB_RETRIEVE_TICKET_MAX_LIFETIME = 40,
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_RETRIEVE_TKT_REQUEST
+        {
+            public KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+            public LUID LogonId;
+            public UNICODE_STRING TargetName;
+            public int TicketFlags;
+            public KerberosCacheOptions CacheOptions;
+            public int EncryptionType;
+            public SECURITY_HANDLE CredentialsHandle;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_RETRIEVE_TKT_RESPONSE
+        {
+            public KERB_EXTERNAL_TICKET Ticket;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_EXTERNAL_TICKET
+        {
+            public IntPtr ServiceName;
+            public IntPtr TargetName;
+            public IntPtr ClientName;
+            public UNICODE_STRING DomainName;
+            public UNICODE_STRING TargetDomainName;
+            public UNICODE_STRING AltTargetDomainName;
+            public KERB_CRYPTO_KEY SessionKey;
+            public int TicketFlags;
+            public int Flags;
+            public long KeyExpirationTime;
+            public long StartTime;
+            public long EndTime;
+            public long RenewUntil;
+            public long TimeSkew;
+            public int EncodedTicketSize;
+            public void* EncodedTicket;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KERB_CRYPTO_KEY
+        {
+            public int KeyType;
+            public int Length;
+            public IntPtr Value;
         }
 
         [StructLayout(LayoutKind.Sequential)]

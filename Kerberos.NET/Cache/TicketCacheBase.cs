@@ -4,6 +4,8 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Configuration;
@@ -12,7 +14,7 @@ using static Kerberos.NET.MemoryTicketCache;
 
 namespace Kerberos.NET
 {
-    public abstract class TicketCacheBase : ITicketCache, IDisposable
+    public abstract class TicketCacheBase : ITicketCache2, IDisposable
     {
         private readonly Task backgroundRunner;
         private bool disposedValue;
@@ -43,18 +45,53 @@ namespace Kerberos.NET
 
         public static void TryParseCacheType(string cachePath, out string cacheType, out string path)
         {
-            cacheType = null;
-            path = cachePath;
+            if (TryParseAsFile(cachePath, out cacheType, out path))
+            {
+                return;
+            }
 
             var indexOf = cachePath.IndexOf(':');
 
             if (indexOf > 1)
             {
+                cacheType = cachePath.Substring(0, indexOf).ToUpperInvariant();
+                path = cachePath.Substring(indexOf + 1);
+            }
+        }
+
+        private static bool TryParseAsFile(string cachePath, out string cacheType, out string path)
+        {
+            cacheType = null;
+            path = null;
+
+            var indexOf = cachePath.IndexOf(':');
+
+            if (indexOf <= 0)
+            {
+                return false;
+            }
+            else if (indexOf == 1 ||
+                     cachePath[0] == Path.DirectorySeparatorChar ||
+                     cachePath[0] == Path.AltDirectorySeparatorChar)
+            {
+                // assume drive letter
+
+                cacheType = "FILE";
+                path = cachePath;
+
+                return true;
+            }
+            else if (indexOf > 1 && cachePath.Substring(0, indexOf).Equals("FILE", StringComparison.OrdinalIgnoreCase))
+            {
                 // not a drive letter
 
                 cacheType = cachePath.Substring(0, indexOf).ToUpperInvariant();
                 path = cachePath.Substring(indexOf + 1);
+
+                return true;
             }
+
+            return false;
         }
 
         private async Task RunBackground()
@@ -94,6 +131,27 @@ namespace Kerberos.NET
         public abstract ValueTask<T> GetCacheItemAsync<T>(string key, string container = null);
 
         public abstract T GetCacheItem<T>(string key, string container = null);
+
+        public virtual void PurgeTickets()
+        {
+        }
+
+        public virtual Task PurgeTicketsAsync()
+        {
+            this.PurgeTickets();
+
+            return Task.CompletedTask;
+        }
+
+        public virtual IEnumerable<object> GetAll()
+        {
+            return Array.Empty<object>();
+        }
+
+        public virtual Task<IEnumerable<object>> GetAllAsync()
+        {
+            return Task.FromResult(this.GetAll());
+        }
 
         protected virtual void Dispose(bool disposing)
         {
