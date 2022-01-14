@@ -16,7 +16,6 @@ namespace Kerberos.NET.Client
     [DebuggerDisplay("{cache}")]
     public class Krb5TicketCache : TicketCacheBase
     {
-        private const int E_SHARINGVIOLATION = unchecked((int)0x80070020);
         private readonly string filePath;
         private readonly Krb5CredentialCache cache;
 
@@ -54,16 +53,6 @@ namespace Kerberos.NET.Client
 
         public bool PersistChanges { get; set; } = true;
 
-        private void ReadCache(byte[] cache)
-        {
-            if (cache == null || cache.Length <= 0)
-            {
-                return;
-            }
-
-            this.cache.Read(cache);
-        }
-
         private void ReadCache()
         {
             using (var fileHandle = this.OpenFile())
@@ -72,27 +61,43 @@ namespace Kerberos.NET.Client
             }
         }
 
-        private void ReadCache(FileStream fileHandle)
+        private void ReadCache(FileHandle fileHandle)
         {
             if (string.IsNullOrWhiteSpace(this.filePath))
             {
                 return;
             }
 
-            var cache = new byte[fileHandle.Length];
+            byte[] cache;
 
-            int offset = 0;
-            int read;
-
-            do
+            using (fileHandle.AcquireReadLock())
+            using (var stream = fileHandle.OpenStream())
             {
-                read = fileHandle.Read(cache, offset, cache.Length - offset);
+                cache = new byte[stream.Length];
 
-                offset += read;
+                int offset = 0;
+                int read;
+
+                do
+                {
+                    read = stream.Read(cache, offset, cache.Length - offset);
+
+                    offset += read;
+                }
+                while (read > 0);
             }
-            while (read > 0);
 
             this.ReadCache(cache);
+        }
+
+        private void ReadCache(byte[] cache)
+        {
+            if (cache == null || cache.Length <= 0)
+            {
+                return;
+            }
+
+            this.cache.Read(cache);
         }
 
         public override bool Add(TicketCacheEntry entry)
@@ -104,8 +109,6 @@ namespace Kerberos.NET.Client
 
             using (var fileHandle = this.OpenFile(write: this.PersistChanges))
             {
-                this.ReadCache(fileHandle);
-
                 this.cache.Add(entry);
 
                 if (this.PersistChanges)
@@ -117,7 +120,7 @@ namespace Kerberos.NET.Client
             return true;
         }
 
-        private void WriteCache(FileStream fileHandle)
+        private void WriteCache(FileHandle fileHandle)
         {
             if (string.IsNullOrWhiteSpace(this.filePath))
             {
@@ -126,10 +129,13 @@ namespace Kerberos.NET.Client
 
             byte[] bytes = this.Serialize();
 
-            fileHandle.Seek(0, SeekOrigin.Begin);
-
-            fileHandle.Write(bytes, 0, bytes.Length);
-            fileHandle.Flush();
+            using (fileHandle.AcquireWriteLock())
+            using (var stream = fileHandle.OpenStream())
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                stream.Write(bytes, 0, bytes.Length);
+                stream.Flush();
+            }
         }
 
         public byte[] Serialize()
@@ -137,38 +143,16 @@ namespace Kerberos.NET.Client
             return this.cache.Serialize();
         }
 
-        private FileStream OpenFile(bool write = false)
+        private FileHandle OpenFile(bool write = false)
         {
-            var max = 100;
-
-            for (var i = 1; i <= max; i++)
+            if (write)
             {
-                try
-                {
-                    if (write)
-                    {
-                        return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-                    }
-                    else
-                    {
-                        return File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read);
-                    }
-                }
-                catch (IOException ioex)
-                {
-                    if (i == max)
-                    {
-                        throw;
-                    }
-
-                    if (ioex.HResult == E_SHARINGVIOLATION)
-                    {
-                        continue;
-                    }
-                }
+                return new FileHandle(this.filePath, FileMode.Create, FileAccess.Write, FileShare.None);
             }
-
-            throw null;
+            else
+            {
+                return new FileHandle(this.filePath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read);
+            }
         }
 
         public override IEnumerable<object> GetAll()
@@ -198,12 +182,7 @@ namespace Kerberos.NET.Client
                 throw new ArgumentNullException(nameof(entry));
             }
 
-            using (var fileHandle = this.OpenFile())
-            {
-                this.ReadCache(fileHandle);
-
-                return this.cache.Contains(entry);
-            }
+            return this.cache.Contains(entry);
         }
 
         public override ValueTask<bool> AddAsync(TicketCacheEntry entry)
@@ -228,7 +207,12 @@ namespace Kerberos.NET.Client
 
         public override void PurgeTickets()
         {
-            File.Delete(this.filePath);
+            this.cache.Clear();
+
+            if (!string.IsNullOrWhiteSpace(this.filePath))
+            {
+                File.Delete(this.filePath);
+            }
         }
     }
 }
