@@ -183,6 +183,36 @@ namespace Tests.Kerberos.NET
             {
                 Parallel.For(0, 1000, i =>
                 {
+                    using (var cache = new Krb5TicketCache(tmp))
+                    {
+                        var key = $"krbtgt/IPA-{i}.IDENTITYINTERVENTION.COM";
+
+                        cache.Add(CreateCacheEntry(key));
+
+                        var item = cache.GetCacheItem(key);
+
+                        Assert.IsNotNull(item);
+                    }
+                });
+            }
+            finally
+            {
+                if (File.Exists(tmp))
+                {
+                    File.Delete(tmp);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void CanConcurrentReadCacheFileAndWriteToMemory()
+        {
+            var tmp = Path.GetTempFileName();
+
+            try
+            {
+                Parallel.For(0, 1000, i =>
+                {
                     using (var cache = new Krb5TicketCache(tmp) { PersistChanges = false })
                     {
                         var key = $"krbtgt/IPA-{i}.IDENTITYINTERVENTION.COM";

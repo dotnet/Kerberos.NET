@@ -105,6 +105,11 @@ namespace Kerberos.NET.Client
 
         public string ProxyImpersonator { get; set; }
 
+        public void Clear()
+        {
+            this.Credentials.Clear();
+        }
+
         internal void Read(byte[] cache)
         {
             this.Credentials.Clear();
