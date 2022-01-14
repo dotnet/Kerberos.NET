@@ -17,10 +17,10 @@ namespace Kerberos.NET.Client
 
         private readonly LsaInterop lsa;
 
-        public LsaCredentialCache(Krb5Config config, ILoggerFactory logger)
+        public LsaCredentialCache(Krb5Config config, LsaInterop lsa = null, ILoggerFactory logger = null)
             : base(config, logger)
         {
-            this.lsa = LsaInterop.Connect();
+            this.lsa = lsa ?? LsaInterop.Connect();
         }
 
         protected override void Dispose(bool disposing)

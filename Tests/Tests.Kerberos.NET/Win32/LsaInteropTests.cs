@@ -4,7 +4,10 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Kerberos.NET;
+using Kerberos.NET.Client;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Win32;
@@ -111,6 +114,29 @@ namespace Tests.Kerberos.NET
             }
         }
 
+        [TestMethod]
+        public async Task LsaLogonUserImportUseCache()
+        {
+            var cred = CreateKrbCredential();
+            var config = Krb5Config.Default();
+
+            using (var interop = LsaInterop.Connect())
+            {
+                Assert.IsNotNull(interop);
+
+                interop.LogonUser();
+
+                interop.ImportCredential(cred);
+
+                using (var client = new KerberosClient(config) { Cache = new LsaCredentialCache(config, interop) })
+                {
+                    var ticket = await client.GetServiceTicket(RequestedSpn);
+
+                    Assert.IsNotNull(ticket);
+                }
+            }
+        }
+
         // This test requires Windows TCB to operate which only happens when running as SYSTEM
         // As such this is a manual test that should only be when the environment is set up correctly
         //
@@ -125,7 +151,7 @@ namespace Tests.Kerberos.NET
 
         private static void RetrieveAndVerifyTicket()
         {
-            using (SspiContext context = new SspiContext(RequestedSpn))
+            using (var context = new SspiContext(RequestedSpn))
             {
                 var ticket = context.RequestToken();
 

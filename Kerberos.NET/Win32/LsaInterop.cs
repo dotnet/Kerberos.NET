@@ -190,7 +190,7 @@ namespace Kerberos.NET.Win32
 
             LsaBufferSafeHandle profileBuffer = null;
 
-            Fixed(bufferSize, (p, _) =>
+            WithFixedBuffer(bufferSize, (p, _) =>
             {
                 try
                 {
@@ -245,7 +245,7 @@ namespace Kerberos.NET.Win32
         /// <param name="luid">The Logon Id of the cache to be purged.</param>
         public unsafe void PurgeTicketCache(long luid = 0)
         {
-            Fixed(Marshal.SizeOf(typeof(KERB_PURGE_TKT_CACHE_EX_REQUEST)), (p, bufferSize) =>
+            WithFixedBuffer(Marshal.SizeOf(typeof(KERB_PURGE_TKT_CACHE_EX_REQUEST)), (p, bufferSize) =>
             {
                 var pPurgeRequest = (KERB_PURGE_TKT_CACHE_EX_REQUEST*)p;
 
@@ -264,7 +264,7 @@ namespace Kerberos.NET.Win32
         /// <returns>Returns a list of cache entries</returns>
         public unsafe IEnumerable<KerberosClientCacheEntry> GetTicketCache(long luid = 0)
         {
-            return Fixed(Marshal.SizeOf(typeof(KERB_QUERY_TKT_CACHE_REQUEST)), (p, bufferSize) =>
+            return WithFixedBuffer(Marshal.SizeOf(typeof(KERB_QUERY_TKT_CACHE_REQUEST)), (p, bufferSize) =>
             {
                 var pRequest = (KERB_QUERY_TKT_CACHE_REQUEST*)p;
 
@@ -273,7 +273,7 @@ namespace Kerberos.NET.Win32
 
                 var response = this.LsaCallAuthenticationPackageWithReturn(pRequest, bufferSize);
 
-                return Fixed(response, p =>
+                return WithFixedBuffer(response, p =>
                 {
                     var pCacheResponse = (KERB_QUERY_TKT_CACHE_EX3_RESPONSE*)p;
 
@@ -307,7 +307,7 @@ namespace Kerberos.NET.Win32
 
             var krbCredBytes = krbCred.EncodeApplication();
 
-            Fixed(size + krbCredBytes.Length, (p, bufferSize) =>
+            WithFixedBuffer(size + krbCredBytes.Length, (p, bufferSize) =>
             {
                 var pRequest = (KERB_SUBMIT_TKT_REQUEST*)p;
 
@@ -337,7 +337,7 @@ namespace Kerberos.NET.Win32
 
             int requestSize = sizeof(KERB_RETRIEVE_TKT_REQUEST);
 
-            return Fixed(
+            return WithFixedBuffer(
                 requestSize + (spn.Length * 2),
                 (p, bufferSize) =>
             {
@@ -351,7 +351,7 @@ namespace Kerberos.NET.Win32
 
                 var response = this.LsaCallAuthenticationPackageWithReturn(pRequest, bufferSize);
 
-                return Fixed(response, p =>
+                return WithFixedBuffer(response, p =>
                 {
                     var pResponse = (KERB_RETRIEVE_TKT_RESPONSE*)p;
 
@@ -362,7 +362,7 @@ namespace Kerberos.NET.Win32
             });
         }
 
-        private static unsafe TRet Fixed<TRet>(LsaBufferSafeHandle handle, Func<IntPtr, TRet> func)
+        private static unsafe TRet WithFixedBuffer<TRet>(LsaBufferSafeHandle handle, Func<IntPtr, TRet> func)
         {
             fixed (void* respBytes = &MemoryMarshal.GetReference(handle.AsSpan()))
             {
@@ -370,7 +370,7 @@ namespace Kerberos.NET.Win32
             }
         }
 
-        private static unsafe TRet Fixed<TRet>(int bufferSize, Func<IntPtr, int, TRet> func)
+        private static unsafe TRet WithFixedBuffer<TRet>(int bufferSize, Func<IntPtr, int, TRet> func)
         {
             using (var pool = CryptoPool.Rent<byte>(bufferSize))
             {
@@ -383,9 +383,9 @@ namespace Kerberos.NET.Win32
             }
         }
 
-        private static unsafe void Fixed(int bufferSize, Action<IntPtr, int> func)
+        private static unsafe void WithFixedBuffer(int bufferSize, Action<IntPtr, int> func)
         {
-            Fixed<object>(bufferSize, (p, s) =>
+            WithFixedBuffer<object>(bufferSize, (p, s) =>
             {
                 func(p, s);
 

@@ -772,7 +772,7 @@ namespace Kerberos.NET.Client
 
         private void SetLsaCache()
         {
-            this.Cache = new LsaCredentialCache(this.Configuration, this.loggerFactory);
+            this.Cache = new LsaCredentialCache(this.Configuration, logger: this.loggerFactory);
 
             this.cacheSet = true;
         }
