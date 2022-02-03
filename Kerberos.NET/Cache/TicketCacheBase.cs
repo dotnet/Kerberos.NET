@@ -6,8 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
 using Microsoft.Extensions.Logging;
 using static Kerberos.NET.MemoryTicketCache;
@@ -50,6 +52,11 @@ namespace Kerberos.NET
                 return;
             }
 
+            if (TryParseAsLsa(cachePath, out cacheType, out path))
+            {
+                return;
+            }
+
             var indexOf = cachePath.IndexOf(':');
 
             if (indexOf > 1)
@@ -57,6 +64,22 @@ namespace Kerberos.NET
                 cacheType = cachePath.Substring(0, indexOf).ToUpperInvariant();
                 path = cachePath.Substring(indexOf + 1);
             }
+        }
+
+        private static readonly IEnumerable<string> LsaCacheTypes = new[] { "mslsa:", "mslsa", "lsa:", "lsa" };
+
+        private static bool TryParseAsLsa(string cachePath, out string cacheType, out string path)
+        {
+            cacheType = null;
+            path = null;
+
+            if (LsaCacheTypes.Any(c => c.Equals(cachePath, StringComparison.OrdinalIgnoreCase)))
+            {
+                cacheType = "mslsa";
+                return true;
+            }
+
+            return false;
         }
 
         private static bool TryParseAsFile(string cachePath, out string cacheType, out string path)
@@ -111,9 +134,47 @@ namespace Kerberos.NET
             }
         }
 
-        protected virtual Task BackgroundCacheOperation()
+        protected virtual async Task BackgroundCacheOperation()
         {
-            return Task.CompletedTask;
+            if (!this.RefreshTickets)
+            {
+                return;
+            }
+
+            var cacheObjects = await this.GetAllAsync();
+
+            foreach (var cacheObject in cacheObjects)
+            {
+                CacheEntry cacheEntry = null;
+
+                if (cacheObject is KerberosClientCacheEntry kerbEntry)
+                {
+                    cacheEntry = new CacheEntry("", kerbEntry, this.Logger);
+                }
+                else if (cacheObject is CacheEntry entry)
+                {
+                    cacheEntry = entry;
+                }
+
+                if (cacheEntry != null && !cacheEntry.IsExpired(this.Configuration.Defaults.ClockSkew))
+                {
+                    await (this.Refresh?.Invoke(cacheEntry)).ConfigureAwait(false);
+                }
+            }
+
+            var finalKeys = await this.GetAllAsync();
+
+            var newKeys = finalKeys.Except(cacheObjects);
+            var purgedKeys = cacheObjects.Except(finalKeys);
+
+            if (newKeys.Any() || purgedKeys.Any())
+            {
+                this.Logger.LogDebug(
+                    "Cache Operation. New: {NewKeys}; Purged: {PurgedKeys}",
+                    string.Join("; ", newKeys),
+                    string.Join("; ", purgedKeys)
+                );
+            }
         }
 
         public abstract ValueTask<bool> AddAsync(TicketCacheEntry entry);
