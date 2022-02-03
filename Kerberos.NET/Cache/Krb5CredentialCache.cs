@@ -90,7 +90,7 @@ namespace Kerberos.NET.Client
          *     data
          */
 
-        public int Version { get; private set; } = ExpectedVersion4;
+        public int Version { get; set; } = ExpectedVersion4;
 
         public IDictionary<Krb5CredentialCacheTag, ReadOnlyMemory<byte>> Header { get; } = new Dictionary<Krb5CredentialCacheTag, ReadOnlyMemory<byte>>();
 
@@ -274,17 +274,17 @@ namespace Kerberos.NET.Client
         {
             foreach (var cred in this.Credentials)
             {
-                WriteCredential(cred, buffer);
+                WriteCredential(cred, buffer, this.Version);
             }
 
             this.WriteConfiguration(buffer);
         }
 
-        private static void WriteCredential(Krb5Credential cred, NdrBuffer buffer)
+        private static void WriteCredential(Krb5Credential cred, NdrBuffer buffer, int version)
         {
             WritePrincipal(cred.Client, buffer);
             WritePrincipal(cred.Server, buffer);
-            WriteKeyBlock(cred.KeyBlock, buffer);
+            WriteKeyBlock(cred.KeyBlock, buffer, version);
             WriteDateTimeOffset(cred.AuthTime, buffer);
             WriteDateTimeOffset(cred.StartTime, buffer);
             WriteDateTimeOffset(cred.EndTime, buffer);
@@ -305,7 +305,7 @@ namespace Kerberos.NET.Client
                 {
                     Client = ReadPrincipal(buffer),
                     Server = ReadPrincipal(buffer),
-                    KeyBlock = ReadKeyBlock(buffer),
+                    KeyBlock = ReadKeyBlock(buffer, this.Version),
                     AuthTime = ReadDateTimeOffset(buffer),
                     StartTime = ReadDateTimeOffset(buffer),
                     EndTime = ReadDateTimeOffset(buffer),
@@ -345,7 +345,8 @@ namespace Kerberos.NET.Client
                         Client = client,
                         Server = new PrincipalName(PrincipalNameType.NT_UNKNOWN, confRealm, new[] { confData, "fast_avail", $"krbtgt/{client.Realm}@{client.Realm}" })
                     },
-                    buffer
+                    buffer,
+                    this.Version
                 );
             }
 
@@ -356,7 +357,8 @@ namespace Kerberos.NET.Client
                     Client = client,
                     Server = new PrincipalName(PrincipalNameType.NT_UNKNOWN, confRealm, new[] { confData, "pa_type", $"krbtgt/{client.Realm}@{client.Realm}" })
                 },
-                buffer
+                buffer,
+                this.Version
             );
         }
 
@@ -471,18 +473,31 @@ namespace Kerberos.NET.Client
             return DateTimeOffset.FromUnixTimeSeconds(time);
         }
 
-        private static void WriteKeyBlock(KeyValuePair<EncryptionType, ReadOnlyMemory<byte>> kv, NdrBuffer buffer)
+        private static void WriteKeyBlock(KeyValuePair<EncryptionType, ReadOnlyMemory<byte>> kv, NdrBuffer buffer, int version)
         {
             buffer.WriteInt16BigEndian((short)kv.Key);
+
+            if (version == ExpectedVersion3)
+            {
+                buffer.WriteInt16BigEndian((short)kv.Key);
+            }
+
             WriteData(kv.Value, buffer);
         }
 
-        private static KeyValuePair<EncryptionType, ReadOnlyMemory<byte>> ReadKeyBlock(NdrBuffer buffer)
+        private static KeyValuePair<EncryptionType, ReadOnlyMemory<byte>> ReadKeyBlock(NdrBuffer buffer, int version)
         {
             var encType = (EncryptionType)buffer.ReadInt16BigEndian();
-            var data = ReadData(buffer);
 
-            return new KeyValuePair<EncryptionType, ReadOnlyMemory<byte>>(encType, data.value);
+            if (version == ExpectedVersion3)
+            {
+                // v3 repeats
+                _ = buffer.ReadInt16BigEndian();
+            }
+
+            var (_, value) = ReadData(buffer);
+
+            return new KeyValuePair<EncryptionType, ReadOnlyMemory<byte>>(encType, value);
         }
 
         private static void WritePrincipal(PrincipalName principal, NdrBuffer buffer)

@@ -18,53 +18,41 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task ConfigSetsValue()
         {
-            var tmpCacheFile = Path.GetTempFileName();
-
-            var config = Krb5Config.Parse(File.ReadAllText(tmpCacheFile));
-            Assert.IsFalse(config.Defaults.AllowWeakCrypto);
-
-            try
+            using (var tmpConfigFile = new TemporaryFile())
             {
-                string commandLine = $"kconfig --config \"{tmpCacheFile}\" libdefaults.allow_weak_crypto=true";
+                var config = Krb5Config.Parse(File.ReadAllText(tmpConfigFile.File));
+                Assert.IsFalse(config.Defaults.AllowWeakCrypto);
 
-                config = await ExecuteCommand(commandLine, tmpCacheFile);
+                string commandLine = $"kconfig --config \"{tmpConfigFile.File}\" libdefaults.allow_weak_crypto=true";
+
+                config = await ExecuteCommand(commandLine, tmpConfigFile.File);
 
                 Assert.IsTrue(config.Defaults.AllowWeakCrypto);
-            }
-            finally
-            {
-                TryCleanupTmp(tmpCacheFile);
             }
         }
 
         [TestMethod]
         public async Task ConfigAppendsValue()
         {
-            var tmpCacheFile = Path.GetTempFileName();
-
-            var config = Krb5Config.Parse(File.ReadAllText(tmpCacheFile));
-            Assert.IsFalse(config.Defaults.AllowWeakCrypto);
-
-            try
+            using (var tmpConfigFile = new TemporaryFile())
             {
-                string commandLine = $"kconfig --config \"{tmpCacheFile}\" realms.\"example.com\".kdc=foo.com";
+                var config = Krb5Config.Parse(File.ReadAllText(tmpConfigFile.File));
+                Assert.IsFalse(config.Defaults.AllowWeakCrypto);
 
-                config = await ExecuteCommand(commandLine, tmpCacheFile);
+                string commandLine = $"kconfig --config \"{tmpConfigFile.File}\" realms.\"example.com\".kdc=foo.com";
+
+                config = await ExecuteCommand(commandLine, tmpConfigFile.File);
 
                 Assert.AreEqual(1, config.Realms["example.com"].Kdc.Count);
                 Assert.AreEqual("foo.com", config.Realms["example.com"].Kdc.First());
 
-                commandLine = $"kconfig --config \"{tmpCacheFile}\" +realms.\"example.com\".kdc=bar.com";
+                commandLine = $"kconfig --config \"{tmpConfigFile.File}\" +realms.\"example.com\".kdc=bar.com";
 
-                config = await ExecuteCommand(commandLine, tmpCacheFile);
+                config = await ExecuteCommand(commandLine, tmpConfigFile.File);
 
                 Assert.AreEqual(2, config.Realms["example.com"].Kdc.Count);
                 Assert.AreEqual("foo.com", config.Realms["example.com"].Kdc.First());
                 Assert.AreEqual("bar.com", config.Realms["example.com"].Kdc.ElementAt(1));
-            }
-            finally
-            {
-                TryCleanupTmp(tmpCacheFile);
             }
         }
 
@@ -72,29 +60,23 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task ConfigRemovesValue()
         {
-            var tmpCacheFile = Path.GetTempFileName();
-
-            var config = Krb5Config.Parse(File.ReadAllText(tmpCacheFile));
-            Assert.IsFalse(config.Defaults.AllowWeakCrypto);
-
-            try
+            using (var tmpConfigFile = new TemporaryFile())
             {
-                string commandLine = $"kconfig --config \"{tmpCacheFile}\" realms.\"example.com\".kdc=foo.com";
+                var config = Krb5Config.Parse(File.ReadAllText(tmpConfigFile.File));
+                Assert.IsFalse(config.Defaults.AllowWeakCrypto);
 
-                config = await ExecuteCommand(commandLine, tmpCacheFile);
+                string commandLine = $"kconfig --config \"{tmpConfigFile.File}\" realms.\"example.com\".kdc=foo.com";
+
+                config = await ExecuteCommand(commandLine, tmpConfigFile.File);
 
                 Assert.AreEqual(1, config.Realms["example.com"].Kdc.Count);
                 Assert.AreEqual("foo.com", config.Realms["example.com"].Kdc.First());
 
-                commandLine = $"kconfig --config \"{tmpCacheFile}\" +realms.\"example.com\".kdc=";
+                commandLine = $"kconfig --config \"{tmpConfigFile.File}\" +realms.\"example.com\".kdc=";
 
-                config = await ExecuteCommand(commandLine, tmpCacheFile);
+                config = await ExecuteCommand(commandLine, tmpConfigFile.File);
 
                 Assert.AreEqual(0, config.Realms["example.com"].Kdc.Count);
-            }
-            finally
-            {
-                TryCleanupTmp(tmpCacheFile);
             }
         }
 

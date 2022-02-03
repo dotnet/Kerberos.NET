@@ -20,21 +20,6 @@ namespace Tests.Kerberos.NET
             return 0;
         }
 
-        protected static void TryCleanupTmp(string tmpCacheFile)
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                try
-                {
-                    File.Delete(tmpCacheFile);
-                    break;
-                }
-                catch
-                {
-                }
-            }
-        }
-
         protected private static ConsoleKeyInfo ReadKey(CommandLineAutoReader reader)
         {
             var chr = reader.ReadKey();

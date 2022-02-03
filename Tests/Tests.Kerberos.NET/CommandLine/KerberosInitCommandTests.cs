@@ -31,14 +31,12 @@ namespace Tests.Kerberos.NET
         public async Task KinitExecutes()
         {
             var port = NextPort();
-            var tmpCacheFile = Path.GetTempFileName();
-            var tmpConfigFile = Path.GetTempFileName();
-
-            try
+            using (var tmpCacheFile = new TemporaryFile())
+            using (var tmpConfigFile = new TemporaryFile())
             {
                 var config = Krb5Config.Default();
 
-                File.WriteAllText(tmpConfigFile, config.Serialize());
+                File.WriteAllText(tmpConfigFile.File, config.Serialize());
 
                 using (var listener = StartTcpListener(port))
                 {
@@ -57,7 +55,7 @@ namespace Tests.Kerberos.NET
                         ReadKey = () => ReadKey(reader)
                     };
 
-                    var command = CreateCommand($"127.0.0.1:{port}", AdminAtCorpUserName, tmpCacheFile, tmpConfigFile, io);
+                    var command = CreateCommand($"127.0.0.1:{port}", AdminAtCorpUserName, tmpCacheFile.File, tmpConfigFile.File, io);
 
                     reader.QueueNext(FakeAdminAtCorpPassword + "\n");
 
@@ -68,11 +66,6 @@ namespace Tests.Kerberos.NET
                     Assert.IsTrue(output.Contains("Ticket Count: 1"));
                     Assert.IsTrue(output.Contains("client : administrator", StringComparison.OrdinalIgnoreCase), output);
                 }
-            }
-            finally
-            {
-                TryCleanupTmp(tmpCacheFile);
-                TryCleanupTmp(tmpConfigFile);
             }
         }
     }
