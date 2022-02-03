@@ -16,19 +16,17 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task DestroyExecutes()
         {
-            var tmpCacheFile = Path.GetTempFileName();
-
-            var parameters = CommandLineParameters.Parse($"kdestroy --cache {tmpCacheFile}");
-
-            var io = new InputControl
+            using (var tmpCacheFile = new TemporaryFile())
             {
-                Clear = () => { },
-                HookCtrlC = hook => { },
-                Writer = new StringWriter()
-            };
+                var parameters = CommandLineParameters.Parse($"kdestroy --cache {tmpCacheFile.File}");
 
-            try
-            {
+                var io = new InputControl
+                {
+                    Clear = () => { },
+                    HookCtrlC = hook => { },
+                    Writer = new StringWriter()
+                };
+
                 var command = (KerberosDestroyCommand)parameters.CreateCommandExecutor(io);
 
                 Assert.IsNotNull(command);
@@ -39,13 +37,9 @@ namespace Tests.Kerberos.NET
 
                 Assert.IsTrue(result.Contains("Cache file has been deleted."));
 
-                var exists = File.Exists(tmpCacheFile);
+                var exists = File.Exists(tmpCacheFile.File);
 
                 Assert.IsFalse(exists);
-            }
-            finally
-            {
-                TryCleanupTmp(tmpCacheFile);
             }
         }
     }

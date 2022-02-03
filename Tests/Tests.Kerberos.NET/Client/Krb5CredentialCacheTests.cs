@@ -9,7 +9,6 @@ using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -70,31 +69,21 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParseFileRoundTrip()
         {
-            var tmp = Path.GetTempFileName();
-            var cache = new Krb5TicketCache(tmp);
-
-            try
+            using (var tmp = new TemporaryFile())
+            using (var cache = new Krb5TicketCache(tmp.File))
             {
+
                 Assert.IsNotNull(cache);
 
                 cache.Add(CreateCacheEntry());
 
-                using (var secondCache = new Krb5TicketCache(tmp))
+                using (var secondCache = new Krb5TicketCache(tmp.File))
                 {
                     var entry = secondCache.GetCacheItem<KerberosClientCacheEntry>("krbtgt/bar.com");
 
                     Assert.IsNotNull(entry.KdcResponse);
                     Assert.AreEqual("bar.com", entry.KdcResponse.CRealm);
                     Assert.AreEqual("user@bar.com", entry.KdcResponse.CName.FullyQualifiedName);
-                }
-            }
-            finally
-            {
-                cache.Dispose();
-
-                if (File.Exists(tmp))
-                {
-                    File.Delete(tmp);
                 }
             }
         }
@@ -177,13 +166,11 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void CanConcurrentReadAndWriteCacheFile()
         {
-            var tmp = Path.GetTempFileName();
-
-            try
+            using (var tmp = new TemporaryFile())
             {
                 Parallel.For(0, 1000, i =>
                 {
-                    using (var cache = new Krb5TicketCache(tmp))
+                    using (var cache = new Krb5TicketCache(tmp.File))
                     {
                         var key = $"krbtgt/IPA-{i}.IDENTITYINTERVENTION.COM";
 
@@ -194,26 +181,17 @@ namespace Tests.Kerberos.NET
                         Assert.IsNotNull(item);
                     }
                 });
-            }
-            finally
-            {
-                if (File.Exists(tmp))
-                {
-                    File.Delete(tmp);
-                }
             }
         }
 
         [TestMethod]
         public void CanConcurrentReadCacheFileAndWriteToMemory()
         {
-            var tmp = Path.GetTempFileName();
-
-            try
+            using (var tmp = new TemporaryFile())
             {
                 Parallel.For(0, 1000, i =>
                 {
-                    using (var cache = new Krb5TicketCache(tmp) { PersistChanges = false })
+                    using (var cache = new Krb5TicketCache(tmp.File) { PersistChanges = false })
                     {
                         var key = $"krbtgt/IPA-{i}.IDENTITYINTERVENTION.COM";
 
@@ -225,11 +203,27 @@ namespace Tests.Kerberos.NET
                     }
                 });
             }
-            finally
+        }
+
+        [TestMethod]
+        public void Version3Roundtrips()
+        {
+            var key = $"krbtgt/IPA.IDENTITYINTERVENTION.COM";
+
+            using (var tmp = new TemporaryFile())
             {
-                if (File.Exists(tmp))
+                using (var cache = new Krb5TicketCache(tmp.File) { Version = 3 })
                 {
-                    File.Delete(tmp);
+                    cache.Add(CreateCacheEntry(key));
+                }
+
+                using (var cache = new Krb5TicketCache(tmp.File))
+                {
+                    Assert.AreEqual(3, cache.Version);
+
+                    var item = cache.GetCacheItem(key);
+
+                    Assert.IsNotNull(item);
                 }
             }
         }

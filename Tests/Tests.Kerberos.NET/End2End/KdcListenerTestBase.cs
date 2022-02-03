@@ -3,14 +3,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Claims;
-using System.Security.Cryptography.Pkcs;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using Kerberos.NET;
 using Kerberos.NET.Client;
 using Kerberos.NET.Credentials;
@@ -18,6 +10,13 @@ using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Kerberos.NET.Transport;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Security.Cryptography.Pkcs;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using static Tests.Kerberos.NET.KdcListener;
 
 namespace Tests.Kerberos.NET
@@ -33,21 +32,25 @@ namespace Tests.Kerberos.NET
 
         internal class KerberosClientWrapper : KerberosClient
         {
-            private readonly string cacheFile;
+            private readonly TemporaryFile cacheFile;
 
-            public KerberosClientWrapper(string cacheFile)
+            public KerberosClientWrapper(bool useCacheFile)
             {
-                this.cacheFile = cacheFile;
-
-                this.SetCache(cacheFile);
+                if (useCacheFile)
+                {
+                    this.cacheFile = new TemporaryFile();
+                    this.SetCache(this.cacheFile.File);
+                }
             }
 
-            public KerberosClientWrapper(string cacheFile, params IKerberosTransport[] transports)
+            public KerberosClientWrapper(bool useCacheFile, params IKerberosTransport[] transports)
                 : base(transports: transports)
             {
-                this.cacheFile = cacheFile;
-
-                this.SetCache(cacheFile);
+                if (useCacheFile)
+                {
+                    this.cacheFile = new TemporaryFile();
+                    this.SetCache(this.cacheFile.File);
+                }
             }
 
             private void SetCache(string cacheFile)
@@ -62,14 +65,7 @@ namespace Tests.Kerberos.NET
             {
                 base.Dispose(disposing);
 
-                if (!string.IsNullOrEmpty(cacheFile))
-                {
-                    try
-                    {
-                        File.Delete(cacheFile);
-                    }
-                    catch { }
-                }
+                this.cacheFile?.Dispose();
             }
         }
 
@@ -83,12 +79,11 @@ namespace Tests.Kerberos.NET
             bool useKrb5TicketCache = false
         )
         {
-            string cachePath = useKrb5TicketCache ? Path.GetTempFileName() : null;
             KerberosClient client;
 
             if (listener == null)
             {
-                client = new KerberosClientWrapper(cachePath);
+                client = new KerberosClientWrapper(useKrb5TicketCache);
 
                 client.PinKdc("corp.identityintervention.com", kdc);
             }
@@ -96,7 +91,7 @@ namespace Tests.Kerberos.NET
             {
                 IKerberosTransport transport = new InMemoryTransport(listener);
 
-                client = new KerberosClientWrapper(cachePath, transports: transport);
+                client = new KerberosClientWrapper(useKrb5TicketCache, transports: transport);
             }
 
             client.Configuration.Defaults.DnsLookupKdc = queryDns;

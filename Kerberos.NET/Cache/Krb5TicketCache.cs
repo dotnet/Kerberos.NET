@@ -51,6 +51,12 @@ namespace Kerberos.NET.Client
 
         public Krb5CredentialCache Krb5Cache => this.cache;
 
+        public int Version
+        {
+            get => this.cache.Version;
+            set => this.cache.Version = value;
+        }
+
         public bool PersistChanges { get; set; } = true;
 
         private void ReadCache()
