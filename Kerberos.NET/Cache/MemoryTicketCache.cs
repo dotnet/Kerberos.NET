@@ -26,38 +26,6 @@ namespace Kerberos.NET
 
         public bool BlockUpdates { get; set; }
 
-        protected override async Task BackgroundCacheOperation()
-        {
-            var originalKeys = this.cache.Keys.ToArray();
-
-            foreach (var kv in originalKeys)
-            {
-                if (!this.cache.TryGetValue(kv, out CacheEntry entry))
-                {
-                    continue;
-                }
-
-                if (entry.IsExpired(this.Configuration.Defaults.ClockSkew))
-                {
-                    this.cache.TryRemove(kv, out _);
-                }
-                else if (this.RefreshTickets)
-                {
-                    await (this.Refresh?.Invoke(entry)).ConfigureAwait(false);
-                }
-            }
-
-            var finalKeys = this.cache.Keys.ToArray();
-
-            var newKeys = finalKeys.Except(originalKeys);
-            var purgedKeys = originalKeys.Except(finalKeys);
-
-            if (newKeys.Any() || purgedKeys.Any())
-            {
-                this.Logger.LogDebug("Cache Operation. New: {NewKeys}; Purged: {PurgedKeys}", string.Join("; ", newKeys), string.Join("; ", purgedKeys));
-            }
-        }
-
         public override ValueTask<bool> AddAsync(TicketCacheEntry entry)
         {
             if (this.Add(entry))

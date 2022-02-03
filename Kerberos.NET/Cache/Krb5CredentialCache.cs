@@ -20,7 +20,8 @@ namespace Kerberos.NET.Client
     public class Krb5CredentialCache
     {
         private const byte Magic = 5;
-        private const byte ExpectedVersion = 4;
+        private const byte ExpectedVersion3 = 3;
+        private const byte ExpectedVersion4 = 4;
 
         /* The format of this file is described here: https://web.mit.edu/kerberos/krb5-devel/doc/formats/ccache_file_format.html
          *
@@ -89,7 +90,7 @@ namespace Kerberos.NET.Client
          *     data
          */
 
-        public int Version { get; } = ExpectedVersion;
+        public int Version { get; private set; } = ExpectedVersion4;
 
         public IDictionary<Krb5CredentialCacheTag, ReadOnlyMemory<byte>> Header { get; } = new Dictionary<Krb5CredentialCacheTag, ReadOnlyMemory<byte>>();
 
@@ -124,16 +125,22 @@ namespace Kerberos.NET.Client
                     throw new InvalidOperationException($"Unknown file format. Expected 0x{Magic}; Actual 0x{magic}.");
                 }
 
-                var version = buffer.Read(1)[0];
+                this.Version = buffer.Read(1)[0];
 
-                if (version != ExpectedVersion)
+                if (this.Version != ExpectedVersion3 && this.Version != ExpectedVersion4)
                 {
-                    throw new InvalidOperationException($"Unknown file format version. Expected 0x{ExpectedVersion}; Actual 0x{version}.");
+                    throw new InvalidOperationException(
+                        $"Unknown file format version. Expected 0x{ExpectedVersion4} or 0x{ExpectedVersion3}; Actual 0x{this.Version}."
+                    );
                 }
 
                 try
                 {
-                    this.ReadHeader(buffer);
+                    if (this.Version >= ExpectedVersion4)
+                    {
+                        this.ReadHeader(buffer);
+                    }
+
                     this.DefaultPrincipalName = ReadPrincipal(buffer);
 
                     this.ReadCredentials(buffer);
@@ -147,12 +154,21 @@ namespace Kerberos.NET.Client
 
         internal byte[] Serialize()
         {
+            if (this.Version < ExpectedVersion3)
+            {
+                this.Version = ExpectedVersion4;
+            }
+
             using (var buffer = new NdrBuffer(align: false))
             {
                 buffer.WriteByte(Magic);
-                buffer.WriteByte(ExpectedVersion);
+                buffer.WriteByte((byte)this.Version);
 
-                this.WriteHeader(buffer);
+                if (this.Version >= ExpectedVersion4)
+                {
+                    this.WriteHeader(buffer);
+                }
+
                 WritePrincipal(this.DefaultPrincipalName, buffer);
 
                 this.WriteCredentials(buffer);

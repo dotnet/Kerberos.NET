@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography.Pkcs;
@@ -30,20 +31,64 @@ namespace Tests.Kerberos.NET
         protected const string FakeAppServiceSpn = "host/appservice.corp.identityintervention.com";
         protected const string FakeAppServiceInOtherRealm = "fake/app.otherrealm.identityintervention.com";
 
+        internal class KerberosClientWrapper : KerberosClient
+        {
+            private readonly string cacheFile;
+
+            public KerberosClientWrapper(string cacheFile)
+            {
+                this.cacheFile = cacheFile;
+
+                this.SetCache(cacheFile);
+            }
+
+            public KerberosClientWrapper(string cacheFile, params IKerberosTransport[] transports)
+                : base(transports: transports)
+            {
+                this.cacheFile = cacheFile;
+
+                this.SetCache(cacheFile);
+            }
+
+            private void SetCache(string cacheFile)
+            {
+                if (!string.IsNullOrWhiteSpace(cacheFile))
+                {
+                    this.Configuration.Defaults.DefaultCCacheName = cacheFile;
+                }
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                base.Dispose(disposing);
+
+                if (!string.IsNullOrEmpty(cacheFile))
+                {
+                    try
+                    {
+                        File.Delete(cacheFile);
+                    }
+                    catch { }
+                }
+            }
+        }
+
         internal static KerberosClient CreateClient(
             KdcListener listener,
             string kdc = null,
             bool caching = true,
             bool queryDns = false,
             bool allowWeakCrypto = false,
-            bool useWeakCrypto = false
+            bool useWeakCrypto = false,
+            bool useKrb5TicketCache = false
         )
         {
+            string cachePath = useKrb5TicketCache ? Path.GetTempFileName() : null;
             KerberosClient client;
 
             if (listener == null)
             {
-                client = new KerberosClient();
+                client = new KerberosClientWrapper(cachePath);
 
                 client.PinKdc("corp.identityintervention.com", kdc);
             }
@@ -51,7 +96,7 @@ namespace Tests.Kerberos.NET
             {
                 IKerberosTransport transport = new InMemoryTransport(listener);
 
-                client = new KerberosClient(transports: transport);
+                client = new KerberosClientWrapper(cachePath, transports: transport);
             }
 
             client.Configuration.Defaults.DnsLookupKdc = queryDns;
@@ -60,6 +105,8 @@ namespace Tests.Kerberos.NET
             client.RenewTickets = caching;
             client.RenewTicketsThreshold = TimeSpan.MaxValue;
             client.RefreshPollInterval = TimeSpan.FromMilliseconds(10);
+            client.CacheInMemory = !useKrb5TicketCache;
+            client.Cache.RefreshTickets = useKrb5TicketCache;
 
             if (useWeakCrypto)
             {
@@ -89,6 +136,69 @@ namespace Tests.Kerberos.NET
             KrbTicket s4uTicket = null
         )
         {
+            await RequestAndValidateTicketsWithCaches(
+                listener,
+                user,
+                password,
+                overrideKdc,
+                keytab,
+                s4u,
+                encodeNego,
+                caching,
+                includePac,
+                cert,
+                spn,
+                keyAgreement,
+                allowWeakCrypto,
+                useWeakCrypto,
+                mutualAuth,
+                s4uTicket
+            );
+
+            if (caching)
+            {
+                await RequestAndValidateTicketsWithCaches(
+                    listener,
+                    user,
+                    password,
+                    overrideKdc,
+                    keytab,
+                    s4u,
+                    encodeNego,
+                    caching,
+                    includePac,
+                    cert,
+                    spn,
+                    keyAgreement,
+                    allowWeakCrypto,
+                    useWeakCrypto,
+                    mutualAuth,
+                    s4uTicket,
+                    useKrb5TicketCache: true
+                );
+            }
+        }
+
+        internal static async Task RequestAndValidateTicketsWithCaches(
+            KdcListener listener,
+            string user,
+            string password = null,
+            string overrideKdc = null,
+            KeyTable keytab = null,
+            string s4u = null,
+            bool encodeNego = false,
+            bool caching = false,
+            bool includePac = true,
+            X509Certificate2 cert = null,
+            string spn = FakeAppServiceSpn,
+            KeyAgreementAlgorithm keyAgreement = KeyAgreementAlgorithm.DiffieHellmanModp14,
+            bool allowWeakCrypto = false,
+            bool useWeakCrypto = false,
+            bool mutualAuth = true,
+            KrbTicket s4uTicket = null,
+            bool useKrb5TicketCache = false
+        )
+        {
             KerberosCredential kerbCred;
 
             if (cert != null)
@@ -104,7 +214,14 @@ namespace Tests.Kerberos.NET
                 kerbCred = new KerberosPasswordCredential(user, password);
             }
 
-            KerberosClient client = CreateClient(listener, overrideKdc, caching: caching, allowWeakCrypto: allowWeakCrypto, useWeakCrypto: useWeakCrypto);
+            KerberosClient client = CreateClient(
+                listener,
+                overrideKdc,
+                caching: caching,
+                allowWeakCrypto: allowWeakCrypto,
+                useWeakCrypto: useWeakCrypto,
+                useKrb5TicketCache: useKrb5TicketCache
+            );
 
             using (kerbCred as IDisposable)
             using (client)
