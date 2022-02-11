@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET;
 using Kerberos.NET.Client;
 using Kerberos.NET.Transport;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -41,6 +42,72 @@ namespace Tests.Kerberos.NET
         public void CacheCannotBeNull()
         {
             new KerberosClient { Cache = null }.Dispose();
+        }
+
+        private class DisposableCache : ITicketCache, IDisposable
+        {
+            public bool RefreshTickets { get; set; }
+            public TimeSpan RefreshInterval { get; set; }
+            public string DefaultDomain { get; set; }
+
+            public bool Disposed { get; set; }
+
+            public bool Add(TicketCacheEntry entry)
+            {
+                throw new NotImplementedException();
+            }
+
+            public ValueTask<bool> AddAsync(TicketCacheEntry entry)
+            {
+                throw new NotImplementedException();
+            }
+
+            public bool Contains(TicketCacheEntry entry)
+            {
+                throw new NotImplementedException();
+            }
+
+            public ValueTask<bool> ContainsAsync(TicketCacheEntry entry)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Dispose()
+            {
+                this.Disposed = true;
+            }
+
+            public object GetCacheItem(string key, string container = null)
+            {
+                throw new NotImplementedException();
+            }
+
+            public T GetCacheItem<T>(string key, string container = null)
+            {
+                throw new NotImplementedException();
+            }
+
+            public ValueTask<object> GetCacheItemAsync(string key, string container = null)
+            {
+                throw new NotImplementedException();
+            }
+
+            public ValueTask<T> GetCacheItemAsync<T>(string key, string container = null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [TestMethod]
+        public void CacheSetDisposesCorrectly()
+        {
+            var disposableCache = new DisposableCache();
+
+            var client = new KerberosClient() { Cache = disposableCache };
+
+            client.Cache = new DisposableCache();
+
+            Assert.IsTrue(disposableCache.Disposed);
         }
 
         [TestMethod]
@@ -103,15 +170,14 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        [ExpectedException(typeof(NotSupportedException))]
-        public void CacheFileFormatBelow4Unsupported()
+        public void CacheFileFormatBelow4Supported()
         {
             using (var client = new KerberosClient())
             {
                 client.CacheInMemory = false;
                 client.Configuration.Defaults.CCacheType = 3;
 
-                Assert.IsNull(client.Cache);
+                Assert.IsNotNull(client.Cache);
             }
         }
     }

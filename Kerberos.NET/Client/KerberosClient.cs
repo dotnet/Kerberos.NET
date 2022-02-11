@@ -94,8 +94,6 @@ namespace Kerberos.NET.Client
                 ScopeId = this.ScopeId
             };
 
-            this.Cache = new MemoryTicketCache(this.Configuration, logger) { Refresh = this.Refresh };
-
             this.MaximumRetries = 10;
         }
 
@@ -170,9 +168,11 @@ namespace Kerberos.NET.Client
                     }
 
                     this.ticketCache = null;
+                    this.cacheSet = false;
                 }
 
                 this.ticketCache = value ?? throw new InvalidOperationException("Cache cannot be null");
+                this.cacheSet = true;
             }
         }
 
@@ -755,14 +755,14 @@ namespace Kerberos.NET.Client
 
         private void SetupCache()
         {
-            if (this.cacheSet || this.CacheInMemory)
+            if (this.cacheSet)
             {
                 return;
             }
 
             var cachePath = Environment.ExpandEnvironmentVariables(this.Configuration.Defaults.DefaultCCacheName);
 
-            if (!string.IsNullOrWhiteSpace(cachePath) && this.CacheServiceTickets)
+            if (!this.CacheInMemory && this.CacheServiceTickets && !string.IsNullOrWhiteSpace(cachePath))
             {
                 TicketCacheBase.TryParseCacheType(cachePath, out string cacheType, out string path);
 
@@ -773,8 +773,6 @@ namespace Kerberos.NET.Client
                     case "API":
                     case "DIR":
                     case "KEYRING":
-                        // treat as memory
-                        this.cacheSet = true;
                         break;
                     case "MSLSA":
                         this.SetLsaCache();
@@ -785,29 +783,35 @@ namespace Kerberos.NET.Client
                         break;
                 }
             }
+
+            if (!this.cacheSet)
+            {
+                this.SetMemoryCache();
+            }
+        }
+
+        private void SetMemoryCache()
+        {
+            this.Cache = new MemoryTicketCache(this.Configuration, this.loggerFactory) { Refresh = this.Refresh };
         }
 
         private void SetLsaCache()
         {
             this.Cache = new LsaCredentialCache(this.Configuration, logger: this.loggerFactory);
-
-            this.cacheSet = true;
         }
 
         private void SetFileCache(string cachePath)
         {
-            if (this.Configuration.Defaults.CCacheType < 4)
+            if (this.Configuration.Defaults.CCacheType < 3)
             {
                 throw new NotSupportedException(
-                    $"A cache type of {this.Configuration.Defaults.CCacheType} is not supported. Only version 4 or higher is supported."
+                    $"A cache type of {this.Configuration.Defaults.CCacheType} is not supported. Only version 3 or higher is supported."
                 );
             }
 
             CreateFilePath(cachePath);
 
-            this.Cache = new Krb5TicketCache(cachePath, this.loggerFactory);
-
-            this.cacheSet = true;
+            this.Cache = new Krb5TicketCache(cachePath, this.loggerFactory) { Version = this.Configuration.Defaults.CCacheType };
         }
 
         private static void CreateFilePath(string cachePath)
