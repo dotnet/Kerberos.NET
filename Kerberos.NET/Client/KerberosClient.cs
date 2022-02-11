@@ -156,7 +156,24 @@ namespace Kerberos.NET.Client
 
                 return this.ticketCache;
             }
-            set => this.ticketCache = value ?? throw new InvalidOperationException("Cache cannot be null");
+            set
+            {
+                if (this.ticketCache is IDisposable disposable)
+                {
+                    try
+                    {
+                        disposable.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogError(ex, "Ticket cache disposal failed");
+                    }
+
+                    this.ticketCache = null;
+                }
+
+                this.ticketCache = value ?? throw new InvalidOperationException("Cache cannot be null");
+            }
         }
 
         /// <summary>
@@ -209,7 +226,7 @@ namespace Kerberos.NET.Client
         /// </summary>
         public string DefaultDomain
         {
-            get => this.Configuration.Defaults.DefaultRealm ?? this.Cache.DefaultDomain;
+            get => this.Cache?.DefaultDomain ?? this.Configuration.Defaults.DefaultRealm;
             protected set => this.Configuration.Defaults.DefaultRealm = value;
         }
 
