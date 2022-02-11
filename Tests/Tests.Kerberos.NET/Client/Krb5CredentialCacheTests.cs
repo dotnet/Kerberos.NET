@@ -5,6 +5,7 @@
 
 using Kerberos.NET;
 using Kerberos.NET.Client;
+using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -224,6 +225,26 @@ namespace Tests.Kerberos.NET
                     var item = cache.GetCacheItem(key);
 
                     Assert.IsNotNull(item);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Version3DefaultsCorrectly()
+        {
+            using (var tmp = new TemporaryFile())
+            {
+                var config = Krb5Config.Default();
+
+                config.Defaults.CCacheType = 3;
+                config.Defaults.DefaultCCacheName = tmp.File;
+
+                using (var client = new KerberosClient(config) { CacheInMemory = false })
+                {
+                    var cache = client.Cache as Krb5TicketCache;
+
+                    Assert.IsNotNull(cache);
+                    Assert.AreEqual(3, cache.Version);
                 }
             }
         }
