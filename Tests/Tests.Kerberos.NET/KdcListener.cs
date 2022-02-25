@@ -54,13 +54,18 @@ namespace Tests.Kerberos.NET
             return new TcpKdcListener(server);
         }
 
-        public static KdcListener StartListener(int port, bool slow = false, bool allowWeakCrypto = false)
+        public static KdcListener StartListener(
+            int port,
+            bool slow = false,
+            bool allowWeakCrypto = false,
+            string realm = "corp2.identityintervention.com"
+        )
         {
             KdcServerOptions options = null;
 
             options = new KdcServerOptions
             {
-                DefaultRealm = "corp2.identityintervention.com".ToUpper(CultureInfo.InvariantCulture),
+                DefaultRealm = realm.ToUpper(CultureInfo.InvariantCulture),
                 IsDebug = true,
                 RealmLocator = realm => LocateRealm(realm, slow, options.Configuration)
             };
