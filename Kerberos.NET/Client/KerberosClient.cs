@@ -580,7 +580,9 @@ namespace Kerberos.NET.Client
 
                     bool cacheResult = false;
 
-                    if (!serviceTicketCacheEntry.IsValid(ignoreExpiration: rst.CanRetrieveExpiredTickets) || !this.CacheServiceTickets || !rst.CanCacheTicket)
+                    if (!serviceTicketCacheEntry.IsValid(ignoreExpiration: rst.CanRetrieveExpiredTickets) ||
+                        !this.CacheServiceTickets ||
+                        !rst.CanCacheTicket)
                     {
                         // nope, try and request it from the KDC that issued the TGT
 
@@ -597,23 +599,37 @@ namespace Kerberos.NET.Client
                         rst.Realm = ResolveKdcTarget(tgtEntry);
                         rst.KdcOptions = ReconcileKdcFlags(rst.KdcOptions, tgtEntry.Flags);
 
-                        serviceTicketCacheEntry = await this.RequestTgs(rst, tgtEntry, cancellation).ConfigureAwait(false);
+                        try
+                        {
+                            (serviceTicketCacheEntry, encKdcRepPart) = await this.RequestDecryptedTgs(
+                                rst,
+                                tgtEntry,
+                                cancellation
+                            ).ConfigureAwait(false);
+                        }
+                        catch (KerberosProtocolException pex)
+                            when (pex.Error?.ErrorCode == KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN)
+                        {
+                            // the SPN was authoritatively not found, but that could be because it belongs to another domain
+                            // usually the KDC will automatically refer us to the domain where it thinks it might be instead
+                            // however, sometimes the KDC just doesn't know where we need to go so we check for a hint instead
 
-                        encKdcRepPart = serviceTicketCacheEntry.KdcResponse.EncPart.Decrypt(
-                           serviceTicketCacheEntry.SessionKey.AsKey(),
-                           serviceTicketCacheEntry.SessionKey.Usage,
-                           d => KrbEncTgsRepPart.DecodeApplication(d)
-                       );
+                            logger.LogInformation("Service principal not found. Checking for realm hint. {SPN}", rst.ServicePrincipalName);
 
-                        VerifyNonces(serviceTicketCacheEntry.Nonce, encKdcRepPart.Nonce);
+                            if (this.TryFindRealmHint(rst, out string referral) &&
+                                !string.Equals(tgtCacheName, referral, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                logger.LogDebug("Realm hint found for {SPN} to {Realm}", rst.ServicePrincipalName, referral);
 
-                        serviceTicketCacheEntry.Flags = encKdcRepPart.Flags;
-                        serviceTicketCacheEntry.AuthTime = encKdcRepPart.AuthTime;
-                        serviceTicketCacheEntry.StartTime = encKdcRepPart.StartTime ?? DateTimeOffset.MinValue;
-                        serviceTicketCacheEntry.EndTime = encKdcRepPart.EndTime;
-                        serviceTicketCacheEntry.RenewTill = encKdcRepPart.RenewTill;
-                        serviceTicketCacheEntry.SessionKey = encKdcRepPart.Key;
-                        serviceTicketCacheEntry.SName = encKdcRepPart.SName;
+                                rst.ServicePrincipalName = referral;
+
+                                continue;
+                            }
+
+                            logger.LogDebug("Realm hint not found");
+
+                            throw;
+                        }
 
                         cacheResult = rst.CacheTicket ?? true;
                     }
@@ -729,6 +745,64 @@ namespace Kerberos.NET.Client
                     SequenceNumber = authenticator.SequenceNumber
                 };
             }
+        }
+
+        private bool TryFindRealmHint(RequestServiceTicket rst, out string referral)
+        {
+            foreach (var kv in this.Configuration.DomainRealm)
+            {
+                //
+                // .foo.net matches anything under foo.net
+                //      bar.foo.net matches
+                //      baz.foo.net matches
+                //      baz.bar.foo.net matches
+                //      foo.net does not match
+                //      bar.net does not match
+                //
+                // bar.foo.net matches explicitly
+                //      bar.foo.net matches
+                //      baz.foo.net does not match
+                //      baz.bar.foo.net does not match
+                //      foo.net does not match
+                //
+
+                if ((kv.Key[0] == '.' && rst.ServicePrincipalName.EndsWith(kv.Key, StringComparison.OrdinalIgnoreCase)) ||
+                    (string.Equals(kv.Key, rst.ServicePrincipalName, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    referral = $"krbtgt/{kv.Value.ToUpperInvariant()}";
+                    return true;
+                }
+            }
+
+            referral = null;
+            return false;
+        }
+
+        private async Task<(KerberosClientCacheEntry serviceTicketCacheEntry, KrbEncTgsRepPart encKdcRepPart)> RequestDecryptedTgs(
+            RequestServiceTicket rst,
+            KerberosClientCacheEntry tgtEntry,
+            CancellationToken cancellation
+        )
+        {
+            var serviceTicketCacheEntry = await this.RequestTgs(rst, tgtEntry, cancellation).ConfigureAwait(false);
+
+            var encKdcRepPart = serviceTicketCacheEntry.KdcResponse.EncPart.Decrypt(
+               serviceTicketCacheEntry.SessionKey.AsKey(),
+               serviceTicketCacheEntry.SessionKey.Usage,
+               d => KrbEncTgsRepPart.DecodeApplication(d)
+           );
+
+            VerifyNonces(serviceTicketCacheEntry.Nonce, encKdcRepPart.Nonce);
+
+            serviceTicketCacheEntry.Flags = encKdcRepPart.Flags;
+            serviceTicketCacheEntry.AuthTime = encKdcRepPart.AuthTime;
+            serviceTicketCacheEntry.StartTime = encKdcRepPart.StartTime ?? DateTimeOffset.MinValue;
+            serviceTicketCacheEntry.EndTime = encKdcRepPart.EndTime;
+            serviceTicketCacheEntry.RenewTill = encKdcRepPart.RenewTill;
+            serviceTicketCacheEntry.SessionKey = encKdcRepPart.Key;
+            serviceTicketCacheEntry.SName = encKdcRepPart.SName;
+
+            return (serviceTicketCacheEntry, encKdcRepPart);
         }
 
         private static KdcOptions ReconcileKdcFlags(KdcOptions options, TicketFlags ticketFlags)

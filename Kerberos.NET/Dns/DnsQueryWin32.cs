@@ -38,7 +38,8 @@ namespace Kerberos.NET.Dns
         private static readonly HashSet<int> IgnoredErrors = new HashSet<int>()
         {
             9002, // server not found
-            9003, // record not found
+            9003, // record not found,
+            9501, // server not found
         };
 
         public static IReadOnlyCollection<DnsRecord> QuerySrvRecord(string query, DnsRecordType type, DnsQueryOptions options = DefaultOptions)
