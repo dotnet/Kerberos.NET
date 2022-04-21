@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
@@ -102,6 +103,7 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(1, obj.CaPaths.Count);
             Assert.AreEqual(".", obj.CaPaths["EXAMPLE.COM"]["DEV.EXAMPLE.COM"]);
             Assert.AreEqual(".", obj.CaPaths["EXAMPLE.COM"]["TEST.EXAMPLE.COM"]);
+            Assert.AreEqual(KerberosCompatibilityFlags.NormalizeRealmsUppercase, obj.Realms["EXAMPLE.COM"].CompatibilityFlags);
         }
 
         [TestMethod]
