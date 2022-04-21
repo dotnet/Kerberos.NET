@@ -25,5 +25,8 @@ namespace Kerberos.NET.Server
 
         /// <inheritdoc />
         public TimeSpan MaximumRenewalWindow => this.config.KdcMaxRenewableLifetime;
+
+        /// <inheritdoc />
+        public KerberosCompatibilityFlags Compatibility => this.config.CompatibilityFlags;
     }
 }

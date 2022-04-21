@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests.Kerberos.NET
@@ -15,6 +16,7 @@ namespace Tests.Kerberos.NET
     public class KrbtgtTests : BaseTest
     {
         private const string Realm = "corp.test.internal";
+        private const string UpperCaseRealm = "CORP.TEST.INTERNAL";
         private const string KrbtgtSpn = "krbtgt/" + Realm;
         private const string UserUpn = "user@test.internal";
         private const string TestSamAccountName = "SamAccount";
@@ -56,10 +58,14 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(krbtgt);
         }
 
-        [TestMethod]
-        public void GeneratedTgtMatchesActiveDirectory()
+        [DataTestMethod]
+        [DataRow(Realm, KerberosCompatibilityFlags.None, Realm)]
+        [DataRow(Realm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
+        [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.None, UpperCaseRealm)]
+        [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
+        public void GeneratedTgtMatchesActiveDirectory(string realm, KerberosCompatibilityFlags compatibilityFlags, string expectedRealm)
         {
-            var realmService = new FakeRealmService(Realm);
+            var realmService = new FakeRealmService(realm, compatibilityFlags: compatibilityFlags);
             var principal = realmService.Principals.Find(KrbPrincipalName.FromString(UserUpn));
 
             var principalKey = principal.RetrieveLongTermCredential();
@@ -78,10 +84,10 @@ namespace Tests.Kerberos.NET
 
             var encoded = tgt.EncodeApplication();
 
-            AssertIsExpectedKrbtgt(principalKey, rst.ServicePrincipalKey, encoded.ToArray());
+            AssertIsExpectedKrbtgt(principalKey, rst.ServicePrincipalKey, encoded.ToArray(), expectedRealm);
         }
 
-        private static void AssertIsExpectedKrbtgt(KerberosKey clientKey, KerberosKey tgtKey, byte[] message)
+        private static void AssertIsExpectedKrbtgt(KerberosKey clientKey, KerberosKey tgtKey, byte[] message, string expectedRealm)
         {
             var asRep = new KrbAsRep().DecodeAsApplication(message);
 
@@ -96,7 +102,7 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(encPart);
 
             Assert.AreEqual(KrbtgtSpn, encPart.SName.FullyQualifiedName, true, CultureInfo.InvariantCulture);
-            Assert.AreEqual(Realm, encPart.Realm);
+            Assert.AreEqual(expectedRealm, encPart.Realm);
 
             Assert.IsNotNull(encPart.Key);
 
@@ -113,16 +119,20 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(krbtgt.CName.FullyQualifiedName, asRep.CName.FullyQualifiedName);
 
             Assert.AreEqual(UserUpn, krbtgt.CName.FullyQualifiedName, true, CultureInfo.InvariantCulture);
-            Assert.AreEqual(Realm, krbtgt.CRealm);
+            Assert.AreEqual(expectedRealm, krbtgt.CRealm);
             Assert.AreEqual(ExpectedFlags, krbtgt.Flags);
 
             Assert.IsTrue(Enumerable.SequenceEqual(krbtgt.Key.KeyValue.ToArray(), encPart.Key.KeyValue.ToArray()));
         }
 
-        [TestMethod]
-        public void GeneratedTgtMatchesWithOnPremisesSamAccountName()
+        [DataTestMethod]
+        [DataRow(Realm, KerberosCompatibilityFlags.None, Realm)]
+        [DataRow(Realm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
+        [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.None, UpperCaseRealm)]
+        [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
+        public void GeneratedTgtMatchesWithOnPremisesSamAccountName(string realm, KerberosCompatibilityFlags compatibilityFlags, string expectedRealm)
         {
-            var realmService = new FakeRealmService(Realm);
+            var realmService = new FakeRealmService(realm, compatibilityFlags: compatibilityFlags);
             var principal = realmService.Principals.Find(KrbPrincipalName.FromString(UserUpn));
 
             var principalKey = principal.RetrieveLongTermCredential();
@@ -142,10 +152,10 @@ namespace Tests.Kerberos.NET
 
             var encoded = tgt.EncodeApplication();
 
-            AssertIsExpectedKrbtgtWithOnPremisesSamAccountName(principalKey, rst.ServicePrincipalKey, encoded.ToArray());
+            AssertIsExpectedKrbtgtWithOnPremisesSamAccountName(principalKey, rst.ServicePrincipalKey, encoded.ToArray(), expectedRealm);
         }
 
-        private static void AssertIsExpectedKrbtgtWithOnPremisesSamAccountName(KerberosKey clientKey, KerberosKey tgtKey, byte[] message)
+        private static void AssertIsExpectedKrbtgtWithOnPremisesSamAccountName(KerberosKey clientKey, KerberosKey tgtKey, byte[] message, string expectedRealm)
         {
             var asRep = new KrbAsRep().DecodeAsApplication(message);
 
@@ -164,7 +174,7 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(encPart);
 
             Assert.AreEqual(KrbtgtSpn, encPart.SName.FullyQualifiedName, true, CultureInfo.InvariantCulture);
-            Assert.AreEqual(Realm, encPart.Realm);
+            Assert.AreEqual(expectedRealm, encPart.Realm);
 
             Assert.IsNotNull(encPart.Key);
 
@@ -183,7 +193,7 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(krbtgt.CName.Name.Length == 1);
             Assert.AreEqual(TestSamAccountName, krbtgt.CName.FullyQualifiedName);
 
-            Assert.AreEqual(Realm, krbtgt.CRealm);
+            Assert.AreEqual(expectedRealm, krbtgt.CRealm);
             Assert.AreEqual(ExpectedFlags, krbtgt.Flags);
 
             Assert.IsTrue(Enumerable.SequenceEqual(krbtgt.Key.KeyValue.ToArray(), encPart.Key.KeyValue.ToArray()));

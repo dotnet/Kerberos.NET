@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using Kerberos.NET.Server;
 
 namespace Kerberos.NET.Configuration
 {
@@ -345,5 +346,12 @@ namespace Kerberos.NET.Configuration
         [DisplayName("supported_enctypes")]
         public ICollection<KeySaltPair> KdcSupportedEncryptionTypes { get; private set; }
 
+        /// <summary>
+        /// Compatibility shims should be enforced by the KDC.
+        /// </summary>
+        [EnumAsInteger]
+        [DefaultValue(KerberosCompatibilityFlags.None)]
+        [DisplayName("compatibility_flags")]
+        public KerberosCompatibilityFlags CompatibilityFlags { get; set; }
     }
 }

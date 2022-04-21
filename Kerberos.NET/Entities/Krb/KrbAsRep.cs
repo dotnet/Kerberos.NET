@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -30,6 +30,8 @@ namespace Kerberos.NET.Entities
             {
                 throw new ArgumentNullException(nameof(realmService));
             }
+
+            rst.Compatibility = realmService.Settings.Compatibility;
 
             // This is approximately correct such that a client doesn't barf on it
             // The krbtgt Ticket structure is probably correct as far as AD thinks

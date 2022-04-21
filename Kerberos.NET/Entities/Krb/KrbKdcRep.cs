@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities.Pac;
+using Kerberos.NET.Server;
 
 namespace Kerberos.NET.Entities
 {
@@ -92,6 +93,11 @@ namespace Kerberos.NET.Entities
             if (request.ServicePrincipalKey == null)
             {
                 throw new InvalidOperationException("A service principal key must be provided");
+            }
+
+            if (request.Compatibility.HasFlag(KerberosCompatibilityFlags.NormalizeRealmsUppercase))
+            {
+                request.RealmName = request.RealmName?.ToUpperInvariant();
             }
 
             var authz = GenerateAuthorizationData(request);

@@ -284,6 +284,7 @@ namespace Kerberos.NET.Server
                     this.RealmService.Configuration.Defaults.PermittedEncryptionTypes,
                     this.RealmService.Configuration.Defaults.AllowWeakCrypto
                 ),
+                Compatibility = this.RealmService.Settings.Compatibility,
             };
 
             // this is set here instead of in GenerateServiceTicket because GST is used by unit tests to
