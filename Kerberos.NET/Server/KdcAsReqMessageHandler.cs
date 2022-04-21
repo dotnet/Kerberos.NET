@@ -183,6 +183,7 @@ namespace Kerberos.NET.Server
                     this.RealmService.Configuration.Defaults.PermittedEncryptionTypes,
                     this.RealmService.Configuration.Defaults.AllowWeakCrypto
                 ),
+                Compatibility = this.RealmService.Settings.Compatibility,
             };
 
             if (context.ClientAuthority != PaDataType.PA_NONE)

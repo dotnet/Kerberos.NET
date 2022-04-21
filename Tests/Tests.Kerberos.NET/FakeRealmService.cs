@@ -11,13 +11,16 @@ namespace Tests.Kerberos.NET
 {
     public class FakeRealmService : IRealmService
     {
-        public FakeRealmService(string realm, Krb5Config config = null)
+        private readonly KerberosCompatibilityFlags compatibilityFlags;
+
+        public FakeRealmService(string realm, Krb5Config config = null, KerberosCompatibilityFlags compatibilityFlags = KerberosCompatibilityFlags.None)
         {
             this.Name = realm;
             this.Configuration = config ?? Krb5Config.Kdc();
+            this.compatibilityFlags = compatibilityFlags;
         }
 
-        public IRealmSettings Settings => new FakeRealmSettings();
+        public IRealmSettings Settings => new FakeRealmSettings(this.compatibilityFlags);
 
         public IPrincipalService Principals => new FakePrincipalService(this.Name);
 

@@ -121,6 +121,11 @@ namespace Kerberos.NET.Entities
         public TimeSpan MaximumRenewalWindow { get; set; }
 
         /// <summary>
+        /// Indicates what compatibility modes if any the KDC should apply.
+        /// </summary>
+        public KerberosCompatibilityFlags Compatibility { get; set; }
+
+        /// <summary>
         /// Validate the lifetime values are within spec and if not set them to be valid.
         /// </summary>
         public void ClampLifetime()
@@ -259,6 +264,11 @@ namespace Kerberos.NET.Entities
                 return false;
             }
 
+            if (other.Compatibility != this.Compatibility)
+            {
+                return false;
+            }
+
             return true;
         }
 
@@ -283,7 +293,8 @@ namespace Kerberos.NET.Entities
                 this.SamAccountName,
                 this.ServicePrincipal,
                 this.ServicePrincipalKey,
-                this.StartTime
+                this.StartTime,
+                this.Compatibility
             );
         }
 

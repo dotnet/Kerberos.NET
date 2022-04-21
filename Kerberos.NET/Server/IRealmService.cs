@@ -102,6 +102,11 @@ namespace Kerberos.NET.Server
         /// The maximum length of time a ticket can be renewed if enabled. Default is 7 days.
         /// </summary>
         TimeSpan MaximumRenewalWindow { get; }
+
+        /// <summary>
+        /// Indicates the compatibility shims the KDC should enforce.
+        /// </summary>
+        KerberosCompatibilityFlags Compatibility { get; }
     }
 
     public interface IKerberosPrincipal
