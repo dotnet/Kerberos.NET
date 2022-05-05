@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
@@ -142,9 +143,16 @@ namespace Kerberos.NET.Credentials
             return null;
         }
 
-        public static KerberosCredential Get(string query, string realmHint)
+        public static KerberosCredential Get(string query, string realmHint) => Get(
+            query,
+            realmHint,
+            StoreName.My.ToString(),
+            StoreLocation.CurrentUser
+        );
+
+        public static KerberosCredential Get(string query, string realmHint, string storeName, StoreLocation location)
         {
-            X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+            var store = new X509Store(storeName, location);
 
             try
             {

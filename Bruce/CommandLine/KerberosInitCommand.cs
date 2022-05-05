@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Humanizer;
 using Kerberos.NET.Client;
@@ -284,7 +285,17 @@ namespace Kerberos.NET.CommandLine
                     this.Certificate = this.PrincipalName;
                 }
 
-                return KerberosAsymmetricCredential.Get(this.Certificate, this.Realm);
+                foreach (StoreLocation location in Enum.GetValues(typeof(StoreLocation)))
+                {
+                    var cred = KerberosAsymmetricCredential.Get(this.Certificate, this.Realm, StoreName.My.ToString(), location);
+
+                    if (cred != null)
+                    {
+                        return cred;
+                    }
+                }
+
+                return null;
             }
             else if (this.UseKeytab || !string.IsNullOrWhiteSpace(this.Keytab))
             {
