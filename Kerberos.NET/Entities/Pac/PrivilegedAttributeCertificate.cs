@@ -408,32 +408,26 @@ namespace Kerberos.NET.Entities
             }
 
             using (var bufferRented = CryptoPool.Rent<byte>(offset))
+            using (var buffer = new NdrBuffer(bufferRented.Memory.Slice(0, offset), align: false))
             {
-                var memory = bufferRented.Memory.Slice(0, offset);
-                // Clean up shared buffer
-                memory.Span.Clear();
+                buffer.WriteInt32LittleEndian(pacCount);
+                buffer.WriteInt32LittleEndian(PAC_VERSION);
 
-                using (var buffer = new NdrBuffer(memory, align: false))
+                foreach (var element in buffers)
                 {
-                    buffer.WriteInt32LittleEndian(pacCount);
-                    buffer.WriteInt32LittleEndian(PAC_VERSION);
+                    buffer.WriteInt32LittleEndian((int)element.Type);
 
-                    foreach (var element in buffers)
-                    {
-                        buffer.WriteInt32LittleEndian((int)element.Type);
+                    // encoded value is cached internally within element
+                    // unless it's been marked dirty, which only happens
+                    // when it's been signed
 
-                        // encoded value is cached internally within element
-                        // unless it's been marked dirty, which only happens
-                        // when it's been signed
+                    buffer.WriteInt32LittleEndian(element.Length);
+                    buffer.WriteInt64LittleEndian(element.Offset);
 
-                        buffer.WriteInt32LittleEndian(element.Length);
-                        buffer.WriteInt64LittleEndian(element.Offset);
-
-                        buffer.WriteSpan(element.Element.Encode().Span, element.Offset);
-                    }
-
-                    return buffer.ToMemory(alignment: 8);
+                    buffer.WriteSpan(element.Element.Encode().Span, element.Offset);
                 }
+
+                return buffer.ToMemory(alignment: 8);
             }
         }
 
