@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -14,7 +14,14 @@ namespace System.Security.Cryptography
 
         internal static byte[] Rent(int minimumLength) => SharedRent<byte>(minimumLength);
 
-        internal static T[] SharedRent<T>(int minimumLength) => ArrayPool<T>.Shared.Rent(minimumLength);
+        internal static T[] SharedRent<T>(int minimumLength)
+        {
+            var rentedBuffer = ArrayPool<T>.Shared.Rent(minimumLength);
+            Array.Clear(rentedBuffer, 0, rentedBuffer.Length);
+
+            return rentedBuffer;
+        }
+
 
         internal static IMemoryOwner<T> Rent<T>(int minimumLength) => new CryptoMemoryOwner<T>(minimumLength);
 
