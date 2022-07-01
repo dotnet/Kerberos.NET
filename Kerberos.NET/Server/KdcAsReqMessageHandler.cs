@@ -236,6 +236,8 @@ namespace Kerberos.NET.Server
                 SName = KrbPrincipalName.FromPrincipal(context.Principal)
             };
 
+            err.StampServerTime();
+
             return err.EncodeApplication();
         }
 
@@ -254,6 +256,8 @@ namespace Kerberos.NET.Server
                     MethodData = context.PaData.ToArray()
                 }.Encode()
             };
+
+            err.StampServerTime();
 
             return err.EncodeApplication();
         }
