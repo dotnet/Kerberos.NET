@@ -162,7 +162,10 @@ namespace Kerberos.NET.Crypto
         {
             var bytes = reader.ReadBytes(4);
 
-            Array.Reverse(bytes);
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes);
+            }
 
             return BitConverter.ToInt32(bytes, 0);
         }
@@ -171,7 +174,10 @@ namespace Kerberos.NET.Crypto
         {
             var bytes = reader.ReadBytes(2);
 
-            Array.Reverse(bytes);
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes);
+            }
 
             return BitConverter.ToInt16(bytes, 0);
         }
@@ -256,7 +262,10 @@ namespace Kerberos.NET.Crypto
         {
             var bytes = BitConverter.GetBytes(val);
 
-            Array.Reverse(bytes);
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes);
+            }
 
             writer.Write(bytes);
         }
@@ -265,7 +274,10 @@ namespace Kerberos.NET.Crypto
         {
             var bytes = BitConverter.GetBytes(val);
 
-            Array.Reverse(bytes);
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes);
+            }
 
             writer.Write(bytes);
         }
