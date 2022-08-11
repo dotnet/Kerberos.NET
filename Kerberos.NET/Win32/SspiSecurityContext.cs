@@ -228,6 +228,8 @@ namespace Kerberos.NET.Win32
                 }
                 while (result == SecStatus.SEC_I_INCOMPLETE_CREDENTIALS || result == SecStatus.SEC_E_INSUFFICENT_MEMORY);
 
+                this.TrackUnmanaged(this.securityContext);
+
                 if (result > SecStatus.SEC_E_ERROR)
                 {
                     throw new Win32Exception((int)result);
