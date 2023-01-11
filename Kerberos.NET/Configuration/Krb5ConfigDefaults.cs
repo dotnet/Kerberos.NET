@@ -101,13 +101,14 @@ namespace Kerberos.NET.Configuration
 
         /// <summary>
         /// Indicate whether name lookups will be used to canonicalize hostnames for use in service
-        /// principal names. Setting this flag to false can improve security by reducing reliance on
+        /// principal names. Setting this flag to False can improve security by reducing reliance on
         /// DNS, but means that short hostnames will not be canonicalized to fully-qualified hostnames.
-        /// The default value is false.
+        /// Value <see cref="DnsCanonicalization.Fallback"/> is currently equivalent to True.
+        /// The default value is <see cref="DnsCanonicalization.False"/>.
         /// </summary>
-        [DefaultValue(false)]
+        [DefaultValue(DnsCanonicalization.False)]
         [DisplayName("dns_canonicalize_hostname")]
-        public bool DnsCanonicalizeHostname { get; set; }
+        public DnsCanonicalization DnsCanonicalizeHostname { get; set; }
 
         /// <summary>
         /// Indicate whether DNS SRV records should be used to locate the KDCs and other servers for a realm,

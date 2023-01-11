@@ -103,6 +103,7 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual(1, obj.CaPaths.Count);
             Assert.AreEqual(".", obj.CaPaths["EXAMPLE.COM"]["DEV.EXAMPLE.COM"]);
             Assert.AreEqual(".", obj.CaPaths["EXAMPLE.COM"]["TEST.EXAMPLE.COM"]);
+            Assert.AreEqual(DnsCanonicalization.Fallback, obj.Defaults.DnsCanonicalizeHostname);
             Assert.AreEqual(KerberosCompatibilityFlags.NormalizeRealmsUppercase, obj.Realms["EXAMPLE.COM"].CompatibilityFlags);
         }
 
