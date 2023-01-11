@@ -516,7 +516,7 @@ namespace Kerberos.NET.Client
 
             var requestedServicePrincipalName = KrbPrincipalName.FromString(rst.ServicePrincipalName);
 
-            if (this.Configuration.Defaults.DnsCanonicalizeHostname)
+            if (this.Configuration.Defaults.DnsCanonicalizeHostname != DnsCanonicalization.False)
             {
                 requestedServicePrincipalName.Canonicalize(this.Configuration.Defaults.QualifyShortname);
 
