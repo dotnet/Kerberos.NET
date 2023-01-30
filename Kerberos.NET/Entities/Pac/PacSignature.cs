@@ -40,7 +40,7 @@ namespace Kerberos.NET.Entities.Pac
         public ReadOnlyMemory<byte> SignatureData { get; set; }
 
         [KerberosIgnore]
-        public KerberosChecksum Validator { get; set; }
+        protected KerberosChecksum Validator { get; set; }
 
         public ChecksumType Type { get; set; }
 
@@ -86,8 +86,6 @@ namespace Kerberos.NET.Entities.Pac
             {
                 this.Signature = SetSignatureValue(this.Type, size => stream.ReadFixedPrimitiveArray<byte>(size).ToArray());
 
-                this.Validator = CryptoService.CreateChecksum(this.Type, this.Signature, this.SignatureData);
-
                 if (stream.BytesAvailable > 0)
                 {
                     this.RODCIdentifier = stream.ReadInt16LittleEndian();
@@ -101,6 +99,8 @@ namespace Kerberos.NET.Entities.Pac
 
         public void Validate(KerberosKey key)
         {
+            this.Validator = CryptoService.CreateChecksum(this.Type, this.Signature, this.SignatureData);
+
             if (this.Validator == null)
             {
                 throw new InvalidOperationException($"Validator not set for checksum type {this.Type}");

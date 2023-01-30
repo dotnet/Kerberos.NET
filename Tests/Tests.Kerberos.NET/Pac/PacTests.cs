@@ -99,7 +99,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(pacValidated);
 
-            GenerateCorruptPac(AES128PACSIGNATURE, AES128PAC).Validator.Validate(kerbKey);
+            GenerateCorruptPac(AES128PACSIGNATURE, AES128PAC).Validate(kerbKey);
         }
 
         [TestMethod]
@@ -118,7 +118,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(pacValidated);
 
-            GenerateCorruptPac(AES256PACSIGNATURE, AES256PAC).Validator.Validate(kerbKey);
+            GenerateCorruptPac(AES256PACSIGNATURE, AES256PAC).Validate(kerbKey);
         }
 
         [TestMethod]
@@ -136,7 +136,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsTrue(pacValidated);
 
-            GenerateCorruptPac(RC4PACSIGNATURE, RC4PAC).Validator.Validate(kerbKey);
+            GenerateCorruptPac(RC4PACSIGNATURE, RC4PAC).Validate(kerbKey);
         }
 
         private static bool ValidatePac(KerberosKey kerbKey, byte[] infoBufferBytes, byte[] pacBytes)
@@ -147,7 +147,7 @@ namespace Tests.Kerberos.NET
             {
                 var sig = new PacSignature() { SignatureData = pacBytes };
                 sig.Unmarshal(infoBufferBytes);
-                sig.Validator.Validate(kerbKey);
+                sig.Validate(kerbKey);
                 pacValidated = true;
             }
 #pragma warning disable CA1031 // Do not catch general exception types
@@ -258,9 +258,6 @@ namespace Tests.Kerberos.NET
 
             var encoded = pac.Encode(kdcKey, serverKey);
 
-            CryptoService.UnregisterChecksumAlgorithm((ChecksumType)(-1));
-            CryptoService.UnregisterCryptographicAlgorithm((EncryptionType)(-1));
-
             var roundtrip = new PrivilegedAttributeCertificate(
                 new KrbAuthorizationData
                 {
@@ -275,6 +272,9 @@ namespace Tests.Kerberos.NET
             roundtrip.ServerSignature.Validate(serverKey);
 
             Assert.AreEqual((ChecksumType)(-1), roundtrip.KdcSignature.Type);
+
+            CryptoService.UnregisterChecksumAlgorithm((ChecksumType)(-1));
+            CryptoService.UnregisterCryptographicAlgorithm((EncryptionType)(-1));
 
             bool threw = false;
 
@@ -374,8 +374,8 @@ namespace Tests.Kerberos.NET
 
             var pacDecoded = new PrivilegedAttributeCertificate(new KrbAuthorizationData { Type = AuthorizationDataType.AdWin2kPac, Data = encoded });
 
-            pacDecoded.ServerSignature.Validator.Validate(key);
-            pacDecoded.KdcSignature.Validator.Validate(key);
+            pacDecoded.ServerSignature.Validate(key);
+            pacDecoded.KdcSignature.Validate(key);
         }
 
         [TestMethod]
