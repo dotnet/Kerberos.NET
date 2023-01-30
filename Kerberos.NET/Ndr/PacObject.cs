@@ -40,6 +40,8 @@ namespace Kerberos.NET.Entities.Pac
 
         internal bool IsDirty { get; set; }
 
+        internal long Offset { get; set; }
+
         private ReadOnlyMemory<byte> cachedEncodedValue;
 
         public virtual ReadOnlyMemory<byte> Encode()

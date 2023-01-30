@@ -61,12 +61,9 @@ namespace Kerberos.NET.Entities
 
                     var pacInfoBuffer = pac.Slice((int)offset, size);
 
-                    int exclusionStart;
-                    int exclusionLength;
-
                     try
                     {
-                        this.ParsePacType(type, pacInfoBuffer, out exclusionStart, out exclusionLength);
+                        this.ParsePacType(type, pacInfoBuffer, offset);
                     }
                     catch (Exception ex)
                     {
@@ -79,10 +76,18 @@ namespace Kerberos.NET.Entities
 
                         throw;
                     }
+                }
 
-                    if (exclusionStart > 0 && exclusionLength > 0)
+                foreach (var kv in this.Attributes)
+                {
+                    if (kv.Value is PacSignature signature)
                     {
-                        this.pacData.Span.Slice((int)offset + exclusionStart, exclusionLength).Clear();
+                        this.ClearSignatures(kv.Key, signature, out int exclusionStart, out int exclusionLength);
+
+                        if (exclusionStart > 0 && exclusionLength > 0)
+                        {
+                            this.pacData.Span.Slice((int)signature.Offset + exclusionStart, exclusionLength).Clear();
+                        }
                     }
                 }
 
@@ -119,14 +124,24 @@ namespace Kerberos.NET.Entities
 
         private readonly Dictionary<PacType, PacObject> attributes = new Dictionary<PacType, PacObject>();
 
-        private void ParsePacType(PacType type, ReadOnlyMemory<byte> pacInfoBuffer, out int exclusionStart, out int exclusionLength)
+        private void ClearSignatures(PacType type, PacSignature signature, out int exclusionStart, out int exclusionLength)
         {
-            exclusionStart = 0;
-            exclusionLength = 0;
+            signature = this.ProcessSignature(signature, type);
 
+            if (!this.Mode.HasFlag(SignatureMode.Kdc) && type == PacType.PRIVILEGE_SERVER_CHECKSUM)
+            {
+                signature.Ignored = true;
+            }
+
+            exclusionStart = signature.SignaturePosition;
+            exclusionLength = signature.Signature.Length;
+        }
+
+        private void ParsePacType(PacType type, ReadOnlyMemory<byte> pacInfoBuffer, long offset)
+        {
             if (!KnownTypes.TryGetValue(type, out Type pacObjectType))
             {
-                this.Attributes[type] = new UnknownPacObject(type, pacInfoBuffer);
+                this.Attributes[type] = new UnknownPacObject(type, pacInfoBuffer) { Offset = offset };
                 return;
             }
 
@@ -137,25 +152,9 @@ namespace Kerberos.NET.Entities
                 return;
             }
 
-            PacSignature signature = null;
-
-            if (attribute is PacSignature sig)
-            {
-                signature = this.ProcessSignature(sig, type);
-
-                if (!this.Mode.HasFlag(SignatureMode.Kdc) && type == PacType.PRIVILEGE_SERVER_CHECKSUM)
-                {
-                    signature.Ignored = true;
-                }
-            }
-
             attribute.Unmarshal(pacInfoBuffer);
 
-            if (signature != null)
-            {
-                exclusionStart = signature.SignaturePosition;
-                exclusionLength = signature.Signature.Length;
-            }
+            attribute.Offset = offset;
 
             this.Attributes[type] = attribute;
         }
