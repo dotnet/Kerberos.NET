@@ -287,7 +287,11 @@ namespace Kerberos.NET.Server
                 Compatibility = this.RealmService.Settings.Compatibility,
             };
 
-            if (tgsReq.Body.KdcOptions.HasFlag(KdcOptions.Canonicalize))
+            // this introduced an annoying regression in a separate party and this is a workaround to make sure it
+            // uses the original behavior in cases where that's expected
+
+            if (!this.RealmService.Settings.Compatibility.HasFlag(KerberosCompatibilityFlags.DoNotCanonicalizeTgsReqFromTgt) &&
+                tgsReq.Body.KdcOptions.HasFlag(KdcOptions.Canonicalize))
             {
                 rst.SamAccountName = context.GetState<TgsState>(PaDataType.PA_TGS_REQ).DecryptedApReq.Ticket.CName.FullyQualifiedName;
             }
