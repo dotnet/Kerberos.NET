@@ -22,5 +22,10 @@ namespace Kerberos.NET.Server
         /// Always uppercase realm names.
         /// </summary>
         NormalizeRealmsUppercase = 1 << 0,
+
+        /// <summary>
+        /// Do not copy the name from the TGT if the canonicalize bit is set
+        /// </summary>
+        DoNotCanonicalizeTgsReqFromTgt = 1 << 1,
     }
 }
