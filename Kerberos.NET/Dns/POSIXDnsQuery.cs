@@ -7,23 +7,25 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Kerberos.NET.Dns;
-
-public class POSIXDnsQuery : IKerberosDnsQuery
+namespace Kerberos.NET.Dns
 {
-    public bool Debug { get; set; }
-
-    public bool IsSupported => OSPlatform.IsLinux;
-
-    public Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type)
+    public class POSIXDnsQuery : IKerberosDnsQuery
     {
-        if (!IsSupported)
+        public bool Debug { get; set; }
+
+        public bool IsSupported => OSPlatform.IsLinux;
+
+        public Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type)
         {
-            throw new InvalidOperationException("The POSIX DNS query implementation is not supported outside of POSIX-compliant systems");
+            if (!IsSupported)
+            {
+                throw new InvalidOperationException(
+                    "The POSIX DNS query implementation is not supported outside of POSIX-compliant systems");
+            }
+
+            var result = DnsQueryWin32.QuerySrvRecord(query, type);
+
+            return Task.FromResult(result);
         }
-
-        var result = DnsQueryWin32.QuerySrvRecord(query, type);
-
-        return Task.FromResult(result);
     }
 }
