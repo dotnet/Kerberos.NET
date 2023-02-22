@@ -23,6 +23,8 @@ namespace Kerberos.NET.Dns
             {
                 QueryImplementation = new WindowsDnsQuery();
             }
+            //for now assume it's POSIX
+            QueryImplementation = new POSIXDnsQuery();
         }
 
         public static bool Debug
