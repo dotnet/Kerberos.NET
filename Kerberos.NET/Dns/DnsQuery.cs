@@ -30,8 +30,8 @@ namespace Kerberos.NET.Dns
 
         public static bool Debug
         {
-            get => DnsQueryWin32.Debug;
-            set => DnsQueryWin32.Debug = value;
+            get => QueryImplementation.Debug;
+            set => QueryImplementation.Debug = value;
         }
 
         /// <summary>
