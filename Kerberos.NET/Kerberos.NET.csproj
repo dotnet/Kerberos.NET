@@ -5,6 +5,7 @@
     <Description>A cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library.</Description>
     <PackageTags>security kerberos</PackageTags>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>9</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
