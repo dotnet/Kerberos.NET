@@ -82,6 +82,8 @@ namespace Tests.Kerberos.NET
         {
             public bool WasCalled { get; set; }
 
+            public bool Debug { get; set; }
+
             public Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type)
             {
                 this.WasCalled = true;
