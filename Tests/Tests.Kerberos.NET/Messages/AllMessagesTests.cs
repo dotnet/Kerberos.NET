@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
@@ -18,7 +19,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_AsRep()
         {
-            var file = ReadDataFile("messages\\as-rep");
+            var file = ReadDataFile(Path.Combine("Messages", "as-rep"));
 
             var decoded = TestSimpleRoundtrip(
                 "as-rep",
@@ -33,7 +34,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_AsReq()
         {
-            var file = ReadDataFile("messages\\as-req");
+            var file = ReadDataFile(Path.Combine("Messages", "as-req"));
 
             var decoded = TestSimpleRoundtrip(
                 "as-req",
@@ -48,7 +49,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_AsReqPreAuth()
         {
-            var file = ReadDataFile("messages\\as-req-preauth");
+            var file = ReadDataFile(Path.Combine("Messages", "as-req-preauth"));
 
             var decoded = TestSimpleRoundtrip(
                 "as-req-preauth",
@@ -63,7 +64,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_KrbErrorPreAuth()
         {
-            var file = ReadDataFile("messages\\krb-error-preauth-required");
+            var file = ReadDataFile(Path.Combine("Messages", "krb-error-preauth-required"));
 
             var decoded = TestSimpleRoundtrip(
                 "krb-error-preauth-required",
@@ -78,7 +79,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_TgsRep()
         {
-            var file = ReadDataFile("messages\\tgs-rep-testuser-host-app03");
+            var file = ReadDataFile(Path.Combine("Messages", "tgs-rep-testuser-host-app03"));
 
             var decoded = TestSimpleRoundtrip(
                 "tgs-rep-testuser-host-app03",
@@ -93,7 +94,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_TgsRepKrbTgtRenew()
         {
-            var file = ReadDataFile("messages\\tgs-rep-testuser-krbtgt-renew");
+            var file = ReadDataFile(Path.Combine("Messages", "tgs-rep-testuser-krbtgt-renew"));
 
             var decoded = TestSimpleRoundtrip(
                 "tgs-rep-testuser-krbtgt-renew",
@@ -108,7 +109,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_TgsReq()
         {
-            var file = ReadDataFile("messages\\tgs-req-testuser-host-app03");
+            var file = ReadDataFile(Path.Combine("Messages", "tgs-req-testuser-host-app03"));
 
             var decoded = TestSimpleRoundtrip(
                 "tgs-req-testuser-host-app03",
@@ -123,7 +124,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_TgsReqKrbTgtRenew()
         {
-            var file = ReadDataFile("messages\\tgs-req-testuser-krbtgt-renew");
+            var file = ReadDataFile(Path.Combine("Messages", "tgs-req-testuser-krbtgt-renew"));
 
             var decoded = TestSimpleRoundtrip(
                 "tgs-req-testuser-krbtgt-renew",
@@ -138,7 +139,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_TgsReqS4uSelf()
         {
-            var file = ReadDataFile("messages\\tgs-req-app2-s4u-self");
+            var file = ReadDataFile(Path.Combine("Messages", "tgs-req-app2-s4u-self"));
 
             var decoded = TestSimpleRoundtrip(
                 "tgs-req-app2-s4u-self",
@@ -153,7 +154,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_TgsRepS4uSelf()
         {
-            var file = ReadDataFile("messages\\tgs-rep-app2-s4u-self");
+            var file = ReadDataFile(Path.Combine("Messages", "tgs-rep-app2-s4u-self"));
 
             var decoded = TestSimpleRoundtrip(
                 "tgs-rep-app2-s4u-self",
@@ -168,7 +169,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_TgsReqS4uProxy()
         {
-            var file = ReadDataFile("messages\\tgs-req-app2-s4u-proxy");
+            var file = ReadDataFile(Path.Combine("Messages", "tgs-req-app2-s4u-proxy"));
 
             var decoded = TestSimpleRoundtrip(
                 "tgs-req-app2-s4u-proxy",
@@ -183,7 +184,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void Message_TgsRepS4uProxy()
         {
-            var file = ReadDataFile("messages\\tgs-rep-app2-s4u-proxy");
+            var file = ReadDataFile(Path.Combine("Messages", "tgs-rep-app2-s4u-proxy"));
 
             var decoded = TestSimpleRoundtrip(
                 "tgs-rep-app2-s4u-proxy",
