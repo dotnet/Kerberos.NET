@@ -10,6 +10,7 @@ using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,7 +19,7 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class Krb5CredentialCacheTests : BaseTest
     {
-        protected static string FilePath => $"{BasePath}cache\\krb5cc";
+        protected static string FilePath => Path.Combine(BasePath, "Cache", "krb5cc");
 
         [TestMethod]
         public void ParseFile()
@@ -34,7 +35,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParseFromBytes()
         {
-            var cacheBytes = ReadDataFile("cache\\krb5cc");
+            var cacheBytes = ReadDataFile(Path.Combine("Cache", "krb5cc"));
 
             using (var cache = new Krb5TicketCache(cacheBytes))
             {
@@ -61,7 +62,7 @@ namespace Tests.Kerberos.NET
 
                 var serialized = cache.Serialize();
 
-                var originalBytes = ReadDataFile("cache\\krb5cc");
+                var originalBytes = ReadDataFile(Path.Combine("Cache", "krb5cc"));
 
                 Assert.IsTrue(originalBytes.SequenceEqual(serialized));
             }
