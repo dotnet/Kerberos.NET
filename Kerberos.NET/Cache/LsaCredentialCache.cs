@@ -1,17 +1,19 @@
-﻿using Kerberos.NET.Configuration;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Win32;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Win32;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Client
 {
     public class LsaCredentialCache : TicketCacheBase
     {
+        private readonly HashSet<string> SuccessfulGets = new(StringComparer.OrdinalIgnoreCase);
+
         private const int ERROR_NO_SUCH_LOGON_SESSION = 0x520;
         private const int STATUS_NO_TRUST_SAME_ACCOUNT = 0x6FB;
 
@@ -71,10 +73,7 @@ namespace Kerberos.NET.Client
 
         public override bool Contains(TicketCacheEntry entry) => false;
 
-        public override IEnumerable<object> GetAll()
-        {
-            return lsa.GetTicketCache().Cast<object>();
-        }
+        public override IEnumerable<object> GetAll() => lsa.GetTicketCache().Cast<object>();
 
         public override ValueTask<object> GetCacheItemAsync(string key, string container = null) => new(this.GetCacheItem(key, container));
 
@@ -90,6 +89,49 @@ namespace Kerberos.NET.Client
                 return null;
             }
 
+            KrbCred ticket = GetTicket(key);
+
+            var credInfo = ticket.Validate();
+
+            for (var i = 0; i < ticket.Tickets.Length; i++)
+            {
+                var entry = TicketCacheEntry.ConvertKrbCredToCacheEntry(credInfo, ticket.Tickets[i], credInfo.TicketInfo[i]);
+
+                if (entry.Value != null)
+                {
+                    return entry.Value;
+                }
+            }
+
+            return null;
+        }
+
+        private KrbCred GetTicket(string key)
+        {
+            try
+            {
+                return this.GetTicketOrThrow(key);
+            }
+            catch (KerberosProtocolException kex) when (kex.Error.ErrorCode == KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN)
+            {
+                if (this.SuccessfulGets.Contains(key))
+                {
+                    this.SuccessfulGets.Clear();
+
+                    // maybe try pPurgeRequest->(KERB_TICKET_CACHE_INFO_EX TicketTemplate)
+                    // if this is too heavy-handed
+
+                    this.PurgeTickets();
+
+                    return this.GetTicketOrThrow(key);
+                }
+
+                throw;
+            }
+        }
+
+        private KrbCred GetTicketOrThrow(string key)
+        {
             KrbCred ticket;
 
             try
@@ -105,19 +147,14 @@ namespace Kerberos.NET.Client
                 throw new KerberosProtocolException(new KrbError { ErrorCode = KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN });
             }
 
-            var credInfo = ticket.Validate();
-
-            for (var i = 0; i < ticket.Tickets.Length; i++)
+            if (ticket == null)
             {
-                var entry = TicketCacheEntry.ConvertKrbCredToCacheEntry(credInfo, ticket.Tickets[i], credInfo.TicketInfo[i]);
-
-                if (entry.Value != null)
-                {
-                    return entry.Value;
-                }
+                throw new KerberosProtocolException(new KrbError { ErrorCode = KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN });
             }
 
-            return null;
+            this.SuccessfulGets.Add(key);
+
+            return ticket;
         }
 
         public override T GetCacheItem<T>(string key, string container = null)
@@ -139,9 +176,6 @@ namespace Kerberos.NET.Client
             return result != null ? (T)result : default;
         }
 
-        public override void PurgeTickets()
-        {
-            lsa.PurgeTicketCache();
-        }
+        public override void PurgeTickets() => lsa.PurgeTicketCache();
     }
 }
