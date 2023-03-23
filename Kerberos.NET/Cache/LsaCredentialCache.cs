@@ -86,6 +86,8 @@ namespace Kerberos.NET.Client
 
             if (KrbPrincipalName.FromString(key).IsKrbtgt())
             {
+                // We want LSA to deal with krbtgt. We do not want it.
+                // LSA giving us the krbtgt ticket is a security vulnerability waiting to happen.
                 return null;
             }
 
@@ -108,35 +110,72 @@ namespace Kerberos.NET.Client
 
         private KrbCred GetTicket(string key)
         {
-            try
-            {
-                return this.GetTicketOrThrow(key);
-            }
-            catch (KerberosProtocolException kex) when (kex.Error.ErrorCode == KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN)
-            {
-                if (this.SuccessfulGets.Contains(key))
+            return TryWithKerberosCatch(
+                () => this.TryGetTicketOrThrow(key),
+                k =>
                 {
-                    this.SuccessfulGets.Clear();
+                    if (!this.SuccessfulGets.Contains(key))
+                    {
+                        throw k;
+                    }
 
-                    // maybe try pPurgeRequest->(KERB_TICKET_CACHE_INFO_EX TicketTemplate)
-                    // if this is too heavy-handed
+                    this.SuccessfulGets.Clear();
 
                     this.PurgeTickets();
 
-                    return this.GetTicketOrThrow(key);
+                    return this.TryGetTicketOrThrow(key);
                 }
-
-                throw;
-            }
+            );
         }
+
+        private KrbCred TryGetTicketOrThrow(string key)
+        {
+            var possiblePrincipalNames = new List<string> { key };
+
+            if (this.Configuration.TryFindRealmHint(key, out string referral) && !string.IsNullOrWhiteSpace(referral))
+            {
+                possiblePrincipalNames.Add($"{key}@{referral}");
+            }
+
+            Exception lastException = null;
+
+            foreach (var spn in possiblePrincipalNames)
+            {
+                var ticket = TryWithKerberosCatch(
+                    () => this.GetTicketOrThrow(spn),
+                    k =>
+                    {
+                        lastException = k;
+                        return null;
+                    }
+                );
+
+                if (ticket != null)
+                {
+                    return ticket;
+                }
+            }
+
+            throw lastException ?? PrincipalUnknownException();
+        }
+
+        private static Exception PrincipalUnknownException()
+            => new KerberosProtocolException(new KrbError { ErrorCode = KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN });
 
         private KrbCred GetTicketOrThrow(string key)
         {
-            KrbCred ticket;
+            var ticket = TryWithKerberosCatch(() => lsa.GetTicket(key)) ?? throw PrincipalUnknownException();
 
+            this.SuccessfulGets.Add(key);
+
+            return ticket;
+        }
+
+        private static T TryWithKerberosCatch<T>(Func<T> func, Func<KerberosProtocolException, T> error = null)
+        {
             try
             {
-                ticket = lsa.GetTicket(key);
+                return func();
             }
             catch (Win32Exception ex) when (ex.NativeErrorCode == ERROR_NO_SUCH_LOGON_SESSION)
             {
@@ -144,17 +183,17 @@ namespace Kerberos.NET.Client
             }
             catch (Win32Exception ex) when (ex.NativeErrorCode == STATUS_NO_TRUST_SAME_ACCOUNT)
             {
-                throw new KerberosProtocolException(new KrbError { ErrorCode = KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN });
+                throw PrincipalUnknownException();
             }
-
-            if (ticket == null)
+            catch (KerberosProtocolException kex)
             {
-                throw new KerberosProtocolException(new KrbError { ErrorCode = KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN });
+                if (error is null)
+                {
+                    throw;
+                }
+
+                return error(kex);
             }
-
-            this.SuccessfulGets.Add(key);
-
-            return ticket;
         }
 
         public override T GetCacheItem<T>(string key, string container = null)
