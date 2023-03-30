@@ -25,6 +25,8 @@ namespace Kerberos.NET.Win32
 
         public byte[] SessionKey => this.context.QueryContextAttributeSession();
 
+        public string UserName => this.context.UserName;
+
         public byte[] RequestToken(byte[] serverResponse = null)
         {
             var status = this.context.InitializeSecurityContext(this.spn, serverResponse, out byte[] clientRequest);
