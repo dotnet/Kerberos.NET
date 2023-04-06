@@ -1,17 +1,19 @@
-﻿using Kerberos.NET.Configuration;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Win32;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Kerberos.NET.Configuration;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Win32;
+using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Client
 {
     public class LsaCredentialCache : TicketCacheBase
     {
+        private readonly HashSet<string> SuccessfulGets = new(StringComparer.OrdinalIgnoreCase);
+
         private const int ERROR_NO_SUCH_LOGON_SESSION = 0x520;
         private const int STATUS_NO_TRUST_SAME_ACCOUNT = 0x6FB;
 
@@ -71,10 +73,7 @@ namespace Kerberos.NET.Client
 
         public override bool Contains(TicketCacheEntry entry) => false;
 
-        public override IEnumerable<object> GetAll()
-        {
-            return lsa.GetTicketCache().Cast<object>();
-        }
+        public override IEnumerable<object> GetAll() => lsa.GetTicketCache().Cast<object>();
 
         public override ValueTask<object> GetCacheItemAsync(string key, string container = null) => new(this.GetCacheItem(key, container));
 
@@ -87,23 +86,12 @@ namespace Kerberos.NET.Client
 
             if (KrbPrincipalName.FromString(key).IsKrbtgt())
             {
+                // We want LSA to deal with krbtgt. We do not want it.
+                // LSA giving us the krbtgt ticket is a security vulnerability waiting to happen.
                 return null;
             }
 
-            KrbCred ticket;
-
-            try
-            {
-                ticket = lsa.GetTicket(key);
-            }
-            catch (Win32Exception ex) when (ex.NativeErrorCode == ERROR_NO_SUCH_LOGON_SESSION)
-            {
-                throw new InvalidOperationException(ex.Message);
-            }
-            catch (Win32Exception ex) when (ex.NativeErrorCode == STATUS_NO_TRUST_SAME_ACCOUNT)
-            {
-                throw new KerberosProtocolException(new KrbError { ErrorCode = KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN });
-            }
+            KrbCred ticket = GetTicket(key);
 
             var credInfo = ticket.Validate();
 
@@ -118,6 +106,94 @@ namespace Kerberos.NET.Client
             }
 
             return null;
+        }
+
+        private KrbCred GetTicket(string key)
+        {
+            return TryWithKerberosCatch(
+                () => this.TryGetTicketOrThrow(key),
+                k =>
+                {
+                    if (!this.SuccessfulGets.Contains(key))
+                    {
+                        throw k;
+                    }
+
+                    this.SuccessfulGets.Clear();
+
+                    this.PurgeTickets();
+
+                    return this.TryGetTicketOrThrow(key);
+                }
+            );
+        }
+
+        private KrbCred TryGetTicketOrThrow(string key)
+        {
+            var possiblePrincipalNames = new List<string> { key };
+
+            if (this.Configuration.TryFindRealmHint(key, out string referral) && !string.IsNullOrWhiteSpace(referral))
+            {
+                possiblePrincipalNames.Add($"{key}@{referral}");
+            }
+
+            Exception lastException = null;
+
+            foreach (var spn in possiblePrincipalNames)
+            {
+                var ticket = TryWithKerberosCatch(
+                    () => this.GetTicketOrThrow(spn),
+                    k =>
+                    {
+                        lastException = k;
+                        return null;
+                    }
+                );
+
+                if (ticket != null)
+                {
+                    return ticket;
+                }
+            }
+
+            throw lastException ?? PrincipalUnknownException();
+        }
+
+        private static Exception PrincipalUnknownException()
+            => new KerberosProtocolException(new KrbError { ErrorCode = KerberosErrorCode.KDC_ERR_S_PRINCIPAL_UNKNOWN });
+
+        private KrbCred GetTicketOrThrow(string key)
+        {
+            var ticket = TryWithKerberosCatch(() => lsa.GetTicket(key)) ?? throw PrincipalUnknownException();
+
+            this.SuccessfulGets.Add(key);
+
+            return ticket;
+        }
+
+        private static T TryWithKerberosCatch<T>(Func<T> func, Func<KerberosProtocolException, T> error = null)
+        {
+            try
+            {
+                return func();
+            }
+            catch (Win32Exception ex) when (ex.NativeErrorCode == ERROR_NO_SUCH_LOGON_SESSION)
+            {
+                throw new InvalidOperationException(ex.Message);
+            }
+            catch (Win32Exception ex) when (ex.NativeErrorCode == STATUS_NO_TRUST_SAME_ACCOUNT)
+            {
+                throw PrincipalUnknownException();
+            }
+            catch (KerberosProtocolException kex)
+            {
+                if (error is null)
+                {
+                    throw;
+                }
+
+                return error(kex);
+            }
         }
 
         public override T GetCacheItem<T>(string key, string container = null)
@@ -139,9 +215,6 @@ namespace Kerberos.NET.Client
             return result != null ? (T)result : default;
         }
 
-        public override void PurgeTickets()
-        {
-            lsa.PurgeTicketCache();
-        }
+        public override void PurgeTickets() => lsa.PurgeTicketCache();
     }
 }

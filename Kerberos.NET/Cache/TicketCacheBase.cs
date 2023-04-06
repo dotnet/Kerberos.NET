@@ -75,7 +75,7 @@ namespace Kerberos.NET
 
             if (LsaCacheTypes.Any(c => c.Equals(cachePath, StringComparison.OrdinalIgnoreCase)))
             {
-                cacheType = "mslsa";
+                cacheType = "MSLSA";
                 return true;
             }
 

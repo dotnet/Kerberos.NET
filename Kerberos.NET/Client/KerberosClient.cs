@@ -749,32 +749,14 @@ namespace Kerberos.NET.Client
 
         private bool TryFindRealmHint(RequestServiceTicket rst, out string referral)
         {
-            foreach (var kv in this.Configuration.DomainRealm)
-            {
-                //
-                // .foo.net matches anything under foo.net
-                //      bar.foo.net matches
-                //      baz.foo.net matches
-                //      baz.bar.foo.net matches
-                //      foo.net does not match
-                //      bar.net does not match
-                //
-                // bar.foo.net matches explicitly
-                //      bar.foo.net matches
-                //      baz.foo.net does not match
-                //      baz.bar.foo.net does not match
-                //      foo.net does not match
-                //
+            var spn = rst.ServicePrincipalName;
 
-                if ((kv.Key[0] == '.' && rst.ServicePrincipalName.EndsWith(kv.Key, StringComparison.OrdinalIgnoreCase)) ||
-                    (string.Equals(kv.Key, rst.ServicePrincipalName, StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    referral = $"krbtgt/{kv.Value.ToUpperInvariant()}";
-                    return true;
-                }
+            if (this.Configuration.TryFindRealmHint(spn, out referral))
+            {
+                referral = $"krbtgt/{referral}";
+                return true;
             }
 
-            referral = null;
             return false;
         }
 

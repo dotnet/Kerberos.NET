@@ -125,16 +125,41 @@ namespace Kerberos.NET.Configuration
             return Default();
         }
 
-        public static Krb5Config Default()
-        {
-            return new Krb5Config();
-        }
+        public static Krb5Config Default() => new Krb5Config();
 
         public string Serialize() => this.Serialize(null);
 
-        public string Serialize(Krb5ConfigurationSerializationConfig serializationConfig)
+        public string Serialize(Krb5ConfigurationSerializationConfig serializationConfig) => Krb5ConfigurationSerializer.Serialize(this, serializationConfig);
+
+        public bool TryFindRealmHint(string spn, out string referral)
         {
-            return Krb5ConfigurationSerializer.Serialize(this, serializationConfig);
+            foreach (var kv in this.DomainRealm)
+            {
+                //
+                // .foo.net matches anything under foo.net
+                //      bar.foo.net matches
+                //      baz.foo.net matches
+                //      baz.bar.foo.net matches
+                //      foo.net does not match
+                //      bar.net does not match
+                //
+                // bar.foo.net matches explicitly
+                //      bar.foo.net matches
+                //      baz.foo.net does not match
+                //      baz.bar.foo.net does not match
+                //      foo.net does not match
+                //
+
+                if ((kv.Key[0] == '.' && spn.EndsWith(kv.Key, StringComparison.OrdinalIgnoreCase)) ||
+                    (string.Equals(kv.Key, spn, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    referral = kv.Value.ToUpperInvariant();
+                    return true;
+                }
+            }
+
+            referral = null;
+            return false;
         }
 
         private static string GetFilePath(string envVar, string winPath, string osxPath, string linuxPath)
