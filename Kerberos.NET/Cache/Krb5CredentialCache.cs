@@ -581,25 +581,22 @@ namespace Kerberos.NET.Client
         {
             var headerLength = buffer.ReadInt16BigEndian();
 
-            int headerRead = 0;
-
-            do
+            while (headerLength > 0)
             {
                 var tag = (Krb5CredentialCacheTag)buffer.ReadInt16BigEndian();
+                headerLength -= sizeof(short);
+
                 var length = buffer.ReadInt16BigEndian();
+                headerLength -= sizeof(short);
+
                 var value = buffer.ReadMemory(length);
+                headerLength -= length;
 
                 this.Header[tag] = value;
-
-                headerRead += 4 + length;
             }
-            while (headerRead < headerLength);
         }
 
-        private static int GetEpoch(DateTimeOffset dt)
-        {
-            return dt == DateTimeOffset.MinValue ? 0 : (int)dt.ToUnixTimeSeconds();
-        }
+        private static int GetEpoch(DateTimeOffset dt) => dt == DateTimeOffset.MinValue ? 0 : (int)dt.ToUnixTimeSeconds();
 
         [DebuggerDisplay("{Client} {Server}")]
         public class Krb5Credential
