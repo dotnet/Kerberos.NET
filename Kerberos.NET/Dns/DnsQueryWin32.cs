@@ -35,7 +35,7 @@ namespace Kerberos.NET.Dns
 
         public static bool Debug { get; set; }
 
-        private static readonly HashSet<int> IgnoredErrors = new HashSet<int>()
+        private static readonly HashSet<int> IgnoredErrors = new()
         {
             9002, // server not found (DNS_ERROR_RCODE_SERVER_FAILURE)
             9003, // record not found (DNS_ERROR_RCODE_NAME_ERROR)

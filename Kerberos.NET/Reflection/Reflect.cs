@@ -5,6 +5,7 @@
 
 using System;
 using System.Buffers;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Kerberos.NET.Configuration;
@@ -40,11 +41,14 @@ namespace Kerberos.NET.Reflection
 
         public static bool IsEnumerable(Type propertyType)
         {
-            return propertyType.IsGenericType && (
-                propertyType.GetGenericTypeDefinition() == typeof(ICollection<>) ||
-                propertyType.GetGenericTypeDefinition() == typeof(IEnumerable<>) ||
-                propertyType.GetGenericTypeDefinition() == typeof(List<>)
-            );
+            if (!propertyType.IsGenericType || propertyType == typeof(string) || propertyType.IsArray)
+            {
+                return false;
+            }
+
+            var type = propertyType.GetGenericTypeDefinition();
+
+            return typeof(IEnumerable).IsAssignableFrom(type);
         }
 
         public static bool IsBytes(Type type)

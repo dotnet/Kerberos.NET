@@ -30,7 +30,7 @@ namespace Benchmark.Kerberos.NET
         private readonly string password = "P@ssw0rd!";
         private readonly string overrideKdc = $"127.0.0.1";
 
-        private static readonly ConcurrentDictionary<string, KerberosPasswordCredential> Creds = new ConcurrentDictionary<string, KerberosPasswordCredential>();
+        private static readonly ConcurrentDictionary<string, KerberosPasswordCredential> Creds = new();
 
         private static readonly int ProcessId = Environment.ProcessId;
 

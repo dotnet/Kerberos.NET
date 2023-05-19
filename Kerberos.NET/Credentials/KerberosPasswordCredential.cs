@@ -51,7 +51,7 @@ namespace Kerberos.NET.Credentials
             }
         }
 
-        private readonly object _syncCache = new object();
+        private readonly object _syncCache = new();
 
         private KerberosKey cacheKey;
 

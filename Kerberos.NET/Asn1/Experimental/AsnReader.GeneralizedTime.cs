@@ -321,7 +321,7 @@ namespace System.Security.Cryptography.Asn1
                         throw new CryptographicException(SR.Resource("Cryptography_Der_Invalid_Encoding"));
                     }
 
-                    TimeSpan tmp = new TimeSpan(offsetHour, offsetMinute, 0);
+                    TimeSpan tmp = new(offsetHour, offsetMinute, 0);
 
                     if (isMinus)
                     {

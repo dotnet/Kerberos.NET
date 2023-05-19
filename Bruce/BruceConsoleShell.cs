@@ -28,7 +28,7 @@ namespace Kerberos.NET.CommandLine
 (C) Copyright {BannerYear} .NET Foundation
 ";
 
-        private readonly Stack<string> shellCommandPath = new Stack<string>();
+        private readonly Stack<string> shellCommandPath = new();
         private readonly InputControl io;
 
         public BruceConsoleShell(InputControl io = null)

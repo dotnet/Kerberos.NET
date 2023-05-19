@@ -61,7 +61,7 @@ namespace Tests.Kerberos.NET
             return cert;
         }
 
-        private static readonly Dictionary<KeyAgreementAlgorithm, IExchangeKey> KeyCache = new Dictionary<KeyAgreementAlgorithm, IExchangeKey>();
+        private static readonly Dictionary<KeyAgreementAlgorithm, IExchangeKey> KeyCache = new();
 
         public IExchangeKey RetrieveKeyCache(KeyAgreementAlgorithm algorithm)
         {

@@ -40,7 +40,7 @@ namespace Kerberos.NET.Win32
                                     AcceptContextFlag.AcceptStream |
                                     AcceptContextFlag.AcceptExtendedError;
 
-        private readonly HashSet<object> disposable = new HashSet<object>();
+        private readonly HashSet<object> disposable = new();
 
         private readonly Credential credential;
         private readonly InitContextFlag clientFlags;

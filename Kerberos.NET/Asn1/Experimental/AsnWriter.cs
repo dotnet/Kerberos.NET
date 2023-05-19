@@ -406,7 +406,7 @@ namespace System.Security.Cryptography.Asn1
 
         private void WriteEncodedValue(ReadOnlyMemory<byte> preEncodedValue)
         {
-            AsnReader reader = new AsnReader(preEncodedValue, this.RuleSet);
+            AsnReader reader = new(preEncodedValue, this.RuleSet);
 
             // Is it legal under the current rules?
             ReadOnlyMemory<byte> parsedBack = reader.ReadEncodedValue();
@@ -536,7 +536,7 @@ namespace System.Security.Cryptography.Asn1
             // still be maintained.
             var reader = new AsnReader(new ReadOnlyMemory<byte>(buffer, start, len), AsnEncodingRules.BER);
 
-            List<(int, int)> positions = new List<(int, int)>();
+            List<(int, int)> positions = new();
 
             int pos = start;
 

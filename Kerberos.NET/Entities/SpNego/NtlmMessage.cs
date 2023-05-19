@@ -13,8 +13,8 @@ namespace Kerberos.NET.Entities
 {
     public class NtlmMessage
     {
-        private static readonly Asn1Tag GssApplicationTag = new Asn1Tag(TagClass.Application, 0);
-        private static readonly Asn1Tag NtlmContextTag = new Asn1Tag(TagClass.ContextSpecific, 1);
+        private static readonly Asn1Tag GssApplicationTag = new(TagClass.Application, 0);
+        private static readonly Asn1Tag NtlmContextTag = new(TagClass.ContextSpecific, 1);
 
         internal static readonly byte[] MessageSignature = Encoding.ASCII.GetBytes("NTLMSSP\0");
 

@@ -56,7 +56,7 @@ namespace Tests.Kerberos.NET
             var expectedBytes = HexToByte("08 9B CA 48 B1 05 EA 6E A7 7C A5 D2 F3 9D C5 E7");
             var saltBytes = HexToByte("10 DF 9D D7 83 E5 BC 8A CE A1 73 0E 74 35 5F 61 41 54 48 45 4E 41 2E 4D 49 54 2E 45 44 55 72 61 65 62 75 72 6E");
 
-            AES128Sha256TransformerEx transformer = new AES128Sha256TransformerEx();
+            AES128Sha256TransformerEx transformer = new();
 
             var iterations = new byte[4];
 
@@ -100,7 +100,7 @@ namespace Tests.Kerberos.NET
             var expectedBytes = HexToByte("08 9B CA 48 B1 05 EA 6E A7 7C A5 D2 F3 9D C5 E7");
             var saltBytes = HexToByte("10 DF 9D D7 83 E5 BC 8A CE A1 73 0E 74 35 5F 61 41 54 48 45 4E 41 2E 4D 49 54 2E 45 44 55 72 61 65 62 75 72 6E");
 
-            AES128Sha256TransformerEx transformer = new AES128Sha256TransformerEx();
+            AES128Sha256TransformerEx transformer = new();
 
             var iterations = new byte[4];
 
@@ -141,7 +141,7 @@ namespace Tests.Kerberos.NET
             var expectedBytes = HexToByte("45 BD 80 6D BF 6A 83 3A 9C FF C1 C9 45 89 A2 22 36 7A 79 BC 21 C4 13 71 89 06 E9 F5 78 A7 84 67");
             var saltBytes = HexToByte("10 DF 9D D7 83 E5 BC 8A CE A1 73 0E 74 35 5F 61 41 54 48 45 4E 41 2E 4D 49 54 2E 45 44 55 72 61 65 62 75 72 6E");
 
-            AES256Sha384Transformer transformer = new AES256Sha384Transformer();
+            AES256Sha384Transformer transformer = new();
 
             var iterations = new byte[4];
 
@@ -182,7 +182,7 @@ namespace Tests.Kerberos.NET
             var expectedBytes = HexToByte("45 BD 80 6D BF 6A 83 3A 9C FF C1 C9 45 89 A2 22 36 7A 79 BC 21 C4 13 71 89 06 E9 F5 78 A7 84 67");
             var saltBytes = HexToByte("10 DF 9D D7 83 E5 BC 8A CE A1 73 0E 74 35 5F 61 41 54 48 45 4E 41 2E 4D 49 54 2E 45 44 55 72 61 65 62 75 72 6E");
 
-            AES256Sha384Transformer transformer = new AES256Sha384Transformer();
+            AES256Sha384Transformer transformer = new();
 
             var iterations = new byte[4];
 
@@ -336,7 +336,7 @@ namespace Tests.Kerberos.NET
             var plaintext = HexToByte(CompleteOneBlock);
             var expectedBytes = HexToByte("35 17 D6 40 F5 0D DC 8A D3 62 87 22 B3 56 9D 2A E0 74 93 FA 82 63 25 40 80 EA 65 C1 00 8E 8F C2 95 FB 48 52 E7 D8 3E 1E 7C 48 C3 7E EB E6 B0 D3");
 
-            AES128Sha256TransformerEx transformer = new AES128Sha256TransformerEx();
+            AES128Sha256TransformerEx transformer = new();
 
             transformer.SetConfounder(HexToByte("56 AB 21 71 3F F6 2C 0A 14 57 20 0F 6F A9 94 8F"));
 

@@ -20,7 +20,7 @@ namespace Kerberos.NET.Entities
             this.MessageType = MessageType.KRB_ERROR;
         }
 
-        private static readonly Asn1Tag KrbErrorTag = new Asn1Tag(TagClass.Application, 30);
+        private static readonly Asn1Tag KrbErrorTag = new(TagClass.Application, 30);
 
         public static bool CanDecode(ReadOnlyMemory<byte> encoded)
         {

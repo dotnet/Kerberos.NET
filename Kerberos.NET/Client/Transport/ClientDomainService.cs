@@ -23,16 +23,16 @@ namespace Kerberos.NET.Transport
         private static readonly Task CacheCleanup;
 
         private static readonly ConcurrentDictionary<string, DnsRecord> DomainCache
-            = new ConcurrentDictionary<string, DnsRecord>(StringComparer.InvariantCultureIgnoreCase);
+            = new(StringComparer.InvariantCultureIgnoreCase);
 
         private static readonly ConcurrentDictionary<string, DateTimeOffset> DomainServiceNegativeCache
-            = new ConcurrentDictionary<string, DateTimeOffset>(StringComparer.InvariantCultureIgnoreCase);
+            = new(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly Dictionary<string, HashSet<string>> pinnedKdcs
-            = new Dictionary<string, HashSet<string>>(StringComparer.InvariantCultureIgnoreCase);
+            = new(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly ConcurrentDictionary<string, DnsRecord> negativeCache
-            = new ConcurrentDictionary<string, DnsRecord>(StringComparer.InvariantCultureIgnoreCase);
+            = new(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly ILogger logger;
 

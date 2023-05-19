@@ -51,7 +51,7 @@ namespace Kerberos.NET.Logging
             private readonly LogFunc log;
             private readonly string categoryName;
 
-            private readonly ConcurrentStack<LoggerScope> scopes = new ConcurrentStack<LoggerScope>();
+            private readonly ConcurrentStack<LoggerScope> scopes = new();
 
             private readonly LoggerScope defaultScope;
 

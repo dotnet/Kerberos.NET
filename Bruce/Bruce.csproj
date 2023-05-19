@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Kerberos.NET.CommandLine</RootNamespace>
 
     <PackAsTool>true</PackAsTool>
@@ -12,6 +11,14 @@
     <Product>Kerberos.NET Command Line Tool</Product>
     <Description>A command line tool that manages the cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library Kerberos.NET.</Description>
     <PackageTags>security kerberos</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+    <TargetFramework>net7.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <TargetFramework>net7.0-windows</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,12 +39,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DnsClient" Version="1.4.0" />
-    <PackageReference Include="Humanizer.Core" Version="2.10.1" />
+    <PackageReference Include="DnsClient" Version="1.7.0" />
+    <PackageReference Include="Humanizer.Core" Version="2.14.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kerberos.NET\Kerberos.NET.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
     <ProjectReference Include="..\Samples\KerbDumpCore\KerbDumpCore.csproj" />
   </ItemGroup>
 

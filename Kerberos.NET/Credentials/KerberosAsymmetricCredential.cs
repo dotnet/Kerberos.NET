@@ -21,8 +21,8 @@ namespace Kerberos.NET.Credentials
     /// </summary>
     public class KerberosAsymmetricCredential : KerberosCredential, IDisposable
     {
-        private static readonly Oid IdPkInitAuthData = new Oid("1.3.6.1.5.2.3.1");
-        private static readonly Oid DiffieHellman = new Oid("1.2.840.10046.2.1");
+        private static readonly Oid IdPkInitAuthData = new("1.3.6.1.5.2.3.1");
+        private static readonly Oid DiffieHellman = new("1.2.840.10046.2.1");
 
         private ReadOnlyMemory<byte> clientDHNonce;
         private IKeyAgreement agreement;
@@ -233,7 +233,7 @@ namespace Kerberos.NET.Credentials
             authPack.PKAuthenticator.CTime = ctime;
             authPack.PKAuthenticator.CuSec = usec;
 
-            SignedCms signed = new SignedCms(
+            SignedCms signed = new(
                 new ContentInfo(
                     IdPkInitAuthData,
                     authPack.Encode().ToArray()

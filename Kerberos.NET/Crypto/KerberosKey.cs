@@ -17,10 +17,10 @@ namespace Kerberos.NET.Crypto
     public class KerberosKey
     {
         private readonly ConcurrentDictionary<EncryptionType, ReadOnlyMemory<byte>> keyCache
-            = new ConcurrentDictionary<EncryptionType, ReadOnlyMemory<byte>>();
+            = new();
 
         private readonly ConcurrentDictionary<string, ReadOnlyMemory<byte>> derivedKeyCache
-            = new ConcurrentDictionary<string, ReadOnlyMemory<byte>>();
+            = new();
 
         private readonly byte[] key;
 

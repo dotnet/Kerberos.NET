@@ -12,7 +12,7 @@ namespace Kerberos.NET.Entities.Pac
     [DebuggerDisplay("{Length}/{MaxLength} {Buffer}")]
     public class RpcString : INdrStruct
     {
-        public static readonly RpcString Empty = new RpcString();
+        public static readonly RpcString Empty = new();
 
         public short Length { get; private set; }
 

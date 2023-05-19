@@ -136,7 +136,7 @@ namespace System.Security.Cryptography.Asn1
             int second = normalized.Second;
 
             Span<byte> baseSpan = this._buffer.AsSpan(this._offset);
-            StandardFormat format = new StandardFormat('D', 2);
+            StandardFormat format = new('D', 2);
 
             if (!Utf8Formatter.TryFormat(year % 100, baseSpan.Slice(0, 2), out _, format) ||
                 !Utf8Formatter.TryFormat(month, baseSpan.Slice(2, 2), out _, format) ||

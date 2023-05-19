@@ -95,16 +95,16 @@ namespace Tests.Kerberos.NET.Pac.Interop
     {
         private const int RpcSOk = 0;
 
-        private static readonly PfnAllocate FnAllocator = new PfnAllocate(MIDL_user_allocate);
-        private static readonly PfnFree FnFree = new PfnFree(MIDL_user_free);
+        private static readonly PfnAllocate FnAllocator = new(MIDL_user_allocate);
+        private static readonly PfnFree FnFree = new(MIDL_user_free);
 
-        private static readonly MIDL_TYPE_PICKLING_INFO MIDLTypePicklingInfo = new MIDL_TYPE_PICKLING_INFO
+        private static readonly MIDL_TYPE_PICKLING_INFO MIDLTypePicklingInfo = new()
         {
             Version = 0x33205054,
             Flags = 0x3
         };
 
-        private static readonly RPC_CLIENT_INTERFACE RpcClientInterface = new RPC_CLIENT_INTERFACE
+        private static readonly RPC_CLIENT_INTERFACE RpcClientInterface = new()
         {
             Length = (uint)sizeof(RPC_CLIENT_INTERFACE),
             InterfaceId = new RPC_SYNTAX_IDENTIFIER()
@@ -260,7 +260,7 @@ namespace Tests.Kerberos.NET.Pac.Interop
         [DllImport("rpcrt4.dll")]
         private static extern int MesHandleFree(IntPtr handle);
 
-        private static readonly ConcurrentDictionary<IntPtr, int> Allocations = new ConcurrentDictionary<IntPtr, int>();
+        private static readonly ConcurrentDictionary<IntPtr, int> Allocations = new();
 
         private static IntPtr MIDL_user_allocate(int size)
         {

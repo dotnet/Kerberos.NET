@@ -107,7 +107,7 @@ namespace Kerberos.NET.Entities
         [KerberosIgnore]
         public IDictionary<PacType, PacObject> Attributes => this.attributes;
 
-        private static readonly Dictionary<PacType, Type> KnownTypes = new Dictionary<PacType, Type>
+        private static readonly Dictionary<PacType, Type> KnownTypes = new()
         {
             { PacType.LOGON_INFO, typeof(PacLogonInfo) },
             { PacType.CREDENTIAL_TYPE, typeof(PacCredentialInfo) },
@@ -122,7 +122,7 @@ namespace Kerberos.NET.Entities
             { PacType.DEVICE_CLAIMS, typeof(ClaimsSetMetadata) },
         };
 
-        private readonly Dictionary<PacType, PacObject> attributes = new Dictionary<PacType, PacObject>();
+        private readonly Dictionary<PacType, PacObject> attributes = new();
 
         private void ClearSignatures(PacType type, PacSignature signature, out int exclusionStart, out int exclusionLength)
         {

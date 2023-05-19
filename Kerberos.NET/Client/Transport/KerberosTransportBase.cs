@@ -18,7 +18,7 @@ namespace Kerberos.NET.Transport
 {
     public abstract class KerberosTransportBase : IKerberosTransport, IDisposable
     {
-        private static readonly Random Random = new Random();
+        private static readonly Random Random = new();
 
         protected KerberosTransportBase(ILoggerFactory logger)
         {

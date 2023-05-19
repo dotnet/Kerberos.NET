@@ -14,8 +14,8 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class KeytabCredentialTests
     {
-        private static readonly KerberosKey Aes128Key = new KerberosKey("P@ssw0rd!", etype: EncryptionType.AES128_CTS_HMAC_SHA1_96);
-        private static readonly KerberosKey RC4Key = new KerberosKey("P@ssw0rd!", etype: EncryptionType.RC4_HMAC_NT);
+        private static readonly KerberosKey Aes128Key = new("P@ssw0rd!", etype: EncryptionType.AES128_CTS_HMAC_SHA1_96);
+        private static readonly KerberosKey RC4Key = new("P@ssw0rd!", etype: EncryptionType.RC4_HMAC_NT);
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]

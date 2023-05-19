@@ -90,7 +90,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void CredPartRoundtrip()
         {
-            KrbEncKrbCredPart part = new KrbEncKrbCredPart
+            KrbEncKrbCredPart part = new()
             {
                 Nonce = 123,
                 RAddress = new KrbHostAddress

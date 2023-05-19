@@ -58,7 +58,7 @@ namespace Kerberos.NET.Ndr
             this.IsAligned = align;
         }
 
-        private readonly DeferralStack deferrals = new DeferralStack();
+        private readonly DeferralStack deferrals = new();
 
         private Memory<byte> backingBuffer;
         private Memory<byte> workingBuffer;

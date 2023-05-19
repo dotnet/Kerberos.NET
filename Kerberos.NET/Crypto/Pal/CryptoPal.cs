@@ -18,7 +18,7 @@ namespace Kerberos.NET.Crypto
         public static CryptoPal Platform => lazyPlatform.Value;
 
         private static readonly Lazy<CryptoPal> lazyPlatform
-            = new Lazy<CryptoPal>(() => CreatePal());
+            = new(() => CreatePal());
 
         private static Func<CryptoPal> injectedPal;
 

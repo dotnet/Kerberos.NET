@@ -13,7 +13,7 @@ namespace Kerberos.NET.Crypto
     internal class AesAlgorithm : ISymmetricAlgorithm
     {
         private static readonly Lazy<Aes> lazyAlgorithm
-            = new Lazy<Aes>(() =>
+            = new(() =>
             {
                 var impl = Aes.Create();
                 impl.Padding = PaddingMode.None;

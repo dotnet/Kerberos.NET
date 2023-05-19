@@ -12,8 +12,8 @@ namespace Tests.Kerberos.NET
 {
     internal class FakeExceptionLoggerFactory : ILoggerFactory
     {
-        private readonly ConcurrentBag<Exception> exceptions = new ConcurrentBag<Exception>();
-        private readonly ConcurrentBag<string> logs = new ConcurrentBag<string>();
+        private readonly ConcurrentBag<Exception> exceptions = new();
+        private readonly ConcurrentBag<string> logs = new();
 
         public IEnumerable<Exception> Exceptions => this.exceptions;
 

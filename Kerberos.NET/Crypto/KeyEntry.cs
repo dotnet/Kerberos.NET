@@ -244,7 +244,7 @@ namespace Kerberos.NET.Crypto
             WriteBytes(writer, bytes);
         }
 
-        private static readonly DateTimeOffset UNIX_EPOCH_BASE = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        private static readonly DateTimeOffset UNIX_EPOCH_BASE = new(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         private static void WriteDateTime(BinaryWriter writer, DateTimeOffset dt)
         {

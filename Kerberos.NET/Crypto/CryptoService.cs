@@ -13,17 +13,17 @@ namespace Kerberos.NET.Crypto
     public static class CryptoService
     {
         private static readonly ConcurrentDictionary<EncryptionType, Func<KerberosCryptoTransformer>> CryptoAlgorithms
-            = new ConcurrentDictionary<EncryptionType, Func<KerberosCryptoTransformer>>();
+            = new();
 
         private static readonly ConcurrentDictionary<ChecksumType, ChecksumConstructor> ChecksumAlgorithms
-            = new ConcurrentDictionary<ChecksumType, ChecksumConstructor>();
+            = new();
 
         private static readonly ConcurrentDictionary<EncryptionType, ChecksumType> ETypeToChecksumCache
-            = new ConcurrentDictionary<EncryptionType, ChecksumType>();
+            = new();
 
-        private static readonly HashSet<EncryptionType> WeakEncryptionTypes = new HashSet<EncryptionType>();
+        private static readonly HashSet<EncryptionType> WeakEncryptionTypes = new();
 
-        private static readonly HashSet<ChecksumType> WeakChecksumTypes = new HashSet<ChecksumType>();
+        private static readonly HashSet<ChecksumType> WeakChecksumTypes = new();
 
         static CryptoService()
         {

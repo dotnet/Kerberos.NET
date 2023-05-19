@@ -642,7 +642,7 @@ namespace Kerberos.NET.CommandLine
             }
         }
 
-        private static readonly HashSet<string> IgnoredProperties = new HashSet<string>
+        private static readonly HashSet<string> IgnoredProperties = new()
         {
             "PacType",
             "Reserved3",

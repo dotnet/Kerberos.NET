@@ -14,7 +14,7 @@ namespace Kerberos.NET.Crypto
     {
         private const string BCryptLib = "BCrypt.dll";
 
-        private static readonly ConcurrentDictionary<string, IntPtr> AlgorithmProviderCache = new ConcurrentDictionary<string, IntPtr>();
+        private static readonly ConcurrentDictionary<string, IntPtr> AlgorithmProviderCache = new();
 
         public static IntPtr GetCachedBCryptAlgorithmProvider(string algorithm)
         {

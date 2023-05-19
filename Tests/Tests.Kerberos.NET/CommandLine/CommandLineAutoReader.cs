@@ -10,8 +10,8 @@ namespace Tests.Kerberos.NET
 {
     public class CommandLineAutoReader : StringReader
     {
-        private readonly Queue<string> lines = new Queue<string>();
-        private readonly Queue<char> lastLine = new Queue<char>();
+        private readonly Queue<string> lines = new();
+        private readonly Queue<char> lastLine = new();
 
         public CommandLineAutoReader()
             : base(string.Empty)

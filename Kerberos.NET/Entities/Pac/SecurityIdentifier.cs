@@ -15,7 +15,7 @@ namespace Kerberos.NET.Entities.Pac
         public static class WellKnown
         {
             public static readonly SecurityIdentifier ThisOrganizationCertificate
-                = new SecurityIdentifier(IdentifierAuthority.NTAuthority, new uint[] { 65, 1 }, SidAttributes.SE_GROUP_ENABLED);
+                = new(IdentifierAuthority.NTAuthority, new uint[] { 65, 1 }, SidAttributes.SE_GROUP_ENABLED);
         }
 
         private readonly IdentifierAuthority authority;

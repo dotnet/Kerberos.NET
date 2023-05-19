@@ -17,7 +17,7 @@ namespace Kerberos.NET
     internal sealed class MemoryTicketCache : TicketCacheBase
     {
         private readonly ConcurrentDictionary<string, CacheEntry> cache
-            = new ConcurrentDictionary<string, CacheEntry>();
+            = new();
 
         public MemoryTicketCache(Krb5Config config, ILoggerFactory logger)
             : base(config, logger)

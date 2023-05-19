@@ -12,7 +12,7 @@ namespace Kerberos.NET.Entities
     public abstract class ContextToken
     {
         private static readonly Dictionary<string, Func<GssApiToken, ContextToken>> KnownMessageTypes
-            = new Dictionary<string, Func<GssApiToken, ContextToken>>
+            = new()
             {
                 { MechType.SPNEGO, e => new NegotiateContextToken(e) },
                 { MechType.NEGOEX, e => new NegotiateContextToken(e) },

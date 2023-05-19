@@ -18,7 +18,7 @@ namespace Kerberos.NET.Entities
         private const int TickUSec = 1000000;
 
         private static readonly RandomNumberGenerator Rng = RandomNumberGenerator.Create();
-        public static readonly DateTimeOffset EndOfTime = new DateTimeOffset(642720196850000000, TimeSpan.Zero);
+        public static readonly DateTimeOffset EndOfTime = new(642720196850000000, TimeSpan.Zero);
 
         private static IEnumerable<EncryptionType> knownETypes = new[]
         {

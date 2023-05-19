@@ -50,7 +50,7 @@ namespace Tests.Kerberos.NET
         [ExpectedException(typeof(CryptographicException))]
         public void ChoiceEncoding()
         {
-            NegotiationToken negToken = new NegotiationToken
+            NegotiationToken negToken = new()
             {
                 InitialToken = new NegTokenInit
                 {
@@ -71,7 +71,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void SPNegoInitTokenRoundtrip()
         {
-            NegotiationToken negToken = new NegotiationToken
+            NegotiationToken negToken = new()
             {
                 InitialToken = new NegTokenInit
                 {
@@ -92,7 +92,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void SPNegoResponseTokenRoundtrip()
         {
-            NegotiationToken negToken = new NegotiationToken
+            NegotiationToken negToken = new()
             {
                 ResponseToken = new NegTokenResp
                 {

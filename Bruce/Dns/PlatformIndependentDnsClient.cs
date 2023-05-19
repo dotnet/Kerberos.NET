@@ -9,7 +9,7 @@ namespace Kerberos.NET.CommandLine.Dns
 {
     internal class PlatformIndependentDnsClient : IKerberosDnsQuery
     {
-        private static readonly WindowsDnsQuery WindowsDns = new WindowsDnsQuery();
+        private static readonly WindowsDnsQuery WindowsDns = new();
 
         public async Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type)
         {

@@ -177,6 +177,9 @@
   <data name="CommandLine_KerberosConfigCommand_Config" xml:space="preserve">
     <value>Provide a path to a particular configuration file.</value>
   </data>
+  <data name="CommandLine_KerberosConstrainedDelegation" xml:space="preserve">
+    <value>Execute a constrained delegation call with the provided parameters.</value>
+  </data>
   <data name="CommandLine_KerberosConstrainedDelegationCommand_Delegated" xml:space="preserve">
     <value>The Service Principal Name of the backend service that should receive the delegated ticket.</value>
   </data>
@@ -223,7 +226,7 @@
     <value>Provide the name of the command to list helpful information about the command.</value>
   </data>
   <data name="CommandLine_KerberosInit" xml:space="preserve">
-    <value>Obtain a cache a Kerberos Ticket-Granting-Ticket.</value>
+    <value>Obtain and cache a Kerberos Ticket-Granting-Ticket.</value>
   </data>
   <data name="CommandLine_KerberosInitCommand_Anonymous" xml:space="preserve">
     <value>Request an anonymous ticket.</value>

@@ -59,7 +59,7 @@ namespace Tests.Kerberos.NET
                 this.handler = handler;
             }
 
-            protected override HttpClient Client => new HttpClient(this.handler);
+            protected override HttpClient Client => new(this.handler);
         }
 
         internal static readonly byte[] TgtKey = new byte[]

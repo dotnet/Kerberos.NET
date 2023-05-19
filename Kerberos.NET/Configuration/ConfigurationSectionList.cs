@@ -24,7 +24,7 @@ namespace Kerberos.NET.Configuration
     {
         private const BindingFlags PublicInstancePropertyFlags = BindingFlags.Public | BindingFlags.Instance;
 
-        private static readonly Dictionary<string, string> Aliases = new Dictionary<string, string>()
+        private static readonly Dictionary<string, string> Aliases = new()
         {
             { "arcfour_hmac_md5", EncryptionType.RC4_HMAC_NT.ToString() },
             { "arcfour_hmac", EncryptionType.RC4_HMAC_NT.ToString() },
@@ -42,7 +42,7 @@ namespace Kerberos.NET.Configuration
 
         internal static readonly ConfigurationSectionList Default = Krb5ConfigurationSerializer.Deserialize(string.Empty);
 
-        private readonly List<string> finalizedKeys = new List<string>();
+        private readonly List<string> finalizedKeys = new();
 
         /// <summary>
         /// Identifies the name of this configuration section.

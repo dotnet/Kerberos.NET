@@ -28,7 +28,7 @@ namespace Tests.Kerberos.NET
         {
             KrbPaPkAsReq asreq = KrbPaPkAsReq.Decode(this.signedPkAsReq);
 
-            SignedCms signedCms = new SignedCms();
+            SignedCms signedCms = new();
             signedCms.Decode(asreq.SignedAuthPack.ToArray());
             signedCms.CheckSignature(verifySignatureOnly: true);
         }
@@ -38,7 +38,7 @@ namespace Tests.Kerberos.NET
         {
             KrbPaPkAsReq asreq = KrbPaPkAsReq.Decode(this.signedPkAsReq);
 
-            SignedCms signedCms = new SignedCms();
+            SignedCms signedCms = new();
             signedCms.Decode(asreq.SignedAuthPack.ToArray());
             signedCms.CheckSignature(verifySignatureOnly: true);
 
@@ -73,7 +73,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(asrep);
 
-            SignedCms signed = new SignedCms();
+            SignedCms signed = new();
             signed.Decode(asrep.DHInfo.DHSignedData.ToArray());
             signed.CheckSignature(verifySignatureOnly: true);
         }
@@ -85,7 +85,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(asrep);
 
-            SignedCms signed = new SignedCms();
+            SignedCms signed = new();
             signed.Decode(asrep.DHInfo.DHSignedData.ToArray());
             signed.CheckSignature(verifySignatureOnly: true);
 

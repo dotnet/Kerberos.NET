@@ -9,8 +9,8 @@ namespace Kerberos.NET.Configuration
     [DebuggerDisplay("{backing}")]
     internal class ConfigurationDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary
     {
-        private static readonly ConfigurationSectionList DefaultValues = new ConfigurationSectionList();
-        private readonly Dictionary<TKey, TValue> backing = new Dictionary<TKey, TValue>();
+        private static readonly ConfigurationSectionList DefaultValues = new();
+        private readonly Dictionary<TKey, TValue> backing = new();
 
         public TValue this[TKey key]
         {

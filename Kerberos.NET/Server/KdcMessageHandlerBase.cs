@@ -16,7 +16,7 @@ namespace Kerberos.NET.Server
     public abstract class KdcMessageHandlerBase
     {
         private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> preAuthHandlers =
-            new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
+            new();
 
         private readonly ReadOnlyMemory<byte> message;
 

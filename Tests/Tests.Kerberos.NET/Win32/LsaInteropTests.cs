@@ -20,7 +20,7 @@ namespace Tests.Kerberos.NET
     {
         private const string RequestedSpn = "host/test.com";
 
-        private static readonly KerberosKey Key = new KerberosKey(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96);
+        private static readonly KerberosKey Key = new(key: new byte[16], etype: EncryptionType.AES128_CTS_HMAC_SHA1_96);
 
         private static KrbCred CreateKrbCredential()
         {

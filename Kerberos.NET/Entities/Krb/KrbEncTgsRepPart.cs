@@ -11,7 +11,7 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncTgsRepPart
     {
-        private static readonly Asn1Tag KrbEncTgsRepPartTag = new Asn1Tag(TagClass.Application, 26);
+        private static readonly Asn1Tag KrbEncTgsRepPartTag = new(TagClass.Application, 26);
 
         public override KeyUsage KeyUsage => KeyUsage.EncTgsRepPartSubSessionKey;
 

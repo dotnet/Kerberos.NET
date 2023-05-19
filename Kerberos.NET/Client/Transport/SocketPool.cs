@@ -15,7 +15,7 @@ namespace Kerberos.NET.Client
     internal class SocketPool : ISocketPool
     {
         private readonly ConcurrentDictionary<string, NamedPool> pool
-            = new ConcurrentDictionary<string, NamedPool>();
+            = new();
 
         private readonly Task backgroundWorker;
         private readonly CancellationTokenSource cts;

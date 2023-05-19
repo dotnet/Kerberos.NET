@@ -15,7 +15,7 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class DomainEncodingTests
     {
-        private static readonly Dictionary<string, string[]> EncodingTestCases = new Dictionary<string, string[]>
+        private static readonly Dictionary<string, string[]> EncodingTestCases = new()
         {
             { "\"EDU,MIT.,ATHENA.,WASHINGTON.EDU,CS.\".", new[] { "EDU", "MIT.EDU", "ATHENA.MIT.EDU", "WASHINGTON.EDU", "CS.WASHINGTON.EDU" } },
             { "\"EDU,MIT.,WASHINGTON.EDU\"", new[] { "EDU", "MIT.EDU", "WASHINGTON.EDU" } }

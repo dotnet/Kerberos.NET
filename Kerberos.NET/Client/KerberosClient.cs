@@ -51,8 +51,8 @@ namespace Kerberos.NET.Client
 
         private const ApOptions DefaultApOptions = 0;
 
-        private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
-        private readonly object _syncTicketCache = new object();
+        private readonly CancellationTokenSource cancellation = new();
+        private readonly object _syncTicketCache = new();
 
         private readonly KerberosTransportSelector transport;
         private readonly ILoggerFactory loggerFactory;

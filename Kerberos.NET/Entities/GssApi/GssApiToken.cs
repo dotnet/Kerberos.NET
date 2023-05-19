@@ -31,7 +31,7 @@ namespace Kerberos.NET.Entities
         // KRB_AP_REP            02 00
         // KRB_ERROR             03 00
 
-        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 0);
+        private static readonly Asn1Tag ApplicationTag = new(TagClass.Application, 0);
 
         public static ReadOnlyMemory<byte> Encode(Oid oid, NegotiationToken token)
         {

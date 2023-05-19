@@ -14,7 +14,7 @@ namespace Kerberos.NET.Dns
     /// </summary>
     public static class DnsQuery
     {
-        private static readonly object SyncImpl = new object();
+        private static readonly object SyncImpl = new();
         private static IKerberosDnsQuery QueryImplementation;
 
         static DnsQuery()

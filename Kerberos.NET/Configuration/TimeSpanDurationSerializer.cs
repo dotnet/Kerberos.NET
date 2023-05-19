@@ -24,7 +24,7 @@ namespace Kerberos.NET.Configuration
             Second
         }
 
-        private static readonly Dictionary<TimeComponent, string[]> TimeSuffixes = new Dictionary<TimeComponent, string[]>
+        private static readonly Dictionary<TimeComponent, string[]> TimeSuffixes = new()
         {
             { TimeComponent.Year, new[] { "y", "yr", "year", "years" } },
             { TimeComponent.Day, new[] { "d", "day", "days" } },

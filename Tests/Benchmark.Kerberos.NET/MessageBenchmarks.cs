@@ -22,7 +22,7 @@ namespace Benchmark.Kerberos.NET
         private readonly string user = "administrator@corp.identityintervention.com";
         private readonly string password = "P@ssw0rd!";
 
-        private static readonly ConcurrentDictionary<string, KerberosPasswordCredential> Creds = new ConcurrentDictionary<string, KerberosPasswordCredential>();
+        private static readonly ConcurrentDictionary<string, KerberosPasswordCredential> Creds = new();
 
         private const AuthenticationOptions DefaultAuthentication =
             AuthenticationOptions.IncludePacRequest |
@@ -80,7 +80,7 @@ namespace Benchmark.Kerberos.NET
         {
             for (var i = 0; i < this.AuthenticationAttempts; i++)
             {
-                KdcAsReqMessageHandler handler = new KdcAsReqMessageHandler(this.asReq, this.options);
+                KdcAsReqMessageHandler handler = new(this.asReq, this.options);
 
                 var response = handler.Execute();
 

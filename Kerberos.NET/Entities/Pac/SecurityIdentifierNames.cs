@@ -36,7 +36,7 @@ namespace Kerberos.NET.Entities.Pac
             return null;
         }
 
-        private static readonly ReadOnlyDictionary<string, string> WellKnownSids = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>
+        private static readonly ReadOnlyDictionary<string, string> WellKnownSids = new(new Dictionary<string, string>
         {
             { "S-1-1-0",                "Everyone" },
             { "S-1-2-0",                "Local" },

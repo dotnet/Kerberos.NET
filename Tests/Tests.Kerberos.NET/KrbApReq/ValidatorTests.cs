@@ -35,7 +35,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task LogsKeyTableDataOnFailure()
         {
-            FakeExceptionLoggerFactory logger = new FakeExceptionLoggerFactory();
+            FakeExceptionLoggerFactory logger = new();
 
             var data = ReadDataFile("rc4-kerberos-data");
             var key = ReadDataFile("aes128-key-data");

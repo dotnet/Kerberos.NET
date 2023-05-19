@@ -498,7 +498,7 @@ namespace System.Security.Cryptography.Asn1
             bytesRead = 0;
             int lastSegmentLength = MaxCERSegmentSize;
 
-            AsnReader tmpReader = new AsnReader(source, this.RuleSet);
+            AsnReader tmpReader = new(source, this.RuleSet);
             Stack<(AsnReader, bool, int)> readerStack = null;
             int totalLength = 0;
             Asn1Tag tag = Asn1Tag.ConstructedBitString;

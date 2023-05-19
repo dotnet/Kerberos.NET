@@ -12,7 +12,7 @@ namespace Kerberos.NET.CommandLine
 {
     public class CommandLineParameters
     {
-        private static HashSet<string> IgnoredParameters = new HashSet<string>() { "--silent" };
+        private static HashSet<string> IgnoredParameters = new() { "--silent" };
 
         public static readonly IEnumerable<string> ParameterDesignators = new[] { "/", "--", "-" };
 

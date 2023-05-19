@@ -324,7 +324,7 @@ namespace System.Security.Cryptography.Asn1
             ReadOnlyMemory<byte> cur = source;
             int totalLen = 0;
 
-            AsnReader tmpReader = new AsnReader(cur, this.RuleSet);
+            AsnReader tmpReader = new(cur, this.RuleSet);
 
             // Our reader is bounded by int.MaxValue.
             // The most aggressive data input would be a one-byte tag followed by

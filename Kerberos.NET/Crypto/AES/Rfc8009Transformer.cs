@@ -18,7 +18,7 @@ namespace Kerberos.NET.Crypto
         /// <summary>
         /// Default iteration count is 32768.
         /// </summary>
-        private static readonly ReadOnlyMemory<byte> DefaultIterations = new ReadOnlyMemory<byte>(new byte[] { 0, 0, 0x80, 0 });
+        private static readonly ReadOnlyMemory<byte> DefaultIterations = new(new byte[] { 0, 0, 0x80, 0 });
 
         private readonly ReadOnlyMemory<byte> encTypeNameBytes;
 

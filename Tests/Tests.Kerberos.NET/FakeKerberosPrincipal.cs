@@ -25,15 +25,15 @@ namespace Tests.Kerberos.NET
             0, 0, 0, 0, 0, 0, 0, 0
         };
 
-        private static readonly SecurityIdentifier DomainSid = new SecurityIdentifier(
+        private static readonly SecurityIdentifier DomainSid = new(
             IdentifierAuthority.NTAuthority,
             new uint[] { 123, 456, 789, 012, 321 },
             0
         );
 
-        private readonly SecurityIdentifier userSid = new SecurityIdentifier(DomainSid, 888);
+        private readonly SecurityIdentifier userSid = new(DomainSid, 888);
 
-        private readonly SecurityIdentifier groupSid = new SecurityIdentifier(DomainSid, 513);
+        private readonly SecurityIdentifier groupSid = new(DomainSid, 513);
 
         private static readonly byte[] FakePassword = Encoding.Unicode.GetBytes("P@ssw0rd!");
 
@@ -110,14 +110,14 @@ namespace Tests.Kerberos.NET
             return pac;
         }
 
-        private static readonly KerberosKey TgtKey = new KerberosKey(
+        private static readonly KerberosKey TgtKey = new(
             password: KrbTgtKey,
             principal: new PrincipalName(PrincipalNameType.NT_PRINCIPAL, Realm, new[] { "krbtgt" }),
             etype: EncryptionType.AES256_CTS_HMAC_SHA1_96,
             saltType: SaltType.ActiveDirectoryUser
         );
 
-        private static readonly ConcurrentDictionary<string, KerberosKey> KeyCache = new ConcurrentDictionary<string, KerberosKey>();
+        private static readonly ConcurrentDictionary<string, KerberosKey> KeyCache = new();
 
         public KerberosKey RetrieveLongTermCredential()
         {

@@ -91,7 +91,7 @@ namespace System.Security.Cryptography.Asn1
                 if (this.RuleSet == AsnEncodingRules.DER ||
                     this.RuleSet == AsnEncodingRules.CER)
                 {
-                    AsnReader reader = new AsnReader(contents, this.RuleSet);
+                    AsnReader reader = new(contents, this.RuleSet);
                     ReadOnlyMemory<byte> current = ReadOnlyMemory<byte>.Empty;
                     SetOfValueComparer comparer = SetOfValueComparer.Instance;
 

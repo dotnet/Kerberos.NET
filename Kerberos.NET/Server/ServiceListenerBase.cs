@@ -22,9 +22,9 @@ namespace Kerberos.NET.Server
         private readonly SocketListener socketListener;
 
         private readonly TaskCompletionSource<object> startTcs
-            = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        private readonly Stack<SocketListener> openListeners = new Stack<SocketListener>();
+        private readonly Stack<SocketListener> openListeners = new();
 
         private readonly ILogger<ServiceListenerBase> logger;
         private bool disposedValue;

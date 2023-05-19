@@ -51,10 +51,10 @@ namespace Kerberos.NET.Server
         }
 
         private readonly ConcurrentDictionary<MessageType, MessageHandlerConstructor> messageHandlers =
-            new ConcurrentDictionary<MessageType, MessageHandlerConstructor>();
+            new();
 
         private readonly ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor> preAuthHandlers =
-            new ConcurrentDictionary<PaDataType, PreAuthHandlerConstructor>();
+            new();
 
         public void RegisterMessageHandler(MessageType type, MessageHandlerConstructor builder)
         {

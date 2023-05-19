@@ -39,7 +39,7 @@ namespace Kerberos.NET.Entities
 
         internal static Asn1Tag PeekTag(ReadOnlyMemory<byte> request)
         {
-            AsnReader reader = new AsnReader(request, AsnEncodingRules.DER);
+            AsnReader reader = new(request, AsnEncodingRules.DER);
 
             return reader.PeekTag();
         }

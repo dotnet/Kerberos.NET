@@ -23,7 +23,7 @@ namespace Tests.Kerberos.NET
             this.server = server;
         }
 
-        private static readonly Random Rng = new Random();
+        private static readonly Random Rng = new();
 
         public static int NextPort()
         {

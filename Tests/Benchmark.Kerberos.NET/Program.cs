@@ -143,7 +143,7 @@ namespace Benchmark.Kerberos.NET
 
     class Program
     {
-        private static readonly EventWaitHandle WaitForAllProcessesToStart = new EventWaitHandle(false, EventResetMode.ManualReset, "KerbBenchmarkRunnerWaitForAllProcesses");
+        private static readonly EventWaitHandle WaitForAllProcessesToStart = new(false, EventResetMode.ManualReset, "KerbBenchmarkRunnerWaitForAllProcesses");
 
         static async Task Main(string[] args)
         {
@@ -232,7 +232,7 @@ namespace Benchmark.Kerberos.NET
             }
         }
 
-        private static readonly StressAsReq Stresser = new StressAsReq();
+        private static readonly StressAsReq Stresser = new();
 
         private static void Teardown()
         {
@@ -301,7 +301,7 @@ namespace Benchmark.Kerberos.NET
         }
 
 
-        private static readonly List<Process> ProcessWaits = new List<Process>();
+        private static readonly List<Process> ProcessWaits = new();
 
         private static Process StartClientProcess(CommandLineParameters cmd)
         {

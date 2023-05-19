@@ -18,7 +18,7 @@ namespace Kerberos.NET.Transport
 {
     public class HttpsKerberosTransport : KerberosTransportBase
     {
-        private static readonly Random Random = new Random();
+        private static readonly Random Random = new();
 
         private readonly ILogger logger;
 
@@ -35,7 +35,7 @@ namespace Kerberos.NET.Transport
         private const string RequestIdHeader = "x-ms-request-id";
         private const string CorrelationIdHeader = "client-request-id";
 
-        private static readonly Lazy<HttpClient> LazyHttp = new Lazy<HttpClient>();
+        private static readonly Lazy<HttpClient> LazyHttp = new();
 
         public string CustomVirtualPath { get; set; }
 
@@ -128,6 +128,11 @@ namespace Kerberos.NET.Transport
                 }
 
                 var responseBody = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+
+                if (!responseBody.Any())
+                {
+                    response.EnsureSuccessStatusCode();
+                }
 
                 if (!KdcProxyMessage.TryDecode(responseBody, out KdcProxyMessage kdcResponse))
                 {

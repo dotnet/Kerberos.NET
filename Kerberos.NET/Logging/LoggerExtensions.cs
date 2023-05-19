@@ -44,7 +44,7 @@ namespace Microsoft.Extensions.Logging
                 return;
             }
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append("Using keytab: [");
 

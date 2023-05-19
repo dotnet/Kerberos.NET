@@ -19,12 +19,12 @@ namespace Kerberos.NET.Server
 {
     public class PaDataPkAsReqHandler : KdcPreAuthenticationHandlerBase
     {
-        private static readonly Oid IdPkInitDHKeyData = new Oid("1.3.6.1.5.2.3.2");
-        private static readonly Oid DiffieHellman = new Oid("1.2.840.10046.2.1");
-        private static readonly Oid EllipticCurveDiffieHellman = new Oid("1.2.840.10045.2.1");
+        private static readonly Oid IdPkInitDHKeyData = new("1.3.6.1.5.2.3.2");
+        private static readonly Oid DiffieHellman = new("1.2.840.10046.2.1");
+        private static readonly Oid EllipticCurveDiffieHellman = new("1.2.840.10045.2.1");
 
         private static readonly ReadOnlyMemory<KeyAgreementAlgorithm> DefaultSupportedAlgorithms
-            = new ReadOnlyMemory<KeyAgreementAlgorithm>(new[]
+            = new(new[]
         {
             KeyAgreementAlgorithm.DiffieHellmanModp14,
             KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256,

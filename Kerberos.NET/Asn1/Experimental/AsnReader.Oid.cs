@@ -84,7 +84,7 @@ namespace System.Security.Cryptography.Asn1
 
             // Specifying null for friendly name makes the lookup deferred until first read
             // of the Oid.FriendlyName property.
-            Oid oid = new Oid(oidValue, null);
+            Oid oid = new(oidValue, null);
 
             // Don't slice until the return object has been created.
             this._data = this._data.Slice(bytesRead);
@@ -234,7 +234,7 @@ namespace System.Security.Cryptography.Asn1
             //
             // So pre-allocate the StringBuilder with at most 1020 characters, an input longer than
             // 255 encoded bytes will just have to re-allocate.
-            StringBuilder builder = new StringBuilder(((byte)contents.Length) * 4);
+            StringBuilder builder = new(((byte)contents.Length) * 4);
 
             ReadSubIdentifier(contents, out int bytesRead, out long? smallValue, out BigInteger? largeValue);
 

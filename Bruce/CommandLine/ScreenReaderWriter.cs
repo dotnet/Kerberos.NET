@@ -19,7 +19,7 @@ namespace Kerberos.NET.CommandLine
 {
     internal class ScreenReaderWriter
     {
-        private readonly HashSet<object> Seen = new HashSet<object>();
+        private readonly HashSet<object> Seen = new();
 
         public ScreenReaderWriter(InputControl io)
         {
@@ -135,7 +135,14 @@ namespace Kerberos.NET.CommandLine
             this.Logger.LogInformation(message, args);
         }
 
-        private void LoggerWriteLine(int indent, TraceLevel level, string line, IReadOnlyList<KeyValuePair<string, object>> logState = null, Exception exception = null, bool labels = false)
+        private void LoggerWriteLine(
+            int indent,
+            TraceLevel level,
+            string line,
+            IReadOnlyList<KeyValuePair<string, object>> logState = null,
+            Exception exception = null,
+            bool labels = false
+        )
         {
             if (level != TraceLevel.Off && labels)
             {
@@ -177,7 +184,7 @@ namespace Kerberos.NET.CommandLine
                     if (modifierIndex > 0)
                     {
                         modifier = substr[(modifierIndex + 1)..];
-                        substr = substr.Substring(0, modifierIndex);
+                        substr = substr[..modifierIndex];
                     }
 
                     var val = logState?.FirstOrDefault(l => l.Key == substr) ?? default;
@@ -245,6 +252,14 @@ namespace Kerberos.NET.CommandLine
                 {
                     this.WriteWithModifier("", modifier, ConsoleColor.Green);
                 }
+            }
+            else if (Reflect.IsEnumerable(val.Value.GetType()))
+            {
+                var list = val.Value as IEnumerable;
+
+                var joined = string.Join(", ", list.Cast<object>().Select(l => l));
+
+                this.WriteWithModifier(joined, modifier, ConsoleColor.Yellow);
             }
             else
             {

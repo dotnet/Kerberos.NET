@@ -125,7 +125,7 @@ namespace Kerberos.NET.Configuration
             return Default();
         }
 
-        public static Krb5Config Default() => new Krb5Config();
+        public static Krb5Config Default() => new();
 
         public string Serialize() => this.Serialize(null);
 
