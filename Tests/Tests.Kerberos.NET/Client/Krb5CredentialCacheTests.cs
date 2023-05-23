@@ -44,6 +44,31 @@ namespace Tests.Kerberos.NET
             }
         }
 
+        [TestMethod]
+        public void RoundtripZeroLengthHeader()
+        {
+            var cacheBytes = ReadDataFile("cache\\krb5cc");
+            Assert.IsNotNull(cacheBytes);
+
+            using (var cache = new Krb5TicketCache(cacheBytes))
+            {
+                Assert.AreEqual(1, cache.Krb5Cache.Header.Count);
+
+                cache.Krb5Cache.Header.Clear();
+
+                AssertCacheFile(cache);
+
+                cacheBytes = cache.Serialize();
+            }
+
+            using (var cache = new Krb5TicketCache(cacheBytes))
+            {
+                AssertCacheFile(cache);
+
+                Assert.AreEqual(0, cache.Krb5Cache.Header.Count);
+            }
+        }
+
         private static void AssertCacheFile(Krb5TicketCache cache)
         {
             var ticket = cache.GetCacheItem<KerberosClientCacheEntry>("krbtgt/IPA.IDENTITYINTERVENTION.COM");
