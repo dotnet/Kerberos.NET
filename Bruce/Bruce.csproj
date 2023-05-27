@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <RootNamespace>Kerberos.NET.CommandLine</RootNamespace>
 
     <PackAsTool>true</PackAsTool>
@@ -32,8 +32,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DnsClient" Version="1.4.0" />
-    <PackageReference Include="Humanizer.Core" Version="2.10.1" />
+    <PackageReference Include="DnsClient" Version="1.7.0" />
+    <PackageReference Include="Humanizer.Core" Version="2.14.1" />
   </ItemGroup>
 
   <ItemGroup>

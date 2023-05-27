@@ -11,6 +11,8 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
+#pragma warning disable CA1416 // Validate platform compatibility
+
 namespace KerbDump
 {
     public partial class MessageTreeView : UserControl

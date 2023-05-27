@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 #pragma warning disable IDE1006 // Naming Styles
+#pragma warning disable CA1416 // Validate platform compatibility
 
 namespace KerbDump
 {
