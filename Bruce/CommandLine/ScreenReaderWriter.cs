@@ -246,6 +246,14 @@ namespace Kerberos.NET.CommandLine
                     this.WriteWithModifier("", modifier, ConsoleColor.Green);
                 }
             }
+            else if (Reflect.IsEnumerable(val.Value.GetType()))
+            {
+                var list = val.Value as IEnumerable;
+
+                var joined = string.Join(", ", list.Cast<object>().Select(l => l));
+
+                this.WriteWithModifier(joined, modifier, ConsoleColor.Yellow);
+            }
             else
             {
                 this.WriteWithModifier(val.Value, modifier, ConsoleColor.DarkCyan);

@@ -241,6 +241,15 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Execute a constrained delegation call with the provided parameters..
+        /// </summary>
+        internal static string CommandLine_KerberosConstrainedDelegation {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosConstrainedDelegation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The Service Principal Name of the backend service that should receive the delegated ticket..
         /// </summary>
         internal static string CommandLine_KerberosConstrainedDelegationCommand_Delegated {
