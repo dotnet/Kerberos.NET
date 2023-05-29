@@ -177,6 +177,9 @@
   <data name="CommandLine_KerberosConfigCommand_Config" xml:space="preserve">
     <value>Provide a path to a particular configuration file.</value>
   </data>
+  <data name="CommandLine_KerberosConstrainedDelegation" xml:space="preserve">
+    <value>Execute a constrained delegation call with the provided parameters.</value>
+  </data>
   <data name="CommandLine_KerberosConstrainedDelegationCommand_Delegated" xml:space="preserve">
     <value>The Service Principal Name of the backend service that should receive the delegated ticket.</value>
   </data>

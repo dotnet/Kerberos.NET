@@ -143,8 +143,7 @@ namespace Kerberos.NET.CommandLine
             this.WriteHeader(sb.ToString());
 
             var max = props.Select(p => p.Item2.Name).Max(p =>
-                p.Length + 7 +
-               (p.Count(c => c == '|') * 9)
+                p.Length + 7 + (p.Count(c => c == '|') * 9)
             ) + 5;
 
             this.WriteLine();
@@ -158,10 +157,7 @@ namespace Kerberos.NET.CommandLine
             this.WriteLine();
         }
 
-        protected virtual void Write(string message)
-        {
-            this.IO.Write(message);
-        }
+        protected virtual void Write(string message) => this.IO.Write(message);
 
         protected virtual void WriteLine() => this.WriteLine(0, "");
 
@@ -172,19 +168,13 @@ namespace Kerberos.NET.CommandLine
         }
 
         protected virtual void WriteLineRaw(string message)
-        {
-            this.IO.WriteAsColor(message, ConsoleColor.White);
-        }
+            => this.IO.WriteAsColor(message, ConsoleColor.White);
 
         protected virtual void WriteLine(int indent, object value)
-        {
-            this.WriteLine(indent, "{Value}", value);
-        }
+            => this.WriteLine(indent, "{Value}", value);
 
         protected virtual void WriteLine(string message, params object[] args)
-        {
-            this.WriteLine(0, message, args);
-        }
+            => this.WriteLine(0, message, args);
 
         protected virtual void WriteLine(int indent, string message, params object[] args)
         {
@@ -194,19 +184,13 @@ namespace Kerberos.NET.CommandLine
         }
 
         protected virtual void WriteLineWarning(string message, params object[] args)
-        {
-            this.IO.Logger.LogWarning(message, args);
-        }
+            => this.IO.Logger.LogWarning(message, args);
 
         protected virtual void WriteLineError(string message, params object[] args)
-        {
-            this.IO.Logger.LogError(message, args);
-        }
+            => this.IO.Logger.LogError(message, args);
 
-        protected void WriteProperties(IEnumerable<(string, object)> props)
-        {
+        protected void WriteProperties(IEnumerable<(string, object)> props) =>
             this.WriteProperties(0, props);
-        }
 
         protected void WriteProperties(int indent, IEnumerable<(string, object)> props)
         {
@@ -455,7 +439,7 @@ namespace Kerberos.NET.CommandLine
 
                 if (CommandLineParameters.IsParameter(param, out string designator))
                 {
-                    param = param.Substring(designator.Length);
+                    param = param[designator.Length..];
                 }
 
                 string nextValue = "";
@@ -464,8 +448,8 @@ namespace Kerberos.NET.CommandLine
 
                 if (indexOfEquals > 0)
                 {
-                    nextValue = param.Substring(indexOfEquals + 1);
-                    param = param.Substring(0, indexOfEquals);
+                    nextValue = param[(indexOfEquals + 1)..];
+                    param = param[..indexOfEquals];
                 }
 
                 var names = attr.Name.Split('|');
@@ -487,10 +471,10 @@ namespace Kerberos.NET.CommandLine
 
                     if (i < parameters.Length - 1)
                     {
-                        i++;
-
                         if (string.IsNullOrWhiteSpace(nextValue))
                         {
+                            i++;
+
                             nextValue = parameters[i];
                         }
                     }
