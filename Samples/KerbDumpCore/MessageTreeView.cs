@@ -1,20 +1,30 @@
-﻿using Kerberos.NET.Entities.Pac;
-using Kerberos.NET.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Windows.Forms;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.Pac;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 
 namespace KerbDump
 {
     public partial class MessageTreeView : UserControl
     {
+        private static readonly JsonSerializerSettings SerializerSettings = new()
+        {
+            Formatting = Formatting.Indented,
+            Converters = new JsonConverter[] { new StringEnumArrayConverter(), new BinaryConverter(), new PacConverter() },
+            ContractResolver = new KerberosIgnoreResolver()
+        };
+
         private readonly Font DefaultTreeFont;
 
         public MessageTreeView()
@@ -33,8 +43,12 @@ namespace KerbDump
             this.tree.Nodes.Clear();
         }
 
-        public void RenderObject(object obj, string label)
+        private KeyTable keytab;
+
+        public void RenderObject(object obj, string label, KeyTable key)
         {
+            this.keytab = key;
+
             var json = FormatSerialize(obj);
 
             if (string.IsNullOrWhiteSpace(json))
@@ -46,19 +60,7 @@ namespace KerbDump
 
             this.tree.Nodes.Clear();
 
-            using (var reader = new StringReader(json))
-            using (var jsonReader = new JsonTextReader(reader))
-            {
-                var jt = JToken.Load(jsonReader);
-
-                var root = new TreeNode(label);
-
-                this.AddNode(jt, root);
-
-                this.tree.Nodes.Add(root);
-
-                this.tree.ExpandAll();
-            }
+            CreateTreeRoot(label, json, this.tree.TopNode);
 
             if (this.tree.Nodes.Count > 0)
             {
@@ -67,6 +69,35 @@ namespace KerbDump
             }
 
             this.tree.EndUpdate();
+        }
+
+        private void CreateTreeRoot(string label, string json, TreeNode top)
+        {
+            using (var reader = new StringReader(json))
+            using (var jsonReader = new JsonTextReader(reader))
+            {
+                var jt = JToken.Load(jsonReader);
+
+                var root = new TreeNode(label);
+
+                this.AddRoot(jt, root, top);
+
+                this.tree.ExpandAll();
+            }
+        }
+
+        private void AddRoot(JToken jt, TreeNode root, TreeNode top)
+        {
+            this.AddNode(jt, root);
+
+            if (top != null)
+            {
+                top.Nodes.Add(root);
+            }
+            else
+            {
+                this.tree.Nodes.Add(root);
+            }
         }
 
         private TreeNode MakeNode(string display)
@@ -82,7 +113,125 @@ namespace KerbDump
 
             node.ContextMenuStrip.Items.Add("Copy Value", null, this.CopyNodeValue);
 
+            node.ContextMenuStrip.Items.Add(new ToolStripMenuItem("Decode As...", null, new[]
+            {
+                new ToolStripButton("AP-REQ", null, OnClickDecodeAsApReq),
+                new ToolStripButton("Ad-If-Relevant", null, OnClickDecodeAsAdIfRelevant),
+                new ToolStripButton("Ad-Win2k-Pac", null, OnClickDecodeAsAdWin2kPac),
+            }));
+
             return node;
+        }
+
+        private static void ParseNode(object sender, out string text, out TreeNode parentNode)
+        {
+            text = null;
+            parentNode = null;
+
+            if (sender is ToolStripItem item &&
+                item.OwnerItem is ToolStripItem parentItem &&
+                parentItem.Owner is ContextMenuStrip menu)
+            {
+                if (menu.Tag is TreeNode node)
+                {
+                    parentNode = node;
+                    text = node.Text;
+                }
+                else if (menu.Tag is TreeView tree)
+                {
+                    text = tree.SelectedNode?.Text;
+                    parentNode = tree.SelectedNode;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(text) && text.StartsWith("Data = "))
+            {
+                text = text["Data = ".Length..];
+            }
+        }
+
+        private void OnClickDecodeAsAdWin2kPac(object sender, EventArgs e)
+        {
+            ParseNode(sender, out string text, out TreeNode parentNode);
+
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                try
+                {
+                    DecodeAsAdWin2kPac(Convert.FromBase64String(text), parentNode);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"DecodeAsAdWin2kPac exception: {ex}");
+                }
+            }
+        }
+
+        private void OnClickDecodeAsAdIfRelevant(object sender, EventArgs e)
+        {
+            ParseNode(sender, out string text, out TreeNode parentNode);
+
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                try
+                {
+                    DecodeAsAdIfRelevant(Convert.FromBase64String(text), parentNode);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"DecodeAsAdIfRelevant exception: {ex}");
+                }
+            }
+        }
+
+        private void DecodeAsAdWin2kPac(byte[] bytes, TreeNode parentNode)
+        {
+            var pac = new PrivilegedAttributeCertificate(new KrbAuthorizationData { Data = bytes, Type = AuthorizationDataType.AdWin2kPac });
+
+            ExplodeObject(pac, "Privilege Attribute Certificate", parentNode);
+        }
+
+        private void ExplodeObject(object thing, string label, TreeNode parentNode)
+        {
+            var serialized = FormatSerialize(thing);
+
+            this.CreateTreeRoot(parentNode.Name, serialized, parentNode);
+
+            parentNode.ExpandAll();
+        }
+
+        private void DecodeAsAdIfRelevant(byte[] bytes, TreeNode parentNode)
+        {
+            var seq = KrbAuthorizationDataSequence.Decode(bytes);
+
+            foreach (var authz in seq.AuthorizationData)
+            {
+                ExplodeObject(authz, "AuthorizationData", parentNode);
+            }
+        }
+
+        private void OnClickDecodeAsApReq(object sender, EventArgs e)
+        {
+            ParseNode(sender, out string text, out TreeNode parentNode);
+
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                try
+                {
+                    DecodeAsApReq(Convert.FromBase64String(text), parentNode);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"DecodeAsApReq exception: {ex}");
+                }
+            }
+        }
+
+        private void DecodeAsApReq(byte[] bytes, TreeNode parentNode)
+        {
+            var apReq = KrbApReq.DecodeApplication(bytes);
+
+            ExplodeObject(apReq, "AP-REQ", parentNode);
         }
 
         private int AddNode(JToken token, TreeNode inTreeNode)
@@ -106,6 +255,8 @@ namespace KerbDump
             else if (token is JObject obj)
             {
                 int children = 0;
+
+                ConfigureDecryption(inTreeNode, token, token.Path);
 
                 foreach (var property in obj.Properties())
                 {
@@ -187,6 +338,114 @@ namespace KerbDump
             return 0;
         }
 
+        private void ConfigureDecryption(TreeNode inTreeNode, JToken token, string scope)
+        {
+            var decryptMenuItems = new List<ToolStripItem>();
+
+            foreach (KeyUsage k in Enum.GetValues(typeof(KeyUsage)))
+            {
+                decryptMenuItems.Add(new ToolStripButton($"({(int)k}) {k}", null, DecryptMessageWithKeyUsage) { Tag = k });
+            }
+
+            inTreeNode.ContextMenuStrip ??= new() { Tag = inTreeNode };
+
+            inTreeNode.ContextMenuStrip.Items.Add(new ToolStripButton("Decrypt", null, DecryptMessage) { Tag = token, Name = scope });
+
+            inTreeNode.ContextMenuStrip.Items.Add(new ToolStripMenuItem("Decrypt With...", null, decryptMenuItems.ToArray()));
+        }
+
+        private void DecryptMessage(object sender, EventArgs e)
+        {
+            if (sender is ToolStripItem item && item.Tag is JToken)
+            {
+                Decrypt(item);
+            }
+        }
+
+        private void DecryptMessageWithKeyUsage(object sender, EventArgs e)
+        {
+            if (sender is ToolStripItem item && item.Tag is KeyUsage usage && item.OwnerItem is ToolStripItem parentItem)
+            {
+                Decrypt(parentItem, usage);
+            }
+        }
+
+        private void Decrypt(object sender, KeyUsage? usage = null)
+        {
+            if (sender is ToolStripItem item && item.Tag is JToken token)
+            {
+                try
+                {
+                    PopAndDecrypt(token, item, usage);
+                }
+                catch (SecurityException ex)
+                {
+                    MessageBox.Show($"Decryption failed: {ex.Message}", "Couldn't decrypt the message", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Something else failed: {ex.Message}", "Couldn't decrypt the message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private static readonly Dictionary<string, (KeyUsage usage, Func<ReadOnlyMemory<byte>, object> decoder)> EncryptedFields
+            = new()
+            {
+                { "KrbApReq.Ticket.EncryptedPart", (KeyUsage.Ticket, b => KrbEncTicketPart.DecodeApplication(b)) },
+                { "KrbApReq.Authenticator", (KeyUsage.ApReqAuthenticator, b => KrbAuthenticator.DecodeApplication(b)) },
+                { "Ticket.EncryptedPart", (KeyUsage.Ticket, b => KrbEncTicketPart.DecodeApplication(b)) },
+                { "Body.EncAuthorizationData", (KeyUsage.Ticket, b => KrbEncTicketPart.DecodeApplication(b)) },
+            };
+
+        private void PopAndDecrypt(JToken token, ToolStripItem item, KeyUsage? usage)
+        {
+            if (!EncryptedFields.TryGetValue(item.Name, out (KeyUsage usage, Func<ReadOnlyMemory<byte>, object> decoder) decoder))
+            {
+                return;
+            }
+
+            if (this.keytab == null)
+            {
+                return;
+            }
+
+            var serializer = new JsonSerializer() { ContractResolver = SerializerSettings.ContractResolver };
+
+            foreach (var conv in SerializerSettings.Converters)
+            {
+                serializer.Converters.Add(conv);
+            }
+
+            var encryptedData = token.ToObject<KrbEncryptedData>(serializer);
+
+            object decrypted = null;
+
+            try
+            {
+                var key = this.keytab.GetKey(encryptedData.EType, null);
+
+                decrypted = encryptedData.Decrypt(key, usage ?? decoder.usage, decoder.decoder);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+
+            if (decrypted == null)
+            {
+                throw new SecurityException($"The provided key couldn't decrypt the message as either a password or as the derived key");
+            }
+
+            var serialized = FormatSerialize(decrypted);
+
+            var node = item.OwnerItem?.Tag as TreeNode ?? item.Owner?.Tag as TreeNode;
+
+            this.CreateTreeRoot(item.Name, serialized, node);
+
+            node.ExpandAll();
+        }
+
         private static bool TryExtractPropertyForName(JToken value, string type, out string typeName)
         {
             typeName = null;
@@ -259,16 +518,9 @@ namespace KerbDump
             return text.Trim();
         }
 
-        private string FormatSerialize(object obj)
+        private static string FormatSerialize(object obj)
         {
-            var settings = new JsonSerializerSettings
-            {
-                Formatting = Formatting.Indented,
-                Converters = new JsonConverter[] { new StringEnumArrayConverter(), new BinaryConverter(), new PacConverter() },
-                ContractResolver = new KerberosIgnoreResolver()
-            };
-
-            return JsonConvert.SerializeObject(obj, settings);
+            return JsonConvert.SerializeObject(obj, SerializerSettings);
         }
 
         private class PacConverter : JsonConverter
@@ -324,19 +576,42 @@ namespace KerbDump
 
             public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
             {
-                throw new NotImplementedException();
+                if (objectType == typeof(ReadOnlyMemory<byte>) && reader.Value != null)
+                {
+                    ReadOnlyMemory<byte> val = Convert.FromBase64String(reader.Value as string);
+
+                    return val;
+                }
+
+                if (objectType == typeof(ReadOnlyMemory<byte>?) && reader.Value != null)
+                {
+                    ReadOnlyMemory<byte> val = Convert.FromBase64String(reader.Value as string);
+
+                    return val;
+                }
+
+                return null;
             }
 
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
             {
-                Reflect.IsBytes(value, out ReadOnlyMemory<byte> mem);
+                ReadOnlyMemory<byte> mem = default;
 
-                writer.WriteStartObject();
-                writer.WritePropertyName("Length");
-                writer.WriteValue(mem.Length);
-                writer.WritePropertyName("Value");
+                if (value.GetType() == typeof(ReadOnlyMemory<byte>))
+                {
+                    mem = (ReadOnlyMemory<byte>)value;
+                }
+                else if (value.GetType() == typeof(ReadOnlyMemory<byte>?))
+                {
+                    var val = (ReadOnlyMemory<byte>?)value;
+
+                    if (val != null)
+                    {
+                        mem = val.Value;
+                    }
+                }
+
                 writer.WriteValue(Convert.ToBase64String(mem.ToArray()));
-                writer.WriteEndObject();
             }
         }
 

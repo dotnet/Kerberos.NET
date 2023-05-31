@@ -1,9 +1,4 @@
-﻿using KerbDump.Properties;
-using Kerberos.NET;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Win32;
-using System;
+﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,6 +10,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using KerbDump.Properties;
+using Kerberos.NET;
+using Kerberos.NET.Crypto;
+using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.SpNego;
+using Kerberos.NET.Win32;
 
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -70,6 +71,9 @@ namespace KerbDump
             this.lblKeytab.Text = "";
 
             CryptoService.RegisterCryptographicAlgorithm(EncryptionType.NULL, () => new NoopTransform());
+
+            CryptoService.RegisterCryptographicAlgorithm((EncryptionType)(-1), () => new NoopTransform());
+            CryptoService.RegisterChecksumAlgorithm((ChecksumType)(-1), (signature, signatureData) => new NoopChecksum(signature, signatureData));
 
             this.SetHost();
 
@@ -245,6 +249,11 @@ namespace KerbDump
 
         private KeyTable EncodePassword(string domain, string host)
         {
+            if (string.IsNullOrWhiteSpace(this.txtKey.Text))
+            {
+                return null;
+            }
+
             KeyTable key;
 
             if (this.chkEncodedKey.Checked)
@@ -430,7 +439,7 @@ namespace KerbDump
 
                     this.Invoke((MethodInvoker)delegate ()
                     {
-                        this.MessageView.RenderObject(ticket, "Decoded Message");
+                        this.MessageView.RenderObject(ticket, "Decoded Message", this.CreateKeytab());
                     });
                 }
                 catch (Exception ex)
@@ -488,7 +497,7 @@ namespace KerbDump
             Parallel.For(
                 0,
                 ticketBytes.Length,
-                new ParallelOptions { CancellationToken = this.cancellation.Token },
+                new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = this.cancellation.Token },
                 (i, state) =>
             {
                 var forwards = new ReadOnlyMemory<byte>(ticketBytes)[i..];
@@ -512,9 +521,9 @@ namespace KerbDump
 
                     try
                     {
-                        var decoded = MessageParser.Parse(backwards);
+                        var decoded = ProcessMessage(backwards);
 
-                        if (decoded != null && !state.IsStopped)
+                        if (decoded && !state.IsStopped)
                         {
                             result = backwards.ToArray();
                             state.Stop();
@@ -528,6 +537,140 @@ namespace KerbDump
             });
 
             return result;
+        }
+
+        internal bool ProcessMessage(ReadOnlyMemory<byte> message, string source = null)
+        {
+            object parsedMessage = null;
+
+            try
+            {
+                parsedMessage = MessageParser.Parse(message);
+            }
+            catch { }
+
+            if (parsedMessage == null)
+            {
+                try
+                {
+                    var nego = NegotiationToken.Decode(message);
+
+                    if (nego.ResponseToken != null)
+                    {
+                        parsedMessage = MessageParser.Parse(nego.ResponseToken.ResponseToken.Value);
+                    }
+                }
+                catch { }
+            }
+
+            if (parsedMessage is NtlmContextToken ntlm)
+            {
+                return ProcessNtlm(ntlm, source);
+            }
+            else if (parsedMessage is NegotiateContextToken nego)
+            {
+                return ProcessNegotiate(nego.Token, source);
+            }
+            else if (parsedMessage is KerberosContextToken kerb)
+            {
+                return ProcessKerberos(kerb, source);
+            }
+
+            try
+            {
+                if (KdcProxyMessage.TryDecode(message, out KdcProxyMessage proxyMessage))
+                {
+                    return ProcessKdcProxy(proxyMessage, source);
+                }
+            }
+            catch { }
+
+            return false;
+        }
+
+        private bool ProcessKdcProxy(KdcProxyMessage proxyMessage, string source)
+        {
+            var message = proxyMessage.UnwrapMessage();
+
+            var kdcBody = new
+            {
+                AsReq = TryDecode(message, m => KrbAsReq.DecodeApplication(m)),
+                AsRep = TryDecode(message, m => KrbAsRep.DecodeApplication(m)),
+                TgsReq = TryDecode(message, m => KrbTgsReq.DecodeApplication(m)),
+                TgsRep = TryDecode(message, m => KrbTgsRep.DecodeApplication(m)),
+                KrbError = TryDecode(message, m => KrbError.DecodeApplication(m))
+            };
+
+            if (kdcBody.AsReq != null)
+            {
+                return ExplodeObject(kdcBody.AsReq, $"AS-REQ ({source})");
+            }
+            else if (kdcBody.AsRep != null)
+            {
+                return ExplodeObject(kdcBody.AsRep, $"AS-REP ({source})");
+            }
+            else if (kdcBody.TgsReq != null)
+            {
+                return ExplodeObject(kdcBody.TgsReq, $"TGS-REQ ({source})");
+            }
+            else if (kdcBody.TgsRep != null)
+            {
+                return ExplodeObject(kdcBody.TgsRep, $"TGS-REP ({source})");
+            }
+            else if (kdcBody.KrbError != null)
+            {
+                return ExplodeObject(kdcBody.KrbError, $"Krb-Error ({source})");
+            }
+
+            return false;
+        }
+
+        private static object TryDecode(ReadOnlyMemory<byte> kerbMessage, Func<ReadOnlyMemory<byte>, object> p)
+        {
+            try
+            {
+                return p(kerbMessage);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private bool ProcessKerberos(KerberosContextToken kerb, string source)
+        {
+            if (kerb.KrbApReq != null)
+            {
+                return ExplodeObject(kerb.KrbApReq, $"Kerberos AP-REQ ({source})");
+            }
+            else if (kerb.KrbApRep != null)
+            {
+                return ExplodeObject(kerb.KrbApRep, $"Kerberos AP-REP ({source})");
+            }
+
+            return false;
+        }
+
+        private bool ProcessNegotiate(NegotiationToken token, string source)
+        {
+            var parsed = MessageParser.Parse(token.InitialToken.MechToken.Value);
+
+            return ExplodeObject(parsed, $"Kerberos Message ({source})");
+        }
+
+        private bool ProcessNtlm(NtlmContextToken ntlm, string source)
+        {
+            return ExplodeObject(ntlm.Token, $"NTLM Message ({source})");
+        }
+
+        private bool ExplodeObject(object thing, string baseNodeText)
+        {
+            this.Invoke((MethodInvoker)delegate ()
+            {
+                this.MessageView.RenderObject(thing, baseNodeText, this.CreateKeytab());
+            });
+
+            return true;
         }
 
         private static bool TryDecodeHex(string ticket, out byte[] ticketBytes)
@@ -667,7 +810,7 @@ namespace KerbDump
                     {
                         var formatted = GenerateFormattedKeyTable(this.table);
 
-                        this.MessageView.RenderObject(new { KeyTable = formatted }, "Keytab");
+                        this.MessageView.RenderObject(new { KeyTable = formatted }, "Keytab", this.CreateKeytab());
                     }
                 }
             }

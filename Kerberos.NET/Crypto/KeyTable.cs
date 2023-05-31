@@ -103,7 +103,7 @@ namespace Kerberos.NET.Crypto
             // Match on type (e.g. RC4_HMAC_NT) and name (Realm + Name)
 
             var entry = this.Entries
-                .Where(e => e.EncryptionType == type && sname.Matches(e.Principal))
+                .Where(e => e.EncryptionType == type && (sname?.Matches(e.Principal) ?? true))
                 .OrderByDescending(x => x.Version)
                 .FirstOrDefault();
 
