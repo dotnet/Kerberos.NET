@@ -30,4 +30,23 @@ namespace KerbDump
             return key.PasswordBytes;
         }
     }
+
+    public class NoopChecksum : KerberosChecksum
+    {
+        public NoopChecksum(ReadOnlyMemory<byte> signature, ReadOnlyMemory<byte> data) : base(signature, data)
+        {
+        }
+
+        public override int ChecksumSize { get; }
+
+        protected override ReadOnlyMemory<byte> SignInternal(KerberosKey key)
+        {
+            return Array.Empty<byte>();
+        }
+
+        protected override bool ValidateInternal(KerberosKey key)
+        {
+            return true;
+        }
+    }
 }
