@@ -115,9 +115,9 @@ namespace KerbDump
 
             node.ContextMenuStrip.Items.Add(new ToolStripMenuItem("Decode As...", null, new[]
             {
-                new ToolStripButton("AP-REQ", null, OnClickDecodeAsApReq),
-                new ToolStripButton("Ad-If-Relevant", null, OnClickDecodeAsAdIfRelevant),
-                new ToolStripButton("Ad-Win2k-Pac", null, OnClickDecodeAsAdWin2kPac),
+                new ToolStripMenuItem("AP-REQ", null, OnClickDecodeAsApReq),
+                new ToolStripMenuItem("Ad-If-Relevant", null, OnClickDecodeAsAdIfRelevant),
+                new ToolStripMenuItem("Ad-Win2k-Pac", null, OnClickDecodeAsAdWin2kPac),
             }));
 
             return node;
@@ -195,7 +195,7 @@ namespace KerbDump
         {
             var serialized = FormatSerialize(thing);
 
-            this.CreateTreeRoot(parentNode.Name, serialized, parentNode);
+            this.CreateTreeRoot(label, serialized, parentNode);
 
             parentNode.ExpandAll();
         }
@@ -340,16 +340,26 @@ namespace KerbDump
 
         private void ConfigureDecryption(TreeNode inTreeNode, JToken token, string scope)
         {
+            if (!EncryptedFields.Keys.Any(s => string.Equals(s, scope, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                return;
+            }
+
             var decryptMenuItems = new List<ToolStripItem>();
 
             foreach (KeyUsage k in Enum.GetValues(typeof(KeyUsage)))
             {
-                decryptMenuItems.Add(new ToolStripButton($"({(int)k}) {k}", null, DecryptMessageWithKeyUsage) { Tag = k });
+                decryptMenuItems.Add(new ToolStripMenuItem($"({(int)k}) {k}", null, DecryptMessageWithKeyUsage) { Tag = k });
             }
 
             inTreeNode.ContextMenuStrip ??= new() { Tag = inTreeNode };
 
-            inTreeNode.ContextMenuStrip.Items.Add(new ToolStripButton("Decrypt", null, DecryptMessage) { Tag = token, Name = scope });
+            if (inTreeNode.ContextMenuStrip.Items.Count > 0)
+            {
+                inTreeNode.ContextMenuStrip.Items.Add("-");
+            }
+
+            inTreeNode.ContextMenuStrip.Items.Add(new ToolStripMenuItem("Decrypt", null, DecryptMessage) { Tag = token, Name = scope });
 
             inTreeNode.ContextMenuStrip.Items.Add(new ToolStripMenuItem("Decrypt With...", null, decryptMenuItems.ToArray()));
         }
