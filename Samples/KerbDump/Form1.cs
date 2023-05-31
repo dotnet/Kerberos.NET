@@ -32,9 +32,6 @@ namespace KerbDump
 
         private KeyTable table;
 
-        private bool decryptDecoded = false;
-        private byte[] ticketBytes = null;
-
         public DecoderForm()
         {
             this.AutoScaleDimensions = new SizeF(96F, 96F);
@@ -80,6 +77,8 @@ namespace KerbDump
             this.txtHost.TextChanged += this.Host_Changed;
 
             this.txtHost.Text = this.hostName;
+
+            this.txtKey.TextChanged += this.Key_Changed;
         }
 
         public string Ticket
@@ -163,6 +162,11 @@ namespace KerbDump
             }
         }
 
+        private void Key_Changed(object sender, EventArgs e)
+        {
+            this.MessageView.Reset();
+        }
+
         private void btnDecode_Click(object sender, EventArgs e)
         {
             try
@@ -189,11 +193,6 @@ namespace KerbDump
             if (string.IsNullOrWhiteSpace(this.txtTicket.Text))
             {
                 return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(this.txtKey.Text) || this.table != null)
-            {
-                this.decryptDecoded = true;
             }
 
             this.Decode(this.txtTicket.Text);
@@ -347,31 +346,6 @@ namespace KerbDump
             return Encoding.Unicode.GetString(unprotected);
         }
 
-        private async Task<object> DecryptMessage(KeyTable key)
-        {
-            var validator = new KerberosValidator(key) { ValidateAfterDecrypt = ValidationActions.Pac };
-
-            var decrypted = await validator.Validate(ticketBytes);
-
-            var request = MessageParser.Parse(ticketBytes);
-
-            var authenticated = await new KerberosAuthenticator(validator).Authenticate(ticketBytes) as KerberosIdentity;
-
-            return new
-            {
-                Request = request,
-                Decrypted = decrypted,
-                Computed = new
-                {
-                    authenticated.Name,
-                    authenticated.Restrictions,
-                    authenticated.ValidationMode,
-                    Claims = authenticated.Claims.Select(c => new { c.Type, c.Value })
-                },
-                KeyTable = GenerateFormattedKeyTable(key)
-            };
-        }
-
         private static string StripWhitespace(string ticket)
         {
             return ticket.Replace("\r", "").Replace("\n", "").Replace("\t", "").Replace(" ", "");
@@ -422,65 +396,15 @@ namespace KerbDump
         {
             this.MessageView.Reset();
 
-            DecodeMessage(ticket).ContinueWith(async t =>
-            {
-                try
-                {
-                    object ticket;
-
-                    if (decryptDecoded)
-                    {
-                        ticket = await DecryptMessage(this.CreateKeytab());
-                    }
-                    else
-                    {
-                        ticket = FormatTicket();
-                    }
-
-                    this.Invoke((MethodInvoker)delegate ()
-                    {
-                        this.MessageView.RenderObject(ticket, "Decoded Message", this.CreateKeytab());
-                    });
-                }
-                catch (Exception ex)
-                {
-                    this.ShowError(ex);
-                }
-            });
-        }
-
-        private object FormatTicket()
-        {
-            if (this.ticketBytes == null)
-            {
-                return null;
-            }
-
-            var request = MessageParser.Parse(this.ticketBytes);
-
-            var obj = new Dictionary<string, object>()
-            {
-                { $"Request (Length = {this.ticketBytes.Length})", request }
-            };
-
-            var nego = request as NegotiateContextToken;
-
-            if (nego?.Token.InitialToken.MechToken != null)
-            {
-                obj["Negotiate"] = MessageParser.Parse(nego.Token.InitialToken.MechToken.Value);
-            }
-
-            obj["Keytab"] = GenerateFormattedKeyTable(this.table);
-
-            return obj;
+            _ = DecodeMessage(ticket);
         }
 
         private Task DecodeMessage(string ticket)
         {
-            return Task.Run(() => this.ticketBytes = DecodeInternal(ticket));
+            return Task.Run(() => DecodeInternal(ticket));
         }
 
-        private byte[] DecodeInternal(string ticket)
+        private void DecodeInternal(string ticket)
         {
             if (!TryDecodeHex(ticket, out byte[] ticketBytes))
             {
@@ -492,13 +416,9 @@ namespace KerbDump
 
             bool handleCreated = this.IsHandleCreated;
 
-            byte[] result = null;
+            bool decoded = false;
 
-            Parallel.For(
-                0,
-                ticketBytes.Length,
-                new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = this.cancellation.Token },
-                (i, state) =>
+            for (var i = 0; i < ticketBytes.Length; i++)
             {
                 var forwards = new ReadOnlyMemory<byte>(ticketBytes)[i..];
 
@@ -512,21 +432,15 @@ namespace KerbDump
 
                 for (var j = forwards.Length; j > 0; j--)
                 {
-                    if (state.IsStopped)
-                    {
-                        break;
-                    }
-
                     var backwards = forwards[..j];
 
                     try
                     {
-                        var decoded = ProcessMessage(backwards);
+                        decoded = ProcessMessage(backwards, "Decoded");
 
-                        if (decoded && !state.IsStopped)
+                        if (decoded)
                         {
-                            result = backwards.ToArray();
-                            state.Stop();
+                            break;
                         }
                     }
                     catch (Exception e) when (e is not InvalidOperationException)
@@ -534,9 +448,12 @@ namespace KerbDump
                         continue;
                     }
                 }
-            });
 
-            return result;
+                if (decoded)
+                {
+                    break;
+                }
+            }
         }
 
         internal bool ProcessMessage(ReadOnlyMemory<byte> message, string source = null)
@@ -755,6 +672,10 @@ namespace KerbDump
             {
                 sb.Append(ex.Message);
             }
+
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.Append(ex.StackTrace);
 
             MessageBox.Show(
                 this,
