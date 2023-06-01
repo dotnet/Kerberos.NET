@@ -26,9 +26,11 @@ namespace KerbDump
         private const string RequestTemplateText = "Request for {0}";
 
         private readonly ContextMenuStrip exportMenu = new();
-        private readonly CancellationTokenSource cancellation = new();
+        private CancellationTokenSource cancellation = new();
 
         private readonly int splitter1Default;
+
+        private bool running = false;
 
         private KeyTable table;
 
@@ -171,6 +173,12 @@ namespace KerbDump
         {
             try
             {
+                if (this.running)
+                {
+                    this.StopDecode();
+                    return;
+                }
+
                 this.Decode();
             }
             catch (Exception ex)
@@ -401,7 +409,40 @@ namespace KerbDump
 
         private Task DecodeMessage(string ticket)
         {
-            return Task.Run(() => DecodeInternal(ticket));
+            return Task.Run(() =>
+            {
+                try
+                {
+                    this.StartDecode();
+
+                    DecodeInternal(ticket);
+                }
+                finally
+                {
+                    this.StopDecode();
+                }
+            });
+        }
+
+        private void StopDecode()
+        {
+            this.Invoke((MethodInvoker)delegate ()
+            {
+                this.lblDecode.Text = "";
+                this.btnDecode.Text = "Decode";
+                this.cancellation.Cancel();
+                this.running = false;
+            });
+        }
+
+        private void StartDecode()
+        {
+            this.Invoke((MethodInvoker)delegate ()
+            {
+                this.btnDecode.Text = "Abort";
+                this.cancellation = new();
+                this.running = true;
+            });
         }
 
         private void DecodeInternal(string ticket)
@@ -416,47 +457,61 @@ namespace KerbDump
 
             bool handleCreated = this.IsHandleCreated;
 
-            bool decoded = false;
+            (object thing, string label) decoded = (null, null);
 
-            for (var i = 0; i < ticketBytes.Length; i++)
-            {
-                var forwards = new ReadOnlyMemory<byte>(ticketBytes)[i..];
-
-                if (handleCreated)
+            Parallel.For(
+                0,
+                ticketBytes.Length,
+                new ParallelOptions { CancellationToken = this.cancellation.Token },
+                (i, state) =>
                 {
-                    this.Invoke((MethodInvoker)delegate ()
+                    var forwards = new ReadOnlyMemory<byte>(ticketBytes)[i..];
+
+                    if (handleCreated)
                     {
-                        this.lblDecode.Text = $"Decoding 0x{i:x4}";
-                    });
-                }
+                        this.Invoke((MethodInvoker)delegate ()
+                        {
+                            this.lblDecode.Text = $"Decoding 0x{i:x4}";
+                        });
+                    }
 
-                for (var j = forwards.Length; j > 0; j--)
-                {
-                    var backwards = forwards[..j];
-
-                    try
+                    for (var j = forwards.Length; j > 0; j--)
                     {
-                        decoded = ProcessMessage(backwards, "Decoded");
-
-                        if (decoded)
+                        if (state.IsStopped)
                         {
                             break;
                         }
-                    }
-                    catch (Exception e) when (e is not InvalidOperationException)
-                    {
-                        continue;
-                    }
-                }
 
-                if (decoded)
+                        var backwards = forwards[..j];
+
+                        try
+                        {
+                            var processed = ProcessMessage(backwards, "Decoded");
+
+                            if (processed.thing != null && !state.IsStopped)
+                            {
+                                state.Stop();
+
+                                decoded = processed;
+                            }
+                        }
+                        catch (Exception e) when (e is not InvalidOperationException)
+                        {
+                            continue;
+                        }
+                    }
+                });
+
+            if (decoded.thing != null)
+            {
+                this.Invoke((MethodInvoker)delegate ()
                 {
-                    break;
-                }
+                    this.MessageView.RenderObject(decoded.thing, decoded.label, this.CreateKeytab());
+                });
             }
         }
 
-        internal bool ProcessMessage(ReadOnlyMemory<byte> message, string source = null)
+        internal (object thing, string label) ProcessMessage(ReadOnlyMemory<byte> message, string source = null)
         {
             object parsedMessage = null;
 
@@ -502,10 +557,10 @@ namespace KerbDump
             }
             catch { }
 
-            return false;
+            return (null, null);
         }
 
-        private bool ProcessKdcProxy(KdcProxyMessage proxyMessage, string source)
+        private (object thing, string label) ProcessKdcProxy(KdcProxyMessage proxyMessage, string source)
         {
             var message = proxyMessage.UnwrapMessage();
 
@@ -539,7 +594,7 @@ namespace KerbDump
                 return ExplodeObject(kdcBody.KrbError, $"Krb-Error ({source})");
             }
 
-            return false;
+            return (null, null);
         }
 
         private static object TryDecode(ReadOnlyMemory<byte> kerbMessage, Func<ReadOnlyMemory<byte>, object> p)
@@ -554,7 +609,7 @@ namespace KerbDump
             }
         }
 
-        private bool ProcessKerberos(KerberosContextToken kerb, string source)
+        private (object thing, string label) ProcessKerberos(KerberosContextToken kerb, string source)
         {
             if (kerb.KrbApReq != null)
             {
@@ -565,29 +620,24 @@ namespace KerbDump
                 return ExplodeObject(kerb.KrbApRep, $"Kerberos AP-REP ({source})");
             }
 
-            return false;
+            return (null, null);
         }
 
-        private bool ProcessNegotiate(NegotiationToken token, string source)
+        private (object thing, string label) ProcessNegotiate(NegotiationToken token, string source)
         {
             var parsed = MessageParser.Parse(token.InitialToken.MechToken.Value);
 
             return ExplodeObject(parsed, $"Kerberos Message ({source})");
         }
 
-        private bool ProcessNtlm(NtlmContextToken ntlm, string source)
+        private (object thing, string label) ProcessNtlm(NtlmContextToken ntlm, string source)
         {
             return ExplodeObject(ntlm.Token, $"NTLM Message ({source})");
         }
 
-        private bool ExplodeObject(object thing, string baseNodeText)
+        private (object thing, string label) ExplodeObject(object thing, string baseNodeText)
         {
-            this.Invoke((MethodInvoker)delegate ()
-            {
-                this.MessageView.RenderObject(thing, baseNodeText, this.CreateKeytab());
-            });
-
-            return true;
+            return (thing, baseNodeText);
         }
 
         private static bool TryDecodeHex(string ticket, out byte[] ticketBytes)
