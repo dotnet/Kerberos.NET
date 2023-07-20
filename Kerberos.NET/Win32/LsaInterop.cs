@@ -155,20 +155,43 @@ namespace Kerberos.NET.Win32
         /// <param name="realm">The default realm to be used by LSA for the any outbound ticket requests not already cached.</param>
         public unsafe void LogonUser(string username = null, string password = null, string realm = null)
         {
-            if (username == null)
+            username ??= DefaultUserName;
+
+            if (this.impersonationContext != null)
             {
-                username = DefaultUserName;
+                this.impersonationContext.Dispose();
+                this.impersonationContext = null;
             }
 
-            if (password == null)
-            {
-                password = string.Empty;
-            }
+            this.impersonationContext = this.LogonUser(username, password, realm, LogonType.NewCredentials);
 
-            if (realm == null)
-            {
-                realm = string.Empty;
-            }
+
+            // this call to impersonate will set the current thread token to be the token out of LsaLogonUser
+            // do we need to do anything special if this gets used within an async context?
+
+            this.impersonationContext.Impersonate();
+        }
+
+        /// <summary>
+        /// Create a logon session for the current LSA Handle.
+        /// </summary>
+        /// <param name="username">The username to be used.
+        /// Passing an empty string will cause LSA to treat this as an anonymous user.</param>
+        /// <param name="password">The password to be used by LSA for any future outbound ticket requests not already cached.</param>
+        /// <param name="realm">The default realm to be used by LSA for the any outbound ticket requests not already cached.</param>
+        /// <param name="logonType">The type of logon session to create</param>
+        public unsafe LsaTokenSafeHandle LogonUser(
+            string username,
+            string password,
+            string realm,
+            LogonType logonType
+        )
+        {
+            username ??= string.Empty;
+
+            password ??= string.Empty;
+
+            realm ??= string.Empty;
 
             var originName = new LSA_STRING
             {
@@ -182,12 +205,7 @@ namespace Kerberos.NET.Win32
                 (username.Length * 2) +
                 (password.Length * 2);
 
-            if (this.impersonationContext != null)
-            {
-                this.impersonationContext.Dispose();
-                this.impersonationContext = null;
-            }
-
+            LsaTokenSafeHandle tokenHandle = null;
             LsaBufferSafeHandle profileBuffer = null;
 
             WithFixedBuffer(bufferSize, (p, _) =>
@@ -211,7 +229,7 @@ namespace Kerberos.NET.Win32
                     int result = LsaLogonUser(
                          this.lsaHandle,
                          ref originName,
-                         SECURITY_LOGON_TYPE.NewCredentials,
+                         logonType,
                          this.negotiateAuthPackage,
                          pLogon,
                          bufferSize,
@@ -220,7 +238,7 @@ namespace Kerberos.NET.Win32
                          out profileBuffer,
                          ref profileLength,
                          out this.luid,
-                         out this.impersonationContext,
+                         out tokenHandle,
                          out IntPtr pQuotas,
                          out int subStatus
                      );
@@ -233,10 +251,7 @@ namespace Kerberos.NET.Win32
                 }
             });
 
-            // this call to impersonate will set the current thread token to be the token out of LsaLogonUser
-            // do we need to do anything special if this gets used within an async context?
-
-            this.impersonationContext.Impersonate();
+            return tokenHandle;
         }
 
         /// <summary>
