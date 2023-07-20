@@ -64,21 +64,21 @@ stages:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         publishLocation: 'Container'
 
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: custom
-        custom: tool
-        arguments: install --tool-path . dotnet-reportgenerator-globaltool
-      displayName: Install ReportGenerator tool
+#    - task: DotNetCoreCLI@2
+#      inputs:
+#        command: custom
+#        custom: tool
+#        arguments: install --tool-path . dotnet-reportgenerator-globaltool
+#      displayName: Install ReportGenerator tool
 
-    - script: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/coverlet/reports -reporttypes:"Cobertura"
-      displayName: Create reports
+#    - script: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/coverlet/reports -reporttypes:"Cobertura"
+#      displayName: Create reports
 
-    - task: PublishCodeCoverageResults@1
-      displayName: 'Publish code coverage'
-      inputs:
-        codeCoverageTool: Cobertura
-        summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml
+#    - task: PublishCodeCoverageResults@1
+#      displayName: 'Publish code coverage'
+#      inputs:
+#        codeCoverageTool: Cobertura
+#        summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml
 
     - task: NuGetAuthenticate@0
       displayName: 'NuGet Authenticate'
