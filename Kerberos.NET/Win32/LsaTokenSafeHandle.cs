@@ -10,7 +10,7 @@ using static Kerberos.NET.Win32.NativeMethods;
 
 namespace Kerberos.NET.Win32
 {
-    internal class LsaTokenSafeHandle : SafeHandle
+    public class LsaTokenSafeHandle : SafeHandle
     {
         public LsaTokenSafeHandle()
             : base(IntPtr.Zero, true)
@@ -49,7 +49,7 @@ namespace Kerberos.NET.Win32
             this.Impersonating = true;
         }
 
-        private void Revert()
+        public void Revert()
         {
             if (!this.Impersonating)
             {

@@ -14,6 +14,23 @@ using System.Runtime.InteropServices;
 
 namespace Kerberos.NET.Win32
 {
+    public enum LogonType
+    {
+        UndefinedLogonType = 0,
+        Interactive = 2,
+        Network,
+        Batch,
+        Service,
+        Proxy,
+        Unlock,
+        NetworkCleartext,
+        NewCredentials,
+        RemoteInteractive,
+        CachedInteractive,
+        CachedRemoteInteractive,
+        CachedUnlock
+    }
+
     internal unsafe class NativeMethods
     {
         private const string SECUR32 = "secur32.dll";
@@ -176,7 +193,7 @@ namespace Kerberos.NET.Win32
         public static extern int LsaLogonUser(
           LsaSafeHandle LsaHandle,
           ref LSA_STRING OriginName,
-          SECURITY_LOGON_TYPE LogonType,
+          LogonType LogonType,
           int AuthenticationPackage,
           void* AuthenticationInformation,
           int AuthenticationInformationLength,
@@ -270,23 +287,6 @@ namespace Kerberos.NET.Win32
             KerbCertificateUnlockLogon = 15,
             KerbNoElevationLogon = 83,
             KerbLuidLogon = 84,
-        }
-
-        public enum SECURITY_LOGON_TYPE
-        {
-            UndefinedLogonType = 0,
-            Interactive = 2,
-            Network,
-            Batch,
-            Service,
-            Proxy,
-            Unlock,
-            NetworkCleartext,
-            NewCredentials,
-            RemoteInteractive,
-            CachedInteractive,
-            CachedRemoteInteractive,
-            CachedUnlock
         }
 
         [StructLayout(LayoutKind.Sequential)]
