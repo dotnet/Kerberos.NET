@@ -3,17 +3,24 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
-using Kerberos.NET.Client;
-using Kerberos.NET.Entities;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using Kerberos.NET.Client;
+using Kerberos.NET.Entities;
 using static Kerberos.NET.Win32.NativeMethods;
 
 namespace Kerberos.NET.Win32
 {
+    [Flags]
+    public enum LsaMode
+    {
+        SameProcess = 1 << 16,
+        MarshallingNeeded = 1 << 17
+    }
+
     /// <summary>
     /// Provides a layer to interact with the LSA functions used to create logon sessions and manipulate the ticket caches.
     /// </summary>
@@ -29,7 +36,6 @@ namespace Kerberos.NET.Win32
         private readonly int negotiateAuthPackage;
 
         private LsaTokenSafeHandle impersonationContext;
-        private LUID luid;
 
         private bool disposedValue;
 
@@ -54,9 +60,10 @@ namespace Kerberos.NET.Win32
          * pool of memory to create a working for the current operation. On dispose it zeros the memory and returns it to the pool.
          */
 
-        private LsaInterop(LsaSafeHandle lsaHandle, string packageName = KerberosPackageName)
+        private LsaInterop(LsaSafeHandle lsaHandle, string packageName = KerberosPackageName, LsaMode securityMode = default)
         {
             this.lsaHandle = lsaHandle;
+            this.SecurityMode = securityMode;
 
             var kerberosPackageName = new LSA_STRING
             {
@@ -80,6 +87,13 @@ namespace Kerberos.NET.Win32
         }
 
         /// <summary>
+        /// The current LogonId represented by this LSA Handle.
+        /// </summary>
+        public ulong LogonId => this.impersonationContext?.Luid ?? 0;
+
+        public LsaMode SecurityMode { get; }
+
+        /// <summary>
         /// Create a new instance of the interop and allow this instance to behave as SYSTEM.
         /// Note that this call requires the TrustedComputingBase privilege to execute.
         /// </summary>
@@ -88,16 +102,7 @@ namespace Kerberos.NET.Win32
         /// <returns>Returns an instance of the <see cref="LsaInterop"/> class.</returns>
         public static LsaInterop RegisterLogonProcess(string name = null, string package = KerberosPackageName)
         {
-            string processNameStr;
-
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                processNameStr = ProcessName;
-            }
-            else
-            {
-                processNameStr = name;
-            }
+            string processNameStr = string.IsNullOrWhiteSpace(name) ? ProcessName : name;
 
             if (string.IsNullOrWhiteSpace(package))
             {
@@ -111,11 +116,11 @@ namespace Kerberos.NET.Win32
                 MaximumLength = (ushort)processNameStr.Length
             };
 
-            var result = LsaRegisterLogonProcess(ref processName, out LsaSafeHandle lsaHandle, out ulong securityMode);
+            var result = LsaRegisterLogonProcess(ref processName, out LsaSafeHandle lsaHandle, out LsaMode securityMode);
 
             LsaThrowIfError(result);
 
-            return new LsaInterop(lsaHandle, package);
+            return new LsaInterop(lsaHandle, package, securityMode);
         }
 
         /// <summary>
@@ -136,11 +141,6 @@ namespace Kerberos.NET.Win32
 
             return new LsaInterop(lsaHandle, package);
         }
-
-        /// <summary>
-        /// The current LogonId represented by this LSA Handle.
-        /// </summary>
-        public ulong LogonId => this.luid;
 
         /// <summary>
         /// Create a "NewCredentials" logon session for the current LSA Handle. This does not authenticate the user
@@ -237,13 +237,15 @@ namespace Kerberos.NET.Win32
                          ref tokenSource,
                          out profileBuffer,
                          ref profileLength,
-                         out this.luid,
+                         out LUID luid,
                          out tokenHandle,
                          out IntPtr pQuotas,
                          out int subStatus
                      );
 
                     LsaThrowIfError(result);
+
+                    tokenHandle.Luid = luid;
                 }
                 finally
                 {

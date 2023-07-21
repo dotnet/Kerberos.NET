@@ -21,6 +21,8 @@ namespace Kerberos.NET.Win32
 
         public override bool IsInvalid => this.handle == IntPtr.Zero;
 
+        public ulong Luid { get; internal set; }
+
         protected override bool ReleaseHandle()
         {
             this.Revert();

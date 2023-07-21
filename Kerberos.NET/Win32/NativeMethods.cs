@@ -168,7 +168,7 @@ namespace Kerberos.NET.Win32
         public static extern int LsaRegisterLogonProcess(
             ref LSA_STRING LogonProcessName,
             out LsaSafeHandle LsaHandle,
-            out ulong SecurityMode
+            out LsaMode SecurityMode
         );
 
         [DllImport(SECUR32)]
