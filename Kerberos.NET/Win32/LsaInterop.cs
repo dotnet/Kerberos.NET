@@ -288,23 +288,24 @@ namespace Kerberos.NET.Win32
                 pRequest->MessageType = KERB_PROTOCOL_MESSAGE_TYPE.KerbQueryTicketCacheEx3Message;
                 pRequest->LogonId = luid;
 
-                var response = this.LsaCallAuthenticationPackageWithReturn(pRequest, bufferSize);
-
-                return WithFixedBuffer(response, p =>
+                using (var response = this.LsaCallAuthenticationPackageWithReturn(pRequest, bufferSize))
                 {
-                    var pCacheResponse = (KERB_QUERY_TKT_CACHE_EX3_RESPONSE*)p;
-
-                    var cacheResult = new List<KerberosClientCacheEntry>();
-
-                    for (var i = 0; i < pCacheResponse->CountOfTickets; i++)
+                    return WithFixedBuffer(response, p =>
                     {
-                        var ticket = (&pCacheResponse->Tickets)[i];
+                        var pCacheResponse = (KERB_QUERY_TKT_CACHE_EX3_RESPONSE*)p;
 
-                        cacheResult.Add(ticket.ToCacheEntry());
-                    }
+                        var cacheResult = new List<KerberosClientCacheEntry>();
 
-                    return cacheResult;
-                });
+                        for (var i = 0; i < pCacheResponse->CountOfTickets; i++)
+                        {
+                            var ticket = (&pCacheResponse->Tickets)[i];
+
+                            cacheResult.Add(ticket.ToCacheEntry());
+                        }
+
+                        return cacheResult;
+                    });
+                }
             });
         }
 
@@ -366,16 +367,17 @@ namespace Kerberos.NET.Win32
 
                 SetString(spn, pRequest, ref pRequest->TargetName, ref requestSize);
 
-                var response = this.LsaCallAuthenticationPackageWithReturn(pRequest, bufferSize);
-
-                return WithFixedBuffer(response, p =>
+                using (var response = this.LsaCallAuthenticationPackageWithReturn(pRequest, bufferSize))
                 {
-                    var pResponse = (KERB_RETRIEVE_TKT_RESPONSE*)p;
+                    return WithFixedBuffer(response, p =>
+                    {
+                        var pResponse = (KERB_RETRIEVE_TKT_RESPONSE*)p;
 
-                    var cred = new Span<byte>(pResponse->Ticket.EncodedTicket, pResponse->Ticket.EncodedTicketSize);
+                        var cred = new Span<byte>(pResponse->Ticket.EncodedTicket, pResponse->Ticket.EncodedTicketSize);
 
-                    return KrbCred.DecodeApplication(cred.ToArray());
-                });
+                        return KrbCred.DecodeApplication(cred.ToArray());
+                    });
+                }
             });
         }
 
