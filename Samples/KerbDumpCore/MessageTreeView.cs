@@ -144,11 +144,25 @@ namespace KerbDump
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(text) && text.StartsWith("Data = "))
+            if (!string.IsNullOrWhiteSpace(text))
             {
-                text = text["Data = ".Length..];
+                foreach (var prefix in LabelPrefixes)
+                {
+                    if (text.StartsWith(prefix))
+                    {
+                        text = text[prefix.Length..];
+                        break;
+                    }
+                }
             }
         }
+
+        private static readonly IEnumerable<string> LabelPrefixes = new[]
+        {
+            "Data = ",
+            "Value = ",
+            "Cipher = "
+        };
 
         private void OnClickDecodeAsAdWin2kPac(object sender, EventArgs e)
         {
