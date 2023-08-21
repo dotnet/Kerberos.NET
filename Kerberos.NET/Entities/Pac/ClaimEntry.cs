@@ -38,7 +38,7 @@ namespace Kerberos.NET.Entities.Pac
             buffer.WriteDeferredStructUnion(this);
         }
 
-        public string Id { get; private set; }
+        public string Id { get; set; }
 
         public ClaimType Type { get; set; }
 
