@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Reflection.Emit;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -561,12 +563,27 @@ namespace KerbDump
             }
             catch { }
 
+            try
+            {
+                return ProcessUnknownMessage(message, "Unknown");
+            }
+            catch { }
+
             return (null, null);
         }
 
         private (object thing, string label) ProcessIAKerb(IAKerbContextToken iakerb, string source)
         {
-            return ProcessUnknownMessage(source, iakerb.Body);
+            var (thing, label) = ProcessUnknownMessage(iakerb.Body, source);
+
+            return ExplodeObject(
+                new Dictionary<string, object>
+                {
+                    { "Wire", iakerb },
+                    { label, thing }
+                },
+                $"IAKerb Message ({source})"
+            );
         }
 
         private class PotentialKerberosMessages
@@ -584,10 +601,10 @@ namespace KerbDump
         {
             var message = proxyMessage.UnwrapMessage();
 
-            return ProcessUnknownMessage(source, message);
+            return ProcessUnknownMessage(message, source);
         }
 
-        private (object thing, string label) ProcessUnknownMessage(string source, ReadOnlyMemory<byte> message)
+        private (object thing, string label) ProcessUnknownMessage(ReadOnlyMemory<byte> message, string source)
         {
             var kdcBody = new PotentialKerberosMessages
             {
@@ -657,7 +674,8 @@ namespace KerbDump
             return ExplodeObject(
                 new Dictionary<string, object>
                 {
-                    { "Wire", parsed },
+                    { "Wire", token },
+                    { "Mech Token", parsed },
                     { label, thing }
                 },
                 $"Negotiate Message ({source})"
