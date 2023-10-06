@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -12,14 +12,23 @@ namespace Kerberos.NET.Entities
     public abstract class ContextToken
     {
         private static readonly Dictionary<string, Func<GssApiToken, ContextToken>> KnownMessageTypes
-            = new Dictionary<string, Func<GssApiToken, ContextToken>>
+            = new()
             {
                 { MechType.SPNEGO, e => new NegotiateContextToken(e) },
                 { MechType.NEGOEX, e => new NegotiateContextToken(e) },
                 { MechType.KerberosV5, e => new KerberosContextToken(e) },
+                { MechType.KerberosGssApi, e => new KerberosContextToken(e) },
                 { MechType.KerberosV5Legacy, e => new KerberosContextToken(e) },
-                { MechType.KerberosUser2User, e => new KerberosUser2UserContextToken(e) }
+                { MechType.KerberosUser2User, e => new KerberosUser2UserContextToken(e) },
+                { MechType.IAKerb, e => new IAKerbContextToken(e) }
             };
+
+        protected ContextToken(GssApiToken token)
+        {
+            this.Message = token;
+        }
+
+        public virtual GssApiToken Message { get; }
 
         public abstract DecryptedKrbApReq DecryptApReq(KeyTable keys);
 

@@ -8,16 +8,22 @@ using Kerberos.NET.Crypto;
 
 namespace Kerberos.NET.Entities
 {
-    public class KerberosUser2UserContextToken : ContextToken
+    public class IAKerbContextToken : ContextToken
     {
-        public KerberosUser2UserContextToken(GssApiToken gssToken)
+        public IAKerbContextToken(GssApiToken gssToken)
             : base(gssToken)
         {
+            Memory<byte> body = gssToken.Token.ToArray();
+
+            this.Header = IAKerbHeader.DecodePartial(ref body);
+            this.Body = body;
         }
 
+        public IAKerbHeader Header { get; }
+
+        public ReadOnlyMemory<byte> Body { get; }
+
         public override DecryptedKrbApReq DecryptApReq(KeyTable keys)
-        {
-            throw new NotSupportedException("Kerberos User to User is not supported");
-        }
+            => throw new NotSupportedException();
     }
 }

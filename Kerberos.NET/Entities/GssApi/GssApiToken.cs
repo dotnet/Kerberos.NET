@@ -1,11 +1,16 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
+using Kerberos.NET.Asn1;
 
 namespace Kerberos.NET.Entities
 {
@@ -30,8 +35,21 @@ namespace Kerberos.NET.Entities
         // KRB_AP_REQ            01 00
         // KRB_AP_REP            02 00
         // KRB_ERROR             03 00
+        // IA_KERB               05 01
 
-        private static readonly Asn1Tag ApplicationTag = new Asn1Tag(TagClass.Application, 0);
+        private static readonly Asn1Tag ApplicationTag = new(TagClass.Application, 0);
+
+        private static readonly ReadOnlyDictionary<MessageType, short> MessageTokenTypes
+            = new(new Dictionary<MessageType, short>()
+        {
+            { MessageType.KRB_AP_REQ, 0x01 },
+            { MessageType.KRB_AP_REP, 0x02 },
+            { MessageType.KRB_ERROR, 0x03 },
+            { MessageType.IAKERB_HEADER, 0x0105 },
+        });
+
+        private static readonly ReadOnlyDictionary<short, MessageType> TokenMessageTypes
+            = new(MessageTokenTypes.ToDictionary(t => t.Value, t => t.Key));
 
         public static ReadOnlyMemory<byte> Encode(Oid oid, NegotiationToken token)
         {
@@ -55,10 +73,13 @@ namespace Kerberos.NET.Entities
         }
 
         public static ReadOnlyMemory<byte> Encode(Oid oid, KrbApReq krbApReq)
+            => Encode<KrbApReq>(oid, krbApReq);
+
+        public static ReadOnlyMemory<byte> Encode<T>(Oid oid, IAsn1ApplicationEncoder<T> body)
         {
-            if (krbApReq == null)
+            if (body == null)
             {
-                throw new ArgumentNullException(nameof(krbApReq));
+                throw new ArgumentNullException(nameof(body));
             }
 
             using (var writer = new AsnWriter(AsnEncodingRules.DER))
@@ -67,9 +88,18 @@ namespace Kerberos.NET.Entities
 
                 writer.WriteObjectIdentifier(oid);
 
-                writer.WriteEncodedValue(new byte[] { 0x01, 0x0 });
+                if (!MessageTokenTypes.TryGetValue(body.MessageType, out short tokenType))
+                {
+                    throw new UnknownMechTypeException();
+                }
 
-                writer.WriteEncodedValue(krbApReq.EncodeApplication().Span);
+                Span<byte> tokenTypeBytes = stackalloc byte[2];
+
+                BinaryPrimitives.WriteInt16LittleEndian(tokenTypeBytes, tokenType);
+
+                writer.WriteEncodedValue(tokenTypeBytes);
+
+                writer.WriteEncodedValue(body.EncodeApplication().Span);
 
                 writer.PopSequence(ApplicationTag);
 
@@ -81,11 +111,9 @@ namespace Kerberos.NET.Entities
         {
             var reader = new AsnReader(data, AsnEncodingRules.DER);
 
-            var token = new GssApiToken();
-
             var sequenceReader = reader.ReadSequence(ApplicationTag);
 
-            token.ThisMech = sequenceReader.ReadObjectIdentifier();
+            var token = new GssApiToken() { ThisMech = sequenceReader.ReadObjectIdentifier() };
 
             // this is a frustrating format -- it starts off as an ASN.1 encoded-thing
             // but values after thisMech don't have to be ASN.1 encoded, which means
@@ -95,27 +123,27 @@ namespace Kerberos.NET.Entities
 
             while (sequenceReader.HasData)
             {
-                var read = sequenceReader.ReadEncodedValue();
+                var peek = sequenceReader.PeekRawBytes(2);
+                var peekShort = BinaryPrimitives.ReadInt16LittleEndian(peek.Span);
 
-                if (sequenceReader.HasData)
+                if (TokenMessageTypes.TryGetValue(peekShort, out MessageType type))
                 {
-                    switch (read.Span[0])
-                    {
-                        case 0x01:
-                            token.MessageType = MessageType.KRB_AP_REQ;
-                            break;
-                        case 0x02:
-                            token.MessageType = MessageType.KRB_AP_REP;
-                            break;
-                        case 0x03:
-                            token.MessageType = MessageType.KRB_ERROR;
-                            break;
-                    }
+                    token.MessageType = type;
+                    token.Token = sequenceReader.ReadRawBytes(sequenceReader.RemainingBytes).Slice(2);
+                    continue;
+                }
+
+                var read = sequenceReader.ReadEncodedValue();
+                var readShort = BinaryPrimitives.ReadInt16LittleEndian(read.Span.Slice(0, 2));
+
+                if (TokenMessageTypes.TryGetValue(readShort, out type))
+                {
+                    token.MessageType = type;
+                    token.Token = read.Slice(2);
                 }
                 else
                 {
                     token.Token = read;
-                    break;
                 }
             }
 

@@ -118,6 +118,8 @@ namespace KerbDump
                 new ToolStripMenuItem("AP-REQ", null, OnClickDecodeAsApReq),
                 new ToolStripMenuItem("Ad-If-Relevant", null, OnClickDecodeAsAdIfRelevant),
                 new ToolStripMenuItem("Ad-Win2k-Pac", null, OnClickDecodeAsAdWin2kPac),
+
+                new ToolStripMenuItem("EType Info", null, OnClickDecodeAsETypeInfo),
             }));
 
             return node;
@@ -161,8 +163,28 @@ namespace KerbDump
         {
             "Data = ",
             "Value = ",
-            "Cipher = "
+            "Cipher = ",
+            "EData = "
         };
+
+        //OnClickDecodeAsEtypeInfo
+
+        private void OnClickDecodeAsETypeInfo(object sender, EventArgs e)
+        {
+            ParseNode(sender, out string text, out TreeNode parentNode);
+
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                try
+                {
+                    DecodeAsETypeInfo(Convert.FromBase64String(text), parentNode);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"DecodeAsAdWin2kPac exception: {ex}");
+                }
+            }
+        }
 
         private void OnClickDecodeAsAdWin2kPac(object sender, EventArgs e)
         {
@@ -196,6 +218,29 @@ namespace KerbDump
                     Debug.WriteLine($"DecodeAsAdIfRelevant exception: {ex}");
                 }
             }
+        }
+
+        private void DecodeAsETypeInfo(byte[] bytes, TreeNode parentNode)
+        {
+            var krbMethod = KrbMethodData.Decode(bytes);
+
+            var data = new List<object>();
+
+            foreach (var m in krbMethod.MethodData)
+            {
+                if (m.Type == PaDataType.PA_ETYPE_INFO2)
+                {
+                    var obj = m.DecodeETypeInfo2();
+
+                    data.Add(obj);
+                }
+                else
+                {
+                    data.Add(m);
+                }
+            }
+
+            ExplodeObject(data, "PA Data", parentNode);
         }
 
         private void DecodeAsAdWin2kPac(byte[] bytes, TreeNode parentNode)

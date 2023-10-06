@@ -11,7 +11,9 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbEncAsRepPart : IAsn1ApplicationEncoder<KrbEncAsRepPart>
     {
-        private static readonly Asn1Tag KrbEncAsRepPartTag = new Asn1Tag(TagClass.Application, 25);
+        private static readonly Asn1Tag KrbEncAsRepPartTag = new(TagClass.Application, 25);
+
+        public MessageType MessageType => (MessageType)(-1);
 
         public KrbEncAsRepPart DecodeAsApplication(ReadOnlyMemory<byte> encoded)
         {
