@@ -20,6 +20,8 @@ namespace Kerberos.NET.Transport
 
         internal const int DefaultKerberosPort = 88;
 
+        internal const int DefaultKpasswdPort = 464;
+
         private static readonly Task CacheCleanup;
 
         private static readonly ConcurrentDictionary<string, DnsRecord> DomainCache
@@ -55,7 +57,21 @@ namespace Kerberos.NET.Transport
 
         public virtual async Task<IEnumerable<DnsRecord>> LocateKdc(string domain, string servicePrefix)
         {
-            var results = (await this.Query(domain, servicePrefix)).Where(r => r.Type == DnsRecordType.SRV);
+            var results = await this.Query(domain, servicePrefix, DefaultKerberosPort);
+
+            return ParseQuerySrvReply(results);
+        }
+
+        public virtual async Task<IEnumerable<DnsRecord>> LocateKpasswd(string domain, string servicePrefix)
+        {
+            var results = await this.Query(domain, servicePrefix, DefaultKpasswdPort);
+
+            return ParseQuerySrvReply(results);
+        }
+
+        public virtual IEnumerable<DnsRecord> ParseQuerySrvReply(IEnumerable<DnsRecord> reply)
+        {
+            var results = reply.Where(r => r.Type == DnsRecordType.SRV);
 
             results = results.Where(s => !this.negativeCache.TryGetValue(s.Target, out DnsRecord record) || record.Expired);
 
@@ -108,18 +124,18 @@ namespace Kerberos.NET.Transport
             }
         }
 
-        protected virtual async Task<IEnumerable<DnsRecord>> Query(string domain, string servicePrefix)
+        protected virtual async Task<IEnumerable<DnsRecord>> Query(string domain, string servicePrefix, int defaultPort)
         {
             var records = new List<DnsRecord>();
 
             if (this.pinnedKdcs.TryGetValue(domain, out HashSet<string> kdcs))
             {
-                records.AddRange(kdcs.Select(k => ParseKdcEntryAsSrvRecord(k, domain, servicePrefix)).Where(k => k != null));
+                records.AddRange(kdcs.Select(k => ParseKdcEntryAsSrvRecord(k, domain, servicePrefix, defaultPort)).Where(k => k != null));
             }
 
             if (this.Configuration.Realms.TryGetValue(domain, out Krb5RealmConfig config))
             {
-                records.AddRange(config.Kdc.Select(k => ParseKdcEntryAsSrvRecord(k, domain, servicePrefix)).Where(k => k != null));
+                records.AddRange(config.Kdc.Select(k => ParseKdcEntryAsSrvRecord(k, domain, servicePrefix, defaultPort)).Where(k => k != null));
             }
 
             if (this.Configuration.Defaults.DnsLookupKdc)
@@ -172,7 +188,7 @@ namespace Kerberos.NET.Transport
             }
         }
 
-        private static DnsRecord ParseKdcEntryAsSrvRecord(string kdc, string realm, string servicePrefix)
+        private static DnsRecord ParseKdcEntryAsSrvRecord(string kdc, string realm, string servicePrefix, int defaultPort)
         {
             if (IsUri(kdc))
             {
@@ -199,7 +215,7 @@ namespace Kerberos.NET.Transport
             }
             else
             {
-                record.Port = DefaultKerberosPort;
+                record.Port = defaultPort;
             }
 
             return record;

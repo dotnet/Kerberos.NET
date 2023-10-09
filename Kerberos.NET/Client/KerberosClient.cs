@@ -4,17 +4,20 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography.Asn1;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.ChangePassword;
 using Kerberos.NET.Transport;
 using Microsoft.Extensions.Logging;
 using static Kerberos.NET.Entities.KerberosConstants;
@@ -316,6 +319,11 @@ namespace Kerberos.NET.Client
         /// <returns>Returns an awaitable task</returns>
         public async Task Authenticate(KerberosCredential credential)
         {
+            await AuthenticateCore(credential, null);
+        }
+
+        private async Task AuthenticateCore(KerberosCredential credential, string tgtServiceName)
+        {
             if (credential == null)
             {
                 throw new ArgumentNullException(nameof(credential));
@@ -354,16 +362,18 @@ namespace Kerberos.NET.Client
 
             using (this.logger.BeginRequestScope(this.ScopeId))
             {
-                await this.AuthenticateCredential(credential);
+                await this.AuthenticateCredential(credential, tgtServiceName);
             }
         }
 
-        private async Task AuthenticateCredential(KerberosCredential credential)
+        private async Task AuthenticateCredential(KerberosCredential credential, string tgtServiceName)
         {
             int preauthAttempts = 0;
 
             bool succeeded = false;
             bool tryPinned = false;
+
+            KrbPrincipalName tgtServicePrincipal = (tgtServiceName == null) ? null : KrbPrincipalName.FromString(tgtServiceName);
 
             do
             {
@@ -371,7 +381,7 @@ namespace Kerberos.NET.Client
                 {
                     // Authenticate to the KDC and if it succeeds break out of the retry loop
 
-                    await this.RequestTgt(credential).ConfigureAwait(false);
+                    await this.RequestTgt(credential, tgtServicePrincipal).ConfigureAwait(false);
                     succeeded = true;
                     break;
                 }
@@ -425,6 +435,86 @@ namespace Kerberos.NET.Client
                 }
             }
             while (++preauthAttempts <= 4);
+        }
+
+        public async Task ChangePassword(
+            KerberosCredential credential,
+            string newPassword,
+            CancellationToken cancellation = default)
+        {
+            await this.AuthenticateCore(credential, "kadmin/changepw");
+
+            using (this.logger.BeginRequestScope(this.ScopeId))
+            {
+                await this.ChangePasswordCredentialWithTgtCached(credential, newPassword, cancellation);
+            }
+        }
+
+        private async Task ChangePasswordCredentialWithTgtCached(
+            KerberosCredential credential,
+            string newPassword,
+            CancellationToken cancellation = default)
+        {
+            // fetch kadmin/changepw tgt
+            var tgtEntry = this.CopyTicket("kadmin/changepw");
+
+            logger.LogInformation(
+                "Using TGT from {CRealm} to {Realm}",
+                tgtEntry.KdcResponse.CRealm,
+                tgtEntry.KdcResponse.Ticket.SName.FullyQualifiedName
+            );
+
+            // create request
+            KrbChangePasswdReq msg;
+            KrbAuthenticator authenticator;
+            CreateRfc3244ChangePasswordRequest(newPassword: newPassword, tgtEntry: tgtEntry, out msg, out authenticator);
+
+            // transmit using TCP
+            var chPwRepl = await this.transport.SendMessageChangePassword(
+               tgtEntry.KdcResponse.CRealm,
+               msg,
+               cancellation
+            ).ConfigureAwait(false);
+
+            // decrypt reply
+            chPwRepl.Decrypt(authenticator.Subkey.AsKey());
+
+            ushort resultCode = BinaryPrimitives.ReadUInt16BigEndian(chPwRepl.encKrbPriv.UserData.Span.Slice(0, 2));
+            string resultString = new UTF8Encoding().GetString(chPwRepl.encKrbPriv.UserData.Span.Slice(2).ToArray());
+            string resultCodeString = ((KrbChangePasswdRep.StatusCode)resultCode).ToString();
+
+            if (resultCode != 0)
+            {
+                throw new Exception($"KPASSWD ERROR ({resultCodeString}): {resultString})");
+            }
+        }
+
+        private static void CreateRfc3244ChangePasswordRequest(string newPassword, KerberosClientCacheEntry tgtEntry, out KrbChangePasswdReq msg, out KrbAuthenticator authenticator)
+        {
+            var rst = new RequestServiceTicket { };
+            rst.ApOptions |= ApOptions.MutualRequired; // request sub-key
+
+            var apReq = KrbApReq.CreateApReq(
+                        tgtEntry.KdcResponse,
+                        tgtEntry.SessionKey.AsKey(),
+                        rst,
+                        out authenticator
+                    );
+
+            // create KRB-PRIV structure containing ChangePasswdData, enc w/ the sub session key
+            var changeUserPassword = new KrbChangePasswdData { NewPasswd = Encoding.ASCII.GetBytes(newPassword) };
+            var krbPrivEncPartDecrypted = new KrbEncKrbPrivPart
+            {
+                UserData = changeUserPassword.Encode(),
+                SeqNumber = authenticator.SequenceNumber,
+                Usec = authenticator.CuSec,
+                SAddress = new KrbHostAddress()
+            };
+            var krbPriv = KrbPriv.Create(
+                key: authenticator.Subkey.AsKey(),
+                krbPrivEncPartUnencrypted: krbPrivEncPartDecrypted);
+
+            msg = new() { ApReq = apReq, KrbPriv = krbPriv };
         }
 
         private static void HandlePolicyViolation(KerberosProtocolException pex)
@@ -1053,13 +1143,11 @@ namespace Kerberos.NET.Client
                 tgsReq.PaData.Select(s => s.Type).ToArray()
             );
 
-            var encodedTgs = tgsReq.EncodeApplication();
-
             cancellation.ThrowIfCancellationRequested();
 
-            var tgsRep = await this.transport.SendMessage<KrbTgsRep>(
+            var tgsRep = await this.transport.SendMessage<KrbTgsReq, KrbTgsRep>(
                 rst.Realm,
-                encodedTgs,
+                tgsReq,
                 cancellation
             ).ConfigureAwait(false);
 
@@ -1129,11 +1217,9 @@ namespace Kerberos.NET.Client
                 out KrbEncryptionKey subkey
             );
 
-            var encodedTgs = tgs.EncodeApplication();
-
-            var tgsRep = await this.transport.SendMessage<KrbTgsRep>(
+            var tgsRep = await this.transport.SendMessage<KrbTgsReq, KrbTgsRep>(
                 tgs.Body.Realm,
-                encodedTgs
+                tgs
             ).ConfigureAwait(false);
 
             var encKdcRepPart = tgsRep.EncPart.Decrypt(
@@ -1171,20 +1257,19 @@ namespace Kerberos.NET.Client
             });
         }
 
-        private async Task RequestTgt(KerberosCredential credential)
+        private async Task RequestTgt(KerberosCredential credential, KrbPrincipalName tgtServicePrincipal = null)
         {
-            var asReqMessage = KrbAsReq.CreateAsReq(credential, this.AuthenticationOptions);
-
-            var asReq = asReqMessage.EncodeApplication();
+            var asReqMessage = KrbAsReq.CreateAsReq(credential, this.AuthenticationOptions, tgtServicePrincipal);
 
             this.logger.LogTrace(
-                "Attempting AS-REQ. UserName = {UserName}; Domain = {Domain}; Nonce = {Nonce}",
+                "Attempting AS-REQ. UserName = {UserName}; Domain = {Domain}; Nonce = {Nonce}; ServiceName = {ServiceName}",
                 credential.UserName,
                 credential.Domain,
-                asReqMessage.Body.Nonce
+                asReqMessage.Body.Nonce,
+                string.Join("/", asReqMessage.Body.SName.Name)
             );
 
-            var asRep = await this.transport.SendMessage<KrbAsRep>(credential.Domain, asReq).ConfigureAwait(false);
+            var asRep = await this.transport.SendMessage<KrbAsReq, KrbAsRep>(credential.Domain, asReqMessage).ConfigureAwait(false);
 
             var decrypted = credential.DecryptKdcRep(
                 asRep,

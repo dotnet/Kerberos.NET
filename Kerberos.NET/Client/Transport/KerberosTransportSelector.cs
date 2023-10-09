@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Kerberos.NET.Asn1;
 using Kerberos.NET.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -39,11 +40,72 @@ namespace Kerberos.NET.Transport
 
         public IEnumerable<IKerberosTransport> Transports { get; }
 
-        public override async Task<T> SendMessage<T>(
+        // for backward compatibility with IKerberosTransport
+        private class NoOpAsn : IAsn1ApplicationEncoder<NoOpAsn>
+        {
+            private ReadOnlyMemory<byte> data;
+
+            public NoOpAsn()
+            {
+
+            }
+
+            private NoOpAsn(ReadOnlyMemory<byte> data)
+            {
+                this.data = data;
+            }
+
+            public NoOpAsn DecodeAsApplication(ReadOnlyMemory<byte> data)
+            {
+                return new NoOpAsn(data);
+            }
+
+            public ReadOnlyMemory<byte> EncodeApplication()
+            {
+                return data;
+            }
+        }
+
+        public override async Task<ReadOnlyMemory<byte>> SendMessage(
             string domain,
             ReadOnlyMemory<byte> encoded,
             CancellationToken cancellation = default
         )
+        {
+            Func<IKerberosTransport, Task<ReadOnlyMemory<byte>>> cbSend;
+            cbSend = async (IKerberosTransport transport) =>
+            {
+                if (transport is IKerberosTransport2 t)
+                {
+                    return await t.SendMessage(domain, encoded, cancellation);
+                }
+                var ret = await transport.SendMessage<NoOpAsn>(domain, encoded, cancellation);
+                return ret.EncodeApplication();
+            };
+            return await this.SendMessageOnTransport(domain, cbSend);
+        }
+
+        public override async Task<ReadOnlyMemory<byte>> SendMessageChangePassword(
+            string domain,
+            ReadOnlyMemory<byte> encoded,
+            CancellationToken cancellation = default
+        )
+        {
+            Func<IKerberosTransport, Task<ReadOnlyMemory<byte>>> cbSend;
+            cbSend = async (IKerberosTransport transport) =>
+            {
+                if (transport is IKerberosTransport2 t)
+                {
+                    return await t.SendMessageChangePassword(domain, encoded, cancellation);
+                }
+                throw new NotSupportedException();
+            };
+            return await this.SendMessageOnTransport(domain, cbSend);
+        }
+
+        private async Task<ReadOnlyMemory<byte>> SendMessageOnTransport(
+            string domain,
+            Func<IKerberosTransport, Task<ReadOnlyMemory<byte>>> cbSend)
         {
             // old logic is:
             // foreach transport
@@ -68,7 +130,7 @@ namespace Kerberos.NET.Transport
 
                 try
                 {
-                    return await transport.SendMessage<T>(domain, encoded, cancellation).ConfigureAwait(false);
+                    return await cbSend(transport).ConfigureAwait(false);
                 }
                 catch (KerberosTransportException tex)
                 {
@@ -78,6 +140,10 @@ namespace Kerberos.NET.Transport
                     transport.LastError = this.LastError = tex;
 
                     this.logger.LogDebug("Transport {Transport} failed connecting to {Domain} so moving on to next transporter", transport.GetType().Name, domain);
+                }
+                catch (NotSupportedException)
+                {
+                    continue;
                 }
             }
 

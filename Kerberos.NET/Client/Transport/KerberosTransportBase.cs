@@ -12,11 +12,12 @@ using Kerberos.NET.Asn1;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Dns;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.ChangePassword;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Transport
 {
-    public abstract class KerberosTransportBase : IKerberosTransport, IDisposable
+    public abstract class KerberosTransportBase : IKerberosTransport2, IDisposable
     {
         private static readonly Random Random = new Random();
 
@@ -51,8 +52,7 @@ namespace Kerberos.NET.Transport
             set => this.ClientRealmService.Configuration = value;
         }
 
-        protected static T Decode<T>(ReadOnlyMemory<byte> response)
-            where T : IAsn1ApplicationEncoder<T>, new()
+        protected static void CheckError(ReadOnlyMemory<byte> response)
         {
             if (KrbError.CanDecode(response))
             {
@@ -69,7 +69,11 @@ namespace Kerberos.NET.Transport
 
                 throw new KerberosProtocolException(error);
             }
+        }
 
+        protected static T Decode<T>(ReadOnlyMemory<byte> response)
+            where T : IAsn1ApplicationEncoder<T>, new()
+        {
             return new T().DecodeAsApplication(response);
         }
 
@@ -93,12 +97,55 @@ namespace Kerberos.NET.Transport
             return this.ClientRealmService.LocateKdc(domain, servicePrefix);
         }
 
-        public abstract Task<T> SendMessage<T>(
+        protected virtual Task<IEnumerable<DnsRecord>> LocateKpasswd(string domain, string servicePrefix)
+        {
+            return this.ClientRealmService.LocateKpasswd(domain, servicePrefix);
+        }
+
+        public async Task<T> SendMessage<T>(
             string domain,
             ReadOnlyMemory<byte> req,
             CancellationToken cancellation = default
         )
-            where T : IAsn1ApplicationEncoder<T>, new();
+            where T : IAsn1ApplicationEncoder<T>, new()
+        {
+            var response = await SendMessage(domain, req, cancellation);
+
+            CheckError(response);
+
+            return Decode<T>(response);
+        }
+
+        public virtual async Task<KrbChangePasswdRep> SendMessageChangePassword(
+            string domain,
+            KrbChangePasswdReq msg,
+            CancellationToken cancellation = default
+        )
+        {
+            if (msg == null)
+            {
+                throw new ArgumentNullException(nameof(msg));
+            }
+
+            var response = await SendMessageChangePassword(domain, msg.Encode(), cancellation);
+
+            CheckError(response);
+
+            return new KrbChangePasswdRep(response);
+        }
+
+        public abstract Task<ReadOnlyMemory<byte>> SendMessage(
+            string domain,
+            ReadOnlyMemory<byte> req,
+            CancellationToken cancellation);
+
+        public virtual Task<ReadOnlyMemory<byte>> SendMessageChangePassword(
+            string domain,
+            ReadOnlyMemory<byte> req,
+            CancellationToken cancellation)
+        {
+            throw new NotSupportedException();
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -118,7 +165,17 @@ namespace Kerberos.NET.Transport
         protected virtual async Task<DnsRecord> LocatePreferredKdc(string domain, string servicePrefix)
         {
             var results = await this.LocateKdc(domain, servicePrefix);
+            return SelectedPreferredInstance(domain, servicePrefix, results, ClientDomainService.DefaultKerberosPort);
+        }
 
+        protected virtual async Task<DnsRecord> LocatePreferredKpasswd(string domain, string servicePrefix)
+        {
+            var results = await this.LocateKpasswd(domain, servicePrefix);
+            return SelectedPreferredInstance(domain, servicePrefix, results, ClientDomainService.DefaultKpasswdPort);
+        }
+
+        protected virtual DnsRecord SelectedPreferredInstance(string domain, string servicePrefix, IEnumerable<DnsRecord> results, int defaultPort)
+        {
             results = results.Where(r => r.Name.StartsWith(servicePrefix));
 
             var rand = Random.Next(0, results?.Count() ?? 0);
@@ -132,7 +189,7 @@ namespace Kerberos.NET.Transport
 
             if (srv.Port <= 0)
             {
-                srv.Port = ClientDomainService.DefaultKerberosPort;
+                srv.Port = defaultPort;
             }
 
             return srv;

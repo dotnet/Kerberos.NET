@@ -17,6 +17,7 @@ namespace Kerberos.NET.Transport
     public class TcpKerberosTransport : KerberosTransportBase
     {
         private const string TcpServiceTemplate = "_kerberos._tcp";
+        private const string TcpServiceTemplatePasswd = "_kpasswd._tcp";
 
         private static readonly ISocketPool Pool = CreateSocketPool();
 
@@ -44,21 +45,40 @@ namespace Kerberos.NET.Transport
 
         public static ISocketPool CreateSocketPool() => new SocketPool();
 
-        public override async Task<T> SendMessage<T>(
+        public override async Task<ReadOnlyMemory<byte>> SendMessage(
             string domain,
             ReadOnlyMemory<byte> encoded,
             CancellationToken cancellation = default
         )
         {
+            return await SendMessageTCP(domain, encoded, cancellation, () => { return this.LocatePreferredKdc(domain, TcpServiceTemplate); });
+        }
+
+        public override async Task<ReadOnlyMemory<byte>> SendMessageChangePassword(
+            string domain,
+            ReadOnlyMemory<byte> encoded,
+            CancellationToken cancellation = default
+        )
+        {
+            return await SendMessageTCP(domain, encoded, cancellation, () => { return this.LocatePreferredKpasswd(domain, TcpServiceTemplatePasswd); });
+        }
+
+        private async Task<ReadOnlyMemory<byte>> SendMessageTCP(
+            string domain,
+            ReadOnlyMemory<byte> encoded,
+            CancellationToken cancellation,
+            Func<Task<Dns.DnsRecord>> locatePreferredServer
+        )
+        {
             try
             {
-                using (var client = await this.GetClient(domain).ConfigureAwait(false))
+                using (var client = await this.GetClient(locatePreferredServer).ConfigureAwait(false))
                 {
                     var stream = client.GetStream();
 
                     await WriteMessage(encoded, stream, cancellation).ConfigureAwait(false);
 
-                    return await ReadResponse<T>(stream, cancellation, this.ReceiveTimeout).ConfigureAwait(false);
+                    return await ReadResponse(stream, cancellation, this.ReceiveTimeout).ConfigureAwait(false);
                 }
             }
             catch (SocketException sx)
@@ -69,14 +89,14 @@ namespace Kerberos.NET.Transport
             }
         }
 
-        private async Task<ITcpSocket> GetClient(string domain)
+        private async Task<ITcpSocket> GetClient(Func<Task<Dns.DnsRecord>> locatePreferredServer)
         {
             var attempts = this.MaximumAttempts;
             SocketException lastThrown = null;
 
             do
             {
-                var target = await this.LocatePreferredKdc(domain, TcpServiceTemplate);
+                var target = await locatePreferredServer();
 
                 this.logger.LogTrace("TCP connecting to {Target} on port {Port}", target.Target, target.Port);
 
@@ -119,8 +139,7 @@ namespace Kerberos.NET.Transport
             throw lastThrown;
         }
 
-        private static async Task<T> ReadResponse<T>(NetworkStream stream, CancellationToken cancellation, TimeSpan readTimeout)
-            where T : Asn1.IAsn1ApplicationEncoder<T>, new()
+        private static async Task<ReadOnlyMemory<byte>> ReadResponse(NetworkStream stream, CancellationToken cancellation, TimeSpan readTimeout)
         {
             using (var messageSizeBytesRented = CryptoPool.Rent<byte>(4))
             {
@@ -132,7 +151,7 @@ namespace Kerberos.NET.Transport
 
                 var response = await Tcp.ReadFromStream(messageSize, stream, cancellation, readTimeout).ConfigureAwait(false);
 
-                return Decode<T>(response);
+                return response;
             }
         }
 

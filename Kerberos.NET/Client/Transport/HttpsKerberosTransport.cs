@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Asn1;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.ChangePassword;
 using Microsoft.Extensions.Logging;
 
 namespace Kerberos.NET.Transport
@@ -47,7 +48,10 @@ namespace Kerberos.NET.Transport
 
         public string RequestId { get; private set; }
 
-        public override async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
+        public override async Task<ReadOnlyMemory<byte>> SendMessage(
+            string domain,
+            ReadOnlyMemory<byte> req,
+            CancellationToken cancellation)
         {
             var kdc = await this.LocateKdc(domain);
 
@@ -60,7 +64,7 @@ namespace Kerberos.NET.Transport
 
             try
             {
-                return await this.SendMessage<T>(domain, req, kdc);
+                return await this.SendMessage(domain, req, kdc);
             }
             catch (KerberosTransportException kex)
             {
@@ -109,8 +113,7 @@ namespace Kerberos.NET.Transport
             return message;
         }
 
-        private async Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, Uri kdc)
-            where T : IAsn1ApplicationEncoder<T>, new()
+        private async Task<ReadOnlyMemory<byte>> SendMessage(string domain, ReadOnlyMemory<byte> req, Uri kdc)
         {
             var message = KdcProxyMessage.WrapMessage(req, domain, this.Hint);
 
@@ -143,7 +146,7 @@ namespace Kerberos.NET.Transport
                     throw new KerberosProtocolException($"Cannot process HTTP Response: {body}");
                 }
 
-                return Decode<T>(kdcResponse.UnwrapMessage());
+                return kdcResponse.UnwrapMessage();
             }
         }
 

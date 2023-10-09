@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<asn:Sequence
+  xmlns:asn="http://schemas.dot.net/asnxml/201808/"
+  name="KrbEncKrbPrivPart"
+  namespace="Kerberos.NET.Entities" explicitTag="28">
+  <!--
+		  EncKrbPrivPart  ::= [APPLICATION 28] SEQUENCE {
+				  user-data       [0] OCTET STRING,
+				  timestamp       [1] KerberosTime OPTIONAL,
+				  usec            [2] Microseconds OPTIONAL,
+				  seq-number      [3] UInt32 OPTIONAL,
+				  s-address       [4] HostAddress ( sender's addr ),
+				  r-address       [5] HostAddress OPTIONAL ( recip's addr )
+          }-->
+
+  <asn:OctetString name="UserData" explicitTag="0" />
+  <asn:GeneralizedTime name="Timestamp" explicitTag="1" optional="true" />
+  <asn:Integer name="Usec" explicitTag="2" backingType="int" optional="true" />
+  <asn:Integer name="SeqNumber" explicitTag="3" backingType="int" optional="true" />
+  <asn:AsnType name="SAddress" explicitTag="4" typeName="KrbHostAddress" />
+  <asn:AsnType name="RAddress" explicitTag="5" typeName="KrbHostAddress" optional="true" />
+  
+</asn:Sequence>

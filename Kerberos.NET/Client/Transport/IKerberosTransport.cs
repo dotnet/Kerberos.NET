@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Asn1;
 using Kerberos.NET.Configuration;
+using Kerberos.NET.Entities.ChangePassword;
 
 namespace Kerberos.NET.Transport
 {
@@ -42,5 +43,26 @@ namespace Kerberos.NET.Transport
             CancellationToken cancellation = default
         )
             where T : IAsn1ApplicationEncoder<T>, new();
+    }
+
+    public interface IKerberosTransport2: IKerberosTransport
+    {
+        Task<ReadOnlyMemory<byte>> SendMessage(
+            string domain,
+            ReadOnlyMemory<byte> req,
+            CancellationToken cancellation = default
+        );
+
+        Task<KrbChangePasswdRep> SendMessageChangePassword(
+            string domain,
+            KrbChangePasswdReq msg,
+            CancellationToken cancellation = default
+        );
+
+        Task<ReadOnlyMemory<byte>> SendMessageChangePassword(
+            string domain,
+            ReadOnlyMemory<byte> req,
+            CancellationToken cancellation = default
+        );
     }
 }
