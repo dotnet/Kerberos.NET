@@ -4,9 +4,9 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Cryptography.Asn1;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET.Crypto;
@@ -399,6 +399,95 @@ namespace Kerberos.NET.Credentials
             }
 
             signedMessage.CheckSignature(verifySignatureOnly: false);
+
+            VerifyKdcCertificate(signedMessage);
+        }
+
+        
+
+        // see https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-pkca/c83e95a4-ac5e-4519-b885-37a4d1b8d08b
+        private void VerifyKdcCertificate(SignedCms signedMessage)
+        {
+            if (signedMessage.SignerInfos.Count != 1)
+            {
+                throw new CryptographicException("Bad number of SignerInfo on KDC reply");
+            }
+
+            var dcCert = signedMessage.SignerInfos[0].Certificate;
+
+            // check hostname
+            // Dotnet 2.0 does not have MatchesHostname(hostname: Domain, allowWildcards: false, allowCommonName: false)
+            if (!CheckSubjectAltName(dcCert, Domain))
+            {
+                throw new CryptographicException($"KDC certificate does not match realm: {Domain}");
+            }
+
+            // check EKU
+            Oid X509EnhancedKeyUsage_KDC = new("1.3.6.1.5.2.3.5");
+            if (!CheckEKU(dcCert, X509EnhancedKeyUsage_KDC))
+            {
+                throw new CryptographicException($"KDC certificate missing EKU {X509EnhancedKeyUsage_KDC.Value} ({X509EnhancedKeyUsage_KDC.FriendlyName})");
+            }
+        }
+
+        private static bool CheckSubjectAltName(X509Certificate2 cert, string domain)
+        {
+            Oid subjectAltName = new("2.5.29.17");
+            foreach (X509Extension extension in cert.Extensions)
+            {
+                if (extension.Oid!.Value == subjectAltName.Value)
+                {
+                    if (CheckSubjectAltName(extension.RawData, domain))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CheckSubjectAltName(byte[] extension, string domain)
+        {
+            AsnReader r = new(extension, AsnEncodingRules.DER);
+            var s = r.ReadSequence();
+            while (s.HasData)
+            {
+                var t = s.PeekTag();
+                if (t.TagValue == 2 && t.TagClass == TagClass.ContextSpecific)
+                {
+                    var dnsName = s.ReadCharacterString(t, UniversalTagNumber.IA5String);
+
+                    if (dnsName.Equals(domain, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    _ = s.ReadEncodedValue(); // skip over
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CheckEKU(X509Certificate2 cert, Oid checkOid)
+        {
+            foreach (X509Extension ext in cert.Extensions)
+            {
+                if (ext as X509EnhancedKeyUsageExtension != null)
+                {
+                    OidCollection oids = ((X509EnhancedKeyUsageExtension)ext).EnhancedKeyUsages;
+                    foreach (Oid oid in oids)
+                    {
+                        if (oid.Value == checkOid.Value)
+                            return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static string TryExtractPrincipalName(X509Certificate2 cert)
