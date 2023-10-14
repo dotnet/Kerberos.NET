@@ -7,7 +7,6 @@ using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Kerberos.NET.Asn1;
 using Kerberos.NET.Dns;
 using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
@@ -18,6 +17,7 @@ namespace Kerberos.NET.Transport
     public class UdpKerberosTransport : KerberosTransportBase
     {
         private const string UdpServiceTemplate = "_kerberos._udp";
+        private const string UdpServiceTemplatePasswd = "_kpasswd._udp";
 
         private readonly ILogger logger;
 
@@ -28,10 +28,29 @@ namespace Kerberos.NET.Transport
             this.Enabled = true;
         }
 
-        public override async Task<T> SendMessage<T>(
+        public override async Task<ReadOnlyMemory<byte>> SendMessage(
             string domain,
             ReadOnlyMemory<byte> encoded,
             CancellationToken cancellation = default
+        )
+        {
+            return await SendMessageUDP(domain, encoded, cancellation, () => { return this.LocatePreferredKdc(domain, UdpServiceTemplate); });
+        }
+
+        public override async Task<ReadOnlyMemory<byte>> SendMessageChangePassword(
+            string domain,
+            ReadOnlyMemory<byte> encoded,
+            CancellationToken cancellation = default
+        )
+        {
+            return await SendMessageUDP(domain, encoded, cancellation, () => { return this.LocatePreferredKpasswd(domain, UdpServiceTemplatePasswd); });
+        }
+
+        private async Task<ReadOnlyMemory<byte>> SendMessageUDP(
+            string domain,
+            ReadOnlyMemory<byte> encoded,
+            CancellationToken cancellation,
+            Func<Task<Dns.DnsRecord>> locatePreferredServer
         )
         {
             if (this.Configuration.Defaults.UdpPreferenceLimit < encoded.Length)
@@ -39,13 +58,13 @@ namespace Kerberos.NET.Transport
                 throw new KerberosTransportException(new KrbError { ErrorCode = KerberosErrorCode.KRB_ERR_RESPONSE_TOO_BIG });
             }
 
-            var target = await this.LocatePreferredKdc(domain, UdpServiceTemplate);
+            var target = await locatePreferredServer();
 
             this.logger.LogTrace("UDP connecting to {Target} on port {Port}", target.Target, target.Port);
 
             try
             {
-                return await SendMessage<T>(encoded, target, cancellation);
+                return await SendMessage(encoded, target, cancellation);
             }
             catch (SocketException)
             {
@@ -54,8 +73,7 @@ namespace Kerberos.NET.Transport
             }
         }
 
-        private static async Task<T> SendMessage<T>(ReadOnlyMemory<byte> encoded, DnsRecord target, CancellationToken cancellation)
-            where T : IAsn1ApplicationEncoder<T>, new()
+        private static async Task<byte[]> SendMessage(ReadOnlyMemory<byte> encoded, DnsRecord target, CancellationToken cancellation)
         {
             using (var client = new UdpClient(target.Target, target.Port))
             {
@@ -67,7 +85,7 @@ namespace Kerberos.NET.Transport
 
                 var response = await client.ReceiveAsync().ConfigureAwait(false);
 
-                return Decode<T>(response.Buffer);
+                return response.Buffer;
             }
         }
     }

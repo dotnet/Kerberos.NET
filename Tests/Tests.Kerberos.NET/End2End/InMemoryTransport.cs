@@ -21,7 +21,7 @@ namespace Tests.Kerberos.NET
             this.Enabled = true;
         }
 
-        public override async Task<T> SendMessage<T>(
+        public override async Task<ReadOnlyMemory<byte>> SendMessage(
             string domain,
             ReadOnlyMemory<byte> req,
             CancellationToken cancellation = default
@@ -29,7 +29,7 @@ namespace Tests.Kerberos.NET
         {
             var response = await this.listener.Receive(req);
 
-            return Decode<T>(response);
+            return response;
         }
     }
 }

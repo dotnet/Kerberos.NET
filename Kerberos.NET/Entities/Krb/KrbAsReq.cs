@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Kerberos.NET.Asn1;
 using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
@@ -13,7 +14,7 @@ using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Entities
 {
-    public partial class KrbAsReq : IKerberosMessage
+    public partial class KrbAsReq : IKerberosMessage, IAsn1ApplicationEncoder<KrbAsReq>
     {
         public KrbAsReq()
         {
@@ -28,6 +29,11 @@ namespace Kerberos.NET.Entities
         public int KerberosProtocolVersionNumber => this.ProtocolVersionNumber;
 
         public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options)
+        {
+            return CreateAsReq(credential, options, null);
+        }
+
+        public static KrbAsReq CreateAsReq(KerberosCredential credential, AuthenticationOptions options, KrbPrincipalName tgtServicePrincipal)
         {
             if (credential == null)
             {
@@ -63,11 +69,7 @@ namespace Kerberos.NET.Entities
                     Nonce = GetNonce(),
                     RTime = CalculateRenewTime(kdcOptions, config),
                     Realm = credential.Domain,
-                    SName = new KrbPrincipalName
-                    {
-                        Type = PrincipalNameType.NT_SRV_INST,
-                        Name = new[] { "krbtgt", credential.Domain }
-                    },
+                    SName = tgtServicePrincipal ?? KrbPrincipalName.WellKnown.Krbtgt(credential.Domain),
                     Till = CalculateExpirationTime(config)
                 },
                 PaData = padata.ToArray()
@@ -144,6 +146,11 @@ namespace Kerberos.NET.Entities
                 credential.PrincipalNameType,
                 credential.Domain
             );
+        }
+
+        public KrbAsReq DecodeAsApplication(ReadOnlyMemory<byte> encoded)
+        {
+            return DecodeApplication(encoded);
         }
     }
 }

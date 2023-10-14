@@ -24,11 +24,18 @@ namespace Kerberos.NET.Entities
 
         public static bool CanDecode(ReadOnlyMemory<byte> encoded)
         {
-            var reader = new AsnReader(encoded, AsnEncodingRules.DER);
+            try
+            {
+                var reader = new AsnReader(encoded, AsnEncodingRules.DER);
 
-            var tag = reader.ReadTagAndLength(out _, out _);
+                var tag = reader.ReadTagAndLength(out _, out _);
 
-            return tag.HasSameClassAndValue(KrbErrorTag);
+                return tag.HasSameClassAndValue(KrbErrorTag);
+            }
+            catch (System.Security.Cryptography.CryptographicException)
+            {
+                return false;
+            }
         }
 
         public void StampServerTime()

@@ -109,7 +109,7 @@ namespace Tests.Kerberos.NET
 
             public override ClientDomainService ClientRealmService { get; } = new NoopClientRealmService();
 
-            public override Task<T> SendMessage<T>(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
+            public override Task<ReadOnlyMemory<byte>> SendMessage(string domain, ReadOnlyMemory<byte> req, CancellationToken cancellation = default)
             {
                 var cached = this.LocateKdc(domain, "_kerberos._foo");
 
@@ -136,7 +136,7 @@ namespace Tests.Kerberos.NET
                     }
                 }.EncodeApplication();
 
-                return Task.FromResult(Decode<T>(response));
+                return Task.FromResult(response);
             }
 
             private class NoopClientRealmService : ClientDomainService
@@ -146,7 +146,7 @@ namespace Tests.Kerberos.NET
                 {
                 }
 
-                protected override Task<IEnumerable<DnsRecord>> Query(string domain, string servicePrefix)
+                protected override Task<IEnumerable<DnsRecord>> Query(string domain, string servicePrefix, int defaultPort)
                 {
                     return Task.FromResult<IEnumerable<DnsRecord>>(new List<DnsRecord>
                     {

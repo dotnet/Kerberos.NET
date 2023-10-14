@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+	<AsnXml Include="Entities\ChangePassword\KrbChangePasswdData.xml" />	
     <AsnXml Include="Entities\Kkdcp\KdcProxyMessage.xml" />
     <AsnXml Include="Entities\Krb\KrbETypeList.xml" />
     <AsnXml Include="Entities\Krb\KrbApReq.xml" />
@@ -34,6 +35,7 @@
     <AsnXml Include="Entities\Krb\KrbEncAsRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncApRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncKdcRepPart.xml" />
+    <AsnXml Include="Entities\Krb\KrbEncKrbPrivPart.xml" />	
     <AsnXml Include="Entities\Krb\KrbEncTgsRepPart.xml" />
     <AsnXml Include="Entities\Krb\KrbEncTicketPart.xml" />
     <AsnXml Include="Entities\Krb\KrbError.xml" />
@@ -53,6 +55,7 @@
     <AsnXml Include="Entities\Krb\KrbPaPacRequest.xml" />
     <AsnXml Include="Entities\Krb\KrbPaS4uX509User.xml" />
     <AsnXml Include="Entities\Krb\KrbPrincipalName.xml" />
+	<AsnXml Include="Entities\Krb\KrbPriv.xml" />	
     <AsnXml Include="Entities\Krb\KrbS4uUserId.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsReq.xml" />
     <AsnXml Include="Entities\Krb\KrbTgsRep.xml" />
