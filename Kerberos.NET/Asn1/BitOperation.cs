@@ -43,10 +43,11 @@ namespace Kerberos.NET
             return AsBytes((int)longVal, littleEndian: littleEndian);
         }
 
+        public static ReadOnlySpan<byte> AsReadOnlySpan(this int val, bool littleEndian = false)
+            => AsBytes(val, littleEndian: littleEndian);
+
         public static long AsLong(this byte[] val, bool littleEndian = false)
-        {
-            return AsLong(val.AsSpan(), littleEndian);
-        }
+            => AsLong(val.AsSpan(), littleEndian);
 
         public static long AsLong(this ReadOnlySpan<byte> val, bool littleEndian = false)
         {
@@ -58,8 +59,6 @@ namespace Kerberos.NET
         }
 
         public static long AsLong(this ReadOnlyMemory<byte> val, bool littleEndian = false)
-        {
-            return AsLong(val.Span, littleEndian);
-        }
+            => AsLong(val.Span, littleEndian);
     }
 }

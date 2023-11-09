@@ -12,6 +12,7 @@ namespace Kerberos.NET.Entities
     public sealed class NegotiateContextToken : ContextToken
     {
         public NegotiateContextToken(GssApiToken gssToken)
+            : base(gssToken)
         {
             if (gssToken == null)
             {

@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -61,7 +61,7 @@ namespace Kerberos.NET
 
         public static object Parse(ReadOnlyMemory<byte> data)
         {
-            if (ParsedNonGssApiToken(data, out ContextToken token))
+            if (TryParseNonGssApiToken(data, out ContextToken token))
             {
                 return token;
             }
@@ -71,7 +71,20 @@ namespace Kerberos.NET
             return ContextToken.Parse(gss);
         }
 
-        private static bool ParsedNonGssApiToken(ReadOnlyMemory<byte> data, out ContextToken token)
+        private static bool TryParseNonGssApiToken(ReadOnlyMemory<byte> data, out ContextToken token)
+        {
+            try
+            {
+                return ParseNonGssApiToken(data, out token);
+            }
+            catch
+            {
+                token = null;
+                return false;
+            }
+        }
+
+        private static bool ParseNonGssApiToken(ReadOnlyMemory<byte> data, out ContextToken token)
         {
             // A caller may try and pass a token that isn't wrapped by GSS-API semantics
             // We should try and detect what it is and return that instead of treating

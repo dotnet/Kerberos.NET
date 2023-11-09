@@ -851,7 +851,7 @@ namespace <xsl:value-of select="@namespace" />
   <xsl:template match="asn:Integer" mode="DefaultTag">Asn1Tag.Integer</xsl:template>
 
   <xsl:template match="asn:BitString" mode="FieldDef">
-    <xsl:if test="@treatAsEnum">    public <xsl:value-of select="@enumType"/> <xsl:value-of select="@name"/> { get; set; }</xsl:if><xsl:if test="not(@treatAsEnum)">    public ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/> { get; set; }
+    <xsl:if test="@treatAsEnum">    public <xsl:value-of select="@enumType"/><xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/> { get; set; }</xsl:if><xsl:if test="not(@treatAsEnum)">    public ReadOnlyMemory&lt;byte&gt;<xsl:if test="@optional | parent::asn:Choice">?</xsl:if> <xsl:value-of select="@name"/> { get; set; }
     </xsl:if></xsl:template>
 
   <xsl:template match="asn:BitString" mode="CollectionElementType">ReadOnlyMemory&lt;byte&gt;</xsl:template>

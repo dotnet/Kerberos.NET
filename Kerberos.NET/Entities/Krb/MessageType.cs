@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -18,7 +18,8 @@ namespace Kerberos.NET.Entities
                     type <= MessageType.KRB_RESERVED17) ||
                    (type >= MessageType.KRB_SAFE &&
                     type <= MessageType.KRB_CRED) ||
-                    type == MessageType.KRB_ERROR;
+                    type == MessageType.KRB_ERROR ||
+                    type == MessageType.IAKERB_HEADER;
         }
     }
 
@@ -82,6 +83,11 @@ namespace Kerberos.NET.Entities
         /// <summary>
         /// Error response
         /// </summary>
-        KRB_ERROR = 30
+        KRB_ERROR = 30,
+
+        /// <summary>
+        /// IAKerb Message Prefix
+        /// </summary>
+        IAKERB_HEADER = 99
     }
 }

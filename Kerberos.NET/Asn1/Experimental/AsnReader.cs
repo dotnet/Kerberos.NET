@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -30,6 +30,8 @@ namespace System.Security.Cryptography.Asn1
         ///   An indication of whether or not the reader has remaining data available to process.
         /// </summary>
         public bool HasData => !this._data.IsEmpty;
+
+        public int RemainingBytes => this._data.Length;
 
         /// <summary>
         ///   Construct an <see cref="AsnReader"/> over <paramref name="data"/> with a given ruleset.
@@ -150,6 +152,20 @@ namespace System.Security.Cryptography.Asn1
             ReadOnlyMemory<byte> encodedValue = this.PeekEncodedValue();
             this._data = this._data.Slice(encodedValue.Length);
             return encodedValue;
+        }
+
+        public ReadOnlyMemory<byte> PeekRawBytes(int length)
+        {
+            return Slice(this._data, 0, length);
+        }
+
+        public ReadOnlyMemory<byte> ReadRawBytes(int length)
+        {
+            var rawBytes = this.PeekRawBytes(length);
+
+            this._data = this._data.Slice(rawBytes.Length);
+
+            return rawBytes;
         }
 
         private static bool TryReadLength(

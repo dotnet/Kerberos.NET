@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Reflection.Emit;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -462,7 +464,7 @@ namespace KerbDump
             Parallel.For(
                 0,
                 ticketBytes.Length,
-                new ParallelOptions { CancellationToken = this.cancellation.Token },
+                new ParallelOptions { CancellationToken = this.cancellation.Token, MaxDegreeOfParallelism = 1 },
                 (i, state) =>
                 {
                     var forwards = new ReadOnlyMemory<byte>(ticketBytes)[i..];
@@ -547,6 +549,10 @@ namespace KerbDump
             {
                 return ProcessKerberos(kerb, source);
             }
+            else if (parsedMessage is IAKerbContextToken iakerb)
+            {
+                return ProcessIAKerb(iakerb, source);
+            }
 
             try
             {
@@ -557,14 +563,50 @@ namespace KerbDump
             }
             catch { }
 
+            try
+            {
+                return ProcessUnknownMessage(message, "Unknown");
+            }
+            catch { }
+
             return (null, null);
+        }
+
+        private (object thing, string label) ProcessIAKerb(IAKerbContextToken iakerb, string source)
+        {
+            var (thing, label) = ProcessUnknownMessage(iakerb.Body, source);
+
+            return ExplodeObject(
+                new Dictionary<string, object>
+                {
+                    { "Wire", iakerb },
+                    { label, thing }
+                },
+                $"IAKerb Message ({source})"
+            );
+        }
+
+        private class PotentialKerberosMessages
+        {
+            public KrbAsReq AsReq { get; set; }
+            public KrbAsRep AsRep { get; set; }
+
+            public KrbTgsReq TgsReq { get; set; }
+            public KrbTgsRep TgsRep { get; set; }
+
+            public KrbError KrbError { get; set; }
         }
 
         private (object thing, string label) ProcessKdcProxy(KdcProxyMessage proxyMessage, string source)
         {
             var message = proxyMessage.UnwrapMessage();
 
-            var kdcBody = new
+            return ProcessUnknownMessage(message, source);
+        }
+
+        private (object thing, string label) ProcessUnknownMessage(ReadOnlyMemory<byte> message, string source)
+        {
+            var kdcBody = new PotentialKerberosMessages
             {
                 AsReq = TryDecode(message, m => KrbAsReq.DecodeApplication(m)),
                 AsRep = TryDecode(message, m => KrbAsRep.DecodeApplication(m)),
@@ -597,7 +639,7 @@ namespace KerbDump
             return (null, null);
         }
 
-        private static object TryDecode(ReadOnlyMemory<byte> kerbMessage, Func<ReadOnlyMemory<byte>, object> p)
+        private static T TryDecode<T>(ReadOnlyMemory<byte> kerbMessage, Func<ReadOnlyMemory<byte>, T> p)
         {
             try
             {
@@ -605,7 +647,7 @@ namespace KerbDump
             }
             catch
             {
-                return null;
+                return default;
             }
         }
 
@@ -627,7 +669,17 @@ namespace KerbDump
         {
             var parsed = MessageParser.Parse(token.InitialToken.MechToken.Value);
 
-            return ExplodeObject(parsed, $"Kerberos Message ({source})");
+            var (thing, label) = ProcessMessage(token.InitialToken.MechToken.Value, source);
+
+            return ExplodeObject(
+                new Dictionary<string, object>
+                {
+                    { "Wire", token },
+                    { "Mech Token", parsed },
+                    { label, thing }
+                },
+                $"Negotiate Message ({source})"
+            );
         }
 
         private (object thing, string label) ProcessNtlm(NtlmContextToken ntlm, string source)

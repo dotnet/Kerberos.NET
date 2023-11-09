@@ -11,10 +11,23 @@ namespace Kerberos.NET.Entities
     public sealed class KerberosContextToken : ContextToken
     {
         public KerberosContextToken(GssApiToken gssToken = null, ReadOnlyMemory<byte>? data = null)
+            : base(gssToken)
         {
             var kerb = data ?? gssToken?.Token;
 
-            this.KrbApReq = KrbApReq.DecodeApplication(kerb.Value);
+            if (!KrbApChoice.CanDecode(kerb.Value, out MessageType type))
+            {
+                throw new KerberosProtocolException();
+            }
+
+            if (type == MessageType.KRB_AP_REQ)
+            {
+                this.KrbApReq = KrbApReq.DecodeApplication(kerb.Value);
+            }
+            else if (type == MessageType.KRB_AS_REP)
+            {
+                this.KrbApRep = KrbApRep.DecodeApplication(kerb.Value);
+            }
         }
 
         public KrbApReq KrbApReq { get; set; }
@@ -22,9 +35,7 @@ namespace Kerberos.NET.Entities
         public KrbApRep KrbApRep { get; set; }
 
         public override DecryptedKrbApReq DecryptApReq(KeyTable keys)
-        {
-            return DecryptApReq(this.KrbApReq, keys);
-        }
+            => DecryptApReq(this.KrbApReq, keys);
 
         public override string ToString()
         {
