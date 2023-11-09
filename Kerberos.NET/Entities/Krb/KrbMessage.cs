@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -19,8 +19,11 @@ namespace Kerberos.NET.Entities
         /// <param name="message">The message to examine</param>
         /// <returns>Returns the possible <see cref="MessageType"/></returns>
         public static MessageType DetectMessageType(ReadOnlyMemory<byte> message)
+            => DetectMessageType(message, out _);
+
+        public static MessageType DetectMessageType(ReadOnlyMemory<byte> message, out int length)
         {
-            var tag = PeekTag(message);
+            var tag = PeekTag(message, out length);
 
             return DetectMessageType(tag);
         }
@@ -37,11 +40,15 @@ namespace Kerberos.NET.Entities
             return messageType;
         }
 
-        internal static Asn1Tag PeekTag(ReadOnlyMemory<byte> request)
+        internal static Asn1Tag PeekTag(ReadOnlyMemory<byte> request, out int length)
         {
-            AsnReader reader = new AsnReader(request, AsnEncodingRules.DER);
+            AsnReader reader = new(request, AsnEncodingRules.DER);
 
-            return reader.PeekTag();
+            var tag = reader.ReadTagAndLength(out int? maybeLength, out int _);
+
+            length = maybeLength ?? 0;
+
+            return tag;
         }
     }
 }

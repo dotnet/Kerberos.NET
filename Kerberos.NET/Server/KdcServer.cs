@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -87,7 +87,7 @@ namespace Kerberos.NET.Server
 
             // but we also need to process Kdc Proxy messages
 
-            var tag = KrbMessage.PeekTag(request);
+            var tag = KrbMessage.PeekTag(request, out _);
 
             if (tag == Asn1Tag.Sequence && this.options.Configuration.KdcDefaults.ProxyEnabled)
             {
@@ -190,7 +190,7 @@ namespace Kerberos.NET.Server
 
             var unwrapped = proxyMessage.UnwrapMessage(out KdcProxyMessageMode mode);
 
-            var tag = KrbMessage.PeekTag(unwrapped);
+            var tag = KrbMessage.PeekTag(unwrapped, out _);
 
             var response = await this.ProcessMessageCoreAsync(unwrapped, tag).ConfigureAwait(false);
 
