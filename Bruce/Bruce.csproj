@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <RootNamespace>Kerberos.NET.CommandLine</RootNamespace>
 
     <PackAsTool>true</PackAsTool>
@@ -40,5 +40,11 @@
     <ProjectReference Include="..\Kerberos.NET\Kerberos.NET.csproj" />
     <ProjectReference Include="..\Samples\KerbDumpCore\KerbDumpCore.csproj" />
   </ItemGroup>
+
+  <Target Name="RemoveTargetPlatformIdBeforePackingTool" BeforeTargets="_PackToolValidation">
+    <PropertyGroup>
+      <TargetPlatformIdentifier />
+    </PropertyGroup>
+  </Target>
 
 </Project>
