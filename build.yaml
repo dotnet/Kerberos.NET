@@ -163,10 +163,10 @@ stages:
             --azure-key-vault-url "$(SignKeyVaultUrl)"
           displayName: Sign packages
               
-          - publish: $(Pipeline.Workspace)/BuildPackages
-            displayName: Publish Signed Packages
-            artifact: SignedPackages
-              
-          - publish: $(Pipeline.Workspace)/Drop
-            displayName: Publish Signed Drop
-            artifact: SignedDrop
+        - publish: $(Pipeline.Workspace)/BuildPackages
+          displayName: Publish Signed Packages
+          artifact: SignedPackages
+            
+        - publish: $(Pipeline.Workspace)/Drop
+          displayName: Publish Signed Drop
+          artifact: SignedDrop
