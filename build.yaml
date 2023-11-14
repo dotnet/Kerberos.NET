@@ -97,76 +97,76 @@ stages:
       displayName: Publish Signing Scripts
       artifact: config
 
-  - stage: CodeSign
-    dependsOn: Build
-    condition: and(succeeded('Build'), not(eq(variables['build.reason'], 'PullRequest'))) # Only run this stage on pushes to the main branch
-    jobs:
-    - job: CodeSign
-      displayName: Code Signing
-      pool:
-        vmImage: windows-latest # Code signing must run on a Windows agent for Authenticode signing (dll/exe)
-      variables:
-      - group: Sign Client Credentials # This is a variable group with secrets in it 
-  
-      steps:
-  
-      # Retreive unsigned artifacts and file list
-      - download: current
-        artifact: config
-        displayName: Download signing file list
-  
-      - download: current
-        artifact: BuildPackages
-        displayName: Download build artifacts
-  
-      - task: UseDotNet@2
-        displayName: 'Use .NET SDK 6.x'
-        inputs:
-          version: 6.x
-  
-      # Install the code signing tool
-      - task: DotNetCoreCLI@2
-        inputs:
-          command: custom
-          custom: tool
-          arguments: install --tool-path . sign --version 0.9.0-beta.23127.3
-        displayName: Install SignTool tool
-  
-      # Run the signing command
-      - pwsh: |
-          .\sign code azure-key-vault `
-          "**/*.nupkg" `
-          --base-directory "$(Pipeline.Workspace)\BuildPackages" `
-          --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
-          --publisher-name "Kerberos.NET" `
-          --description "Kerberos.NET" `
-          --description-url "https://github.com/dotnet/Kerberos.NET" `
-          --azure-key-vault-tenant-id "$(SignTenantId)" `
-          --azure-key-vault-client-id "$(SignClientId)" `
-          --azure-key-vault-client-secret '$(SignClientSecret)' `
-          --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
-          --azure-key-vault-url "$(SignKeyVaultUrl)"
-        displayName: Sign packages
-        
-      - pwsh: |
-          .\sign code azure-key-vault `
-          "**/*.nupkg" `
-          --base-directory "$(Pipeline.Workspace)\drop" `
-          --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
-          --publisher-name "Bruce" `
-          --description "Command line client for Kerberos.NET" `
-          --description-url "https://github.com/dotnet/Kerberos.NET" `
-          --azure-key-vault-tenant-id "$(SignTenantId)" `
-          --azure-key-vault-client-id "$(SignClientId)" `
-          --azure-key-vault-client-secret '$(SignClientSecret)' `
-          --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
-          --azure-key-vault-url "$(SignKeyVaultUrl)"
-        displayName: Sign packages
-            
-      - publish: $(Pipeline.Workspace)/BuildPackages
-        displayName: Publish Signed Packages
-        artifact: SignedPackages
+- stage: CodeSign
+  dependsOn: Build
+  condition: and(succeeded('Build'), not(eq(variables['build.reason'], 'PullRequest'))) # Only run this stage on pushes to the main branch
+  jobs:
+  - job: CodeSign
+    displayName: Code Signing
+    pool:
+      vmImage: windows-latest # Code signing must run on a Windows agent for Authenticode signing (dll/exe)
+    variables:
+    - group: Sign Client Credentials # This is a variable group with secrets in it 
+
+    steps:
+
+    # Retreive unsigned artifacts and file list
+    - download: current
+      artifact: config
+      displayName: Download signing file list
+
+    - download: current
+      artifact: BuildPackages
+      displayName: Download build artifacts
+
+    - task: UseDotNet@2
+      displayName: 'Use .NET SDK 6.x'
+      inputs:
+        version: 6.x
+
+    # Install the code signing tool
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: custom
+        custom: tool
+        arguments: install --tool-path . sign --version 0.9.0-beta.23127.3
+      displayName: Install SignTool tool
+
+    # Run the signing command
+    - pwsh: |
+        .\sign code azure-key-vault `
+        "**/*.nupkg" `
+        --base-directory "$(Pipeline.Workspace)\BuildPackages" `
+        --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
+        --publisher-name "Kerberos.NET" `
+        --description "Kerberos.NET" `
+        --description-url "https://github.com/dotnet/Kerberos.NET" `
+        --azure-key-vault-tenant-id "$(SignTenantId)" `
+        --azure-key-vault-client-id "$(SignClientId)" `
+        --azure-key-vault-client-secret '$(SignClientSecret)' `
+        --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
+        --azure-key-vault-url "$(SignKeyVaultUrl)"
+      displayName: Sign packages
+      
+    - pwsh: |
+        .\sign code azure-key-vault `
+        "**/*.nupkg" `
+        --base-directory "$(Pipeline.Workspace)\drop" `
+        --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
+        --publisher-name "Bruce" `
+        --description "Command line client for Kerberos.NET" `
+        --description-url "https://github.com/dotnet/Kerberos.NET" `
+        --azure-key-vault-tenant-id "$(SignTenantId)" `
+        --azure-key-vault-client-id "$(SignClientId)" `
+        --azure-key-vault-client-secret '$(SignClientSecret)' `
+        --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
+        --azure-key-vault-url "$(SignKeyVaultUrl)"
+      displayName: Sign packages
           
-      - publish: $(Pipeline.Workspace)/Drop
-        displayName: Publish Signed Drop
-        artifact: SignedDrop
+    - publish: $(Pipeline.Workspace)/BuildPackages
+      displayName: Publish Signed Packages
+      artifact: SignedPackages
+        
+    - publish: $(Pipeline.Workspace)/Drop
+      displayName: Publish Signed Drop
+      artifact: SignedDrop
