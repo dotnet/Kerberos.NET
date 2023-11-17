@@ -21,7 +21,7 @@ stages:
 
     steps:
     - task: UseDotNet@2
-      displayName: 'Use .NET Core SDK 3.1.x'
+      displayName: 'Use .NET Core SDK 6.x'
       inputs:
         version: 6.x
         performMultiLevelLookup: true
@@ -96,6 +96,10 @@ stages:
     - publish: config
       displayName: Publish Signing Scripts
       artifact: config
+
+    - publish: drop
+      displayName: Publish drop
+      artifact: drop
 
 - stage: CodeSign
   dependsOn: Build
