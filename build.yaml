@@ -106,7 +106,7 @@ stages:
     pool:
       vmImage: windows-latest # Code signing must run on a Windows agent for Authenticode signing (dll/exe)
     variables:
-    - group: Sign Client Credentials # This is a variable group with secrets in it 
+    - group: Sign Client Secrets # This is a variable group with secrets in it 
 
     steps:
 
