@@ -167,6 +167,6 @@ stages:
       displayName: Publish Signed Packages
       artifact: SignedPackages
         
-    - publish: $(Pipeline.Workspace)/Drop
-      displayName: Publish Signed Drop
-      artifact: SignedDrop
+#    - publish: $(Pipeline.Workspace)/Drop
+#      displayName: Publish Signed Drop
+#      artifact: SignedDrop
