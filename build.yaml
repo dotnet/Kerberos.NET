@@ -146,22 +146,22 @@ stages:
         --azure-key-vault-client-secret "$(SignClientSecret)" `
         --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
         --azure-key-vault-url "$(SignKeyVaultUrl)"
-      displayName: Sign packages
+      displayName: Sign Kerberos.NET
       
-#    - pwsh: |
-#        .\sign code azure-key-vault `
-#        "**/*.nupkg" `
-#        --base-directory "$(Pipeline.Workspace)\drop" `
-#        --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
-#        --publisher-name "Bruce" `
-#        --description "Command line client for Kerberos.NET" `
-#        --description-url "https://github.com/dotnet/Kerberos.NET" `
-#        --azure-key-vault-tenant-id "$(SignTenantId)" `
-#        --azure-key-vault-client-id "$(SignClientId)" `
-#        --azure-key-vault-client-secret '$(SignClientSecret)' `
-#        --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
-#        --azure-key-vault-url "$(SignKeyVaultUrl)"
-#      displayName: Sign packages
+    - pwsh: |
+        .\sign code azure-key-vault `
+        "**/*.nupkg" `
+        --base-directory "$(Pipeline.Workspace)\drop" `
+        --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
+        --publisher-name "Bruce" `
+        --description "Command line client for Kerberos.NET" `
+        --description-url "https://github.com/dotnet/Kerberos.NET" `
+        --azure-key-vault-tenant-id "$(SignTenantId)" `
+        --azure-key-vault-client-id "$(SignClientId)" `
+        --azure-key-vault-client-secret '$(SignClientSecret)' `
+        --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
+        --azure-key-vault-url "$(SignKeyVaultUrl)"
+      displayName: Sign Bruce
           
     - publish: $(Pipeline.Workspace)/BuildPackages
       displayName: Publish Signed Packages
