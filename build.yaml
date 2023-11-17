@@ -97,10 +97,6 @@ stages:
       displayName: Publish Signing Scripts
       artifact: config
 
-    - publish: drop
-      displayName: Publish drop
-      artifact: drop
-
 - stage: CodeSign
   dependsOn: Build
   condition: and(succeeded('Build'), not(eq(variables['build.reason'], 'PullRequest'))) # Only run this stage on pushes to the main branch
@@ -155,7 +151,7 @@ stages:
     - pwsh: |
         .\sign code azure-key-vault `
         "**/*.nupkg" `
-        --base-directory "$(Pipeline.Workspace)\drop" `
+        --base-directory "$(Pipeline.Workspace)" `
         --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
         --publisher-name "Bruce" `
         --description "Command line client for Kerberos.NET" `
