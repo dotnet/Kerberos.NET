@@ -464,7 +464,7 @@ namespace KerbDump
             Parallel.For(
                 0,
                 ticketBytes.Length,
-                new ParallelOptions { CancellationToken = this.cancellation.Token, MaxDegreeOfParallelism = 1 },
+                new ParallelOptions { CancellationToken = this.cancellation.Token/*, MaxDegreeOfParallelism = 1*/ },
                 (i, state) =>
                 {
                     var forwards = new ReadOnlyMemory<byte>(ticketBytes)[i..];
@@ -488,7 +488,7 @@ namespace KerbDump
 
                         try
                         {
-                            var processed = ProcessMessage(backwards, "Decoded");
+                            var processed = ProcessMessage(backwards, "Decoded", this.cancellation.Token);
 
                             if (processed.thing != null && !state.IsStopped)
                             {
@@ -496,6 +496,10 @@ namespace KerbDump
 
                                 decoded = processed;
                             }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            break;
                         }
                         catch (Exception e) when (e is not InvalidOperationException)
                         {
@@ -513,8 +517,10 @@ namespace KerbDump
             }
         }
 
-        internal (object thing, string label) ProcessMessage(ReadOnlyMemory<byte> message, string source = null)
+        internal (object thing, string label) ProcessMessage(ReadOnlyMemory<byte> message, string source = null, CancellationToken token = default)
         {
+            token.ThrowIfCancellationRequested();
+
             object parsedMessage = null;
 
             try
