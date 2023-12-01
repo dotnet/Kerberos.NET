@@ -34,10 +34,7 @@ namespace Kerberos.NET.Entities
             return tag.HasSameClassAndValue(ApplicationTag);
         }
 
-        public KrbApReq DecodeAsApplication(ReadOnlyMemory<byte> data)
-        {
-            return DecodeApplication(data);
-        }
+        public KrbApReq DecodeAsApplication(ReadOnlyMemory<byte> data) => DecodeApplication(data);
 
         public static KrbApReq CreateApReq(
             KrbKdcRep tgsRep,

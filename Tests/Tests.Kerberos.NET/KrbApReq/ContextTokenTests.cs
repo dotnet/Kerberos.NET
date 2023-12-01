@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -23,6 +23,29 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(gss);
 
             MessageParser.Parse(gss);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(UnknownMechTypeException))]
+        public void GssContextToken_KerberosBaseNotReal()
+        {
+            var gss = GssApiToken.Encode(new Oid(MechType.KerberosV5Base), CreateFakeApReq());
+
+            Assert.IsNotNull(gss);
+
+            MessageParser.Parse(gss);
+        }
+
+        [TestMethod]
+        public void GssContextToken_KerberosMechType()
+        {
+            var gss = GssApiToken.Encode(new Oid(MechType.KerberosGssApi), CreateFakeApReq());
+
+            Assert.IsNotNull(gss);
+
+            var result = MessageParser.Parse(gss);
+
+            Assert.IsNotNull(result);
         }
 
         private static KrbApReq CreateFakeApReq()

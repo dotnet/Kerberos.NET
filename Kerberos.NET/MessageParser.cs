@@ -39,25 +39,13 @@ namespace Kerberos.NET
         //      Token optimisticToken
         // }
 
-        public static ContextToken ParseContext(ReadOnlyMemory<byte> data)
-        {
-            return Parse<ContextToken>(data);
-        }
+        public static ContextToken ParseContext(ReadOnlyMemory<byte> data) => Parse<ContextToken>(data);
 
-        public static NegotiateContextToken ParseNegotiate(ReadOnlyMemory<byte> data)
-        {
-            return Parse<NegotiateContextToken>(data);
-        }
+        public static NegotiateContextToken ParseNegotiate(ReadOnlyMemory<byte> data) => Parse<NegotiateContextToken>(data);
 
-        public static KerberosContextToken ParseKerberos(ReadOnlyMemory<byte> data)
-        {
-            return Parse<KerberosContextToken>(data);
-        }
+        public static KerberosContextToken ParseKerberos(ReadOnlyMemory<byte> data) => Parse<KerberosContextToken>(data);
 
-        public static T Parse<T>(ReadOnlyMemory<byte> data)
-        {
-            return (T)Parse(data);
-        }
+        public static T Parse<T>(ReadOnlyMemory<byte> data) => (T)Parse(data);
 
         public static object Parse(ReadOnlyMemory<byte> data)
         {
