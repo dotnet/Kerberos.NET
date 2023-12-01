@@ -12,7 +12,7 @@ namespace Kerberos.NET.Entities
     {
         public const string SPNEGO = "1.3.6.1.5.5.2";
         public const string KerberosV5Legacy = "1.2.840.48018.1.2.2";
-        public const string KerberosV5 = "1.3.6.1.5.2";
+        public const string KerberosV5Base = "1.3.6.1.5.2";
         public const string KerberosGssApi = "1.2.840.113554.1.2.2";
         public const string KerberosUser2User = "1.2.840.113554.1.2.2.3";
         public const string NTLM = "1.3.6.1.4.1.311.2.2.10";
@@ -25,7 +25,7 @@ namespace Kerberos.NET.Entities
             {
                 SPNEGO => "SPNEGO",
                 KerberosV5Legacy => "Kerberos V5 Legacy",
-                KerberosV5 => "Kerberos V5",
+                KerberosV5Base => "Kerberos V5",
                 KerberosGssApi => "Kerberos GSS API",
                 KerberosUser2User => "Kerberos User2User",
                 NTLM => "NTLM",

@@ -16,8 +16,8 @@ namespace Kerberos.NET.Entities
     {
         internal const int ApplicationTagValue = 14;
 
-        private static readonly Oid Kerberos5Oid = new Oid(MechType.KerberosV5);
-        private static readonly Oid SPNegoOid = new Oid(MechType.SPNEGO);
+        private static readonly Oid Kerberos5Oid = new(MechType.KerberosGssApi);
+        private static readonly Oid SPNegoOid = new(MechType.SPNEGO);
 
         public KrbApReq()
         {
@@ -34,10 +34,7 @@ namespace Kerberos.NET.Entities
             return tag.HasSameClassAndValue(ApplicationTag);
         }
 
-        public KrbApReq DecodeAsApplication(ReadOnlyMemory<byte> data)
-        {
-            return DecodeApplication(data);
-        }
+        public KrbApReq DecodeAsApplication(ReadOnlyMemory<byte> data) => DecodeApplication(data);
 
         public static KrbApReq CreateApReq(
             KrbKdcRep tgsRep,
