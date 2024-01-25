@@ -446,12 +446,31 @@ namespace Kerberos.NET.Client
 
             using (this.logger.BeginRequestScope(this.ScopeId))
             {
-                await this.ChangePasswordCredentialWithTgtCached(credential, newPassword, cancellation);
+                await this.ChangePasswordCredentialWithTgtCached(credential, null, null, newPassword, cancellation);
+            }
+        }
+
+        public async Task SetPassword(
+            KerberosCredential credential,
+            string targName,
+            string targRealm,
+            string newPassword,
+            CancellationToken cancellation = default)
+        {
+            await this.AuthenticateCore(credential, "kadmin/changepw");
+
+            var targNamePrinc = KrbPrincipalName.FromString(targName, null, targRealm);
+
+            using (this.logger.BeginRequestScope(this.ScopeId))
+            {
+                await this.ChangePasswordCredentialWithTgtCached(credential, targNamePrinc, targRealm, newPassword, cancellation);
             }
         }
 
         private async Task ChangePasswordCredentialWithTgtCached(
             KerberosCredential credential,
+            KrbPrincipalName targName,
+            string targRealm,
             string newPassword,
             CancellationToken cancellation = default)
         {
@@ -467,7 +486,7 @@ namespace Kerberos.NET.Client
             // create request
             KrbChangePasswdReq msg;
             KrbAuthenticator authenticator;
-            CreateRfc3244ChangePasswordRequest(newPassword: newPassword, tgtEntry: tgtEntry, out msg, out authenticator);
+            CreateRfc3244ChangePasswordRequest(newPassword, tgtEntry, targName, targRealm, out msg, out authenticator);
 
             // transmit using TCP
             var chPwRepl = await this.transport.SendMessageChangePassword(
@@ -489,7 +508,13 @@ namespace Kerberos.NET.Client
             }
         }
 
-        private static void CreateRfc3244ChangePasswordRequest(string newPassword, KerberosClientCacheEntry tgtEntry, out KrbChangePasswdReq msg, out KrbAuthenticator authenticator)
+        private static void CreateRfc3244ChangePasswordRequest(
+            string newPassword,
+            KerberosClientCacheEntry tgtEntry,
+            KrbPrincipalName targName,
+            string targRealm,
+            out KrbChangePasswdReq msg,
+            out KrbAuthenticator authenticator)
         {
             var rst = new RequestServiceTicket { };
             rst.ApOptions |= ApOptions.MutualRequired; // request sub-key
@@ -503,6 +528,14 @@ namespace Kerberos.NET.Client
 
             // create KRB-PRIV structure containing ChangePasswdData, enc w/ the sub session key
             var changeUserPassword = new KrbChangePasswdData { NewPasswd = Encoding.ASCII.GetBytes(newPassword) };
+            if (targName != null)
+            {
+                changeUserPassword.TargName = targName;
+            }
+            if (targRealm != null)
+            {
+                changeUserPassword.TargRealm = targRealm;
+            }
             var krbPrivEncPartDecrypted = new KrbEncKrbPrivPart
             {
                 UserData = changeUserPassword.Encode(),
