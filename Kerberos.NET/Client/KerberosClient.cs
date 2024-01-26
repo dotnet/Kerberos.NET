@@ -457,13 +457,25 @@ namespace Kerberos.NET.Client
             string newPassword,
             CancellationToken cancellation = default)
         {
+            if (targName is null)
+            {
+                throw new ArgumentNullException(nameof(targName));
+            }
+
+            if (targRealm is null)
+            {
+                // targRealm is required if targName is included (see RFC 3244)
+                // set targRealm to the same value as the principal changing the password
+                targRealm = credential.Domain;
+            }
+
             await this.AuthenticateCore(credential, "kadmin/changepw");
 
-            var targNamePrinc = KrbPrincipalName.FromString(targName, null, targRealm);
+            var targPrinc = KrbPrincipalName.FromString(targName, null, targRealm);
 
             using (this.logger.BeginRequestScope(this.ScopeId))
             {
-                await this.ChangePasswordCredentialWithTgtCached(credential, targNamePrinc, targRealm, newPassword, cancellation);
+                await this.ChangePasswordCredentialWithTgtCached(credential, targPrinc, targRealm, newPassword, cancellation);
             }
         }
 
@@ -504,6 +516,14 @@ namespace Kerberos.NET.Client
 
             if (resultCode != 0)
             {
+                // per RFC 3244 - 2. Protocol
+                // Result string should contain UTF-8 string, but this is not always the case for KRB5_KPASSWD_SOFTERROR
+                // My testing has shown that a change password may return a binary buffer, ex.
+                // 00-00-00-00-00-07-00-00-00-18-00-00-00-01-00-00-21-00-F5-59-80-00-00-00-00-C9-2A-69-C0-00
+                if (resultString.Any(c => c == '\0'))
+                {
+                    resultString = "Password change does not comply with password policy requirements.";
+                }
                 throw new Exception($"KPASSWD ERROR ({resultCodeString}): {resultString})");
             }
         }
