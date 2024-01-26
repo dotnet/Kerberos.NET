@@ -1033,6 +1033,150 @@ namespace Kerberos.NET.CommandLine {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Change password of the principal or set password of another principal..
+        /// </summary>
+        internal static string CommandLine_KerberosPassword {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password change succeeded for {0}..
+        /// </summary>
+        internal static string CommandLine_KerberosPassword_ChangeSuccess {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPassword_ChangeSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Running kpasswd change password for {0}....
+        /// </summary>
+        internal static string CommandLine_KerberosPassword_Changing {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPassword_Changing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error: Credential not found.
+        /// </summary>
+        internal static string CommandLine_KerberosPassword_CredNotFound {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPassword_CredNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to New password for {0}: .
+        /// </summary>
+        internal static string CommandLine_KerberosPassword_NewPassPrompt {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPassword_NewPassPrompt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password for {0}: .
+        /// </summary>
+        internal static string CommandLine_KerberosPassword_PassPrompt {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPassword_PassPrompt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password set succeeded for {0}..
+        /// </summary>
+        internal static string CommandLine_KerberosPassword_SetSuccess {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPassword_SetSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Running kpasswd set password for {0}....
+        /// </summary>
+        internal static string CommandLine_KerberosPassword_Setting {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPassword_Setting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide the path to a configuration to use for initialization..
+        /// </summary>
+        internal static string CommandLine_KerberosPasswordCommand_Config {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPasswordCommand_Config", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide new password to set..
+        /// </summary>
+        internal static string CommandLine_KerberosPasswordCommand_NewPassword {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPasswordCommand_NewPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Optionally provide the password to authenticate the user..
+        /// </summary>
+        internal static string CommandLine_KerberosPasswordCommand_Password {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPasswordCommand_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The principal name to use otherwise uses the current system user..
+        /// </summary>
+        internal static string CommandLine_KerberosPasswordCommand_Principal {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPasswordCommand_Principal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide the realm name to authenticate against..
+        /// </summary>
+        internal static string CommandLine_KerberosPasswordCommand_Realm {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPasswordCommand_Realm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide the principal name of user to set password of..
+        /// </summary>
+        internal static string CommandLine_KerberosPasswordCommand_TargName {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPasswordCommand_TargName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Provide the realm name of user to set password of..
+        /// </summary>
+        internal static string CommandLine_KerberosPasswordCommand_TargRealm {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPasswordCommand_TargRealm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Include detailed logging information in the kpasswd request..
+        /// </summary>
+        internal static string CommandLine_KerberosPasswordCommand_Verbose {
+            get {
+                return ResourceManager.GetString("CommandLine_KerberosPasswordCommand_Verbose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Locate and ping a KDC for the provided user to get pre-auth details..
         /// </summary>
         internal static string CommandLine_KerberosPing {

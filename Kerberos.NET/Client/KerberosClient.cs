@@ -446,12 +446,43 @@ namespace Kerberos.NET.Client
 
             using (this.logger.BeginRequestScope(this.ScopeId))
             {
-                await this.ChangePasswordCredentialWithTgtCached(credential, newPassword, cancellation);
+                await this.ChangePasswordCredentialWithTgtCached(credential, null, null, newPassword, cancellation);
+            }
+        }
+
+        public async Task SetPassword(
+            KerberosCredential credential,
+            string targName,
+            string targRealm,
+            string newPassword,
+            CancellationToken cancellation = default)
+        {
+            if (targName is null)
+            {
+                throw new ArgumentNullException(nameof(targName));
+            }
+
+            if (targRealm is null)
+            {
+                // targRealm is required if targName is included (see RFC 3244)
+                // set targRealm to the same value as the principal changing the password
+                targRealm = credential.Domain;
+            }
+
+            await this.AuthenticateCore(credential, "kadmin/changepw");
+
+            var targPrinc = KrbPrincipalName.FromString(targName, null, targRealm);
+
+            using (this.logger.BeginRequestScope(this.ScopeId))
+            {
+                await this.ChangePasswordCredentialWithTgtCached(credential, targPrinc, targRealm, newPassword, cancellation);
             }
         }
 
         private async Task ChangePasswordCredentialWithTgtCached(
             KerberosCredential credential,
+            KrbPrincipalName targName,
+            string targRealm,
             string newPassword,
             CancellationToken cancellation = default)
         {
@@ -467,7 +498,7 @@ namespace Kerberos.NET.Client
             // create request
             KrbChangePasswdReq msg;
             KrbAuthenticator authenticator;
-            CreateRfc3244ChangePasswordRequest(newPassword: newPassword, tgtEntry: tgtEntry, out msg, out authenticator);
+            CreateRfc3244ChangePasswordRequest(newPassword, tgtEntry, targName, targRealm, out msg, out authenticator);
 
             // transmit using TCP
             var chPwRepl = await this.transport.SendMessageChangePassword(
@@ -485,11 +516,25 @@ namespace Kerberos.NET.Client
 
             if (resultCode != 0)
             {
+                // per RFC 3244 - 2. Protocol
+                // Result string should contain UTF-8 string, but this is not always the case for KRB5_KPASSWD_SOFTERROR
+                // My testing has shown that a change password may return a binary buffer, ex.
+                // 00-00-00-00-00-07-00-00-00-18-00-00-00-01-00-00-21-00-F5-59-80-00-00-00-00-C9-2A-69-C0-00
+                if (resultString.Any(c => c == '\0'))
+                {
+                    resultString = "Password change does not comply with password policy requirements.";
+                }
                 throw new Exception($"KPASSWD ERROR ({resultCodeString}): {resultString})");
             }
         }
 
-        private static void CreateRfc3244ChangePasswordRequest(string newPassword, KerberosClientCacheEntry tgtEntry, out KrbChangePasswdReq msg, out KrbAuthenticator authenticator)
+        private static void CreateRfc3244ChangePasswordRequest(
+            string newPassword,
+            KerberosClientCacheEntry tgtEntry,
+            KrbPrincipalName targName,
+            string targRealm,
+            out KrbChangePasswdReq msg,
+            out KrbAuthenticator authenticator)
         {
             var rst = new RequestServiceTicket { };
             rst.ApOptions |= ApOptions.MutualRequired; // request sub-key
@@ -503,6 +548,14 @@ namespace Kerberos.NET.Client
 
             // create KRB-PRIV structure containing ChangePasswdData, enc w/ the sub session key
             var changeUserPassword = new KrbChangePasswdData { NewPasswd = Encoding.ASCII.GetBytes(newPassword) };
+            if (targName != null)
+            {
+                changeUserPassword.TargName = targName;
+            }
+            if (targRealm != null)
+            {
+                changeUserPassword.TargRealm = targRealm;
+            }
             var krbPrivEncPartDecrypted = new KrbEncKrbPrivPart
             {
                 UserData = changeUserPassword.Encode(),

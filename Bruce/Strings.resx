@@ -441,6 +441,54 @@
   <data name="CommandLine_KerberosListCommand_Verbose" xml:space="preserve">
     <value>Displays all data about the cache.</value>
   </data>
+  <data name="CommandLine_KerberosPassword" xml:space="preserve">
+    <value>Change password of the principal or set password of another principal.</value>
+  </data>
+  <data name="CommandLine_KerberosPasswordCommand_Config" xml:space="preserve">
+    <value>Provide the path to a configuration to use for initialization.</value>
+  </data>
+  <data name="CommandLine_KerberosPasswordCommand_Principal" xml:space="preserve">
+    <value>The principal name to use otherwise uses the current system user.</value>
+  </data>
+  <data name="CommandLine_KerberosPasswordCommand_Realm" xml:space="preserve">
+    <value>Provide the realm name to authenticate against.</value>
+  </data>
+  <data name="CommandLine_KerberosPasswordCommand_Password" xml:space="preserve">
+    <value>Optionally provide the password to authenticate the user.</value>
+  </data>
+  <data name="CommandLine_KerberosPasswordCommand_NewPassword" xml:space="preserve">
+    <value>Provide new password to set.</value>
+  </data>
+  <data name="CommandLine_KerberosPasswordCommand_TargName" xml:space="preserve">
+    <value>Provide the principal name of user to set password of.</value>
+  </data>
+  <data name="CommandLine_KerberosPasswordCommand_TargRealm" xml:space="preserve">
+    <value>Provide the realm name of user to set password of.</value>
+  </data>
+  <data name="CommandLine_KerberosPasswordCommand_Verbose" xml:space="preserve">
+    <value>Include detailed logging information in the kpasswd request.</value>
+  </data>
+  <data name="CommandLine_KerberosPassword_PassPrompt" xml:space="preserve">
+    <value>Password for {0}: </value>
+  </data>
+  <data name="CommandLine_KerberosPassword_NewPassPrompt" xml:space="preserve">
+    <value>New password for {0}: </value>
+  </data>
+  <data name="CommandLine_KerberosPassword_CredNotFound" xml:space="preserve">
+    <value>Error: Credential not found</value>
+  </data>
+  <data name="CommandLine_KerberosPassword_Changing" xml:space="preserve">
+    <value>Running kpasswd change password for {0}...</value>
+  </data>
+  <data name="CommandLine_KerberosPassword_Setting" xml:space="preserve">
+    <value>Running kpasswd set password for {0}...</value>
+  </data>
+  <data name="CommandLine_KerberosPassword_ChangeSuccess" xml:space="preserve">
+    <value>Password change succeeded for {0}.</value>
+  </data>
+  <data name="CommandLine_KerberosPassword_SetSuccess" xml:space="preserve">
+    <value>Password set succeeded for {0}.</value>
+  </data>
   <data name="CommandLine_KerberosPing" xml:space="preserve">
     <value>Locate and ping a KDC for the provided user to get pre-auth details.</value>
   </data>
