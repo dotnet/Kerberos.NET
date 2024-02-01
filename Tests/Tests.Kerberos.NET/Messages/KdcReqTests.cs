@@ -3,6 +3,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System.IO;
 using System.Linq;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,7 +16,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParseAsReq()
         {
-            var asReqBin = ReadDataFile("messages\\as-req").Skip(4).ToArray();
+            var asReqBin = ReadDataFile(Path.Combine("Messages", "as-req")).Skip(4).ToArray();
 
             var asreq = KrbAsReq.DecodeApplication(asReqBin);
 
@@ -29,7 +30,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParseAsReqWithPaData()
         {
-            var asReqBin = ReadDataFile("messages\\as-req-preauth").Skip(4).ToArray();
+            var asReqBin = ReadDataFile(Path.Combine("Messages", "as-req-preauth")).Skip(4).ToArray();
 
             var asreq = KrbAsReq.DecodeApplication(asReqBin);
 

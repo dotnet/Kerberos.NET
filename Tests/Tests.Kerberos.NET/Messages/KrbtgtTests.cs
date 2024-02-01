@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
@@ -43,7 +44,7 @@ namespace Tests.Kerberos.NET
             var krbtgtKey = new KerberosKey(key: Key, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96);
             var longUserTermKey = new KerberosKey("P@ssw0rd!", salt: "CORP.IDENTITYINTERVENTION.COMtestuser");
 
-            var krbAsRepBytes = ReadDataFile("messages\\as-rep").Skip(4).ToArray();
+            var krbAsRepBytes = ReadDataFile(Path.Combine("Messages", "as-rep")).Skip(4).ToArray();
 
             var asRep = new KrbAsRep().DecodeAsApplication(krbAsRepBytes);
 

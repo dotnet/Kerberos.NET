@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Kerberos.NET.Configuration;
@@ -250,7 +251,7 @@ namespace Tests.Kerberos.NET
 
         private static ConfigurationSectionList ParseConfiguration()
         {
-            var file = ReadDataFile("Configuration\\krb5.conf");
+            var file = ReadDataFile(Path.Combine("Configuration", "krb5.conf"));
 
             return Krb5ConfigurationSerializer.Deserialize(Encoding.Default.GetString(file));
         }

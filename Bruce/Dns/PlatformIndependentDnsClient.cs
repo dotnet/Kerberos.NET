@@ -11,6 +11,8 @@ namespace Kerberos.NET.CommandLine.Dns
     {
         private static readonly WindowsDnsQuery WindowsDns = new WindowsDnsQuery();
 
+        public bool Debug { get; set; }
+
         public async Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type)
         {
             if (WindowsDns.IsSupported)

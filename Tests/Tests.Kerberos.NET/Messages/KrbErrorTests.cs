@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
@@ -18,7 +19,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ErrorPreAuthRoundtrip()
         {
-            var krbErrBin = ReadDataFile("messages\\krb-error-preauth-required").Skip(4).ToArray();
+            var krbErrBin = ReadDataFile(Path.Combine("Messages", "krb-error-preauth-required")).Skip(4).ToArray();
 
             var err = KrbError.DecodeApplication(krbErrBin);
 
@@ -30,7 +31,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void KrbErrorParseEtypeInfo()
         {
-            var krbErrBin = ReadDataFile("messages\\krb-error-preauth-required").Skip(4).ToArray();
+            var krbErrBin = ReadDataFile(Path.Combine("Messages", "krb-error-preauth-required")).Skip(4).ToArray();
 
             var err = KrbError.DecodeApplication(krbErrBin);
 

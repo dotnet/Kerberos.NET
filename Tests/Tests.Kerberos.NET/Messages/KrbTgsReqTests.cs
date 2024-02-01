@@ -3,6 +3,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System.IO;
 using System.Linq;
 using System.Security;
 using Kerberos.NET.Crypto;
@@ -23,7 +24,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void TgsParse()
         {
-            var tgsReqBytes = ReadDataFile("messages\\tgs-req-testuser-host-app03").Skip(4).ToArray();
+            var tgsReqBytes = ReadDataFile(Path.Combine("Messages", "tgs-req-testuser-host-app03")).Skip(4).ToArray();
 
             var tgsReq = KrbTgsReq.DecodeApplication(tgsReqBytes);
 
@@ -64,7 +65,7 @@ namespace Tests.Kerberos.NET
 
         private static void RetrieveS4u(out KrbTgsReq tgsReq, out KrbEncTicketPart krbtgt)
         {
-            var tgsReqBytes = ReadDataFile("messages\\tgs-req-app2-s4u-self").Skip(4).ToArray();
+            var tgsReqBytes = ReadDataFile(Path.Combine("Messages", "tgs-req-app2-s4u-self")).Skip(4).ToArray();
 
             tgsReq = KrbTgsReq.DecodeApplication(tgsReqBytes);
             Assert.IsNotNull(tgsReq);
