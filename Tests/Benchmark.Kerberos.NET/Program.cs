@@ -141,11 +141,13 @@ namespace Benchmark.Kerberos.NET
         }
     }
 
-    class Program
+    public class Program
     {
         private static readonly EventWaitHandle WaitForAllProcessesToStart = new EventWaitHandle(false, EventResetMode.ManualReset, "KerbBenchmarkRunnerWaitForAllProcesses");
 
-        static async Task Main(string[] args)
+        static void Main(string[] args) => MainAsync(args).Wait();
+
+        static async Task MainAsync(string[] args)
         {
             var cmd = CommandLineParameters.Parse(args);
 
@@ -216,7 +218,7 @@ namespace Benchmark.Kerberos.NET
             }
         }
 
-        public static IEnumerable<List<T>> SplitList<T>(List<T> locations, int size)
+        private static IEnumerable<List<T>> SplitList<T>(List<T> locations, int size)
         {
             for (int i = 0; i < locations.Count; i += size)
             {
