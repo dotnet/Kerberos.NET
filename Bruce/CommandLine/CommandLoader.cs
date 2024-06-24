@@ -61,7 +61,16 @@ namespace Kerberos.NET.CommandLine
 
             foreach (var assembly in assemblies)
             {
-                var types = assembly.GetTypes().Where(t => t.GetCustomAttribute<CommandLineCommandAttribute>() != null);
+                IEnumerable<Type> types = Array.Empty<Type>();
+
+                try
+                {
+                    types = assembly.GetTypes().Where(t => t.GetCustomAttribute<CommandLineCommandAttribute>() != null);
+                }
+                catch (ReflectionTypeLoadException rex)
+                {
+                    Debug.WriteLine(rex);
+                }
 
                 foreach (var type in types)
                 {
