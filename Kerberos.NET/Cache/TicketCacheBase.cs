@@ -158,7 +158,7 @@ namespace Kerberos.NET
 
                 if (cacheEntry != null && !cacheEntry.IsExpired(this.Configuration.Defaults.ClockSkew))
                 {
-                    await (this.Refresh?.Invoke(cacheEntry))?.ConfigureAwait(false);
+                    await (this.Refresh?.Invoke(cacheEntry) ?? Task.CompletedTask).ConfigureAwait(false);
                 }
             }
 
