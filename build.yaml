@@ -151,7 +151,7 @@ stages:
     - pwsh: |
         .\sign code azure-key-vault `
         "**/*.nupkg" `
-        --base-directory "$(Pipeline.Workspace)" `
+        --base-directory "$(Pipeline.Workspace)\drop" `
         --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
         --publisher-name "Bruce" `
         --description "Command line client for Kerberos.NET" `
@@ -167,6 +167,6 @@ stages:
       displayName: Publish Signed Packages
       artifact: SignedPackages
         
-#    - publish: $(Pipeline.Workspace)/Drop
-#      displayName: Publish Signed Drop
-#      artifact: SignedDrop
+    - publish: $(Pipeline.Workspace)/Drop
+      displayName: Publish Signed Drop
+      artifact: SignedDrop
