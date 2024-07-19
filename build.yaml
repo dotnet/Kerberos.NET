@@ -119,6 +119,10 @@ stages:
       artifact: BuildPackages
       displayName: Download build artifacts
 
+    - download: current
+      artifact: drop
+      displayName: Download drop build artifacts
+
     - task: UseDotNet@2
       displayName: 'Use .NET SDK 6.x'
       inputs:
@@ -147,10 +151,6 @@ stages:
         --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
         --azure-key-vault-url "$(SignKeyVaultUrl)"
       displayName: Sign Kerberos.NET
-
-    - pwsh: |
-        dir
-      displayName: Sign Bruce
 
     - pwsh: |
         .\sign code azure-key-vault `
