@@ -147,7 +147,11 @@ stages:
         --azure-key-vault-certificate "$(SignKeyVaultCertificate)" `
         --azure-key-vault-url "$(SignKeyVaultUrl)"
       displayName: Sign Kerberos.NET
-      
+
+    - pwsh: |
+        dir
+      displayName: Sign Bruce
+
     - pwsh: |
         .\sign code azure-key-vault `
         "**/*.nupkg" `
