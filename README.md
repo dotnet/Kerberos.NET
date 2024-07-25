@@ -11,9 +11,9 @@ This project is supported by the [.NET Foundation](https://dotnetfoundation.org)
 
 ### Microsoft Support
 
-This library is NOT officially supported by Microsoft. If you are using it via Oracle's [ODP.NET](https://www.oracle.com/database/technologies/appdev/dotnet/odp.html), please contact Oracle support, even if you know that the problem is in Kerberos.NET. Microsoft will close servicing cases created directly with Microsoft for Kerberos.NET.
+This library is NOT officially supported by Microsoft. If you are using it via Oracle's [ODP.NET](https://www.oracle.com/database/technologies/appdev/dotnet/odp.html), Kerberos.NET is supported only via Oracle Support. You must contact Oracle Support, even if you know that the problem is in Kerberos.NET. Oracle Support will work with Microsoft directly if the problem exists in Kerberos.NET. Microsoft will close support cases created directly with Microsoft for Kerberos.NET.
 
-To summarize: This repo is NOT officially supported by Microsoft, despite the fact that some Microsoft employees might be managing it and contributing to it. They are doing it either in their free time, or partially as work time for internal usage, without any SLA from Microsoft (or from Microsoft employees).
+To summarize: This repo is NOT officially supported by Microsoft, despite the fact that some Microsoft employees might be managing it and contributing to it. They are doing it either in their free time, or partially as work time for internal usage, without any SLA from Microsoft (or from Microsoft employees). [ODP.NET](https://www.oracle.com/database/technologies/appdev/dotnet/odp.html) usage of Kerberos.NET is supported only through Oracle Support.
 
 # What is it?
 
