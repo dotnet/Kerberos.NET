@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -30,7 +30,10 @@ namespace Kerberos.NET.Entities
             buffer.WriteInt16LittleEndian(this.ReservedType);
             buffer.WriteInt32LittleEndian(this.ReservedFieldSize);
 
-            buffer.WriteDeferredConformantArray<byte>(this.ReservedField.Span);
+            // This.is the ReservedField that should be written to buffer as:
+            // buffer.WriteDeferredConformantArray<byte>(this.ReservedField.Span)
+            // However, it's currently reserved and should be 0
+            buffer.WriteInt32LittleEndian(0);
         }
 
         private static ReadOnlySpan<byte> Compress(ClaimsSet claimsSet, CompressionFormat compressionFormat, out int originalSize)

@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -32,6 +32,69 @@ namespace Tests.Kerberos.NET
             "Y1B5B/iEXp4hwNTsUiozw+CwTu78f+mpV2HBx31cV5VIScdZrqgYa3D51+CaBYsLSOe5gZkMBme+eNHzIRW95OCkpsY1K7F4nuNO0pwO73GvX22eliqOEuVPa1/82fgyD9y0rXjNwHbTHRrmef" +
             "QpXsMxbf8OTdTpPUjM+YO15nLKpyU1OkLkPG2OotRgIp0NoeKcyaSBsTCBrqADAgEXooGmBIGj24IhfgqoJAvOcADQ4hEiN9rrnB1iG43jBJqvsZlPtiy60LMNDKQEiQrW5yNca11V8ZJP0iPG" +
             "xEmequOqPQvcSAk4I3EpzYH7wcdvBN/Cie0xUC6nrLJAoO1sScn7iiR2xKwBwOLWSvJzUa5XZ7OlelLQjYCp2r3+I6TMPf8OUEvuhzSfKm5rBiHpR9owA83+RsGtXTAQsFZ8bghEsO8Q9QRq9A==";
+
+
+        [TestMethod]
+        public void NdrClientClaimsEncoding()
+        {
+            byte[] encodedClientClaims =
+               {0x01, 0x10, 0x08, 0x00, 0xcc, 0xcc, 0xcc, 0xcc, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x02, 0x00, 0xe8, 0x00, 0x00, 0x00, 0x04, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0xe8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0xe8, 0x00, 0x00, 0x00, 0x01, 0x10, 0x08, 0x00, 0xcc, 0xcc, 0xcc, 0xcc, 0xd8, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x02, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+                0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x08, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00,
+                0x0c, 0x00, 0x02, 0x00, 0x03, 0x00, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x10, 0x00, 0x02, 0x00,
+                0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x31, 0x00, 0x32, 0x00,
+                0x33, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x14, 0x00, 0x02, 0x00, 0x37, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x37, 0x00, 0x00, 0x00, 0x65, 0x00, 0x79, 0x00, 0x4a, 0x00, 0x30, 0x00,
+                0x65, 0x00, 0x58, 0x00, 0x41, 0x00, 0x69, 0x00, 0x4f, 0x00, 0x69, 0x00, 0x4a, 0x00, 0x4b, 0x00,
+                0x56, 0x00, 0x31, 0x00, 0x51, 0x00, 0x69, 0x00, 0x4c, 0x00, 0x43, 0x00, 0x4a, 0x00, 0x68, 0x00,
+                0x62, 0x00, 0x47, 0x00, 0x63, 0x00, 0x69, 0x00, 0x4f, 0x00, 0x69, 0x00, 0x4a, 0x00, 0x53, 0x00,
+                0x55, 0x00, 0x7a, 0x00, 0x49, 0x00, 0x31, 0x00, 0x4e, 0x00, 0x69, 0x00, 0x49, 0x00, 0x73, 0x00,
+                0x49, 0x00, 0x6e, 0x00, 0x67, 0x00, 0x31, 0x00, 0x64, 0x00, 0x43, 0x00, 0x49, 0x00, 0x36, 0x00,
+                0x49, 0x00, 0x6b, 0x00, 0x31, 0x00, 0x48, 0x00, 0x54, 0x00, 0x48, 0x00, 0x46, 0x00, 0x71, 0x00,
+                0x4f, 0x00, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+            ClaimEntry entry = new ClaimEntry
+            {
+                Id = "123",
+                Type = ClaimType.CLAIM_TYPE_STRING,
+                Values = new List<object> { "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik1HTHFqOT" }
+            };
+
+            entry.Count = entry.Values.Count;
+
+            ClaimsArray array = new ClaimsArray
+            {
+                ClaimSource = ClaimSourceType.CLAIMS_SOURCE_TYPE_AD,
+                ClaimEntries = new List<ClaimEntry> { entry },
+                Count = 1
+            };
+
+            ClaimsSet claims = new ClaimsSet
+            {
+                ReservedType = 0,
+                ClaimsArray = new List<ClaimsArray> { array },
+                ReservedField = ReadOnlyMemory<byte>.Empty,
+                Count = 1,
+                ReservedFieldSize = 0
+            };
+
+            ClaimsSetMetadata ClientClaims = new ClaimsSetMetadata
+            {
+                ClaimsSet = claims,
+                CompressionFormat = CompressionFormat.COMPRESSION_FORMAT_NONE,
+                ReservedType = 0,
+                ReservedField = ReadOnlyMemory<byte>.Empty,
+                ReservedFieldSize = 0
+            };
+
+            var encoded = ClientClaims.Marshal();
+
+            Assert.IsTrue(encoded.Span.SequenceEqual(encodedClientClaims));
+        }
 
         private static async Task<PrivilegedAttributeCertificate> GeneratePac(bool includeClaims)
         {
@@ -155,41 +218,41 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(signature.Signature.Span.SequenceEqual(signatureDecoded.Signature.Span));
         }
 
-        // [TestMethod]
-        // public async Task NdrClaimsRoundtrip()
-        // {
-        //    var pac = await GeneratePac(true);
+        [TestMethod]
+        public async Task NdrClaimsRoundtrip()
+        {
+            var pac = await GeneratePac(true);
 
-        // var claims = pac.ClientClaims;
+            var claims = pac.ClientClaims;
 
-        // var claimsDecoded = TestPacEncoding(claims);
+            var claimsDecoded = TestPacEncoding(claims);
 
-        // Assert.IsNotNull(claimsDecoded);
+            Assert.IsNotNull(claimsDecoded);
 
-        // Assert.AreEqual(claims.ClaimsSet.ClaimsArray.Count(), claimsDecoded.ClaimsSet.ClaimsArray.Count());
+            Assert.AreEqual(claims.ClaimsSet.ClaimsArray.Count(), claimsDecoded.ClaimsSet.ClaimsArray.Count());
 
-        // for (var i = 0; i < claims.ClaimsSet.ClaimsArray.Count(); i++)
-        //    {
-        //        var left = claims.ClaimsSet.ClaimsArray.ElementAt(i);
-        //        var right = claimsDecoded.ClaimsSet.ClaimsArray.ElementAt(i);
+            for (var i = 0; i < claims.ClaimsSet.ClaimsArray.Count(); i++)
+            {
+                var left = claims.ClaimsSet.ClaimsArray.ElementAt(i);
+                var right = claimsDecoded.ClaimsSet.ClaimsArray.ElementAt(i);
 
-        // Assert.AreEqual(left.ClaimSource, right.ClaimSource);
+                Assert.AreEqual(left.ClaimSource, right.ClaimSource);
 
-        // Assert.AreEqual(left.ClaimEntries.Count(), right.ClaimEntries.Count());
+                Assert.AreEqual(left.ClaimEntries.Count(), right.ClaimEntries.Count());
 
-        // for (var c = 0; c < left.ClaimEntries.Count(); c++)
-        //        {
-        //            var claimLeft = left.ClaimEntries.ElementAt(c);
-        //            var claimRight = right.ClaimEntries.ElementAt(c);
+                for (var c = 0; c < left.ClaimEntries.Count(); c++)
+                {
+                    var claimLeft = left.ClaimEntries.ElementAt(c);
+                    var claimRight = right.ClaimEntries.ElementAt(c);
 
-        // Assert.AreEqual(claimLeft.Type, claimRight.Type);
-        //            Assert.AreEqual(claimLeft.Id, claimRight.Id);
-        //            Assert.AreEqual(claimLeft.Values.Count(), claimRight.Values.Count());
+                    Assert.AreEqual(claimLeft.Type, claimRight.Type);
+                    Assert.AreEqual(claimLeft.Id, claimRight.Id);
+                    Assert.AreEqual(claimLeft.Values.Count(), claimRight.Values.Count());
 
-        // Assert.IsTrue(claimLeft.Values.SequenceEqual(claimRight.Values));
-        //        }
-        //    }
-        // }
+                    Assert.IsTrue(claimLeft.Values.SequenceEqual(claimRight.Values));
+                }
+            }
+        }
 
         [TestMethod]
         public async Task NdrLogonInfoRoundtrip()

@@ -304,6 +304,24 @@ namespace Kerberos.NET.Ndr
             }
         }
 
+        public void WriteDeferredString<T>(ReadOnlyMemory<T> buffer)
+            where T : struct
+        {
+            if (this.WriteDeferred())
+            {
+                this.deferrals.Defer(() => this.WriteString(buffer.Span));
+            }
+        }
+
+        public void WriteString<T>(ReadOnlySpan<T> array)
+            where T : struct
+        {
+            if (typeof(T) == typeof(char))
+            {
+                this.WriteNullTerminatedString(MemoryMarshal.Cast<T, char>(array));
+            }
+        }
+
         private void WriteConformantVaryingCharArray(ReadOnlySpan<char> chars)
         {
             var indexOfNull = chars.IndexOf('\0');
@@ -322,6 +340,29 @@ namespace Kerberos.NET.Ndr
             this.WriteInt32LittleEndian(charWrite.Length);
 
             this.WriteSpan(bytes);
+        }
+
+        private void WriteNullTerminatedString(ReadOnlySpan<char> chars)
+        {
+            var indexOfNull = chars.IndexOf('\0');
+
+            var charWrite = chars;
+
+            if (indexOfNull > 0)
+            {
+                charWrite = chars.Slice(0, indexOfNull);
+            }
+
+            var bytes = MemoryMarshal.Cast<char, byte>(charWrite);
+
+            this.WriteInt32LittleEndian(charWrite.Length + 1);
+            this.WriteInt32LittleEndian(0);
+            this.WriteInt32LittleEndian(charWrite.Length + 1);
+
+            this.WriteSpan(bytes);
+
+            // Null termination char
+            this.WriteInt16LittleEndian(0);
         }
 
         public void WriteDeferredConformantArray<T>(ReadOnlySpan<T> span)
