@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -30,8 +30,11 @@ namespace Kerberos.NET.Entities.Pac
                 throw new ArgumentNullException(nameof(buffer));
             }
 
-            buffer.WriteDeferredConformantVaryingArray(this.Id.AsMemory());
+            buffer.WriteDeferredString(this.Id.AsMemory());
 
+            buffer.WriteInt16LittleEndian((short)this.Type);
+
+            // We have to repeat the type again
             buffer.WriteInt16LittleEndian((short)this.Type);
             buffer.WriteInt32LittleEndian(this.Count);
 
@@ -45,7 +48,7 @@ namespace Kerberos.NET.Entities.Pac
         [KerberosIgnore]
         public int Count { get; set; }
 
-        public IList<object> Values { get; private set; } = new List<object>();
+        public IList<object> Values { get; set; } = new List<object>();
 
         public IEnumerable<T> GetValuesOfType<T>()
         {
@@ -103,7 +106,7 @@ namespace Kerberos.NET.Entities.Pac
                 case ClaimType.CLAIM_TYPE_STRING:
                     var arr = this.GetValuesOfType<string>().Select(v => v.AsMemory());
 
-                    buffer.WriteDeferredArray(arr, val => buffer.WriteConformantVaryingArray(val.Span));
+                    buffer.WriteDeferredArray(arr, val => buffer.WriteString(val.Span));
                     break;
                 default:
                     buffer.WriteFixedPrimitiveArray<long>(this.GetValuesOfType<long>().ToArray());

@@ -22,10 +22,16 @@ namespace Kerberos.NET.Entities
         internal const TicketFlags DefaultFlags = TicketFlags.Renewable |
                                                   TicketFlags.Forwardable;
 
-        public static KrbCred GenerateWrappedServiceTicket(ServiceTicketRequest request)
+        public static KrbCred GenerateWrappedServiceTicket(
+            ServiceTicketRequest request,
+            KrbEncryptionKey sessionKey = null,
+            IEnumerable<KrbAuthorizationData> authz = null
+            )
         {
             GenerateServiceTicket<KrbTgsRep>(
                 request,
+                sessionKey,
+                authz,
                 out KrbEncTicketPart encTicketPart,
                 out KrbTicket ticket,
                 out _,
@@ -36,7 +42,11 @@ namespace Kerberos.NET.Entities
             return KrbCred.WrapTicket(ticket, encTicketPart);
         }
 
-        public static T GenerateServiceTicket<T>(ServiceTicketRequest request)
+        public static T GenerateServiceTicket<T>(
+            ServiceTicketRequest request,
+            KrbEncryptionKey encryptionKey = null,
+            IEnumerable<KrbAuthorizationData> authz = null
+            )
             where T : KrbKdcRep, new()
         {
             if (request.EncryptedPartKey == null)
@@ -46,6 +56,8 @@ namespace Kerberos.NET.Entities
 
             request = GenerateServiceTicket<T>(
                 request,
+                encryptionKey,
+                authz,
                 out KrbEncTicketPart encTicketPart,
                 out KrbTicket ticket,
                 out KrbEncKdcRepPart encKdcRepPart,
@@ -72,6 +84,8 @@ namespace Kerberos.NET.Entities
 
         private static ServiceTicketRequest GenerateServiceTicket<T>(
             ServiceTicketRequest request,
+            KrbEncryptionKey sessionKey,
+            IEnumerable<KrbAuthorizationData> authz,
             out KrbEncTicketPart encTicketPart,
             out KrbTicket ticket,
             out KrbEncKdcRepPart encKdcRepPart,
@@ -100,9 +114,15 @@ namespace Kerberos.NET.Entities
                 request.RealmName = request.RealmName?.ToUpperInvariant();
             }
 
-            var authz = GenerateAuthorizationData(request);
+            if (authz == null)
+            {
+                authz = GenerateAuthorizationData(request);
+            }
 
-            var sessionKey = KrbEncryptionKey.Generate(request.PreferredClientEType ?? request.ServicePrincipalKey.EncryptionType);
+            if (sessionKey == null)
+            {
+                sessionKey = KrbEncryptionKey.Generate(request.PreferredClientEType ?? request.ServicePrincipalKey.EncryptionType);
+            }
 
             encTicketPart = CreateEncTicketPart(request, authz.ToArray(), sessionKey);
             bool appendRealm = false;
