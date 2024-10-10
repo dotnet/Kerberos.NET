@@ -8,7 +8,7 @@ using Kerberos.NET.Crypto.Pal;
 
 namespace Kerberos.NET.Crypto
 {
-    internal class WindowsCryptoPal : CryptoPal
+    public class WindowsCryptoPal : CryptoPal
     {
         public WindowsCryptoPal()
         {
