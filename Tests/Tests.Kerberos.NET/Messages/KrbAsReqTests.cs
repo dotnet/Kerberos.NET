@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Kerberos.NET.Client;
@@ -34,7 +35,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ParseAsReqApplicationMessage()
         {
-            var asReqBin = ReadDataFile("messages\\as-req").Skip(4).ToArray();
+            var asReqBin = ReadDataFile(Path.Combine("Messages", "as-req")).Skip(4).ToArray();
 
             var asReq = KrbAsReq.DecodeApplication(asReqBin);
 
@@ -49,7 +50,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void DecryptAsReqApplicationMessage()
         {
-            var asReqBin = ReadDataFile("messages\\as-req-preauth").Skip(4).ToArray();
+            var asReqBin = ReadDataFile(Path.Combine("Messages", "as-req-preauth")).Skip(4).ToArray();
 
             var asReq = KrbAsReq.DecodeApplication(asReqBin);
 

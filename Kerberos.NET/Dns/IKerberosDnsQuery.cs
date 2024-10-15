@@ -13,6 +13,8 @@ namespace Kerberos.NET.Dns
     /// </summary>
     public interface IKerberosDnsQuery
     {
+        public bool Debug { get; set; }
+
         /// <summary>
         /// Make a DNS lookup for the provided query and record type.
         /// </summary>

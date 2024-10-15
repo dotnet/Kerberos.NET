@@ -22,13 +22,16 @@ namespace Kerberos.NET.Dns
             if (OSPlatform.IsWindows)
             {
                 QueryImplementation = new WindowsDnsQuery();
+                return;
             }
+            //for now assume it's POSIX
+            QueryImplementation = new POSIXDnsQuery();
         }
 
         public static bool Debug
         {
-            get => DnsQueryWin32.Debug;
-            set => DnsQueryWin32.Debug = value;
+            get => QueryImplementation.Debug;
+            set => QueryImplementation.Debug = value;
         }
 
         /// <summary>
