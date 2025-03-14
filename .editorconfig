@@ -58,6 +58,9 @@ end_of_line = crlf
 
 [*.cs]
 
+[*.generated.cs]
+generated_code = true
+
 # IDE0063: Use simple 'using' statement
 csharp_prefer_simple_using_statement = true:silent
 
