@@ -1,9 +1,8 @@
-﻿using System;
+﻿using Kerberos.NET.PortableDns;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Kerberos.NET.CommandLine.Dns;
-using Kerberos.NET.Dns;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -12,7 +11,10 @@ namespace Kerberos.NET.CommandLine
         [STAThread]
         static void Main(string[] args)
         {
-            DnsQuery.RegisterImplementation(new PlatformIndependentDnsClient());
+            if (!OSPlatform.IsWindows)
+            {
+                PortableDnsClient.Configure();
+            }
 
             var assembly = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName);
 
