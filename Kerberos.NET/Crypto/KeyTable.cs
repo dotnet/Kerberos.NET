@@ -76,16 +76,21 @@ namespace Kerberos.NET.Crypto
 
         public ICollection<KeyEntry> Entries => this.entries ??= new List<KeyEntry>();
 
-        public KerberosKey GetKey(ChecksumType type, KrbPrincipalName sname)
-        {
-            var etype = type switch
+        private static EncryptionType EncryptionTypeForChecksumType(ChecksumType type)
+            => type switch
             {
                 ChecksumType.HMAC_SHA1_96_AES128 => EncryptionType.AES128_CTS_HMAC_SHA1_96,
                 ChecksumType.HMAC_SHA1_96_AES256 => EncryptionType.AES256_CTS_HMAC_SHA1_96,
+                ChecksumType.HMAC_SHA256_128_AES128 => EncryptionType.AES128_CTS_HMAC_SHA256_128,
+                ChecksumType.HMAC_SHA384_192_AES256 => EncryptionType.AES256_CTS_HMAC_SHA384_192,
                 _ => EncryptionType.RC4_HMAC_NT,
             };
-            return this.GetKey(etype, sname);
-        }
+
+        public IEnumerable<KerberosKey> GetKeys(ChecksumType type, KrbPrincipalName sname)
+           => this.GetKeys(EncryptionTypeForChecksumType(type), sname);
+
+        public KerberosKey GetKey(ChecksumType type, KrbPrincipalName sname)
+            => this.GetKey(EncryptionTypeForChecksumType(type), sname);
 
         public IEnumerable<KerberosKey> GetKeys(EncryptionType type, KrbPrincipalName sname)
         {
