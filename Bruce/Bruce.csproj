@@ -1,8 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <TargetFramework>net8.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Kerberos.NET.CommandLine</RootNamespace>
 
     <RollForward>Major</RollForward>
@@ -39,7 +46,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Kerberos.NET.PortableDns\Kerberos.NET.PortableDns.csproj" />
     <ProjectReference Include="..\Kerberos.NET\Kerberos.NET.csproj" />
-    <ProjectReference Include="..\Samples\KerbDumpCore\KerbDumpCore.csproj" />
+    <ProjectReference Include="..\Samples\KerbDumpCore\KerbDumpCore.csproj"
+                      Condition="'$(OS)' == 'Windows_NT'" />
   </ItemGroup>
 
 </Project>
