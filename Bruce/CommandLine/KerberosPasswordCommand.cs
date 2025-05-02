@@ -3,17 +3,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
-using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
-using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Kerberos.NET.CommandLine
 {
