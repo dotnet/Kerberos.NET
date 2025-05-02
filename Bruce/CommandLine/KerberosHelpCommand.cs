@@ -123,11 +123,11 @@ namespace Kerberos.NET.CommandLine
 
             if (string.Equals(descName, desc, StringComparison.OrdinalIgnoreCase))
             {
-                this.WriteLine(string.Format(format, label), attr.Description, commands.Skip(1));
+                this.WriteLine(string.Format(format, label), attr.Description, string.Join(", ", commands.Skip(1)));
             }
             else
             {
-                this.WriteLine(string.Format(format, label), desc, commands.Skip(1));
+                this.WriteLine(string.Format(format, label), desc, string.Join(", ", commands.Skip(1)));
             }
         }
     }
