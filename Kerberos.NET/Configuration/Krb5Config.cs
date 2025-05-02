@@ -77,7 +77,7 @@ namespace Kerberos.NET.Configuration
             envVar: "%KRB5_CONFIG%",
             winPath: "%APPDATA%\\Kerberos.NET\\",
             osxPath: "Library/Preferences/Kerberos.NET/",
-            linuxPath: "/etc/"
+            linuxPath: "%HOME%/.config/Kerberos.NET/" // use XDG_CONFIG_HOME default
         );
 
         public static string ServiceConfigurationPath => GetFilePath(
@@ -117,9 +117,10 @@ namespace Kerberos.NET.Configuration
                 path = DefaultUserConfigurationPath;
             }
 
-            if (File.Exists(path))
+            var expandedPath = Environment.ExpandEnvironmentVariables(path);
+            if (File.Exists(expandedPath))
             {
-                return Krb5ConfigurationSerializer.Deserialize(File.ReadAllText(path)).ToConfigObject();
+                return Krb5ConfigurationSerializer.Deserialize(File.ReadAllText(expandedPath)).ToConfigObject();
             }
 
             return Default();
