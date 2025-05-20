@@ -49,21 +49,39 @@ namespace Kerberos.NET.Configuration
         /// <summary>
         /// This relation specifies the name of the default credential cache. The default is "FILE:%APPDATA%\Kerberos.NET\.krb5cc".
         /// </summary>
+#if WINDOWS
         [DefaultValue("FILE:%APPDATA%\\Kerberos.NET\\.krb5cc")]
+#elif LINUX
+        [DefaultValue("FILE:%HOME%/.config/Kerberos.NET/.krb5cc")]
+#else
+        [DefaultValue("FILE:%HOME%/Library/Preferences/Kerberos.NET/.krb5cc")]
+#endif
         [DisplayName("default_ccache_name")]
         public string DefaultCCacheName { get; set; }
 
         /// <summary>
         /// This relation specifies the name of the default keytab for obtaining client credentials. The default is "%APPDATA%\\Kerberos.NET\\client.keytab".
         /// </summary>
-        [DefaultValue("%APPDATA%\\Kerberos.NET\\.keytab")]
+#if WINDOWS
+        [DefaultValue("%APPDATA%\\Kerberos.NET\\client.keytab")]
+#elif LINUX
+        [DefaultValue("%HOME%/.config/Kerberos.NET/client.keytab")]
+#else
+        [DefaultValue("%HOME%/Library/Preferences/Kerberos.NET/client.keytab")]
+#endif
         [DisplayName("default_client_keytab_name")]
         public string DefaultClientKeytabName { get; set; }
 
         /// <summary>
         /// This relation specifies the default keytab name to be used by application servers such as sshd. The default is "%APPDATA%\\Kerberos.NET\\server.keytab".
         /// </summary>
-        [DefaultValue("%APPDATA%\\Kerberos.NET\\.keytab")]
+#if WINDOWS
+        [DefaultValue("%APPDATA%\\Kerberos.NET\\server.keytab")]
+#elif LINUX
+        [DefaultValue("%HOME%/.config/Kerberos.NET/server.keytab")]
+#else
+        [DefaultValue("%HOME%/Library/Preferences/Kerberos.NET/server.keytab")]
+#endif
         [DisplayName("default_keytab_name")]
         public string DefaultKeytabName { get; set; }
 
