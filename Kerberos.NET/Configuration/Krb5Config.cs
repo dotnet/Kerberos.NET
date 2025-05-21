@@ -74,14 +74,18 @@ namespace Kerberos.NET.Configuration
         public Krb5Logging Logging { get; private set; }
 
         public static string UserConfigurationPath => GetFilePath(
-            envVar: "%KRB5_CONFIG%",
+            envVar: "%KRB5_CONFIG%", // %KRB_CONFIG% is being used to specify the user
+                                     // configuration path, but it should be the path to krb5.conf itself
+                                     // (see https://web.mit.edu/kerberos/krb5-1.12/doc/admin/env_variables.html)
             winPath: "%APPDATA%\\Kerberos.NET\\",
             osxPath: "Library/Preferences/Kerberos.NET/",
             linuxPath: "%HOME%/.config/Kerberos.NET/" // use XDG_CONFIG_HOME default
         );
 
         public static string ServiceConfigurationPath => GetFilePath(
-            envVar: "%KRB5_KDC_PROFILE%",
+            envVar: "%KRB5_KDC_PROFILE%", // %KRB5_KDC_PROFILE% is being used to specify the service
+                                          // configuration path, but it should be the path to kdc.conf itself
+                                          // (see https://web.mit.edu/kerberos/krb5-1.12/doc/admin/env_variables.html)
             winPath: "%APPDATA%\\Kerberos.NET\\",
             osxPath: "Library/Preferences/Kerberos.NET/",
             linuxPath: "/var/krb5kdc"
@@ -117,6 +121,7 @@ namespace Kerberos.NET.Configuration
                 path = DefaultUserConfigurationPath;
             }
 
+            // Expansion allows the use of environment variables in krb5.conf, but they must be in %VAR% format
             var expandedPath = Environment.ExpandEnvironmentVariables(path);
             if (File.Exists(expandedPath))
             {
@@ -181,7 +186,9 @@ namespace Kerberos.NET.Configuration
             }
             else if (OSPlatform.IsLinux)
             {
-                return linuxPath;
+                // Environment variables use %VAR% format
+                // (see https://github.com/dotnet/runtime/issues/25792)
+                return Environment.ExpandEnvironmentVariables(linuxPath);
             }
 
             return string.Empty;
