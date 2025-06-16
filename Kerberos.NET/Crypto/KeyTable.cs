@@ -74,28 +74,49 @@ namespace Kerberos.NET.Crypto
 
         private ICollection<KeyEntry> entries;
 
-        public ICollection<KeyEntry> Entries => this.entries ?? (this.entries = new List<KeyEntry>());
+        public ICollection<KeyEntry> Entries => this.entries ??= new List<KeyEntry>();
+
+        private static EncryptionType EncryptionTypeForChecksumType(ChecksumType type)
+            => type switch
+            {
+                ChecksumType.HMAC_SHA1_96_AES128 => EncryptionType.AES128_CTS_HMAC_SHA1_96,
+                ChecksumType.HMAC_SHA1_96_AES256 => EncryptionType.AES256_CTS_HMAC_SHA1_96,
+                ChecksumType.HMAC_SHA256_128_AES128 => EncryptionType.AES128_CTS_HMAC_SHA256_128,
+                ChecksumType.HMAC_SHA384_192_AES256 => EncryptionType.AES256_CTS_HMAC_SHA384_192,
+                _ => EncryptionType.RC4_HMAC_NT,
+            };
+
+        public IEnumerable<KerberosKey> GetKeys(ChecksumType type, KrbPrincipalName sname)
+           => this.GetKeys(EncryptionTypeForChecksumType(type), sname);
 
         public KerberosKey GetKey(ChecksumType type, KrbPrincipalName sname)
+            => this.GetKey(EncryptionTypeForChecksumType(type), sname);
+
+        public IEnumerable<KerberosKey> GetKeys(EncryptionType type, KrbPrincipalName sname)
         {
-            EncryptionType etype;
+            // try and find a matching entry
 
-            switch (type)
+            var entries = this.Entries
+                .Where(e => e.EncryptionType == type && (sname?.Matches(e.Principal) ?? true))
+                .OrderByDescending(x => x.Version);
+
+            if (!entries.Any())
             {
-                case ChecksumType.HMAC_SHA1_96_AES128:
-                    etype = EncryptionType.AES128_CTS_HMAC_SHA1_96;
-                    break;
-                case ChecksumType.HMAC_SHA1_96_AES256:
-                    etype = EncryptionType.AES256_CTS_HMAC_SHA1_96;
-                    break;
+                // Fall back to first entry with matching type
 
-                case ChecksumType.KERB_CHECKSUM_HMAC_MD5:
-                default:
-                    etype = EncryptionType.RC4_HMAC_NT;
-                    break;
+                entries = this.Entries
+                    .Where(e => e.EncryptionType == type)
+                    .OrderByDescending(x => x.Version);
             }
 
-            return this.GetKey(etype, sname);
+            if (!entries.Any())
+            {
+                // fall back to first entry
+
+                entries = this.Entries.OrderByDescending(x => x.Version);
+            }
+
+            return entries.Select(e => e.Key);
         }
 
         public KerberosKey GetKey(EncryptionType type, KrbPrincipalName sname)
@@ -107,22 +128,16 @@ namespace Kerberos.NET.Crypto
                 .OrderByDescending(x => x.Version)
                 .FirstOrDefault();
 
-            // Fall back to first entry with matching type (RC4_HMAC_NT)
+            // Fall back to first entry with matching type
 
-            if (entry == null)
-            {
-                entry = this.Entries
+            entry ??= this.Entries
                     .Where(e => e.EncryptionType == type)
                     .OrderByDescending(x => x.Version)
                     .FirstOrDefault();
-            }
 
             // Fall back to first entry
 
-            if (entry == null)
-            {
-                entry = this.Entries.FirstOrDefault();
-            }
+            entry ??= this.Entries.FirstOrDefault();
 
             return entry?.Key;
         }

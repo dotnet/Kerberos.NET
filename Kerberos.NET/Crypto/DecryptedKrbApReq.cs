@@ -4,6 +4,9 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
+using System.Security;
+using System.Security.Cryptography;
 using Kerberos.NET.Entities;
 
 namespace Kerberos.NET.Crypto
@@ -65,9 +68,38 @@ namespace Kerberos.NET.Crypto
                 throw new ArgumentNullException(nameof(keytab));
             }
 
-            var key = keytab.GetKey(this.EType, this.SName);
+            var keys = keytab.GetKeys(this.EType, this.SName);
 
-            this.Decrypt(key);
+            if (!keys.Any())
+            {
+                throw new InvalidOperationException($"Could not find a key for {this.EType} and {this.SName.FullyQualifiedName}");
+            }
+
+            Exception ex = null;
+
+            foreach (var key in keys)
+            {
+                try
+                {
+                    this.Decrypt(key);
+                    return;
+                }
+                catch (CryptographicException cex)
+                {
+                    ex = cex;
+                    continue;
+                }
+                catch (SecurityException secx)
+                {
+                    ex = secx;
+                    continue;
+                }
+            }
+
+            if (ex != null)
+            {
+                throw ex;
+            }
         }
 
         public override void Decrypt(KerberosKey ticketEncryptingKey)
