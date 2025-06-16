@@ -117,7 +117,7 @@ namespace Kerberos.NET
             claims.Add(new Claim(ClaimTypes.NameIdentifier, krbApReq.Ticket.CName.FullyQualifiedName, ClaimValueTypes.String, AD_AUTHORITY));
         }
 
-        private void DecodeRestrictions(
+        protected void DecodeRestrictions(
             DecryptedKrbApReq krbApReq,
             List<Claim> claims,
             List<Restriction> restrictions

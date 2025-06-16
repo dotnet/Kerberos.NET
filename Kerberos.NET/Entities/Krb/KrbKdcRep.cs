@@ -26,7 +26,7 @@ namespace Kerberos.NET.Entities
             ServiceTicketRequest request,
             KrbEncryptionKey sessionKey = null,
             IEnumerable<KrbAuthorizationData> authz = null
-            )
+        )
         {
             GenerateServiceTicket<KrbTgsRep>(
                 request,
@@ -46,8 +46,7 @@ namespace Kerberos.NET.Entities
             ServiceTicketRequest request,
             KrbEncryptionKey encryptionKey = null,
             IEnumerable<KrbAuthorizationData> authz = null
-            )
-            where T : KrbKdcRep, new()
+        ) where T : KrbKdcRep, new()
         {
             if (request.EncryptedPartKey == null)
             {
@@ -67,8 +66,8 @@ namespace Kerberos.NET.Entities
 
             var rep = new T
             {
-                CName = encTicketPart.CName,
-                CRealm = request.RealmName,
+                CName = KrbPrincipalName.FromPrincipal(request.Principal) ?? encTicketPart.CName,
+                CRealm = request.ClientRealmName ?? encTicketPart.CRealm,
                 MessageType = messageType,
                 Ticket = ticket,
                 EncPart = KrbEncryptedData.Encrypt(
@@ -91,8 +90,7 @@ namespace Kerberos.NET.Entities
             out KrbEncKdcRepPart encKdcRepPart,
             out KeyUsage keyUsage,
             out MessageType messageType
-        )
-            where T : KrbKdcRep, new()
+        ) where T : KrbKdcRep, new()
         {
             if (request.Principal == null)
             {
@@ -112,17 +110,12 @@ namespace Kerberos.NET.Entities
             if (request.Compatibility.HasFlag(KerberosCompatibilityFlags.NormalizeRealmsUppercase))
             {
                 request.RealmName = request.RealmName?.ToUpperInvariant();
+                request.ClientRealmName = request.ClientRealmName?.ToUpperInvariant();
             }
 
-            if (authz == null)
-            {
-                authz = GenerateAuthorizationData(request);
-            }
+            authz ??= GenerateAuthorizationData(request);
 
-            if (sessionKey == null)
-            {
-                sessionKey = KrbEncryptionKey.Generate(request.PreferredClientEType ?? request.ServicePrincipalKey.EncryptionType);
-            }
+            sessionKey ??= KrbEncryptionKey.Generate(request.PreferredClientEType ?? request.ServicePrincipalKey.EncryptionType);
 
             encTicketPart = CreateEncTicketPart(request, authz.ToArray(), sessionKey);
             bool appendRealm = false;
@@ -146,6 +139,7 @@ namespace Kerberos.NET.Entities
                     KeyUsage.Ticket
                 )
             };
+
             if (typeof(T) == typeof(KrbAsRep))
             {
                 encKdcRepPart = new KrbEncAsRepPart();
@@ -186,13 +180,15 @@ namespace Kerberos.NET.Entities
                     }
                 }
             };
+
             return request;
         }
 
         private static KrbEncTicketPart CreateEncTicketPart(
             ServiceTicketRequest request,
             KrbAuthorizationData[] authorizationDatas,
-            KrbEncryptionKey sessionKey)
+            KrbEncryptionKey sessionKey
+        )
         {
             var cname = CreateCNameForTicket(request);
 
@@ -205,19 +201,16 @@ namespace Kerberos.NET.Entities
 
             var addresses = request.Addresses;
 
-            if (addresses == null)
-            {
-                addresses = Array.Empty<KrbHostAddress>();
-            }
+            addresses ??= Array.Empty<KrbHostAddress>();
 
             var encTicketPart = new KrbEncTicketPart()
             {
                 CName = cname,
+                CRealm = request.ClientRealmName,
                 Key = sessionKey,
                 AuthTime = request.Now,
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
-                CRealm = request.RealmName,
                 Flags = flags,
                 AuthorizationData = authorizationDatas,
                 CAddr = addresses.ToArray(),
@@ -238,7 +231,7 @@ namespace Kerberos.NET.Entities
         {
             if (string.IsNullOrEmpty(request.SamAccountName))
             {
-                return KrbPrincipalName.FromPrincipal(request.Principal, realm: request.RealmName);
+                return KrbPrincipalName.FromPrincipal(request.Principal, realm: request.ClientRealmName);
             }
 
             return new KrbPrincipalName

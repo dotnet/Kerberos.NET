@@ -18,7 +18,7 @@
           }-->
 
   <asn:Integer name="AuthenticatorVersionNumber" explicitTag="0" backingType="int" />
-  <asn:GeneralString name="Realm" explicitTag="1" />
+  <asn:GeneralString name="CRealm" explicitTag="1" />
   <asn:AsnType name="CName" typeName="KrbPrincipalName" explicitTag="2" />
   <asn:AsnType name="Checksum" typeName="KrbChecksum" explicitTag="3" optional="true" />
   <asn:Integer name="CuSec" explicitTag="4" backingType="int" />

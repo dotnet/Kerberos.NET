@@ -207,7 +207,7 @@ namespace Kerberos.NET.Entities
             var authenticator = new KrbAuthenticator
             {
                 CName = kdcRep.CName,
-                Realm = kdcRep.CRealm,
+                CRealm = kdcRep.CRealm,
                 SequenceNumber = GetNonce(),
                 Checksum = checksum
             };

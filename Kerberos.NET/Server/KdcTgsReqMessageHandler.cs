@@ -180,7 +180,10 @@ namespace Kerberos.NET.Server
                 tgsReq.Body.SName.FullyQualifiedName,
                 tgsReq.Body.Realm);
 
-            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(tgsReq.Body.SName, tgsReq.Body.Realm).ConfigureAwait(false);
+            context.ServicePrincipal = await this.RealmService.Principals.FindAsync(
+                tgsReq.Body.SName,
+                tgsReq.Body.Realm
+            ).ConfigureAwait(false);
         }
 
         public override ReadOnlyMemory<byte> ExecuteCore(PreAuthenticationContext context)
@@ -255,10 +258,9 @@ namespace Kerberos.NET.Server
             {
                 context.IncludePac = DetectPacRequirement(tgsReq);
 
-                if (context.IncludePac == null)
-                {
-                    context.IncludePac = context.Ticket?.AuthorizationData?.Any(a => a.Type == AuthorizationDataType.AdIfRelevant) ?? false;
-                }
+                context.IncludePac ??= context.Ticket?.AuthorizationData?.Any(
+                    a => a.Type == AuthorizationDataType.AdIfRelevant
+                ) ?? false;
             }
 
             var rst = new ServiceTicketRequest
@@ -269,6 +271,7 @@ namespace Kerberos.NET.Server
                 EncryptedPartEType = context.EncryptedPartEType,
                 ServicePrincipal = context.ServicePrincipal,
                 ServicePrincipalKey = serviceKey,
+                ClientRealmName = context.ClientRealm,
                 RealmName = tgsReq.Body.Realm,
                 Addresses = tgsReq.Body.Addresses,
                 RenewTill = context.Ticket.RenewTill,
