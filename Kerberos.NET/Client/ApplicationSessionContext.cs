@@ -15,15 +15,19 @@ namespace Kerberos.NET.Client
 
         public KrbEncryptionKey SessionKey { get; set; }
 
+        public KrbEncryptionKey ClientSubSessionKey { get; set; }
+
+        public KrbEncryptionKey ServerSubSessionKey { get; set; }
+
         public int? SequenceNumber { get; set; }
 
         public int CuSec { get; set; }
 
         public DateTimeOffset CTime { get; set; }
 
-        public KrbEncryptionKey AuthenticateServiceResponse(string asRepEncoded)
+        public KrbEncryptionKey AuthenticateServiceResponse(string apRepEncoded)
         {
-            return AuthenticateServiceResponse(Convert.FromBase64String(asRepEncoded));
+            return AuthenticateServiceResponse(Convert.FromBase64String(apRepEncoded));
         }
 
         public KrbEncryptionKey AuthenticateServiceResponse(ReadOnlyMemory<byte> apRepBytes)
@@ -37,11 +41,35 @@ namespace Kerberos.NET.Client
                 SequenceNumber = this.SequenceNumber
             };
 
-            decrypted.Decrypt(this.SessionKey.AsKey());
+            DecryptApRep(decrypted);
 
             decrypted.Validate(ValidationActions.TokenWindow);
+            ServerSubSessionKey = decrypted.Response.SubSessionKey;
 
-            return decrypted.Response.SubSessionKey ?? this.SessionKey;
+            return ServerSubSessionKey ?? this.SessionKey;
         }
+
+        private void DecryptApRep(DecryptedKrbApRep decrypted)
+        {
+            foreach(var key in new[] {
+                this.SessionKey,
+                this.ClientSubSessionKey
+            })
+            {
+                if (key == null) continue;
+                try
+                {
+                    decrypted.Decrypt(key.AsKey());
+                    return;
+                }
+                catch (Exception)
+                {
+                    // Not this key, continue to the next one
+                }
+            }
+
+            throw new InvalidOperationException("Failed to decrypt AP_REP with any of the provided keys.");
+        }
+
     }
 }
