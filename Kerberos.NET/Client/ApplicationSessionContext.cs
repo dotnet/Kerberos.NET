@@ -73,7 +73,7 @@ namespace Kerberos.NET.Client
                 }
             }
 
-            throw new InvalidOperationException("Failed to decrypt AP_REP with any of the provided keys.");
+            throw new InvalidOperationException("Failed to decrypt AP-REP with any of the provided keys.");
         }
     }
 }
