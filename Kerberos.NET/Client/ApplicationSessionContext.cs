@@ -15,6 +15,10 @@ namespace Kerberos.NET.Client
 
         public KrbEncryptionKey SessionKey { get; set; }
 
+        public KrbEncryptionKey ServiceTicketSessionKey { get; set; }
+
+        public KrbEncryptionKey ClientSubSessionKey { get; set; }
+
         public int? SequenceNumber { get; set; }
 
         public int CuSec { get; set; }

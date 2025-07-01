@@ -883,6 +883,8 @@ namespace Kerberos.NET.Client
                         out KrbAuthenticator authenticator
                     ),
                     SessionKey = authenticator.Subkey ?? serviceTicketCacheEntry.SessionKey,
+                    ClientSubSessionKey = authenticator.Subkey,
+                    ServiceTicketSessionKey = serviceTicketCacheEntry.SessionKey,
                     CTime = authenticator.CTime,
                     CuSec = authenticator.CuSec,
                     SequenceNumber = authenticator.SequenceNumber
