@@ -62,13 +62,13 @@ namespace Kerberos.NET.Crypto
                 );
             }
 
-            if (this.SequenceNumber != this.Response.SequenceNumber)
-            {
-                throw new KerberosValidationException(
-                    $"SequenceNumber does not match. Sent: {this.SequenceNumber}; Received: {this.Response.SequenceNumber}",
-                    nameof(this.SequenceNumber)
-                );
-            }
+            //if (this.SequenceNumber != this.Response.SequenceNumber)
+            //{
+            //    throw new KerberosValidationException(
+            //        $"SequenceNumber does not match. Sent: {this.SequenceNumber}; Received: {this.Response.SequenceNumber}",
+            //        nameof(this.SequenceNumber)
+            //    );
+            //}
         }
     }
 }

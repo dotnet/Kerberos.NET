@@ -41,11 +41,39 @@ namespace Kerberos.NET.Client
                 SequenceNumber = this.SequenceNumber
             };
 
-            decrypted.Decrypt(this.SessionKey.AsKey());
+            DecryptApRep(decrypted);
 
             decrypted.Validate(ValidationActions.TokenWindow);
 
             return decrypted.Response.SubSessionKey ?? this.SessionKey;
+        }
+
+        private void DecryptApRep(DecryptedKrbApRep decrypted)
+        {
+            foreach (var key in new[]
+            {
+                this.SessionKey,
+                this.ServiceTicketSessionKey,
+                this.ClientSubSessionKey,
+            })
+            {
+                if (key == null)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    decrypted.Decrypt(key.AsKey());
+                    return;
+                }
+                catch (Exception)
+                {
+                    // Not this key, continue to the next one
+                }
+            }
+
+            throw new InvalidOperationException("Failed to decrypt AP_REP with any of the provided keys.");
         }
     }
 }
