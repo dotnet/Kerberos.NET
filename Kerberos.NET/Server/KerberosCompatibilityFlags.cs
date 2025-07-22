@@ -27,5 +27,11 @@ namespace Kerberos.NET.Server
         /// Do not copy the name from the TGT if the canonicalize bit is set
         /// </summary>
         DoNotCanonicalizeTgsReqFromTgt = 1 << 1,
+
+        /// <summary>
+        /// Realms are unique between the client and the target but historically they shared common
+        /// fields or properties. This separates the names into two.
+        /// </summary>
+        IsolateRealmsConsistently = 1 << 2,
     }
 }

@@ -13,7 +13,7 @@ namespace Tests.Kerberos.NET
     {
         private readonly KerberosCompatibilityFlags compatibilityFlags;
 
-        public FakeRealmService(string realm, Krb5Config config = null, KerberosCompatibilityFlags compatibilityFlags = KerberosCompatibilityFlags.None)
+        public FakeRealmService(string realm, Krb5Config config = null, KerberosCompatibilityFlags compatibilityFlags = KerberosCompatibilityFlags.IsolateRealmsConsistently)
         {
             this.Name = realm;
             this.Configuration = config ?? Krb5Config.Kdc();

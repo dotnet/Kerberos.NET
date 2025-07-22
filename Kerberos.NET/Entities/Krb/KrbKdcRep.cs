@@ -66,8 +66,14 @@ namespace Kerberos.NET.Entities
 
             var rep = new T
             {
-                CName = KrbPrincipalName.FromPrincipal(request.Principal) ?? encTicketPart.CName,
-                CRealm = request.ClientRealmName ?? encTicketPart.CRealm,
+                CName = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ?
+                            KrbPrincipalName.FromPrincipal(request.Principal) ?? encTicketPart.CName :
+                            encTicketPart.CName,
+
+                CRealm = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ?
+                            request.ClientRealmName :
+                            request.RealmName,
+
                 MessageType = messageType,
                 Ticket = ticket,
                 EncPart = KrbEncryptedData.Encrypt(
@@ -110,7 +116,7 @@ namespace Kerberos.NET.Entities
             if (request.Compatibility.HasFlag(KerberosCompatibilityFlags.NormalizeRealmsUppercase))
             {
                 request.RealmName = request.RealmName?.ToUpperInvariant();
-                request.ClientRealmName = request.ClientRealmName?.ToUpperInvariant();
+                request.ClientRealmName = request.ClientRealmName?.ToUpperInvariant() ?? throw new InvalidOperationException("Unknown client realm name");
             }
 
             authz ??= GenerateAuthorizationData(request);
@@ -231,7 +237,12 @@ namespace Kerberos.NET.Entities
         {
             if (string.IsNullOrEmpty(request.SamAccountName))
             {
-                return KrbPrincipalName.FromPrincipal(request.Principal, realm: request.ClientRealmName);
+                return KrbPrincipalName.FromPrincipal(
+                    request.Principal,
+                    realm: request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ?
+                        request.ClientRealmName :
+                        request.RealmName
+                );
             }
 
             return new KrbPrincipalName
