@@ -112,7 +112,7 @@ jobs:
     
     # Publish the signed packages
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: SignedArtifacts
         path: BuildArtifacts
