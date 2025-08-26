@@ -11,7 +11,6 @@ on:
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
@@ -29,3 +28,91 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+
+    - name: Upload signing file list
+      uses: actions/upload-artifact@v3
+      with:
+        name: config
+        path: config
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: BuildArtifacts
+        path: src/Kerberos.NET/bin/Release/**/*.nupkg
+    
+  sign:
+    needs: build
+    runs-on: windows-latest # Code signing must run on a Windows agent for Authenticode signing (dll/exe)
+    if: ${{ github.ref == 'refs/heads/develop' }} # Only run this job on pushes to the develop branch
+    permissions:
+      id-token: write # Required for requesting the JWT
+      
+    steps:
+
+    # Download signing configuration and artifacts
+    - name: Download signing config
+      uses: actions/download-artifact@v3
+      with:
+        name: config
+        path: config
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: BuildArtifacts
+        path: BuildArtifacts
+    
+    # .NET is required on the agent for the tool to run
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.x'
+
+    # Install the code signing tool    
+    - name: Install Sign CLI tool
+      run: dotnet tool install --tool-path . --prerelease sign
+    
+    # Login to Azure using a ServicePrincipal configured to authenticate agaist a GitHub Action
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+        allow-no-subscriptions: true
+        client-id: ${{ secrets.AZURE_CLIENT_ID }} # This does not need to be a secret and is just a placeholder
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }} # This does not need to be a secret and is just a placeholder
+
+    # Run the signing command
+    - name: Sign Kerberos.NET artifacts
+      shell: pwsh
+      run: >
+        .\sign code azure-key-vault `
+        "**/*.nupkg" `
+        --base-directory "$(Pipeline.Workspace)\BuildPackages" `
+        --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
+        --publisher-name "Kerberos.NET" `
+        --description "Kerberos.NET" `
+        --description-url "https://github.com/dotnet/Kerberos.NET" `
+        --azure-credential-type "azure-cli"
+        --azure-key-vault-url "${{ secrets.KEY_VAULT_URL }}" # This does not need to be a secret and is just a placeholder
+        --azure-key-vault-certificate "${{ secrets.KEY_VAULT_CERTIFICATE_ID }}" # This does not need to be a secret and is just a placeholder
+
+    - name: Sign Bruce artifacts
+      shell: pwsh
+      run: >
+        .\sign code azure-key-vault `
+        "**/*.nupkg" `
+        --base-directory "$(Pipeline.Workspace)\drop" `
+        --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
+        --publisher-name "Bruce" `
+        --description "Command line client for Kerberos.NET" `
+        --description-url "https://github.com/dotnet/Kerberos.NET" `
+        --azure-credential-type "azure-cli"
+        --azure-key-vault-url "${{ secrets.KEY_VAULT_URL }}" # This does not need to be a secret and is just a placeholder
+        --azure-key-vault-certificate "${{ secrets.KEY_VAULT_CERTIFICATE_ID }}" # This does not need to be a secret and is just a placeholder
+    
+    # Publish the signed packages
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: SignedArtifacts
+        path: BuildArtifacts
