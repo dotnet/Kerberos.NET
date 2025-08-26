@@ -30,13 +30,13 @@ jobs:
       run: dotnet test --no-build --verbosity normal
 
     - name: Upload signing file list
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: config
         path: config
         
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: BuildArtifacts
         path: src/Kerberos.NET/bin/Release/**/*.nupkg
