@@ -87,8 +87,8 @@ jobs:
       run: >
         .\sign code azure-key-vault `
         "**/*.nupkg" `
-        --base-directory "$(Pipeline.Workspace)\BuildPackages" `
-        --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
+        --base-directory "${{ github.workspace }}/BuildArtifacts"
+        --file-list "${{ github.workspace }}/config/filelist.txt"
         --publisher-name "Kerberos.NET" `
         --description "Kerberos.NET" `
         --description-url "https://github.com/dotnet/Kerberos.NET" `
@@ -101,8 +101,8 @@ jobs:
       run: >
         .\sign code azure-key-vault `
         "**/*.nupkg" `
-        --base-directory "$(Pipeline.Workspace)\drop" `
-        --file-list "$(Pipeline.Workspace)\config\filelist.txt" `
+        --base-directory "$(github.workspace)\drop" `
+        --file-list "${{ github.workspace }}/config/filelist.txt"
         --publisher-name "Bruce" `
         --description "Command line client for Kerberos.NET" `
         --description-url "https://github.com/dotnet/Kerberos.NET" `
