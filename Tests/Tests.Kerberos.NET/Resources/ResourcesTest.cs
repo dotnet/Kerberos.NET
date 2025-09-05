@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Security.Cryptography;
 using Kerberos.NET.Entities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,7 +18,7 @@ namespace Tests.Kerberos.NET
         [ExpectedException(typeof(CryptographicException))]
         public void ResourceManagerFormattedResource()
         {
-            var asReq = ReadDataFile("messages\\as-req");
+            var asReq = ReadDataFile(Path.Combine("Messages", "as-req"));
 
             try
             {

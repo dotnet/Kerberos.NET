@@ -119,7 +119,7 @@ namespace Tests.Kerberos.NET
             "AFffP2PNqYn95dA4HD/On0QpOkNykZ3JBzSLnEr0+lo7bgZOTAF5m1IBwwEMdMhZRYudg4/MRPgKSzAx2cDfFfqe3c5a/e8IjYdZHI3fmQa1rPXn5XQ03aw9YJNkW1VNb0+n5JGR4Jge" +
             "C12oQyIh4DSu3XGvlXi+swg90=";
 
-        protected static readonly string BasePath = $"data{Path.DirectorySeparatorChar}";
+        protected static readonly string BasePath = $"Data{Path.DirectorySeparatorChar}";
 
         protected static byte[] ReadDataFile(string name)
         {

@@ -12,6 +12,8 @@
     <Product>Kerberos.NET Command Line Tool</Product>
     <Description>A command line tool that manages the cross-platform, managed-code Kerberos Ticket parsing, validation, and authentication library Kerberos.NET.</Description>
     <PackageTags>security kerberos</PackageTags>
+    <LangVersion>9</LangVersion>
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">WINDOWS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,6 +40,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kerberos.NET\Kerberos.NET.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
     <ProjectReference Include="..\Samples\KerbDumpCore\KerbDumpCore.csproj" />
   </ItemGroup>
 

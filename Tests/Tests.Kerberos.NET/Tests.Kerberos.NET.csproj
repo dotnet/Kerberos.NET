@@ -9,11 +9,9 @@
 
   <PropertyGroup>
     <DefineConstants>WEAKCRYPTO</DefineConstants>
+    <DefineConstants Condition="'$(Platform)' == 'x64'">X64</DefineConstants>
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">WINDOWS</DefineConstants>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Platform)' == 'x64'">
-    <DefineConstants>X64</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>

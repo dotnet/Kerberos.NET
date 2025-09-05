@@ -61,6 +61,9 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task E2E_ClientWantsWeakCrypto_AllowWeak()
         {
+            if(OSPlatform.IsLinux)
+                Assert.Inconclusive("MD4 operations are not supported by Linux");
+
             var port = NextPort();
 
             using (var listener = StartListener(port, allowWeakCrypto: true))

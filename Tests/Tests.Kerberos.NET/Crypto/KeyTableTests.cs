@@ -169,6 +169,9 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task Authenticator_SerializedKeytab()
         {
+            if(OSPlatform.IsLinux)
+                Assert.Inconclusive("MD4 operations are not supported by Linux");
+
             var key = new KerberosKey(
                 password: "P@ssw0rd!",
                 principalName: new PrincipalName(

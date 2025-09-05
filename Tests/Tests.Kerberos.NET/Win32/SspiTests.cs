@@ -14,6 +14,7 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class SspiTests
     {
+#if WINDOWS
         [TestMethod]
         public void TryGettingSspiTicketTest()
         {
@@ -48,5 +49,6 @@ namespace Tests.Kerberos.NET
                 Assert.IsTrue(KerberosCryptoTransformer.AreEqualSlow(contextSender.SessionKey, contextReceiver.SessionKey));
             }
         }
+#endif
     }
 }

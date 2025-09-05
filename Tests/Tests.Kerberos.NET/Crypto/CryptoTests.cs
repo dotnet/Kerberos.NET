@@ -104,6 +104,9 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void RC4Roundtrip()
         {
+            if(OSPlatform.IsLinux)
+                Assert.Inconclusive("MD4 operations are not supported by Linux");
+
             var data = new Memory<byte>(new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 });
 
             var key = CreateKey();
