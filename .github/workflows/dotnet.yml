@@ -52,13 +52,13 @@ jobs:
 
     # Download signing configuration and artifacts
     - name: Download signing config
-      uses: actions/upload-artifact@v4
+      uses: actions/download-artifact@v4
       with:
         name: config
         path: config
-        
+    
     - name: Download build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/download-artifact@v4
       with:
         name: BuildArtifacts
         path: BuildArtifacts
