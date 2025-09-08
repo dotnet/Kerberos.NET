@@ -24,10 +24,13 @@ jobs:
         dotnet-version: 8.0.x
     - name: Restore dependencies
       run: dotnet restore
+      working-directory: ./src
     - name: Build
       run: dotnet build --no-restore -c release
+      working-directory: ./src
     - name: Test
       run: dotnet test --no-build -c release --verbosity normal
+      working-directory: ./src
 
     - name: Upload signing file list
       uses: actions/upload-artifact@v4
@@ -39,7 +42,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: BuildArtifacts
-        path: src/Kerberos.NET/bin/Release/**/*.nupkg
+        path: ./src/Kerberos.NET/bin/Release/**/*.nupkg
     
   sign:
     needs: build
