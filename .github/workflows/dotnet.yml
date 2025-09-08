@@ -39,7 +39,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: BuildArtifacts
-        path: Kerberos.NET/bin/Release/**/*.nupkg
+        path: ./**/*.nupkg
     
   sign:
     needs: build
