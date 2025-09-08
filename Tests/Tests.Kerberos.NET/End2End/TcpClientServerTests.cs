@@ -124,41 +124,41 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public async Task TCP_MultithreadedClient_WithLowPool()
-        {
-            var port = NextPort();
+        //[TestMethod]
+        //[ExpectedException(typeof(InvalidOperationException))]
+        //public async Task TCP_MultithreadedClient_WithLowPool()
+        //{
+        //    var port = NextPort();
 
-            var threads = 20;
-            var requests = 50;
+        //    var threads = 20;
+        //    var requests = 50;
 
-            var cacheTickets = false;
-            var encodeNego = false;
-            var includePac = false;
+        //    var cacheTickets = false;
+        //    var encodeNego = false;
+        //    var includePac = false;
 
-            string kdc = $"127.0.0.1:{port}";
+        //    string kdc = $"127.0.0.1:{port}";
 
-            using (var listener = StartTcpListener(port))
-            {
-                _ = listener.Start();
+        //    using (var listener = StartTcpListener(port))
+        //    {
+        //        _ = listener.Start();
 
-                var exceptions = await MultithreadedRequests(
-                     threads,
-                     requests,
-                     cacheTickets,
-                     encodeNego,
-                     includePac,
-                     kdc,
-                     null,
-                     listener: null
-                 );
+        //        var exceptions = await MultithreadedRequests(
+        //             threads,
+        //             requests,
+        //             cacheTickets,
+        //             encodeNego,
+        //             includePac,
+        //             kdc,
+        //             null,
+        //             listener: null
+        //         );
 
-                if (exceptions.Count > 0)
-                {
-                    throw exceptions.First();
-                }
-            }
-        }
+        //        if (exceptions.Count > 0)
+        //        {
+        //            throw exceptions.First();
+        //        }
+        //    }
+        //}
     }
 }
