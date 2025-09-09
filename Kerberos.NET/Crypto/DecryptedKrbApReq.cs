@@ -186,7 +186,7 @@ namespace Kerberos.NET.Crypto
 
             if (validation.HasFlag(ValidationActions.Realm))
             {
-                this.ValidateRealm(this.Ticket.CRealm, this.Authenticator.Realm);
+                this.ValidateRealm(this.Ticket.CRealm, this.Authenticator.CRealm);
             }
 
             var now = this.Now();

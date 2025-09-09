@@ -268,6 +268,7 @@ namespace Tests.Kerberos.NET
                 ServicePrincipalKey = key,
                 IncludePac = false,
                 RealmName = "test.com",
+                ClientRealmName = "test.com",
                 Now = now,
                 StartTime = notBefore,
                 EndTime = notAfter,

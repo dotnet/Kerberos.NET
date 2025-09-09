@@ -33,7 +33,7 @@ namespace Kerberos.NET.Entities
     
         public int AuthenticatorVersionNumber { get; set; }
   
-        public string Realm { get; set; }
+        public string CRealm { get; set; }
   
         public KrbPrincipalName CName { get; set; }
   
@@ -63,7 +63,7 @@ namespace Kerberos.NET.Entities
             writer.WriteInteger(AuthenticatorVersionNumber);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-            writer.WriteCharacterString(UniversalTagNumber.GeneralString, Realm);
+            writer.WriteCharacterString(UniversalTagNumber.GeneralString, CRealm);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 2));
             CName?.Encode(writer);
@@ -223,7 +223,7 @@ namespace Kerberos.NET.Entities
             explicitReader.ThrowIfNotEmpty();
 
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-            decoded.Realm = explicitReader.ReadCharacterString(UniversalTagNumber.GeneralString);
+            decoded.CRealm = explicitReader.ReadCharacterString(UniversalTagNumber.GeneralString);
 
             explicitReader.ThrowIfNotEmpty();
 

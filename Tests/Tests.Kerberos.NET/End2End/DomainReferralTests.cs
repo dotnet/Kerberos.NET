@@ -19,6 +19,10 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public async Task DomainRefersToOther()
         {
+            // user@corp -> CORP
+            // user@CORP -> CORP@OTHERREALM
+            // user@CORP[@OTHERREALM] -> fake/app@OTHERREALM
+
             var port = NextPort();
 
             using (var listener = StartListener(port))
@@ -29,7 +33,7 @@ namespace Tests.Kerberos.NET
                     FakeAdminAtCorpPassword,
                     $"127.0.0.1:{port}",
                     spn: FakeAppServiceInOtherRealm,
-                    includePac: false
+                    includePac: true
                 );
             }
         }

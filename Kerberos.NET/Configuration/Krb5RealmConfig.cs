@@ -350,7 +350,7 @@ namespace Kerberos.NET.Configuration
         /// Compatibility shims should be enforced by the KDC.
         /// </summary>
         [EnumAsInteger]
-        [DefaultValue(KerberosCompatibilityFlags.None)]
+        [DefaultValue(KerberosCompatibilityFlags.IsolateRealmsConsistently)]
         [DisplayName("compatibility_flags")]
         public KerberosCompatibilityFlags CompatibilityFlags { get; set; }
     }
