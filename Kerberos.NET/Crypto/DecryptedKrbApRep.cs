@@ -61,14 +61,6 @@ namespace Kerberos.NET.Crypto
                     nameof(this.CuSec)
                 );
             }
-
-            //if (this.SequenceNumber != this.Response.SequenceNumber)
-            //{
-            //    throw new KerberosValidationException(
-            //        $"SequenceNumber does not match. Sent: {this.SequenceNumber}; Received: {this.Response.SequenceNumber}",
-            //        nameof(this.SequenceNumber)
-            //    );
-            //}
         }
     }
 }
