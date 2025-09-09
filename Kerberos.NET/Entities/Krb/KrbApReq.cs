@@ -56,7 +56,7 @@ namespace Kerberos.NET.Entities
             authenticator = new KrbAuthenticator
             {
                 CName = tgsRep.CName,
-                Realm = tgsRep.CRealm
+                CRealm = tgsRep.CRealm
             };
 
             if (rst.AuthenticatorChecksum != null)

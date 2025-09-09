@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -94,30 +94,18 @@ namespace Kerberos.NET.Server
             // in either case we can and will validate the ticket and
             // extract the user principal from within the krbtgt ticket
 
-            var krbtgtKey = context.EvidenceTicketIdentity.RetrieveLongTermCredential();
+            var krbtgtKey = context.EvidenceTicketIdentity.RetrieveLongTermCredential()
+                ?? throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_ETYPE_NOSUPP);
 
-            if (krbtgtKey == null)
-            {
-                // since the key comes from caller-implemented code we
-                // should check to make sure they gave us a usable key
-
-                throw new KerberosProtocolException(KerberosErrorCode.KDC_ERR_ETYPE_NOSUPP);
-            }
-
-            if (context.EvidenceTicketKey == null)
-            {
-                context.EvidenceTicketKey = krbtgtKey;
-            }
+            context.EvidenceTicketKey ??= krbtgtKey;
 
             var state = context.GetState<TgsState>(PaDataType.PA_TGS_REQ);
 
-            if (state.DecryptedApReq == null)
-            {
-                state.DecryptedApReq = this.DecryptApReq(state.ApReq, context.EvidenceTicketKey);
-            }
+            state.DecryptedApReq ??= this.DecryptApReq(state.ApReq, context.EvidenceTicketKey);
 
             context.EncryptedPartKey = state.DecryptedApReq.SessionKey;
             context.Ticket = state.DecryptedApReq.Ticket;
+            context.ClientRealm = state.DecryptedApReq.Ticket.CRealm;
 
             return null;
         }

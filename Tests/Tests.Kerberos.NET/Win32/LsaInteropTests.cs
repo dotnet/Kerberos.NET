@@ -31,6 +31,7 @@ namespace Tests.Kerberos.NET
                 ServicePrincipalKey = Key,
                 IncludePac = false,
                 RealmName = "test.com",
+                ClientRealmName = "test.com",
                 Now = DateTimeOffset.UtcNow,
                 StartTime = DateTimeOffset.UtcNow,
                 EndTime = DateTimeOffset.UtcNow.AddHours(5),

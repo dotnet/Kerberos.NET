@@ -28,6 +28,8 @@ jobs:
       run: dotnet build --no-restore -c release
     - name: Test
       run: dotnet test --no-build -c release --verbosity normal
+    - name: Package
+      run: dotnet pack --no-build
 
     - name: Upload signing file list
       uses: actions/upload-artifact@v4
@@ -39,7 +41,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: BuildArtifacts
-        path: src/Kerberos.NET/bin/Release/**/*.nupkg
+        path: ./**/*.nupkg
     
   sign:
     needs: build
@@ -96,19 +98,19 @@ jobs:
         --azure-key-vault-url "${{ secrets.KEY_VAULT_URL }}"
         --azure-key-vault-certificate "${{ secrets.KEY_VAULT_CERTIFICATE_ID }}"
 
-    - name: Sign Bruce artifacts
-      shell: pwsh
-      run: >
-        .\sign code azure-key-vault `
-        "**/*.nupkg" `
-        --base-directory "$(github.workspace)\drop" `
-        --file-list "${{ github.workspace }}/config/filelist.txt"
-        --publisher-name "Bruce" `
-        --description "Command line client for Kerberos.NET" `
-        --description-url "https://github.com/dotnet/Kerberos.NET" `
-        --azure-credential-type "azure-cli"
-        --azure-key-vault-url "${{ secrets.KEY_VAULT_URL }}"
-        --azure-key-vault-certificate "${{ secrets.KEY_VAULT_CERTIFICATE_ID }}"
+#    - name: Sign Bruce artifacts
+#      shell: pwsh
+#      run: >
+#        .\sign code azure-key-vault `
+#        "**/*.nupkg" `
+#        --base-directory "$(github.workspace)\drop" `
+#        --file-list "${{ github.workspace }}/config/filelist.txt"
+#        --publisher-name "Bruce" `
+#        --description "Command line client for Kerberos.NET" `
+#        --description-url "https://github.com/dotnet/Kerberos.NET" `
+#        --azure-credential-type "azure-cli"
+#        --azure-key-vault-url "${{ secrets.KEY_VAULT_URL }}"
+#        --azure-key-vault-certificate "${{ secrets.KEY_VAULT_CERTIFICATE_ID }}"
     
     # Publish the signed packages
     - name: Upload build artifacts

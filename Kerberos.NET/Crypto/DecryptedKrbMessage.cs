@@ -5,6 +5,7 @@
 
 using System;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Server;
 using static Kerberos.NET.Entities.KerberosConstants;
 
 namespace Kerberos.NET.Crypto
@@ -19,6 +20,8 @@ namespace Kerberos.NET.Crypto
             get { return this.nowFunc ?? (this.nowFunc = () => DateTimeOffset.UtcNow); }
             set { this.nowFunc = value; }
         }
+
+        public KerberosCompatibilityFlags CompatibilityFlags { get; set; }
 
         public abstract void Validate(ValidationActions validation);
 

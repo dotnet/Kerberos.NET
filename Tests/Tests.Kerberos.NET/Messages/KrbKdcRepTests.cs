@@ -78,7 +78,8 @@ namespace Tests.Kerberos.NET
                 ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
                 ServicePrincipalKey = key,
                 Principal = new FakeKerberosPrincipal("blah@blah2.com"),
-                RealmName = "blah.com"
+                RealmName = "blah.com",
+                ClientRealmName = "test.com",
             });
 
             Assert.IsNotNull(ticket);
@@ -100,6 +101,7 @@ namespace Tests.Kerberos.NET
                 ServicePrincipalKey = key,
                 Principal = new FakeKerberosPrincipal("blah@blah2.com"),
                 RealmName = realm,
+                ClientRealmName = realm,
                 Compatibility = compatibilityFlags,
             });
 

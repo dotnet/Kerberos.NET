@@ -130,7 +130,11 @@ namespace Tests.Kerberos.NET
         [DataRow(Realm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
         [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.None, UpperCaseRealm)]
         [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
-        public void GeneratedTgtMatchesWithOnPremisesSamAccountName(string realm, KerberosCompatibilityFlags compatibilityFlags, string expectedRealm)
+        public void GeneratedTgtMatchesWithOnPremisesSamAccountName(
+            string realm,
+            KerberosCompatibilityFlags compatibilityFlags,
+            string expectedRealm
+        )
         {
             var realmService = new FakeRealmService(realm, compatibilityFlags: compatibilityFlags);
             var principal = realmService.Principals.Find(KrbPrincipalName.FromString(UserUpn));
@@ -155,7 +159,12 @@ namespace Tests.Kerberos.NET
             AssertIsExpectedKrbtgtWithOnPremisesSamAccountName(principalKey, rst.ServicePrincipalKey, encoded.ToArray(), expectedRealm);
         }
 
-        private static void AssertIsExpectedKrbtgtWithOnPremisesSamAccountName(KerberosKey clientKey, KerberosKey tgtKey, byte[] message, string expectedRealm)
+        private static void AssertIsExpectedKrbtgtWithOnPremisesSamAccountName(
+            KerberosKey clientKey,
+            KerberosKey tgtKey,
+            byte[] message,
+            string expectedRealm
+        )
         {
             var asRep = new KrbAsRep().DecodeAsApplication(message);
 

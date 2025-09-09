@@ -145,7 +145,7 @@ namespace Tests.Kerberos.NET
                 CName = KrbPrincipalName.FromString("blah@blah.com"),
                 CTime = DateTimeOffset.UtcNow,
                 CuSec = 1234,
-                Realm = "blah.com",
+                CRealm = "blah.com",
                 SequenceNumber = 123456,
                 Subkey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96)
             };
@@ -280,6 +280,7 @@ namespace Tests.Kerberos.NET
                 ServicePrincipalKey = key,
                 IncludePac = false,
                 RealmName = "test.com",
+                ClientRealmName = "test.com",
                 Now = now,
                 StartTime = notBefore,
                 EndTime = notAfter,

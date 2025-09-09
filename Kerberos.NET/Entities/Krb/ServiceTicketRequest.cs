@@ -28,6 +28,11 @@ namespace Kerberos.NET.Entities
         public KerberosKey KdcAuthorizationKey { get; set; }
 
         /// <summary>
+        /// The realm name for which the requested identity originated
+        /// </summary>
+        public string ClientRealmName { get; set; }
+
+        /// <summary>
         /// The principal for which a service ticket is requested
         /// </summary>
         public IKerberosPrincipal Principal { get; set; }

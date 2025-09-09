@@ -44,6 +44,11 @@ namespace Kerberos.NET.Entities
                 rst.RealmName = realmService.Name;
             }
 
+            if (string.IsNullOrWhiteSpace(rst.ClientRealmName))
+            {
+                rst.ClientRealmName = realmService.Name;
+            }
+
             KrbPrincipalName krbtgtName = KrbPrincipalName.WellKnown.Krbtgt(rst.RealmName);
 
             if (rst.ServicePrincipal == null)
