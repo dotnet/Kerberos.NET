@@ -53,8 +53,10 @@ namespace Kerberos.NET.Configuration
         [DefaultValue("FILE:%APPDATA%\\Kerberos.NET\\.krb5cc")]
 #elif LINUX
         [DefaultValue("FILE:%HOME%/.config/Kerberos.NET/.krb5cc")]
-#else
+#elif MACOS
         [DefaultValue("FILE:%HOME%/Library/Preferences/Kerberos.NET/.krb5cc")]
+#else
+        #error Unknown platform
 #endif
         [DisplayName("default_ccache_name")]
         public string DefaultCCacheName { get; set; }
@@ -66,8 +68,10 @@ namespace Kerberos.NET.Configuration
         [DefaultValue("%APPDATA%\\Kerberos.NET\\client.keytab")]
 #elif LINUX
         [DefaultValue("%HOME%/.config/Kerberos.NET/client.keytab")]
-#else
+#elif MACOS
         [DefaultValue("%HOME%/Library/Preferences/Kerberos.NET/client.keytab")]
+#else
+        #error Unknown platform
 #endif
         [DisplayName("default_client_keytab_name")]
         public string DefaultClientKeytabName { get; set; }
@@ -79,8 +83,10 @@ namespace Kerberos.NET.Configuration
         [DefaultValue("%APPDATA%\\Kerberos.NET\\server.keytab")]
 #elif LINUX
         [DefaultValue("%HOME%/.config/Kerberos.NET/server.keytab")]
-#else
+#elif MACOS
         [DefaultValue("%HOME%/Library/Preferences/Kerberos.NET/server.keytab")]
+#else
+        #error Unknown platform
 #endif
         [DisplayName("default_keytab_name")]
         public string DefaultKeytabName { get; set; }
