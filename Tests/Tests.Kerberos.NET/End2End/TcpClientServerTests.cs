@@ -124,41 +124,49 @@ namespace Tests.Kerberos.NET
             }
         }
 
-        //[TestMethod]
-        //[ExpectedException(typeof(InvalidOperationException))]
-        //public async Task TCP_MultithreadedClient_WithLowPool()
-        //{
-        //    var port = NextPort();
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public async Task TCP_MultithreadedClient_WithLowPool()
+        {
+            int tries = 0;
 
-        //    var threads = 20;
-        //    var requests = 50;
+            do
+            {
+                var port = NextPort();
 
-        //    var cacheTickets = false;
-        //    var encodeNego = false;
-        //    var includePac = false;
+                var threads = 20;
+                var requests = 50;
 
-        //    string kdc = $"127.0.0.1:{port}";
+                var cacheTickets = false;
+                var encodeNego = false;
+                var includePac = false;
 
-        //    using (var listener = StartTcpListener(port))
-        //    {
-        //        _ = listener.Start();
+                string kdc = $"127.0.0.1:{port}";
 
-        //        var exceptions = await MultithreadedRequests(
-        //             threads,
-        //             requests,
-        //             cacheTickets,
-        //             encodeNego,
-        //             includePac,
-        //             kdc,
-        //             null,
-        //             listener: null
-        //         );
+                using (var listener = StartTcpListener(port))
+                {
+                    _ = listener.Start();
 
-        //        if (exceptions.Count > 0)
-        //        {
-        //            throw exceptions.First();
-        //        }
-        //    }
-        //}
+                    var exceptions = await MultithreadedRequests(
+                         threads,
+                         requests,
+                         cacheTickets,
+                         encodeNego,
+                         includePac,
+                         kdc,
+                         null,
+                         listener: null
+                     );
+
+                    if (exceptions.Count > 0)
+                    {
+                        throw exceptions.First();
+                    }
+                }
+            }
+            while (++tries < 10);
+
+            Assert.Fail("Expected multithreaded requests to eventually fail");
+        }
     }
 }
