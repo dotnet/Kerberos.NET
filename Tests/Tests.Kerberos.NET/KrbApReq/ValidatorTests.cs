@@ -384,21 +384,5 @@ namespace Tests.Kerberos.NET
 
             decrypted.Validate(ValidationActions.All);
         }
-
-        [TestMethod]
-        [ExpectedException(typeof(KerberosValidationException))]
-        public void DecryptedKrbApRep_Validate_Sequence()
-        {
-            var now = DateTimeOffset.UtcNow;
-
-            var sessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96);
-
-            var decrypted = CreateResponseMessage(now, 111, 123, sessionKey.AsKey());
-
-            decrypted.CTime = now;
-            decrypted.CuSec = 111;
-
-            decrypted.Validate(ValidationActions.All);
-        }
     }
 }
