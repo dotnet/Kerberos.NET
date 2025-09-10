@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -57,6 +57,18 @@ namespace Kerberos.NET
         /// Indicates the Ticket renewal period if set must be before the time of validation (now).
         /// </summary>
         RenewTill = 1 << 7,
+
+        /// <summary>
+        /// Validates that the caller wants to check if the sequence number equals the expected value.
+        /// Incompatible with `SequenceNumberGreaterThan`.
+        /// </summary>
+        SequenceNumberEquals = 1 << 8,
+
+        /// <summary>
+        /// Validates that the caller wants to check if the sequence number is greater than the expected value.
+        /// Incompatible with `SequenceNumberEquals`.
+        /// </summary>
+        SequenceNumberGreaterThan = 1 << 9,
 
         /// <summary>
         /// Indicates all validation actions must be invoked.

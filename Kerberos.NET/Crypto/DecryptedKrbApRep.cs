@@ -61,6 +61,52 @@ namespace Kerberos.NET.Crypto
                     nameof(this.CuSec)
                 );
             }
+
+            if (validation.HasFlag(ValidationActions.SequenceNumberEquals))
+            {
+                this.ValidateSequenceNumberEquals();
+            }
+
+            if (validation.HasFlag(ValidationActions.SequenceNumberGreaterThan))
+            {
+                this.ValidateSequenceNumberGreaterThan();
+            }
+        }
+
+        private void ValidateSequenceNumberGreaterThan()
+        {
+            if (this.SequenceNumber >= this.Response.SequenceNumber)
+            {
+                throw new KerberosValidationException(
+                    $"SequenceNumber is not incrementing. Sent: {this.SequenceNumber}; Received: {this.Response.SequenceNumber}",
+                    nameof(this.SequenceNumber)
+                );
+            }
+            else if (this.SequenceNumber is not null && this.Response.SequenceNumber is null)
+            {
+                throw new KerberosValidationException(
+                    $"Response SequenceNumber is null. Sent: {this.SequenceNumber}; Received: {this.Response.SequenceNumber}",
+                    nameof(this.SequenceNumber)
+                );
+            }
+            else if (this.SequenceNumber is null && this.Response.SequenceNumber is null)
+            {
+                throw new KerberosValidationException(
+                    $"Both SequenceNumber and response SequenceNumber are null and not incrementing. Sent: {this.SequenceNumber}; Received: {this.Response.SequenceNumber}",
+                    nameof(this.SequenceNumber)
+                );
+            }
+        }
+
+        private void ValidateSequenceNumberEquals()
+        {
+            if (this.SequenceNumber != this.Response.SequenceNumber)
+            {
+                throw new KerberosValidationException(
+                    $"SequenceNumber does not match. Sent: {this.SequenceNumber}; Received: {this.Response.SequenceNumber}",
+                    nameof(this.SequenceNumber)
+                );
+            }
         }
     }
 }

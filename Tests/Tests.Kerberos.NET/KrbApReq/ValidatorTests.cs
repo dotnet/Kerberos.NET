@@ -231,7 +231,7 @@ namespace Tests.Kerberos.NET
             decrypted.Validate(ValidationActions.All);
         }
 
-        private static DecryptedKrbApRep CreateResponseMessage(DateTimeOffset ctime, int cusec, int sequence, KerberosKey sessionKey)
+        private static DecryptedKrbApRep CreateResponseMessage(DateTimeOffset ctime, int cusec, int? sequence, KerberosKey sessionKey)
         {
             var apRepPart = new KrbEncApRepPart
             {
@@ -383,6 +383,39 @@ namespace Tests.Kerberos.NET
             decrypted.CTime = now;
 
             decrypted.Validate(ValidationActions.All);
+        }
+
+        [TestMethod]
+        [DataRow(ValidationActions.SequenceNumberEquals, 123, 123, true)]
+        [DataRow(ValidationActions.SequenceNumberEquals, 123, 124, false)]
+        [DataRow(ValidationActions.SequenceNumberEquals, null, 123, false)]
+        [DataRow(ValidationActions.SequenceNumberEquals, 123, null, false)]
+        [DataRow(ValidationActions.SequenceNumberEquals, null, null, true)]
+        [DataRow(ValidationActions.SequenceNumberGreaterThan, 123, 124, true)]
+        [DataRow(ValidationActions.SequenceNumberGreaterThan, 123, 123, false)]
+        [DataRow(ValidationActions.SequenceNumberGreaterThan, null, 124, true)]
+        [DataRow(ValidationActions.SequenceNumberGreaterThan, 123, null, false)]
+        [DataRow(ValidationActions.SequenceNumberGreaterThan, null, null, false)]
+        public void DecryptedKrbApRep_Validate_SequenceNumber(ValidationActions validation, int? current, int? resp, bool expectedSuccess)
+        {
+            var now = DateTimeOffset.UtcNow;
+
+            var sessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96);
+
+            var decrypted = CreateResponseMessage(now, 111, resp, sessionKey.AsKey());
+
+            decrypted.SequenceNumber = current;
+            decrypted.CTime = now;
+            decrypted.CuSec = 111;
+
+            if (!expectedSuccess)
+            {
+                Assert.ThrowsException<KerberosValidationException>(() => decrypted.Validate(ValidationActions.All | validation));
+            }
+            else
+            {
+                decrypted.Validate(ValidationActions.All | validation);
+            }
         }
     }
 }
