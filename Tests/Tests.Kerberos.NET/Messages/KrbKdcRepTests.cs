@@ -85,7 +85,7 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(ticket);
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow(LowerCaseRealm, KerberosCompatibilityFlags.None, LowerCaseRealm)]
         [DataRow(LowerCaseRealm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
         [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.None, UpperCaseRealm)]

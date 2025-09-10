@@ -58,7 +58,7 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(krbtgt);
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow(Realm, KerberosCompatibilityFlags.None, Realm)]
         [DataRow(Realm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
         [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.None, UpperCaseRealm)]
@@ -125,7 +125,7 @@ namespace Tests.Kerberos.NET
             Assert.IsTrue(Enumerable.SequenceEqual(krbtgt.Key.KeyValue.ToArray(), encPart.Key.KeyValue.ToArray()));
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow(Realm, KerberosCompatibilityFlags.None, Realm)]
         [DataRow(Realm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
         [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.None, UpperCaseRealm)]
