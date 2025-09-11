@@ -1,27 +1,30 @@
-﻿using System;
+﻿using DnsClient;
+using Kerberos.NET.Dns;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DnsClient;
-using Kerberos.NET.Dns;
 
-namespace Kerberos.NET.CommandLine.Dns
+namespace Kerberos.NET.PortableDns
 {
-    internal class PlatformIndependentDnsClient : IKerberosDnsQuery
+    internal class PortableDnsImplementation : IKerberosDnsQuery
     {
-        private static readonly WindowsDnsQuery WindowsDns = new WindowsDnsQuery();
+        static PortableDnsImplementation()
+        {
+            DnsQuery.RegisterImplementation(new PortableDnsImplementation());
+        }
+
+        public static LookupClientOptions Options { get; set; } = new LookupClientOptions();
+
+        private static LookupClient Create()
+        {
+            return new LookupClient(Options);
+        }
 
         public async Task<IReadOnlyCollection<DnsRecord>> Query(string query, DnsRecordType type)
         {
-            if (WindowsDns.IsSupported)
-            {
-                return await WindowsDns.Query(query, type);
-            }
-
-            var client = new LookupClient();
-
+            var client = Create();
             var response = await client.QueryAsync(query, (QueryType)type);
-
             var srvRecords = response.Answers.SrvRecords().Select(a => new DnsRecord
             {
                 Name = a.DomainName,
@@ -38,9 +41,7 @@ namespace Kerberos.NET.CommandLine.Dns
             foreach (var srv in srvRecords)
             {
                 var c1 = merged.Where(m => m.Key.Equals(srv.Target, StringComparison.InvariantCultureIgnoreCase));
-
                 var canon = c1.SelectMany(r => r);
-
                 srv.Canonical = canon.ToList();
             }
 

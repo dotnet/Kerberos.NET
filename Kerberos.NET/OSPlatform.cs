@@ -1,16 +1,14 @@
 ﻿using System;
+using RtIs = System.Runtime.InteropServices;
 
 namespace Kerberos.NET
 {
     public static class OSPlatform
     {
-        public static readonly bool IsWindows = Environment.OSVersion.Platform == PlatformID.Win32S
-                                             || Environment.OSVersion.Platform == PlatformID.Win32Windows
-                                             || Environment.OSVersion.Platform == PlatformID.Win32NT
-                                             || Environment.OSVersion.Platform == PlatformID.WinCE;
+        public static readonly bool IsWindows = RtIs.RuntimeInformation.IsOSPlatform(RtIs.OSPlatform.Windows);
 
-        public static readonly bool IsLinux = Environment.OSVersion.Platform == PlatformID.Unix;
+        public static readonly bool IsLinux = RtIs.RuntimeInformation.IsOSPlatform(RtIs.OSPlatform.Linux);
 
-        public static readonly bool IsOsX = Environment.OSVersion.Platform == PlatformID.MacOSX;
+        public static readonly bool IsOsX = RtIs.RuntimeInformation.IsOSPlatform(RtIs.OSPlatform.OSX);
     }
 }

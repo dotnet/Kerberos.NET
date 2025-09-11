@@ -4,8 +4,10 @@
 // -----------------------------------------------------------------------
 
 using System.Threading.Tasks;
+#if WINDOWS
 using System.Windows.Forms;
 using KerbDump;
+#endif
 
 namespace Kerberos.NET.CommandLine
 {
@@ -14,8 +16,10 @@ namespace Kerberos.NET.CommandLine
     {
         static KerberosDumpCommand()
         {
+#if WINDOWS
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+#endif
         }
 
         public KerberosDumpCommand(CommandLineParameters parameters)
@@ -29,11 +33,7 @@ namespace Kerberos.NET.CommandLine
 
         public override Task<bool> Execute()
         {
-            if (!OSPlatform.IsWindows)
-            {
-                return Task.FromResult(false);
-            }
-
+#if WINDOWS
             using (var form = new DecoderForm()
             {
                 Ticket = this.Ticket,
@@ -44,6 +44,10 @@ namespace Kerberos.NET.CommandLine
             }
 
             return Task.FromResult(true);
+#else
+            return Task.FromResult(false);
+#endif
         }
     }
 }
+

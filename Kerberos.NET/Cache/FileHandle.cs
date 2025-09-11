@@ -20,8 +20,9 @@ namespace Kerberos.NET.Client
         private readonly FileMode mode;
         private readonly FileAccess access;
         private readonly FileShare share;
+#nullable enable
         private static readonly MethodInfo? SetUnixFileMode = TryGetSetUnixFileMode();
-
+#nullable disable
         private static readonly TimeSpan LockWaitTimeout = TimeSpan.FromMilliseconds(5000);
 
         public FileHandle(string file, FileMode mode, FileAccess access, FileShare share)
@@ -78,6 +79,7 @@ namespace Kerberos.NET.Client
                                                  .Replace(Path.VolumeSeparatorChar, '_');
         }
 
+#nullable enable
         private static MethodInfo? TryGetSetUnixFileMode()
         {
             MethodInfo? mi = null;
@@ -90,11 +92,15 @@ namespace Kerberos.NET.Client
                 {
                     mi = typeof(File).GetMethod("SetUnixFileMode", new Type[] { typeof(SafeFileHandle), Type.GetType("System.IO.UnixFileMode") });
                 }
-                catch { }
+                catch
+                {
+                    // ignored
+                }
             }
 
             return mi;
         }
+#nullable disable
 
         private class FileLock : IDisposable
         {
