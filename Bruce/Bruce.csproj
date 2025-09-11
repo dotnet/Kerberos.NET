@@ -50,4 +50,11 @@
                       Condition="'$(OS)' == 'Windows_NT'" />
   </ItemGroup>
 
+  <Target Name="NETSDK1146Workaround" BeforeTargets="_PackToolValidation">
+    <PropertyGroup>
+      <TargetPlatformIdentifier></TargetPlatformIdentifier>
+      <TargetPlatformMoniker></TargetPlatformMoniker>
+    </PropertyGroup>
+  </Target>
+
 </Project>
