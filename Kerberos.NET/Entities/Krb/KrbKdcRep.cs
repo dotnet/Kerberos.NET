@@ -212,7 +212,7 @@ namespace Kerberos.NET.Entities
             var encTicketPart = new KrbEncTicketPart()
             {
                 CName = cname,
-                CRealm = request.ClientRealmName,
+                CRealm = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ? request.ClientRealmName : request.RealmName,
                 Key = sessionKey,
                 AuthTime = request.Now,
                 StartTime = request.StartTime,
