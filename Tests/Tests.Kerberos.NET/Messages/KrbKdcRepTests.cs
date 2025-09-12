@@ -14,8 +14,10 @@ namespace Tests.Kerberos.NET
     [TestClass]
     public class KrbKdcRepTests
     {
-        private const string LowerCaseRealm = "realm.com";
-        private const string UpperCaseRealm = "REALM.COM";
+        private const string LowerCaseRealm1 = "realm.com";
+        private const string UpperCaseRealm1 = "REALM.COM";
+        private const string LowerCaseRealm2 = "test.com";
+        private const string UpperCaseRealm2 = "TEST.COM";
 
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]
@@ -72,7 +74,7 @@ namespace Tests.Kerberos.NET
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
 
-            var ticket = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
                 EncryptedPartKey = key,
                 ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
@@ -80,33 +82,60 @@ namespace Tests.Kerberos.NET
                 Principal = new FakeKerberosPrincipal("blah@blah2.com"),
                 RealmName = "blah.com",
                 ClientRealmName = "test.com",
+                Compatibility = KerberosCompatibilityFlags.IsolateRealmsConsistently,
             });
 
-            Assert.IsNotNull(ticket);
+            Assert.IsNotNull(tgsRep);
+            Assert.AreEqual("blah.com", tgsRep.Ticket.Realm);
+            Assert.AreEqual("blah@blah.com/blah.com", tgsRep.Ticket.SName.FullyQualifiedName);
+            Assert.AreEqual("test.com", tgsRep.CRealm);
+            Assert.AreEqual("blah@blah2.com", tgsRep.CName.FullyQualifiedName);
+
+            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(key, KeyUsage.Ticket, KrbEncTicketPart.DecodeApplication);
+            Assert.AreEqual("test.com", ticketEncPart.CRealm);
+            Assert.AreEqual("blah@blah2.com", ticketEncPart.CName.FullyQualifiedName);
         }
 
         [TestMethod]
-        [DataRow(LowerCaseRealm, KerberosCompatibilityFlags.None, LowerCaseRealm)]
-        [DataRow(LowerCaseRealm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
-        [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.None, UpperCaseRealm)]
-        [DataRow(UpperCaseRealm, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm)]
-        public void CreateServiceTicketOnCompatibilitySetting(string realm, KerberosCompatibilityFlags compatibilityFlags, string expectedRealm)
+        // Check that no uppercasing or realm isolation happens by default.
+        [DataRow(LowerCaseRealm1, LowerCaseRealm2, KerberosCompatibilityFlags.None, LowerCaseRealm1, LowerCaseRealm1)]
+        [DataRow(UpperCaseRealm1, UpperCaseRealm2, KerberosCompatibilityFlags.None, UpperCaseRealm1, UpperCaseRealm1)]
+        // Check that KerberosCompatibilityFlags.NormalizeRealmsUppercase uppercases the realm.
+        [DataRow(LowerCaseRealm1, LowerCaseRealm2, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm1, UpperCaseRealm1)]
+        [DataRow(UpperCaseRealm1, UpperCaseRealm2, KerberosCompatibilityFlags.NormalizeRealmsUppercase, UpperCaseRealm1, UpperCaseRealm1)]
+        // Check that KerberosCompatibilityFlags.IsolateRealmsConsistently does isolate the realm and crealm
+        [DataRow(LowerCaseRealm1, LowerCaseRealm2, KerberosCompatibilityFlags.IsolateRealmsConsistently, LowerCaseRealm1, LowerCaseRealm2)]
+        [DataRow(UpperCaseRealm1, UpperCaseRealm2, KerberosCompatibilityFlags.IsolateRealmsConsistently, UpperCaseRealm1, UpperCaseRealm2)]
+        // Check that both flags together uppercase and isolate the realms.
+        [DataRow(LowerCaseRealm1, LowerCaseRealm2, KerberosCompatibilityFlags.NormalizeRealmsUppercase | KerberosCompatibilityFlags.IsolateRealmsConsistently, UpperCaseRealm1, UpperCaseRealm2)]
+        [DataRow(UpperCaseRealm1, UpperCaseRealm2, KerberosCompatibilityFlags.NormalizeRealmsUppercase | KerberosCompatibilityFlags.IsolateRealmsConsistently, UpperCaseRealm1, UpperCaseRealm2)]
+        public void CreateServiceTicketOnCompatibilitySetting(
+            string realm,
+            string crealm,
+            KerberosCompatibilityFlags compatibilityFlags,
+            string expectedRealm,
+            string expectedCRealm
+        )
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
 
-            var ticket = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
                 EncryptedPartKey = key,
                 ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
                 ServicePrincipalKey = key,
                 Principal = new FakeKerberosPrincipal("blah@blah2.com"),
                 RealmName = realm,
-                ClientRealmName = realm,
+                ClientRealmName = crealm,
                 Compatibility = compatibilityFlags,
             });
 
-            Assert.IsNotNull(ticket);
-            Assert.AreEqual(expectedRealm, ticket.CRealm);
+            Assert.IsNotNull(tgsRep);
+            Assert.AreEqual(expectedRealm, tgsRep.Ticket.Realm);
+
+            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(key, KeyUsage.Ticket, KrbEncTicketPart.DecodeApplication);
+            Assert.AreEqual(expectedCRealm, ticketEncPart.CRealm);
+            Assert.AreEqual(expectedCRealm, tgsRep.CRealm);
         }
     }
 }
