@@ -105,7 +105,6 @@ namespace Kerberos.NET.Server
 
             context.EncryptedPartKey = state.DecryptedApReq.SessionKey;
             context.Ticket = state.DecryptedApReq.Ticket;
-            context.ClientRealm = state.DecryptedApReq.Ticket.CRealm;
 
             return null;
         }

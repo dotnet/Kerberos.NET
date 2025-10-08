@@ -271,7 +271,7 @@ namespace Kerberos.NET.Server
                 EncryptedPartEType = context.EncryptedPartEType,
                 ServicePrincipal = context.ServicePrincipal,
                 ServicePrincipalKey = serviceKey,
-                ClientRealmName = context.ClientRealm,
+                ClientRealmName = context.Ticket.CRealm,
                 RealmName = tgsReq.Body.Realm,
                 Addresses = tgsReq.Body.Addresses,
                 RenewTill = context.Ticket.RenewTill,
