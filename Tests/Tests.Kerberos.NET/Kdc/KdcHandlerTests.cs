@@ -26,11 +26,33 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void KdcAsReqHandler_Sync()
         {
-            KrbAsRep asRep = RequestTgt(out _);
+            KrbAsRep asRep = RequestTgt(out _, out KrbAsReq asReq);
 
             Assert.IsNotNull(asRep);
+
+            // RFC 4120 Section 3.1.5 Receipt of KRB_AS_REP Message
+            // "If the reply message type is KRB_AS_REP, then the client verifies that the cname and crealm fields in
+            // the cleartext portion of the reply match what it requested."
+            Assert.AreEqual(Realm, asReq.Body.Realm);
             Assert.AreEqual(Realm, asRep.CRealm);
+
+            Assert.AreEqual(Upn, asReq.Body.CName.FullyQualifiedName);
             Assert.AreEqual(Upn, asRep.CName.FullyQualifiedName);
+
+            // Clients can't decrypt TGTs usually, but for the sake of testing let's check what's inside
+            var realmService = new FakeRealmService(Realm);
+            var tgtPrincipalName = KrbPrincipalName.WellKnown.Krbtgt(Realm);
+            var tgtEncPartKey = realmService.Principals.Find(tgtPrincipalName).RetrieveLongTermCredential();
+
+            var ticketEncPart = asRep.Ticket.EncryptedPart.Decrypt(
+                tgtEncPartKey,
+                KeyUsage.Ticket,
+                d => KrbEncTicketPart.DecodeApplication(d)
+            );
+
+            Assert.IsNotNull(ticketEncPart);
+            Assert.AreEqual(Realm, ticketEncPart.CRealm);
+            Assert.AreEqual(Upn, ticketEncPart.CName.FullyQualifiedName);
         }
 
         [TestMethod]
@@ -40,11 +62,13 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(asRep);
 
+            var spn = "host/foo." + Realm;
+
             var tgsReq = KrbTgsReq.CreateTgsReq(
                 new RequestServiceTicket
                 {
                     Realm = Realm,
-                    ServicePrincipalName = "host/foo." + Realm
+                    ServicePrincipalName = spn
                 },
                 tgtKey,
                 asRep,
@@ -71,9 +95,31 @@ namespace Tests.Kerberos.NET
             );
 
             Assert.IsNotNull(encKdcRepPart);
+
+            Assert.AreEqual(Realm, tgsRep.CRealm);
+            Assert.AreEqual(Upn, tgsRep.CName.FullyQualifiedName);
+
+            // Clients can't decrypt service tickets usually, but for the sake of testing let's check what's inside
+            var realmService = new FakeRealmService(Realm);
+            var ticketEncPart = realmService.Principals.Find(KrbPrincipalName.FromString(spn)).RetrieveLongTermCredential();
+
+            var serviceTicketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(
+                ticketEncPart,
+                KeyUsage.Ticket,
+                d => KrbEncTicketPart.DecodeApplication(d)
+            );
+
+            Assert.IsNotNull(serviceTicketEncPart);
+            Assert.AreEqual(Realm, serviceTicketEncPart.CRealm);
+            Assert.AreEqual(Upn, serviceTicketEncPart.CName.FullyQualifiedName);
         }
 
-        private static KrbAsRep RequestTgt(out KrbEncryptionKey sessionKey)
+        private KrbAsRep RequestTgt(out KrbEncryptionKey sessionKey)
+        {
+            return RequestTgt(out sessionKey, out _);
+        }
+
+        private KrbAsRep RequestTgt(out KrbEncryptionKey sessionKey, out KrbAsReq asReq)
         {
             var cred = new KerberosPasswordCredential(Upn, "P@ssw0rd!")
             {
@@ -89,7 +135,7 @@ namespace Tests.Kerberos.NET
                 Configuration = Krb5Config.Default()
             };
 
-            var asReq = KrbAsReq.CreateAsReq(
+            asReq = KrbAsReq.CreateAsReq(
                 cred,
                 AuthenticationOptions.AllAuthentication
             );
