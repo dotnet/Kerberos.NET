@@ -265,13 +265,19 @@ namespace Kerberos.NET.Server
 
             var rst = new ServiceTicketRequest
             {
+                // RFC 4120, section 3.3.3 Generation of KRB_TGS_REP Message:
+                // "By default, the address field, the client's name and realm, the list of transited realms, the time
+                // of initial authentication, the expiration time, and the authorization data of the newly-issued
+                // ticket will be copied from the TGT or renewable ticket."
+                ClientName = context.Ticket.CName,
+                ClientRealmName = context.Ticket.CRealm,
+
                 KdcAuthorizationKey = context.EvidenceTicketKey,
                 Principal = context.Principal,
                 EncryptedPartKey = context.EncryptedPartKey,
                 EncryptedPartEType = context.EncryptedPartEType,
                 ServicePrincipal = context.ServicePrincipal,
                 ServicePrincipalKey = serviceKey,
-                ClientRealmName = context.Ticket.CRealm,
                 RealmName = tgsReq.Body.Realm,
                 Addresses = tgsReq.Body.Addresses,
                 RenewTill = context.Ticket.RenewTill,

@@ -167,6 +167,12 @@ namespace Kerberos.NET.Server
 
             var rst = new ServiceTicketRequest
             {
+                // RFC 4120 section 3.1.5 Receipt of KRB_AS_REP Message
+                // "If the reply message type is KRB_AS_REP, then the client verifies that the cname and crealm fields
+                // in the cleartext portion of the reply match what it requested."
+                ClientName = asReq.Body.CName,
+                ClientRealmName = asReq.Body.Realm,
+
                 Principal = context.Principal,
                 EncryptedPartKey = context.EncryptedPartKey,
                 EncryptedPartEType = context.EncryptedPartEType,

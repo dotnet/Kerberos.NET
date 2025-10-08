@@ -112,12 +112,15 @@ namespace Tests.Kerberos.NET
 
             var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
-                EncryptedPartKey = key,
+                ClientName = KrbPrincipalName.FromString("blah@test.com"),
+                ClientRealmName = "test.com",
+                Principal = new FakeKerberosPrincipal("blah@test.com"),
+
                 ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
                 ServicePrincipalKey = key,
-                Principal = new FakeKerberosPrincipal("blah@blah2.com"),
                 RealmName = "blah.com",
-                ClientRealmName = "test.com",
+
+                EncryptedPartKey = key,
                 Compatibility = KerberosCompatibilityFlags.IsolateRealmsConsistently,
             });
 
@@ -125,11 +128,11 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual("blah.com", tgsRep.Ticket.Realm);
             Assert.AreEqual("blah@blah.com/blah.com", tgsRep.Ticket.SName.FullyQualifiedName);
             Assert.AreEqual("test.com", tgsRep.CRealm);
-            Assert.AreEqual("blah@blah2.com", tgsRep.CName.FullyQualifiedName);
+            Assert.AreEqual("blah@test.com", tgsRep.CName.FullyQualifiedName);
 
             var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(key, KeyUsage.Ticket, KrbEncTicketPart.DecodeApplication);
             Assert.AreEqual("test.com", ticketEncPart.CRealm);
-            Assert.AreEqual("blah@blah2.com", ticketEncPart.CName.FullyQualifiedName);
+            Assert.AreEqual("blah@test.com", ticketEncPart.CName.FullyQualifiedName);
         }
 
         [TestMethod]
@@ -184,12 +187,14 @@ namespace Tests.Kerberos.NET
 
             var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
+                Principal = new FakeKerberosPrincipal($"blah@{crealm}"),
+                ClientName = KrbPrincipalName.FromString($"blah@{crealm}"),
+                ClientRealmName = crealm,
+
                 EncryptedPartKey = key,
                 ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
                 ServicePrincipalKey = key,
-                Principal = new FakeKerberosPrincipal("blah@blah2.com"),
                 RealmName = realm,
-                ClientRealmName = crealm,
                 Compatibility = compatibilityFlags,
             });
 

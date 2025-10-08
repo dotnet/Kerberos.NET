@@ -107,6 +107,19 @@ namespace Kerberos.NET.Entities
                 throw new InvalidOperationException("A service principal key must be provided");
             }
 
+            if (request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently))
+            {
+                if (request.ClientName == null)
+                {
+                    throw new InvalidOperationException("Client name must be provided when IsolateRealmsConsistently is set");
+                }
+
+                if (request.ClientRealmName == null)
+                {
+                    throw new InvalidOperationException("Client realm name must be provided when IsolateRealmsConsistently is set");
+                }
+            }
+
             if (request.Compatibility.HasFlag(KerberosCompatibilityFlags.NormalizeRealmsUppercase))
             {
                 request.RealmName = request.RealmName?.ToUpperInvariant();
@@ -194,8 +207,6 @@ namespace Kerberos.NET.Entities
             KrbEncryptionKey sessionKey
         )
         {
-            var cname = CreateCNameForTicket(request);
-
             var flags = request.Flags;
 
             if (request.PreAuthenticationData?.Any(r => r.Type == PaDataType.PA_REQ_ENC_PA_REP) ?? false)
@@ -209,7 +220,7 @@ namespace Kerberos.NET.Entities
 
             var encTicketPart = new KrbEncTicketPart()
             {
-                CName = cname,
+                CName = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ? request.ClientName : CreateCNameForTicket(request),
                 CRealm = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ? request.ClientRealmName : request.RealmName,
                 Key = sessionKey,
                 AuthTime = request.Now,
@@ -235,11 +246,11 @@ namespace Kerberos.NET.Entities
         {
             if (string.IsNullOrEmpty(request.SamAccountName))
             {
+                // This is a bug, fixed under the IsolateRealmsConsistently flag.
+                // Client realm name is not necessarily the same as the (service) realm name
                 return KrbPrincipalName.FromPrincipal(
                     request.Principal,
-                    realm: request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ?
-                        request.ClientRealmName :
-                        request.RealmName
+                    realm: request.RealmName
                 );
             }
 

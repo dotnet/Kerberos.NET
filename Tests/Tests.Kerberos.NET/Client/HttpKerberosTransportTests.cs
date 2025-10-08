@@ -92,6 +92,8 @@ namespace Tests.Kerberos.NET
 
                 var rst = new ServiceTicketRequest
                 {
+                    ClientName = KrbPrincipalName.FromPrincipal(principal),
+                    ClientRealmName = Realm,
                     Principal = principal,
                     EncryptedPartKey = principalKey,
                     ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96)

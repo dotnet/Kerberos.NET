@@ -28,7 +28,12 @@ namespace Kerberos.NET.Entities
         public KerberosKey KdcAuthorizationKey { get; set; }
 
         /// <summary>
-        /// The realm name for which the requested identity originated
+        /// The client name (cname) of the identity requesting the ticket
+        /// </summary>
+        public KrbPrincipalName ClientName { get; set; }
+
+        /// <summary>
+        /// The client realm (crealm) name of the identity requesting the ticket
         /// </summary>
         public string ClientRealmName { get; set; }
 
@@ -179,6 +184,21 @@ namespace Kerberos.NET.Entities
                 return false;
             }
 
+            if (other.ClientName != this.ClientName)
+            {
+                return false;
+            }
+
+            if (other.ClientRealmName != this.ClientRealmName)
+            {
+                return false;
+            }
+
+            if (other.EncryptedPartEType != this.EncryptedPartEType)
+            {
+                return false;
+            }
+
             if (other.EncryptedPartKey != this.EncryptedPartKey)
             {
                 return false;
@@ -281,6 +301,10 @@ namespace Kerberos.NET.Entities
         {
             return EntityHashCode.GetHashCode(
                 this.Addresses,
+                this.ClientName,
+                this.ClientRealmName,
+                this.Compatibility,
+                this.EncryptedPartEType,
                 this.EncryptedPartKey,
                 this.EndTime,
                 this.Flags,
