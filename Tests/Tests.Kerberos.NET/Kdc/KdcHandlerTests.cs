@@ -3,6 +3,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET;
@@ -22,6 +23,10 @@ namespace Tests.Kerberos.NET
     {
         private const string Realm = "CORP2.IDENTITYINTERVENTION.COM";
         private const string Upn = "fake@" + Realm;
+
+        private const string Realm2 = "TEST.COM";
+        private const string Upn2WithoutRealm = "fakeuser";
+        // private const string Upn2WithoutRealm = "fakeuser@" + Realm2;
 
         [TestMethod]
         public void KdcAsReqHandler_Sync()
@@ -112,6 +117,178 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(serviceTicketEncPart);
             Assert.AreEqual(Realm, serviceTicketEncPart.CRealm);
             Assert.AreEqual(Upn, serviceTicketEncPart.CName.FullyQualifiedName);
+        }
+
+        [TestMethod]
+        public void KdcTgsReqHandler_Sync_ReferralTgt()
+        {
+            var sourceRealm = Realm2;
+            var destRealm = Realm;
+            var cname = new KrbPrincipalName
+            {
+                Type = PrincipalNameType.NT_PRINCIPAL,
+                Name = new[] { Upn2WithoutRealm }
+            };
+
+            KrbAsRep asRep = CreateReferralTgt(sourceRealm, destRealm, cname, out KerberosKey tgtKey, out KerberosKey asRepKey, out KrbEncryptionKey sessionKey);
+
+            // Check the TGT we just generated
+            Assert.IsNotNull(asRep);
+            Assert.AreEqual(sourceRealm, asRep.CRealm);
+            Assert.AreEqual(Upn2WithoutRealm, asRep.CName.FullyQualifiedName);
+
+            // Clients can't decrypt TGTs usually, but for the sake of testing let's check what's inside
+            var tgtEncPart = asRep.Ticket.EncryptedPart.Decrypt(
+                tgtKey,
+                KeyUsage.Ticket,
+                d => KrbEncTicketPart.DecodeApplication(d)
+            );
+
+            Assert.IsNotNull(tgtEncPart);
+            Assert.AreEqual(sourceRealm, tgtEncPart.CRealm);
+            Assert.AreEqual(Upn2WithoutRealm, tgtEncPart.CName.FullyQualifiedName);
+
+            // Send a TGS-REQ to get a service ticket in the destination realm
+            var spn = "host/foo." + Realm;
+
+            var tgsReq = KrbTgsReq.CreateTgsReq(
+                new RequestServiceTicket
+                {
+                    Realm = Realm,
+                    ServicePrincipalName = spn
+                },
+                sessionKey,
+                asRep,
+                out KrbEncryptionKey subSessionKey
+            );
+
+            var handler = new KdcTgsReqMessageHandler(tgsReq.EncodeApplication(), new KdcServerOptions
+            {
+                DefaultRealm = destRealm,
+                IsDebug = true,
+                RealmLocator = realm => new FakeRealmService(realm)
+            });
+
+            var results = handler.Execute();
+
+            var tgsRep = KrbTgsRep.DecodeApplication(results);
+
+            Assert.IsNotNull(tgsRep);
+
+            var encKdcRepPart = tgsRep.EncPart.Decrypt(
+                subSessionKey.AsKey(),
+                KeyUsage.EncTgsRepPartSubSessionKey,
+                d => KrbEncTgsRepPart.DecodeApplication(d)
+            );
+
+            Assert.IsNotNull(encKdcRepPart);
+
+            Assert.AreEqual(sourceRealm, tgsRep.CRealm);
+            Assert.AreEqual(Upn2WithoutRealm, tgsRep.CName.FullyQualifiedName);
+
+            // Clients can't decrypt service tickets usually, but for the sake of testing let's check what's inside
+            var destRealmService = new FakeRealmService(destRealm);
+            var servicePrincipal = destRealmService.Principals.Find(KrbPrincipalName.FromString(spn), destRealm);
+            var servicePrincipalKey = servicePrincipal.RetrieveLongTermCredential();
+
+            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(
+                servicePrincipalKey,
+                KeyUsage.Ticket,
+                d => KrbEncTicketPart.DecodeApplication(d)
+            );
+
+            Assert.IsNotNull(ticketEncPart);
+            Assert.AreEqual(sourceRealm, ticketEncPart.CRealm);
+            Assert.AreEqual(Upn2WithoutRealm, ticketEncPart.CName.FullyQualifiedName);
+        }
+
+        private KrbAsRep CreateReferralTgt(string sourceRealm, string destRealm, KrbPrincipalName cname, out KerberosKey tgtKey, out KerberosKey asRepKey, out KrbEncryptionKey sessionKey)
+        {
+            var sourceRealmService = new FakeRealmService(sourceRealm);
+
+            var sname = KrbPrincipalName.WellKnown.Krbtgt(destRealm);
+            var servicePrincipal = sourceRealmService.Principals.Find(sname, destRealm);
+            tgtKey = servicePrincipal.RetrieveLongTermCredential();
+
+            var clientPrincipal = sourceRealmService.Principals.Find(cname, sourceRealm);
+            asRepKey = clientPrincipal.RetrieveLongTermCredential();
+
+            sessionKey = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA256_128);
+
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+
+            var encTicketPart = new KrbEncTicketPart()
+            {
+                CName = cname,
+                CRealm = sourceRealm,
+                Key = sessionKey,
+                AuthTime = now,
+                StartTime = now,
+                EndTime = now.AddHours(1),
+                RenewTill = now.AddDays(30),
+                Flags = TicketFlags.PreAuthenticated | TicketFlags.Initial | TicketFlags.Renewable | TicketFlags.Forwardable,
+                AuthorizationData = null,
+                CAddr = new KrbHostAddress[] { },
+                Transited = new KrbTransitedEncoding()
+            };
+
+            KrbTicket ticket = new KrbTicket()
+            {
+                Realm = destRealm,
+                SName = sname,
+                EncryptedPart = KrbEncryptedData.Encrypt(
+                    encTicketPart.EncodeApplication(),
+                    tgtKey,
+                    KeyUsage.Ticket
+                )
+            };
+
+            KrbEncAsRepPart encAsRepPart = new KrbEncAsRepPart
+            {
+                AuthTime = encTicketPart.AuthTime,
+                StartTime = encTicketPart.AuthTime,
+                EndTime = encTicketPart.EndTime,
+                RenewTill = encTicketPart.RenewTill,
+                KeyExpiration = servicePrincipal.Expires,
+                Realm = destRealm,
+                SName = sname,
+                Flags = encTicketPart.Flags,
+                CAddr = encTicketPart.CAddr,
+                Key = sessionKey,
+                Nonce = 1234567890,
+                LastReq = new[] { new KrbLastReq { Type = 0, Value = now } },
+                EncryptedPaData = new KrbMethodData
+                {
+                    MethodData = new[]
+                    {
+                        new KrbPaData
+                        {
+                            Type = PaDataType.PA_SUPPORTED_ETYPES,
+                            Value = servicePrincipal.SupportedEncryptionTypes.AsReadOnlyMemory(littleEndian: true)
+                        }
+                    }
+                }
+            };
+
+            KrbAsRep asRep = new KrbAsRep
+            {
+                CRealm = Realm2,
+                CName = new KrbPrincipalName
+                {
+                    Type = PrincipalNameType.NT_PRINCIPAL,
+                    Name = new[] { Upn2WithoutRealm }
+                },
+                MessageType = MessageType.KRB_AS_REP,
+                Ticket = ticket,
+                EncPart = KrbEncryptedData.Encrypt(
+                    encAsRepPart.EncodeApplication(),
+                    asRepKey,
+                    asRepKey.EncryptionType,
+                    KeyUsage.EncAsRepPart
+                )
+            };
+
+            return asRep;
         }
 
         private KrbAsRep RequestTgt(out KrbEncryptionKey sessionKey)
