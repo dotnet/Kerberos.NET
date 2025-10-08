@@ -33,37 +33,7 @@ namespace Tests.Kerberos.NET
         {
             KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out _, out KrbAsReq asReq);
 
-            Assert.IsNotNull(asReq);
-            Assert.IsNotNull(asRep);
-
-            // RFC 4120 Section 3.1.5 Receipt of KRB_AS_REP Message
-            // "If the reply message type is KRB_AS_REP, then the client verifies that the cname and crealm fields in
-            // the cleartext portion of the reply match what it requested."
-            Assert.AreEqual(MessageType.KRB_AS_REP, asRep.MessageType);
-            Assert.AreEqual(Realm, asReq.Body.Realm);
-            Assert.AreEqual(Realm, asRep.CRealm);
-
-            Assert.AreEqual(Upn, asReq.Body.CName.FullyQualifiedName);
-            Assert.AreEqual(Upn, asRep.CName.FullyQualifiedName);
-
-            // Check that correct TGT was generated
-            Assert.AreEqual(Realm, asRep.Ticket.Realm);
-            Assert.AreEqual($"krbtgt/{Realm}", asRep.Ticket.SName.FullyQualifiedName);
-
-            // Clients can't decrypt TGTs usually, but for the sake of testing let's check what's inside
-            var realmService = new FakeRealmService(Realm);
-            var tgtPrincipalName = KrbPrincipalName.WellKnown.Krbtgt(Realm);
-            var tgtEncPartKey = realmService.Principals.Find(tgtPrincipalName).RetrieveLongTermCredential();
-
-            var ticketEncPart = asRep.Ticket.EncryptedPart.Decrypt(
-                tgtEncPartKey,
-                KeyUsage.Ticket,
-                d => KrbEncTicketPart.DecodeApplication(d)
-            );
-
-            Assert.IsNotNull(ticketEncPart);
-            Assert.AreEqual(Realm, ticketEncPart.CRealm);
-            Assert.AreEqual(Upn, ticketEncPart.CName.FullyQualifiedName);
+            ValidateAsRep(asRep, expectedCName: Upn, expectedCRealm: Realm, expectedSRealm: Realm, asReq);
         }
 
         [TestMethod]
@@ -138,21 +108,7 @@ namespace Tests.Kerberos.NET
 
             KrbAsRep asRep = CreateReferralTgt(sourceRealm, destRealm, cname, out KerberosKey tgtKey, out KerberosKey asRepKey, out KrbEncryptionKey sessionKey);
 
-            // Check the TGT we just generated
-            Assert.IsNotNull(asRep);
-            Assert.AreEqual(sourceRealm, asRep.CRealm);
-            Assert.AreEqual(Upn2WithoutRealm, asRep.CName.FullyQualifiedName);
-
-            // Clients can't decrypt TGTs usually, but for the sake of testing let's check what's inside
-            var tgtEncPart = asRep.Ticket.EncryptedPart.Decrypt(
-                tgtKey,
-                KeyUsage.Ticket,
-                d => KrbEncTicketPart.DecodeApplication(d)
-            );
-
-            Assert.IsNotNull(tgtEncPart);
-            Assert.AreEqual(sourceRealm, tgtEncPart.CRealm);
-            Assert.AreEqual(Upn2WithoutRealm, tgtEncPart.CName.FullyQualifiedName);
+            ValidateAsRep(asRep, expectedCName: Upn2WithoutRealm, expectedCRealm: sourceRealm, expectedSRealm: destRealm);
 
             // Send a TGS-REQ to get a service ticket in the destination realm
             var spn = "host/foo." + Realm;
@@ -206,6 +162,44 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(ticketEncPart);
             Assert.AreEqual(sourceRealm, ticketEncPart.CRealm);
             Assert.AreEqual(Upn2WithoutRealm, ticketEncPart.CName.FullyQualifiedName);
+        }
+
+        private void ValidateAsRep(KrbAsRep asRep, string expectedCName, string expectedCRealm, string expectedSRealm, KrbAsReq asReq = null)
+        {
+            Assert.IsNotNull(asRep);
+
+            // RFC 4120 Section 3.1.5 Receipt of KRB_AS_REP Message
+            // "If the reply message type is KRB_AS_REP, then the client verifies that the cname and crealm fields in
+            // the cleartext portion of the reply match what it requested."
+            Assert.AreEqual(MessageType.KRB_AS_REP, asRep.MessageType);
+            Assert.AreEqual(expectedCRealm, asRep.CRealm);
+            Assert.AreEqual(expectedCName, asRep.CName.FullyQualifiedName);
+
+            // Optionally double check that the AS-REQ also matches
+            if (asReq != null)
+            {
+                Assert.AreEqual(Realm, asReq.Body.Realm);
+                Assert.AreEqual(Upn, asReq.Body.CName.FullyQualifiedName);
+            }
+
+            // Check that correct TGT was generated
+            Assert.AreEqual(expectedSRealm, asRep.Ticket.Realm);
+            Assert.AreEqual($"krbtgt/{expectedSRealm}", asRep.Ticket.SName.FullyQualifiedName);
+
+            // Clients can't decrypt TGTs usually, but for the sake of testing let's check what's inside
+            var realmService = new FakeRealmService(Realm);
+            var tgtPrincipalName = KrbPrincipalName.WellKnown.Krbtgt(Realm);
+            var tgtEncPartKey = realmService.Principals.Find(tgtPrincipalName).RetrieveLongTermCredential();
+
+            var ticketEncPart = asRep.Ticket.EncryptedPart.Decrypt(
+                tgtEncPartKey,
+                KeyUsage.Ticket,
+                d => KrbEncTicketPart.DecodeApplication(d)
+            );
+
+            Assert.IsNotNull(ticketEncPart);
+            Assert.AreEqual(expectedCRealm, ticketEncPart.CRealm);
+            Assert.AreEqual(expectedCName, ticketEncPart.CName.FullyQualifiedName);
         }
 
         private KrbAsRep CreateReferralTgt(string sourceRealm, string destRealm, KrbPrincipalName cname, out KerberosKey tgtKey, out KerberosKey asRepKey, out KrbEncryptionKey sessionKey)
