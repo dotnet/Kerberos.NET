@@ -31,7 +31,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void KdcAsReqHandler_Sync()
         {
-            KrbAsRep asRep = RequestTgt(out _, out KrbAsReq asReq);
+            KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out _, out KrbAsReq asReq);
 
             Assert.IsNotNull(asRep);
 
@@ -63,7 +63,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void KdcTgsReqHandler_Sync()
         {
-            KrbAsRep asRep = RequestTgt(out KrbEncryptionKey tgtKey);
+            KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out KrbEncryptionKey tgtKey);
 
             Assert.IsNotNull(asRep);
 
@@ -291,14 +291,14 @@ namespace Tests.Kerberos.NET
             return asRep;
         }
 
-        private KrbAsRep RequestTgt(out KrbEncryptionKey sessionKey)
+        private KrbAsRep RequestTgt(string cname, string crealm, string srealm, out KrbEncryptionKey sessionKey)
         {
-            return RequestTgt(out sessionKey, out _);
+            return RequestTgt(cname, crealm, srealm, out sessionKey, out _);
         }
 
-        private KrbAsRep RequestTgt(out KrbEncryptionKey sessionKey, out KrbAsReq asReq)
+        private KrbAsRep RequestTgt(string cname, string crealm, string srealm, out KrbEncryptionKey sessionKey, out KrbAsReq asReq)
         {
-            var cred = new KerberosPasswordCredential(Upn, "P@ssw0rd!")
+            var cred = new KerberosPasswordCredential(cname, "P@ssw0rd!", crealm)
             {
                 // cheating by skipping the initial leg of requesting PA-type
 
@@ -319,7 +319,7 @@ namespace Tests.Kerberos.NET
 
             var handler = new KdcAsReqMessageHandler(asReq.EncodeApplication(), new KdcServerOptions
             {
-                DefaultRealm = Realm,
+                DefaultRealm = srealm,
                 IsDebug = true,
                 RealmLocator = realm => new FakeRealmService(realm)
             });
