@@ -33,16 +33,22 @@ namespace Tests.Kerberos.NET
         {
             KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out _, out KrbAsReq asReq);
 
+            Assert.IsNotNull(asReq);
             Assert.IsNotNull(asRep);
 
             // RFC 4120 Section 3.1.5 Receipt of KRB_AS_REP Message
             // "If the reply message type is KRB_AS_REP, then the client verifies that the cname and crealm fields in
             // the cleartext portion of the reply match what it requested."
+            Assert.AreEqual(MessageType.KRB_AS_REP, asRep.MessageType);
             Assert.AreEqual(Realm, asReq.Body.Realm);
             Assert.AreEqual(Realm, asRep.CRealm);
 
             Assert.AreEqual(Upn, asReq.Body.CName.FullyQualifiedName);
             Assert.AreEqual(Upn, asRep.CName.FullyQualifiedName);
+
+            // Check that correct TGT was generated
+            Assert.AreEqual(Realm, asRep.Ticket.Realm);
+            Assert.AreEqual($"krbtgt/{Realm}", asRep.Ticket.SName.FullyQualifiedName);
 
             // Clients can't decrypt TGTs usually, but for the sake of testing let's check what's inside
             var realmService = new FakeRealmService(Realm);
