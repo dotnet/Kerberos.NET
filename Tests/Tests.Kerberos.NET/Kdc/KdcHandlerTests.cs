@@ -67,32 +67,17 @@ namespace Tests.Kerberos.NET
 
             var tgsRep = KrbTgsRep.DecodeApplication(results);
 
-            Assert.IsNotNull(tgsRep);
-
-            var encKdcRepPart = tgsRep.EncPart.Decrypt(
-                sessionKey.AsKey(),
-                KeyUsage.EncTgsRepPartSubSessionKey,
-                d => KrbEncTgsRepPart.DecodeApplication(d)
-            );
-
-            Assert.IsNotNull(encKdcRepPart);
-
-            Assert.AreEqual(Realm, tgsRep.CRealm);
-            Assert.AreEqual(Upn, tgsRep.CName.FullyQualifiedName);
-
-            // Clients can't decrypt service tickets usually, but for the sake of testing let's check what's inside
             var realmService = new FakeRealmService(Realm);
-            var ticketEncPart = realmService.Principals.Find(KrbPrincipalName.FromString(spn)).RetrieveLongTermCredential();
+            var ticketKey = realmService.Principals.Find(KrbPrincipalName.FromString(spn)).RetrieveLongTermCredential();
 
-            var serviceTicketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(
-                ticketEncPart,
-                KeyUsage.Ticket,
-                d => KrbEncTicketPart.DecodeApplication(d)
-            );
-
-            Assert.IsNotNull(serviceTicketEncPart);
-            Assert.AreEqual(Realm, serviceTicketEncPart.CRealm);
-            Assert.AreEqual(Upn, serviceTicketEncPart.CName.FullyQualifiedName);
+            ValidateTgsRep(
+                tgsRep,
+                subSessionKey: sessionKey.AsKey(),
+                ticketKey: ticketKey,
+                expectedCName: Upn,
+                expectedCRealm: Realm,
+                expectedSName: spn,
+                expectedSRealm: Realm);
         }
 
         [TestMethod]
@@ -135,33 +120,18 @@ namespace Tests.Kerberos.NET
 
             var tgsRep = KrbTgsRep.DecodeApplication(results);
 
-            Assert.IsNotNull(tgsRep);
-
-            var encKdcRepPart = tgsRep.EncPart.Decrypt(
-                subSessionKey.AsKey(),
-                KeyUsage.EncTgsRepPartSubSessionKey,
-                d => KrbEncTgsRepPart.DecodeApplication(d)
-            );
-
-            Assert.IsNotNull(encKdcRepPart);
-
-            Assert.AreEqual(sourceRealm, tgsRep.CRealm);
-            Assert.AreEqual(Upn2WithoutRealm, tgsRep.CName.FullyQualifiedName);
-
-            // Clients can't decrypt service tickets usually, but for the sake of testing let's check what's inside
             var destRealmService = new FakeRealmService(destRealm);
             var servicePrincipal = destRealmService.Principals.Find(KrbPrincipalName.FromString(spn), destRealm);
-            var servicePrincipalKey = servicePrincipal.RetrieveLongTermCredential();
+            var ticketKey = servicePrincipal.RetrieveLongTermCredential();
 
-            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(
-                servicePrincipalKey,
-                KeyUsage.Ticket,
-                d => KrbEncTicketPart.DecodeApplication(d)
-            );
-
-            Assert.IsNotNull(ticketEncPart);
-            Assert.AreEqual(sourceRealm, ticketEncPart.CRealm);
-            Assert.AreEqual(Upn2WithoutRealm, ticketEncPart.CName.FullyQualifiedName);
+            ValidateTgsRep(
+                tgsRep,
+                subSessionKey: subSessionKey.AsKey(),
+                ticketKey: ticketKey,
+                expectedCName: Upn2WithoutRealm,
+                expectedCRealm: sourceRealm,
+                expectedSName: spn,
+                expectedSRealm: destRealm);
         }
 
         private void ValidateAsRep(KrbAsRep asRep, string expectedCName, string expectedCRealm, string expectedSRealm, KrbAsReq asReq = null)
@@ -193,6 +163,36 @@ namespace Tests.Kerberos.NET
 
             var ticketEncPart = asRep.Ticket.EncryptedPart.Decrypt(
                 tgtEncPartKey,
+                KeyUsage.Ticket,
+                d => KrbEncTicketPart.DecodeApplication(d)
+            );
+
+            Assert.IsNotNull(ticketEncPart);
+            Assert.AreEqual(expectedCRealm, ticketEncPart.CRealm);
+            Assert.AreEqual(expectedCName, ticketEncPart.CName.FullyQualifiedName);
+        }
+
+        private void ValidateTgsRep(KrbTgsRep tgsRep, KerberosKey subSessionKey, KerberosKey ticketKey, string expectedCName, string expectedCRealm, string expectedSName, string expectedSRealm)
+        {
+            Assert.IsNotNull(tgsRep);
+
+            var encKdcRepPart = tgsRep.EncPart.Decrypt(
+                subSessionKey,
+                KeyUsage.EncTgsRepPartSubSessionKey,
+                d => KrbEncTgsRepPart.DecodeApplication(d)
+            );
+
+            Assert.IsNotNull(encKdcRepPart);
+            Assert.AreEqual(expectedCRealm, tgsRep.CRealm);
+            Assert.AreEqual(expectedCName, tgsRep.CName.FullyQualifiedName);
+
+            Assert.IsNotNull(tgsRep.Ticket);
+            Assert.AreEqual(expectedSRealm, tgsRep.Ticket.Realm);
+            Assert.AreEqual(expectedSName, tgsRep.Ticket.SName.FullyQualifiedName);
+
+            // Clients can't decrypt service tickets usually, but for the sake of testing let's check what's inside
+            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(
+                ticketKey,
                 KeyUsage.Ticket,
                 d => KrbEncTicketPart.DecodeApplication(d)
             );
