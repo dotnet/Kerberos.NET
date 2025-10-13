@@ -70,6 +70,42 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public void CreateServiceTicket_NullClientRealmName()
+        {
+            var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
+
+            // This should not throw, as ClientRealmName is allowed to be null if CompatibilityFlags.IsolateRealmsConsistently is not set
+            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            {
+                EncryptedPartKey = key,
+                ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
+                ServicePrincipalKey = key,
+                Principal = new FakeKerberosPrincipal("blah@blah2.com"),
+                RealmName = "blah.com",
+                ClientRealmName = null,
+                Compatibility = KerberosCompatibilityFlags.NormalizeRealmsUppercase,
+            });
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void CreateServiceTicket_NullClientRealmName_IsolateRealmsConsistently()
+        {
+            var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
+
+            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            {
+                EncryptedPartKey = key,
+                ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
+                ServicePrincipalKey = key,
+                Principal = new FakeKerberosPrincipal("blah@blah2.com"),
+                RealmName = "blah.com",
+                ClientRealmName = null,
+                Compatibility = KerberosCompatibilityFlags.NormalizeRealmsUppercase | KerberosCompatibilityFlags.IsolateRealmsConsistently,
+            });
+        }
+
+        [TestMethod]
         public void CreateServiceTicket()
         {
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();

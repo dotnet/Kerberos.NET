@@ -110,7 +110,11 @@ namespace Kerberos.NET.Entities
             if (request.Compatibility.HasFlag(KerberosCompatibilityFlags.NormalizeRealmsUppercase))
             {
                 request.RealmName = request.RealmName?.ToUpperInvariant();
-                request.ClientRealmName = request.ClientRealmName?.ToUpperInvariant() ?? throw new InvalidOperationException("Unknown client realm name");
+
+                if (request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently))
+                {
+                    request.ClientRealmName = request.ClientRealmName?.ToUpperInvariant() ?? throw new InvalidOperationException("Unknown client realm name");
+                }
             }
 
             authz ??= GenerateAuthorizationData(request);
