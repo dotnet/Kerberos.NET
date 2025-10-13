@@ -97,6 +97,33 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
+        public void CreateServiceTicket_ReferralTgtComputerIdentity()
+        {
+            var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
+
+            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            {
+                EncryptedPartKey = key,
+                ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
+                ServicePrincipalKey = key,
+                Principal = new FakeKerberosPrincipal("computer$"),
+                RealmName = "blah.com",
+                ClientRealmName = "test.com",
+                Compatibility = KerberosCompatibilityFlags.IsolateRealmsConsistently,
+            });
+
+            Assert.IsNotNull(tgsRep);
+            Assert.AreEqual("blah.com", tgsRep.Ticket.Realm);
+            Assert.AreEqual("blah@blah.com/blah.com", tgsRep.Ticket.SName.FullyQualifiedName);
+            Assert.AreEqual("test.com", tgsRep.CRealm);
+            Assert.AreEqual("computer$@test.com", tgsRep.CName.FullyQualifiedName);
+
+            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(key, KeyUsage.Ticket, KrbEncTicketPart.DecodeApplication);
+            Assert.AreEqual("test.com", ticketEncPart.CRealm);
+            Assert.AreEqual("computer$@test.com", ticketEncPart.CName.FullyQualifiedName);
+        }
+
+        [TestMethod]
         // Check that no uppercasing or realm isolation happens by default.
         [DataRow(LowerCaseRealm1, LowerCaseRealm2, KerberosCompatibilityFlags.None, LowerCaseRealm1, LowerCaseRealm1)]
         [DataRow(UpperCaseRealm1, UpperCaseRealm2, KerberosCompatibilityFlags.None, UpperCaseRealm1, UpperCaseRealm1)]

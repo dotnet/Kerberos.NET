@@ -66,14 +66,8 @@ namespace Kerberos.NET.Entities
 
             var rep = new T
             {
-                CName = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ?
-                            KrbPrincipalName.FromPrincipal(request.Principal) ?? encTicketPart.CName :
-                            encTicketPart.CName,
-
-                CRealm = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ?
-                            request.ClientRealmName :
-                            request.RealmName,
-
+                CName = encTicketPart.CName,
+                CRealm = encTicketPart.CRealm,
                 MessageType = messageType,
                 Ticket = ticket,
                 EncPart = KrbEncryptedData.Encrypt(
