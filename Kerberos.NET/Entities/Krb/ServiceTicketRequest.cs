@@ -28,7 +28,8 @@ namespace Kerberos.NET.Entities
         public KerberosKey KdcAuthorizationKey { get; set; }
 
         /// <summary>
-        /// The client name (cname) of the identity requesting the ticket
+        /// The client name (cname) of the identity requesting the ticket.
+        /// If this is not set, <see cref="SamAccountName"/> or <see cref="Principal"/> will be used.
         /// </summary>
         public KrbPrincipalName ClientName { get; set; }
 
@@ -115,8 +116,8 @@ namespace Kerberos.NET.Entities
 
         /// <summary>
         /// SAM account name to be used to generate TGT for Windows specific user principal.
-        /// If this parameter contains valid string (not empty), CName of encrypted part of ticket
-        /// will be created based on provided SamAccountName.
+        /// This is only used if (1) <see cref="ClientName"/> is not set, and (2) it is a valid (not empty) string.
+        /// Used to compute the cname of a KDC-REP.
         /// </summary>
         public string SamAccountName { get; set; }
 

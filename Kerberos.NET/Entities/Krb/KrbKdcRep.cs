@@ -107,19 +107,6 @@ namespace Kerberos.NET.Entities
                 throw new InvalidOperationException("A service principal key must be provided");
             }
 
-            if (request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently))
-            {
-                if (request.ClientName == null)
-                {
-                    throw new InvalidOperationException("Client name must be provided when IsolateRealmsConsistently is set");
-                }
-
-                if (request.ClientRealmName == null)
-                {
-                    throw new InvalidOperationException("Client realm name must be provided when IsolateRealmsConsistently is set");
-                }
-            }
-
             if (request.Compatibility.HasFlag(KerberosCompatibilityFlags.NormalizeRealmsUppercase))
             {
                 request.RealmName = request.RealmName?.ToUpperInvariant();
@@ -220,7 +207,7 @@ namespace Kerberos.NET.Entities
 
             var encTicketPart = new KrbEncTicketPart()
             {
-                CName = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ? request.ClientName : CreateCNameForTicket(request),
+                CName = CreateCNameForTicket(request),
                 CRealm = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ? request.ClientRealmName : request.RealmName,
                 Key = sessionKey,
                 AuthTime = request.Now,
@@ -244,21 +231,41 @@ namespace Kerberos.NET.Entities
 
         private static KrbPrincipalName CreateCNameForTicket(ServiceTicketRequest request)
         {
-            if (string.IsNullOrEmpty(request.SamAccountName))
+            // If ClientName is explicitly set, use that. This is the preferred method for the caller to indicate what
+            // cname should be used.
+            if (request.ClientName != null)
             {
-                // This is a bug, fixed under the IsolateRealmsConsistently flag.
-                // Client realm name is not necessarily the same as the (service) realm name
-                return KrbPrincipalName.FromPrincipal(
-                    request.Principal,
-                    realm: request.RealmName
-                );
+                return request.ClientName;
             }
 
-            return new KrbPrincipalName
+            // Otherwise, if SamAccountName is set, use that as the principal name.
+            // This is not the recommended method, but is supported for backwards compatibility.
+#pragma warning disable CS0618 // Type or member is obsolete
+            if (!string.IsNullOrEmpty(request.SamAccountName))
             {
-                Type = PrincipalNameType.NT_PRINCIPAL,
-                Name = new[] { request.SamAccountName }
-            };
+                return new KrbPrincipalName
+                {
+                    Type = PrincipalNameType.NT_PRINCIPAL,
+                    Name = new[] { request.SamAccountName }
+                };
+            }
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            // Lastly, if neither are set, derive from the principal.
+            //
+            // Note: this might not be correct in all scenarios. For instance, if the client does not accept
+            // name canonicalization (i.e., the Canonicalize flag is not set), then it's not spec-compliant to deviate
+            // from the requested cname. Also, in TGS-REP, the cname should match what's in the TGT, and should not be
+            // derived from the found principal.
+            //
+            // Note: historically Kerberos.NET had a bug where the service realm was used to derive cname from the principal.
+            // However, it should be the client realm. This has been corrected under the IsolateRealmsConsistently flag.
+            return KrbPrincipalName.FromPrincipal(
+                request.Principal,
+                realm: request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ?
+                    request.ClientRealmName :
+                    request.RealmName
+            );
         }
 
         private static IEnumerable<KrbAuthorizationData> GenerateAuthorizationData(ServiceTicketRequest request)

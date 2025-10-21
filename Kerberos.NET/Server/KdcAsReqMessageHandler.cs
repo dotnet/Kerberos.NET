@@ -167,12 +167,7 @@ namespace Kerberos.NET.Server
 
             var rst = new ServiceTicketRequest
             {
-                // RFC 4120 section 3.1.5 Receipt of KRB_AS_REP Message
-                // "If the reply message type is KRB_AS_REP, then the client verifies that the cname and crealm fields
-                // in the cleartext portion of the reply match what it requested."
-                ClientName = asReq.Body.CName,
                 ClientRealmName = asReq.Body.Realm,
-
                 Principal = context.Principal,
                 EncryptedPartKey = context.EncryptedPartKey,
                 EncryptedPartEType = context.EncryptedPartEType,
@@ -199,10 +194,20 @@ namespace Kerberos.NET.Server
 
             // Canonicalize means the CName in the reply is allowed to be different from the CName in the request.
             // If this is not allowed, then we must use the CName from the request. Otherwise, we will set the CName
-            // to what we have in our realm, i.e. user@realm.
+            // to what we have in our realm, i.e. user@realm (which will be inferred from the Principal set above).
+            //
+            // RFC 4120 section 3.1.5. Receipt of KRB_AS_REP Message
+            // -----------------------------------------------------
+            // If the reply message type is KRB_AS_REP, then the client verifies that the cname and crealm fields in
+            // the cleartext portion of the reply match what it requested.
+            //
+            // RFC 6806 section 6. Name Canonicalization
+            // -----------------------------------------
+            // If the "canonicalize" KDC option is set, then the KDC MAY change the client and server principal names
+            // and types in the AS response and ticket returned from those in the request.
             if (!asReq.Body.KdcOptions.HasFlag(KdcOptions.Canonicalize))
             {
-                rst.SamAccountName = asReq.Body.CName.FullyQualifiedName;
+                rst.ClientName = asReq.Body.CName;
             }
 
             if (rst.EncryptedPartKey == null)
