@@ -315,7 +315,9 @@ namespace Kerberos.NET.Server
                 tgsReq.Body.KdcOptions.HasFlag(KdcOptions.Canonicalize))
             {
                 rst.ClientName = null;
+#pragma warning disable CS0612 // Type or member is obsolete
                 rst.SamAccountName = context.GetState<TgsState>(PaDataType.PA_TGS_REQ).DecryptedApReq.Ticket.CName.FullyQualifiedName;
+#pragma warning restore CS0612 // Type or member is obsolete
             }
 
             // this is set here instead of in GenerateServiceTicket because GST is used by unit tests to

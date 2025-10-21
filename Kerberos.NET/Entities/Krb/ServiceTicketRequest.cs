@@ -119,6 +119,9 @@ namespace Kerberos.NET.Entities
         /// This is only used if (1) <see cref="ClientName"/> is not set, and (2) it is a valid (not empty) string.
         /// Used to compute the cname of a KDC-REP.
         /// </summary>
+        [Obsolete(
+            "Using SamAccountName may cause non spec-compliant behavior. Use ClientName instead to set the client " +
+            "principal name that should be used in Kerberos responses in a spec-compliant manner.")]
         public string SamAccountName { get; set; }
 
         /// <summary>
@@ -270,10 +273,12 @@ namespace Kerberos.NET.Entities
                 return false;
             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
             if (other.SamAccountName != this.SamAccountName)
             {
                 return false;
             }
+#pragma warning restore CS0618 // Type or member is obsolete
 
             if (other.ServicePrincipal != this.ServicePrincipal)
             {
@@ -300,6 +305,7 @@ namespace Kerberos.NET.Entities
 
         public override int GetHashCode()
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             return EntityHashCode.GetHashCode(
                 this.Addresses,
                 this.ClientName,
@@ -326,6 +332,7 @@ namespace Kerberos.NET.Entities
                 this.StartTime,
                 this.Compatibility
             );
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         public static bool operator ==(ServiceTicketRequest left, ServiceTicketRequest right)

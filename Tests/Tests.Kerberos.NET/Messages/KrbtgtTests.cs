@@ -141,6 +141,7 @@ namespace Tests.Kerberos.NET
 
             var principalKey = principal.RetrieveLongTermCredential();
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var rst = new ServiceTicketRequest
             {
                 SamAccountName = TestSamAccountName,
@@ -149,6 +150,7 @@ namespace Tests.Kerberos.NET
                 EncryptedPartKey = principalKey,
                 ServicePrincipalKey = new KerberosKey(key: TgtKey, etype: EncryptionType.AES256_CTS_HMAC_SHA1_96)
             };
+#pragma warning restore CS0618 // Type or member is obsolete
 
             var tgt = KrbAsRep.GenerateTgt(rst, realmService);
 
