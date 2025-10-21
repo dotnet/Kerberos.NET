@@ -243,6 +243,8 @@ namespace Kerberos.NET.Entities
 #pragma warning disable CS0618 // Type or member is obsolete
             if (!string.IsNullOrEmpty(request.SamAccountName))
             {
+                // Note that the name is returned in a single part here, even if the request may have had multiple parts.
+                // This may be okay for AS-REQs with Canonicalize set, but it is not spec-compliant for other scenarios.
                 return new KrbPrincipalName
                 {
                     Type = PrincipalNameType.NT_PRINCIPAL,
@@ -256,7 +258,8 @@ namespace Kerberos.NET.Entities
             // Note: this might not be correct in all scenarios. For instance, if the client does not accept
             // name canonicalization (i.e., the Canonicalize flag is not set), then it's not spec-compliant to deviate
             // from the requested cname. Also, in TGS-REP, the cname should match what's in the TGT, and should not be
-            // derived from the found principal.
+            // derived from the found principal. It is the responsibility of the caller to decide whether the request
+            // warrants passing Principal only, or forcing a specific cname via ClientName.
             //
             // Note: historically Kerberos.NET had a bug where the service realm was used to derive cname from the principal.
             // However, it should be the client realm. This has been corrected under the IsolateRealmsConsistently flag.

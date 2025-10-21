@@ -265,24 +265,7 @@ namespace Kerberos.NET.Server
 
             var rst = new ServiceTicketRequest
             {
-                // In TGS-REP, we should always reply with cname/crealm copied from the TGT, even when the Canonicalize
-                // flag is set in TGS-REQ.
-                //
-                // RFC 4120 § 3.3.3 Generation of KRB_TGS_REP Message
-                // --------------------------------------------------
-                // "By default, the address field, the client's name and realm, the list of transited realms, the time
-                // of initial authentication, the expiration time, and the authorization data of the newly-issued
-                // ticket will be copied from the TGT or renewable ticket."
-                //
-                // RFC 6806 § 6. Name Canonicalization
-                // -----------------------------------
-                // "If the "canonicalize" KDC option is set, then the KDC MAY change the client and server principal
-                // names and types in the AS response and ticket returned from those in the request. Names MUST NOT be
-                // changed in the response to a TGS request, although it is common for KDCs to maintain a set of
-                // aliases for service principals."
-                ClientName = context.Ticket.CName,
                 ClientRealmName = context.Ticket.CRealm,
-
                 KdcAuthorizationKey = context.EvidenceTicketKey,
                 Principal = context.Principal,
                 EncryptedPartKey = context.EncryptedPartKey,
@@ -307,17 +290,35 @@ namespace Kerberos.NET.Server
                 Compatibility = this.RealmService.Settings.Compatibility,
             };
 
-            // The code below introduced an annoying regression in a separate party.
-            // The compatibility flag is a workaround to make sure it can use the original behavior in cases where
-            // that's expected.
-
-            if (!this.RealmService.Settings.Compatibility.HasFlag(KerberosCompatibilityFlags.DoNotCanonicalizeTgsReqFromTgt) &&
+            if (this.RealmService.Settings.Compatibility.HasFlag(KerberosCompatibilityFlags.EnableSpecCompliantCNameHandling))
+            {
+                // In TGS-REP, we should always reply with cname/crealm copied from the TGT, even when the Canonicalize
+                // flag is set in TGS-REQ.
+                //
+                // RFC 4120 § 3.3.3 Generation of KRB_TGS_REP Message
+                // --------------------------------------------------
+                // "By default, the address field, the client's name and realm, the list of transited realms, the time
+                // of initial authentication, the expiration time, and the authorization data of the newly-issued
+                // ticket will be copied from the TGT or renewable ticket."
+                //
+                // RFC 6806 § 6. Name Canonicalization
+                // -----------------------------------
+                // "If the "canonicalize" KDC option is set, then the KDC MAY change the client and server principal
+                // names and types in the AS response and ticket returned from those in the request. Names MUST NOT be
+                // changed in the response to a TGS request, although it is common for KDCs to maintain a set of
+                // aliases for service principals."
+                rst.ClientName = context.Ticket.CName;
+            }
+            else if (!this.RealmService.Settings.Compatibility.HasFlag(KerberosCompatibilityFlags.DoNotCanonicalizeTgsReqFromTgt) &&
                 tgsReq.Body.KdcOptions.HasFlag(KdcOptions.Canonicalize))
             {
-                rst.ClientName = null;
-#pragma warning disable CS0612 // Type or member is obsolete
+                // The code below introduced an annoying regression in a separate party.
+                // The compatibility flag is a workaround to make sure it can use the original behavior in cases where
+                // that's expected.
+
+                #pragma warning disable CS0612 // Type or member is obsolete
                 rst.SamAccountName = context.GetState<TgsState>(PaDataType.PA_TGS_REQ).DecryptedApReq.Ticket.CName.FullyQualifiedName;
-#pragma warning restore CS0612 // Type or member is obsolete
+                #pragma warning restore CS0612 // Type or member is obsolete
             }
 
             // this is set here instead of in GenerateServiceTicket because GST is used by unit tests to

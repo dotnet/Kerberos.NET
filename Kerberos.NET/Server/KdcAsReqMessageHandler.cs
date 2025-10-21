@@ -207,7 +207,17 @@ namespace Kerberos.NET.Server
             // and types in the AS response and ticket returned from those in the request.
             if (!asReq.Body.KdcOptions.HasFlag(KdcOptions.Canonicalize))
             {
-                rst.ClientName = asReq.Body.CName;
+                if (this.RealmService.Settings.Compatibility.HasFlag(KerberosCompatibilityFlags.EnableSpecCompliantCNameHandling))
+                {
+                    rst.ClientName = asReq.Body.CName;
+                }
+                else
+                {
+                    #pragma warning disable CS0618 // Type or member is obsolete
+                    rst.SamAccountName = asReq.Body.CName.FullyQualifiedName;
+                    #pragma warning restore CS0618 // Type or member is obsolete
+                }
+                
             }
 
             if (rst.EncryptedPartKey == null)
