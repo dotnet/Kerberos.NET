@@ -33,5 +33,12 @@ namespace Kerberos.NET.Server
         /// fields or properties. This separates the names into two.
         /// </summary>
         IsolateRealmsConsistently = 1 << 2,
+
+        /// <summary>
+        /// CName handling was historically non-spec compliant in some cases.
+        /// This flag enables handling that more strictly adheres to the spec, for better compliance
+        /// with other implementations.
+        /// </summary>
+        EnableSpecCompliantCNameHandling = 1 << 3,
     }
 }

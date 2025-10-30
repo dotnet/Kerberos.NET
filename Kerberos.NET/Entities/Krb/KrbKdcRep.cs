@@ -194,8 +194,6 @@ namespace Kerberos.NET.Entities
             KrbEncryptionKey sessionKey
         )
         {
-            var cname = CreateCNameForTicket(request);
-
             var flags = request.Flags;
 
             if (request.PreAuthenticationData?.Any(r => r.Type == PaDataType.PA_REQ_ENC_PA_REP) ?? false)
@@ -209,7 +207,7 @@ namespace Kerberos.NET.Entities
 
             var encTicketPart = new KrbEncTicketPart()
             {
-                CName = cname,
+                CName = CreateCNameForTicket(request),
                 CRealm = request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ? request.ClientRealmName : request.RealmName,
                 Key = sessionKey,
                 AuthTime = request.Now,
@@ -233,21 +231,44 @@ namespace Kerberos.NET.Entities
 
         private static KrbPrincipalName CreateCNameForTicket(ServiceTicketRequest request)
         {
-            if (string.IsNullOrEmpty(request.SamAccountName))
+            // If ClientName is explicitly set, use that. This is the preferred method for the caller to indicate what
+            // cname should be used.
+            if (request.ClientName != null)
             {
-                return KrbPrincipalName.FromPrincipal(
-                    request.Principal,
-                    realm: request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ?
-                        request.ClientRealmName :
-                        request.RealmName
-                );
+                return request.ClientName;
             }
 
-            return new KrbPrincipalName
+            // Otherwise, if SamAccountName is set, use that as the principal name.
+            // This is not the recommended method, but is supported for backwards compatibility.
+#pragma warning disable CS0618 // Type or member is obsolete
+            if (!string.IsNullOrEmpty(request.SamAccountName))
             {
-                Type = PrincipalNameType.NT_PRINCIPAL,
-                Name = new[] { request.SamAccountName }
-            };
+                // Note that the name is returned in a single part here, even if the request may have had multiple parts.
+                // This may be okay for AS-REQs with Canonicalize set, but it is not spec-compliant for other scenarios.
+                return new KrbPrincipalName
+                {
+                    Type = PrincipalNameType.NT_PRINCIPAL,
+                    Name = new[] { request.SamAccountName }
+                };
+            }
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            // Lastly, if neither are set, derive from the principal.
+            //
+            // Note: this might not be correct in all scenarios. For instance, if the client does not accept
+            // name canonicalization (i.e., the Canonicalize flag is not set), then it's not spec-compliant to deviate
+            // from the requested cname. Also, in TGS-REP, the cname should match what's in the TGT, and should not be
+            // derived from the found principal. It is the responsibility of the caller to decide whether the request
+            // warrants passing Principal only, or forcing a specific cname via ClientName.
+            //
+            // Note: historically Kerberos.NET had a bug where the service realm was used to derive cname from the principal.
+            // However, it should be the client realm. This has been corrected under the IsolateRealmsConsistently flag.
+            return KrbPrincipalName.FromPrincipal(
+                request.Principal,
+                realm: request.Compatibility.HasFlag(KerberosCompatibilityFlags.IsolateRealmsConsistently) ?
+                    request.ClientRealmName :
+                    request.RealmName
+            );
         }
 
         private static IEnumerable<KrbAuthorizationData> GenerateAuthorizationData(ServiceTicketRequest request)

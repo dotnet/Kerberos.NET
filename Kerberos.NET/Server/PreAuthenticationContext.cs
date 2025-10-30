@@ -33,11 +33,6 @@ namespace Kerberos.NET.Server
         public KerberosKey EvidenceTicketKey { get; set; }
 
         /// <summary>
-        /// The name of the realm that the client issued a TGT from.
-        /// </summary>
-        public string ClientRealm { get; set; }
-
-        /// <summary>
         /// The identity that will be the subject of the issued ticket.
         /// </summary>
         public IKerberosPrincipal Principal { get; set; }

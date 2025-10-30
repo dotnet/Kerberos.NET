@@ -28,7 +28,13 @@ namespace Kerberos.NET.Entities
         public KerberosKey KdcAuthorizationKey { get; set; }
 
         /// <summary>
-        /// The realm name for which the requested identity originated
+        /// The client name (cname) of the identity requesting the ticket.
+        /// If this is not set, <see cref="SamAccountName"/> or <see cref="Principal"/> will be used.
+        /// </summary>
+        public KrbPrincipalName ClientName { get; set; }
+
+        /// <summary>
+        /// The client realm (crealm) name of the identity requesting the ticket
         /// </summary>
         public string ClientRealmName { get; set; }
 
@@ -110,9 +116,12 @@ namespace Kerberos.NET.Entities
 
         /// <summary>
         /// SAM account name to be used to generate TGT for Windows specific user principal.
-        /// If this parameter contains valid string (not empty), CName of encrypted part of ticket
-        /// will be created based on provided SamAccountName.
+        /// This is only used if (1) <see cref="ClientName"/> is not set, and (2) it is a valid (not empty) string.
+        /// Used to compute the cname of a KDC-REP.
         /// </summary>
+        [Obsolete(
+            "Using SamAccountName may cause non spec-compliant behavior. Use ClientName instead to set the client " +
+            "principal name that should be used in Kerberos responses in a spec-compliant manner.")]
         public string SamAccountName { get; set; }
 
         /// <summary>
@@ -175,6 +184,21 @@ namespace Kerberos.NET.Entities
         public bool Equals(ServiceTicketRequest other)
         {
             if (other.Addresses != this.Addresses)
+            {
+                return false;
+            }
+
+            if (other.ClientName != this.ClientName)
+            {
+                return false;
+            }
+
+            if (other.ClientRealmName != this.ClientRealmName)
+            {
+                return false;
+            }
+
+            if (other.EncryptedPartEType != this.EncryptedPartEType)
             {
                 return false;
             }
@@ -249,10 +273,12 @@ namespace Kerberos.NET.Entities
                 return false;
             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
             if (other.SamAccountName != this.SamAccountName)
             {
                 return false;
             }
+#pragma warning restore CS0618 // Type or member is obsolete
 
             if (other.ServicePrincipal != this.ServicePrincipal)
             {
@@ -279,8 +305,13 @@ namespace Kerberos.NET.Entities
 
         public override int GetHashCode()
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             return EntityHashCode.GetHashCode(
                 this.Addresses,
+                this.ClientName,
+                this.ClientRealmName,
+                this.Compatibility,
+                this.EncryptedPartEType,
                 this.EncryptedPartKey,
                 this.EndTime,
                 this.Flags,
@@ -301,6 +332,7 @@ namespace Kerberos.NET.Entities
                 this.StartTime,
                 this.Compatibility
             );
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         public static bool operator ==(ServiceTicketRequest left, ServiceTicketRequest right)
