@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
@@ -27,17 +28,21 @@ namespace Kerberos.NET
 
         public UserNameFormat UserNameFormat { get; set; } = UserNameFormat.UserPrincipalName;
 
-        public KerberosAuthenticator(string upn, KeyTable keytab, Krb5Config config, ILoggerFactory logger = null)
+        public KerberosAuthenticator(string upn, KeyTable keytab, KerberosClient delegationClient, ILoggerFactory logger = null)
             : this(new KerberosValidator(keytab, logger))
         {
             if (!string.IsNullOrWhiteSpace(upn))
             {
-                this.s4uProvider = new S4UProviderFactory(upn, keytab, config, logger);
+                this.s4uProvider = new S4UProviderFactory(upn, keytab, delegationClient, delegationClient?.Configuration, logger);
             }
         }
 
+        public KerberosAuthenticator(string upn, KeyTable keytab, Krb5Config config = null, ILoggerFactory logger = null)
+            : this(upn, keytab, new KerberosClient(config, logger) { CacheInMemory = true }, logger)
+        { }
+
         public KerberosAuthenticator(KeyTable keytab, ILoggerFactory logger = null)
-            : this(null, keytab, null, logger)
+            : this(null, keytab, (Krb5Config)null, logger)
         {
 
         }

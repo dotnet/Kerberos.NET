@@ -16,9 +16,9 @@ namespace Kerberos.NET
         private readonly KerberosClient client;
         private readonly KerberosCredential credential;
 
-        public S4UProviderFactory(string upn, KeyTable keytab, Krb5Config config = null, ILoggerFactory logger = null)
+        public S4UProviderFactory(string upn, KeyTable keytab, KerberosClient delegationClient, Krb5Config config = null, ILoggerFactory logger = null)
         {
-            this.client = new KerberosClient(config, logger) { CacheInMemory = true };
+            this.client = KerberosClient.CopyOrCreate(delegationClient, config, logger);
             this.credential = new KeytabCredential(upn, keytab);
         }
 
