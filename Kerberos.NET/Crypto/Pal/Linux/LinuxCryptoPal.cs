@@ -10,7 +10,7 @@ namespace Kerberos.NET.Crypto
 {
     public class LinuxCryptoPal : CryptoPal
     {
-        public LinuxCryptoPal()
+        protected override void PlatformCheck()
         {
             if (!IsLinux)
             {

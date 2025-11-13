@@ -7,7 +7,7 @@ namespace Kerberos.NET.Crypto
 {
     public class OSXCryptoPal : LinuxCryptoPal
     {
-        public OSXCryptoPal()
+        protected override void PlatformCheck()
         {
             if (!IsOsX)
             {

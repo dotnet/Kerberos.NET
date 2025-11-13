@@ -9,6 +9,11 @@ namespace Kerberos.NET.Crypto
 {
     public abstract class CryptoPal
     {
+        protected CryptoPal()
+        {
+            this.PlatformCheck();
+        }
+
         protected static bool IsWindows => OSPlatform.IsWindows;
 
         protected static bool IsLinux => OSPlatform.IsLinux;
@@ -18,13 +23,17 @@ namespace Kerberos.NET.Crypto
         public static CryptoPal Platform => lazyPlatform.Value;
 
         private static readonly Lazy<CryptoPal> lazyPlatform
-            = new Lazy<CryptoPal>(() => CreatePal());
+            = new(() => CreatePal());
 
         private static Func<CryptoPal> injectedPal;
 
         public static void RegisterPal(Func<CryptoPal> palFunc)
         {
             injectedPal = palFunc ?? throw new InvalidOperationException("Cannot register a null PAL");
+        }
+
+        protected virtual void PlatformCheck()
+        {
         }
 
         private static CryptoPal CreatePal()
@@ -40,15 +49,13 @@ namespace Kerberos.NET.Crypto
             {
                 return new WindowsCryptoPal();
             }
-
-            if (IsLinux)
-            {
-                return new LinuxCryptoPal();
-            }
-
-            if (IsOsX)
+            else if (IsOsX)
             {
                 return new OSXCryptoPal();
+            }
+            else if (IsLinux)
+            {
+                return new LinuxCryptoPal();
             }
 
             throw PlatformNotSupported();
