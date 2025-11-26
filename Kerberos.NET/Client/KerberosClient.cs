@@ -260,6 +260,30 @@ namespace Kerberos.NET.Client
         }
 
         /// <summary>
+        /// Create a new Kerberos client based on the configuration of an existing client or create a new one from scratch.
+        /// </summary>
+        /// <param name="delegationClient">The client to copy from</param>
+        /// <param name="config">The config to pass in if the client is null</param>
+        /// <param name="logger">The logger to use for the new client</param>
+        /// <returns></returns>
+        internal static KerberosClient CopyOrCreate(KerberosClient delegationClient, Krb5Config config, ILoggerFactory logger)
+        {
+            if (delegationClient == null)
+            {
+                return new KerberosClient(config, logger) { CacheInMemory = true };
+            }
+
+            return new KerberosClient(
+                delegationClient.Configuration ?? config,
+                delegationClient.loggerFactory ?? logger,
+                delegationClient.Transports.ToArray()
+            )
+            {
+                CacheInMemory = true
+            };
+        }
+
+        /// <summary>
         /// Reset any connection state that may be cached from previous attempts.
         /// </summary>
         public void ResetConnections()
