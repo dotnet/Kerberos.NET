@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Kerberos.NET;
 using Kerberos.NET.Client;
@@ -12,6 +13,7 @@ using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
+using Kerberos.NET.Entities.Pac;
 using Kerberos.NET.Server;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Tests.Kerberos.NET.KdcListenerTestBase;
@@ -33,7 +35,13 @@ namespace Tests.Kerberos.NET
         {
             KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out _, out KrbAsReq asReq);
 
-            ValidateAsRep(asRep, expectedCName: Upn, expectedCRealm: Realm, expectedSRealm: Realm, asReq);
+            ValidateAsRep(
+                asRep,
+                expectedCName: Upn,
+                expectedCRealm: Realm,
+                expectedSRealm: Realm,
+                expectPac: true,
+                asReq);
         }
 
         [TestMethod]
@@ -77,7 +85,8 @@ namespace Tests.Kerberos.NET
                 expectedCName: Upn,
                 expectedCRealm: Realm,
                 expectedSName: spn,
-                expectedSRealm: Realm);
+                expectedSRealm: Realm,
+                expectPac: true);
         }
 
         [TestMethod]
@@ -91,9 +100,21 @@ namespace Tests.Kerberos.NET
                 Name = new[] { Upn2WithoutRealm }
             };
 
-            KrbAsRep asRep = CreateReferralTgt(sourceRealm, destRealm, cname, out KerberosKey tgtKey, out KerberosKey asRepKey, out KrbEncryptionKey sessionKey);
+            KrbAsRep asRep = CreateReferralTgt(
+                sourceRealm,
+                destRealm,
+                cname,
+                includePac: true,
+                out KerberosKey tgtKey,
+                out KerberosKey asRepKey,
+                out KrbEncryptionKey sessionKey);
 
-            ValidateAsRep(asRep, expectedCName: Upn2WithoutRealm, expectedCRealm: sourceRealm, expectedSRealm: destRealm);
+            ValidateAsRep(
+                asRep,
+                expectedCName: Upn2WithoutRealm,
+                expectedCRealm: sourceRealm,
+                expectedSRealm: destRealm,
+                expectPac: true);
 
             // Send a TGS-REQ to get a service ticket in the destination realm
             var spn = "host/foo." + Realm;
@@ -131,10 +152,17 @@ namespace Tests.Kerberos.NET
                 expectedCName: Upn2WithoutRealm,
                 expectedCRealm: sourceRealm,
                 expectedSName: spn,
-                expectedSRealm: destRealm);
+                expectedSRealm: destRealm,
+                expectPac: true);
         }
 
-        private void ValidateAsRep(KrbAsRep asRep, string expectedCName, string expectedCRealm, string expectedSRealm, KrbAsReq asReq = null)
+        private void ValidateAsRep(
+            KrbAsRep asRep,
+            string expectedCName,
+            string expectedCRealm,
+            string expectedSRealm,
+            bool expectPac,
+            KrbAsReq asReq = null)
         {
             Assert.IsNotNull(asRep);
 
@@ -170,9 +198,31 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(ticketEncPart);
             Assert.AreEqual(expectedCRealm, ticketEncPart.CRealm);
             Assert.AreEqual(expectedCName, ticketEncPart.CName.FullyQualifiedName);
+
+            // Check PAC fields
+            bool success = ticketEncPart.TryGetPac(out PrivilegedAttributeCertificate pac);
+            if (!expectPac)
+            {
+                Assert.IsFalse(success);
+                Assert.IsNull(pac);
+            }
+            else
+            {
+                Assert.IsTrue(success);
+                Assert.IsNotNull(pac);
+                Assert.AreEqual(expectedCName, pac.ClientInformation.Name);
+            }
         }
 
-        private void ValidateTgsRep(KrbTgsRep tgsRep, KerberosKey subSessionKey, KerberosKey ticketKey, string expectedCName, string expectedCRealm, string expectedSName, string expectedSRealm)
+        private void ValidateTgsRep(
+            KrbTgsRep tgsRep,
+            KerberosKey subSessionKey,
+            KerberosKey ticketKey,
+            string expectedCName,
+            string expectedCRealm,
+            string expectedSName,
+            string expectedSRealm,
+            bool expectPac)
         {
             Assert.IsNotNull(tgsRep);
 
@@ -200,9 +250,30 @@ namespace Tests.Kerberos.NET
             Assert.IsNotNull(ticketEncPart);
             Assert.AreEqual(expectedCRealm, ticketEncPart.CRealm);
             Assert.AreEqual(expectedCName, ticketEncPart.CName.FullyQualifiedName);
+
+            // Check PAC fields
+            bool success = ticketEncPart.TryGetPac(out PrivilegedAttributeCertificate pac);
+            if (!expectPac)
+            {
+                Assert.IsFalse(success);
+                Assert.IsNull(pac);
+            }
+            else
+            {
+                Assert.IsTrue(success);
+                Assert.IsNotNull(pac);
+                Assert.AreEqual(expectedCName, pac.ClientInformation.Name);
+            }
         }
 
-        private KrbAsRep CreateReferralTgt(string sourceRealm, string destRealm, KrbPrincipalName cname, out KerberosKey tgtKey, out KerberosKey asRepKey, out KrbEncryptionKey sessionKey)
+        private KrbAsRep CreateReferralTgt(
+            string sourceRealm,
+            string destRealm,
+            KrbPrincipalName cname,
+            bool includePac,
+            out KerberosKey tgtKey,
+            out KerberosKey asRepKey,
+            out KrbEncryptionKey sessionKey)
         {
             var sourceRealmService = new FakeRealmService(sourceRealm);
 
@@ -217,6 +288,39 @@ namespace Tests.Kerberos.NET
 
             DateTimeOffset now = DateTimeOffset.UtcNow;
 
+            KrbAuthorizationData[] authorizationData = null;
+
+            if (includePac)
+            {
+                var pac = clientPrincipal.GeneratePac();
+                Assert.IsNotNull(pac);
+
+                pac.ClientInformation = new PacClientInfo
+                {
+                    Name = cname.FullyQualifiedName,
+                    ClientId = RpcFileTime.ConvertWithoutMicroseconds(now),
+                };
+
+                authorizationData = new[]
+                {
+                    new KrbAuthorizationData
+                    {
+                        Type = AuthorizationDataType.AdIfRelevant,
+                        Data = new KrbAuthorizationDataSequence
+                        {
+                            AuthorizationData = new[]
+                            {
+                                new KrbAuthorizationData
+                                {
+                                    Type = AuthorizationDataType.AdWin2kPac,
+                                    Data = pac.Encode(tgtKey, tgtKey)
+                                }
+                            }
+                        }.Encode()
+                    }
+                };
+            }
+
             var encTicketPart = new KrbEncTicketPart()
             {
                 CName = cname,
@@ -227,7 +331,7 @@ namespace Tests.Kerberos.NET
                 EndTime = now.AddHours(1),
                 RenewTill = now.AddDays(30),
                 Flags = TicketFlags.PreAuthenticated | TicketFlags.Initial | TicketFlags.Renewable | TicketFlags.Forwardable,
-                AuthorizationData = null,
+                AuthorizationData = authorizationData,
                 CAddr = new KrbHostAddress[] { },
                 Transited = new KrbTransitedEncoding()
             };
