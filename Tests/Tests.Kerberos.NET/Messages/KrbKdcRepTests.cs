@@ -124,15 +124,15 @@ namespace Tests.Kerberos.NET
                 Compatibility = KerberosCompatibilityFlags.IsolateRealmsConsistently,
             });
 
-            Assert.IsNotNull(tgsRep);
-            Assert.AreEqual("blah.com", tgsRep.Ticket.Realm);
-            Assert.AreEqual("blah@blah.com/blah.com", tgsRep.Ticket.SName.FullyQualifiedName);
-            Assert.AreEqual("test.com", tgsRep.CRealm);
-            Assert.AreEqual("blah@test.com", tgsRep.CName.FullyQualifiedName);
-
-            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(key, KeyUsage.Ticket, KrbEncTicketPart.DecodeApplication);
-            Assert.AreEqual("test.com", ticketEncPart.CRealm);
-            Assert.AreEqual("blah@test.com", ticketEncPart.CName.FullyQualifiedName);
+            ValidateTgsRep(
+                tgsRep,
+                key,
+                expectedCName: "blah@test.com",
+                expectedCRealm: "test.com",
+                expectedSName: "blah@blah.com/blah.com",
+                expectedSRealm: "blah.com",
+                expectPac: false,
+                expectedPacClientName: null);
         }
 
         [TestMethod]
@@ -149,17 +149,19 @@ namespace Tests.Kerberos.NET
                 RealmName = "blah.com",
                 ClientRealmName = "test.com",
                 Compatibility = KerberosCompatibilityFlags.IsolateRealmsConsistently,
+                IncludePac = true,
+                KdcAuthorizationKey = key
             });
 
-            Assert.IsNotNull(tgsRep);
-            Assert.AreEqual("blah.com", tgsRep.Ticket.Realm);
-            Assert.AreEqual("blah@blah.com/blah.com", tgsRep.Ticket.SName.FullyQualifiedName);
-            Assert.AreEqual("test.com", tgsRep.CRealm);
-            Assert.AreEqual("computer$@test.com", tgsRep.CName.FullyQualifiedName);
-
-            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(key, KeyUsage.Ticket, KrbEncTicketPart.DecodeApplication);
-            Assert.AreEqual("test.com", ticketEncPart.CRealm);
-            Assert.AreEqual("computer$@test.com", ticketEncPart.CName.FullyQualifiedName);
+            ValidateTgsRep(
+                tgsRep,
+                key,
+                expectedCName: "computer$@test.com",
+                expectedCRealm: "test.com",
+                expectedSName: "blah@blah.com/blah.com",
+                expectedSRealm: "blah.com",
+                expectPac: true,
+                expectedPacClientName: "computer$");
         }
 
         [TestMethod]
@@ -183,27 +185,74 @@ namespace Tests.Kerberos.NET
             string expectedCRealm
         )
         {
+            var cname = $"blah@{crealm}";
+            var sname = "blah@blah.com";
+
             var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
 
             var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
             {
-                Principal = new FakeKerberosPrincipal($"blah@{crealm}"),
-                ClientName = KrbPrincipalName.FromString($"blah@{crealm}"),
+                Principal = new FakeKerberosPrincipal(cname),
+                ClientName = KrbPrincipalName.FromString(cname),
                 ClientRealmName = crealm,
 
                 EncryptedPartKey = key,
-                ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
+                ServicePrincipal = new FakeKerberosPrincipal(sname),
                 ServicePrincipalKey = key,
                 RealmName = realm,
                 Compatibility = compatibilityFlags,
+
+                IncludePac = true,
+                KdcAuthorizationKey = key
             });
 
-            Assert.IsNotNull(tgsRep);
-            Assert.AreEqual(expectedRealm, tgsRep.Ticket.Realm);
+            ValidateTgsRep(
+                tgsRep,
+                key,
+                expectedCName: cname,
+                expectedCRealm: expectedCRealm,
+                expectedSName: $"{sname}/{expectedRealm}",
+                expectedSRealm: expectedRealm,
+                expectPac: true,
+                expectedPacClientName: cname);
+        }
 
-            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(key, KeyUsage.Ticket, KrbEncTicketPart.DecodeApplication);
-            Assert.AreEqual(expectedCRealm, ticketEncPart.CRealm);
+        private void ValidateTgsRep(
+            KrbTgsRep tgsRep,
+            KerberosKey ticketKey,
+            string expectedCName,
+            string expectedCRealm,
+            string expectedSName,
+            string expectedSRealm,
+            bool expectPac,
+            string expectedPacClientName)
+        {
+            Assert.IsNotNull(tgsRep);
+
+            // Check cleartext fields
+            Assert.AreEqual(expectedCName, tgsRep.CName.FullyQualifiedName);
             Assert.AreEqual(expectedCRealm, tgsRep.CRealm);
+            Assert.AreEqual(expectedSName, tgsRep.Ticket.SName.FullyQualifiedName);
+            Assert.AreEqual(expectedSRealm, tgsRep.Ticket.Realm);
+
+            // Check encrypted ticket fields
+            var ticketEncPart = tgsRep.Ticket.EncryptedPart.Decrypt(ticketKey, KeyUsage.Ticket, KrbEncTicketPart.DecodeApplication);
+            Assert.AreEqual(expectedCName, ticketEncPart.CName.FullyQualifiedName);
+            Assert.AreEqual(expectedCRealm, ticketEncPart.CRealm);
+
+            // Check PAC fields
+            if (!expectPac)
+            {
+                Assert.IsFalse(ticketEncPart.TryGetPac(out _));
+            }
+            else
+            {
+                bool success = ticketEncPart.TryGetPac(out PrivilegedAttributeCertificate pac);
+                Assert.IsTrue(success);
+                Assert.IsNotNull(pac);
+                Assert.IsNotNull(pac.ClientInformation);
+                Assert.AreEqual(expectedPacClientName, pac.ClientInformation.Name);
+            }
         }
     }
 }
