@@ -161,7 +161,39 @@ namespace Tests.Kerberos.NET
                 expectedSName: "blah@blah.com/blah.com",
                 expectedSRealm: "blah.com",
                 expectPac: true,
+                // Normally PAC client name should be the same as ticket cname. This is fixed when passing in
+                // ClientName in the ServiceTicketRequest, see CreateServiceTicket_ReferralTgtComputerIdentity_WithClientName test.
                 expectedPacClientName: "computer$");
+        }
+
+        [TestMethod]
+        public void CreateServiceTicket_ReferralTgtComputerIdentity_WithClientName()
+        {
+            var key = KrbEncryptionKey.Generate(EncryptionType.AES128_CTS_HMAC_SHA1_96).AsKey();
+
+            var tgsRep = KrbKdcRep.GenerateServiceTicket<KrbTgsRep>(new ServiceTicketRequest
+            {
+                ClientName = KrbPrincipalName.FromString("computer$@test.com"), // specify client name to get correct PAC client name
+                EncryptedPartKey = key,
+                ServicePrincipal = new FakeKerberosPrincipal("blah@blah.com"),
+                ServicePrincipalKey = key,
+                Principal = new FakeKerberosPrincipal("computer$"),
+                RealmName = "blah.com",
+                ClientRealmName = "test.com",
+                Compatibility = KerberosCompatibilityFlags.IsolateRealmsConsistently,
+                IncludePac = true,
+                KdcAuthorizationKey = key
+            });
+
+            ValidateTgsRep(
+                tgsRep,
+                key,
+                expectedCName: "computer$@test.com",
+                expectedCRealm: "test.com",
+                expectedSName: "blah@blah.com/blah.com",
+                expectedSRealm: "blah.com",
+                expectPac: true,
+                expectedPacClientName: "computer$@test.com");
         }
 
         [TestMethod]
