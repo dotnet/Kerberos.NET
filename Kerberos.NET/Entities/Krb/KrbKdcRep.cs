@@ -271,6 +271,18 @@ namespace Kerberos.NET.Entities
             );
         }
 
+        private static string GetClientNameForPac(ServiceTicketRequest request)
+        {
+            // If ClientName is explicitly set, use that for the PAC client name.
+            // The PAC client name should match the ticket's cname.
+            if (request.ClientName != null)
+            {
+                return request.ClientName.FullyQualifiedName;
+            }
+
+            return request.Principal.PrincipalName;
+        }
+
         private static IEnumerable<KrbAuthorizationData> GenerateAuthorizationData(ServiceTicketRequest request)
         {
             // authorization-data is annoying because it's a sequence of
@@ -303,7 +315,7 @@ namespace Kerberos.NET.Entities
                     pac.ClientInformation = new PacClientInfo
                     {
                         ClientId = RpcFileTime.ConvertWithoutMicroseconds(request.Now),
-                        Name = request.Principal.PrincipalName
+                        Name = GetClientNameForPac(request)
                     };
 
                     var sequence = new KrbAuthorizationDataSequence

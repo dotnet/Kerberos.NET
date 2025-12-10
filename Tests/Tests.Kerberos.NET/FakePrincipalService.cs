@@ -30,26 +30,20 @@ namespace Tests.Kerberos.NET
 
         public IKerberosPrincipal Find(KrbPrincipalName principalName, string realm = null)
         {
-            IKerberosPrincipal principal = null;
-
-            bool fallback = false;
-
             if (principalName.FullyQualifiedName.Contains("-fallback", StringComparison.OrdinalIgnoreCase) &&
                 principalName.Type == PrincipalNameType.NT_ENTERPRISE)
             {
-                principal = null;
-                fallback = true;
+                return null;
             }
 
-            if ((principalName.FullyQualifiedName.EndsWith(this.realm, StringComparison.InvariantCultureIgnoreCase) ||
+            if (principalName.FullyQualifiedName.EndsWith(this.realm, StringComparison.InvariantCultureIgnoreCase) ||
                 principalName.FullyQualifiedName.StartsWith("krbtgt", StringComparison.InvariantCultureIgnoreCase) ||
                 principalName.Type == PrincipalNameType.NT_PRINCIPAL)
-                && !fallback)
             {
-                principal = new FakeKerberosPrincipal(principalName.FullyQualifiedName);
+                return new FakeKerberosPrincipal(principalName.FullyQualifiedName);
             }
 
-            return principal;
+            return null;
         }
 
         public X509Certificate2 RetrieveKdcCertificate()
