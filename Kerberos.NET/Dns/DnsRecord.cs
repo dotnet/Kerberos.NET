@@ -49,5 +49,7 @@ namespace Kerberos.NET.Dns
                 return this.Target;
             }
         }
+
+        public int PingResponseTime { get; set; } = int.MaxValue;
     }
 }
