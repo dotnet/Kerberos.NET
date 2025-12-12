@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Asn1;
@@ -20,14 +19,17 @@ namespace Kerberos.NET.Transport
 {
     public abstract class KerberosTransportBase : IKerberosTransport2, IDisposable
     {
-        protected KerberosTransportBase(ILoggerFactory logger)
-        {
-            this.ClientRealmService = new ClientDomainService(logger);
-        }
+        protected static readonly Random Random = new();
 
         private bool disposedValue;
 
-        private DnsRecord fastest;
+        protected KerberosTransportBase(ILoggerFactory logger)
+        {
+            this.ClientRealmService = new ClientDomainService(logger);
+            this.Logger = logger.CreateLoggerSafe<KerberosTransportBase>();
+        }
+
+        protected ILogger Logger { get; }
 
         public virtual bool TransportFailed { get; set; }
 
@@ -35,11 +37,23 @@ namespace Kerberos.NET.Transport
 
         public bool Enabled { get; set; }
 
-        public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(2);
+        public TimeSpan ConnectTimeout
+        {
+            get => this.ClientRealmService.ConnectTimeout;
+            set => this.ClientRealmService.ConnectTimeout = value;
+        }
 
-        public TimeSpan SendTimeout { get; set; } = TimeSpan.FromSeconds(10);
+        public TimeSpan SendTimeout
+        {
+            get => this.ClientRealmService.SendTimeout;
+            set => this.ClientRealmService.SendTimeout = value;
+        }
 
-        public TimeSpan ReceiveTimeout { get; set; } = TimeSpan.FromSeconds(10);
+        public TimeSpan ReceiveTimeout
+        {
+            get => this.ClientRealmService.ReceiveTimeout;
+            set => this.ClientRealmService.ReceiveTimeout = value;
+        }
 
         public int MaximumAttempts { get; set; } = 30;
 
@@ -166,58 +180,20 @@ namespace Kerberos.NET.Transport
         protected virtual async Task<DnsRecord> LocatePreferredKdc(string domain, string servicePrefix)
         {
             var results = await this.LocateKdc(domain, servicePrefix);
-            return await SelectedPreferredInstance(domain, servicePrefix, results, ClientDomainService.DefaultKerberosPort);
+            return SelectedPreferredInstance(domain, servicePrefix, results, ClientDomainService.DefaultKerberosPort);
         }
 
         protected virtual async Task<DnsRecord> LocatePreferredKpasswd(string domain, string servicePrefix)
         {
             var results = await this.LocateKpasswd(domain, servicePrefix);
-            return await SelectedPreferredInstance(domain, servicePrefix, results, ClientDomainService.DefaultKpasswdPort);
+            return SelectedPreferredInstance(domain, servicePrefix, results, ClientDomainService.DefaultKpasswdPort);
         }
 
-        protected virtual async Task<DnsRecord> SelectedPreferredInstance(string domain, string servicePrefix, IEnumerable<DnsRecord> results, int defaultPort)
+        protected virtual DnsRecord SelectedPreferredInstance(string domain, string servicePrefix, IEnumerable<DnsRecord> results, int defaultPort)
         {
-            if (results.Contains(fastest, DnsRecordComparer.Instance))
-            {
-                return fastest;
-            }
+            results = results.Where(r => r.Name.StartsWith(servicePrefix)).OrderBy(r => r.PingResponseTime);
 
-            fastest = await results.Where(r => r.Name.StartsWith(servicePrefix)).GetFastestAsync(PingAsync);
-            return fastest ?? throw new KerberosTransportException($"Cannot locate SRV record for {domain}");
-        }
-
-        private async Task<DnsRecord> PingAsync(DnsRecord record, CancellationToken cancellationToken)
-        {
-            using var ping = new Ping();
-            cancellationToken.Register(() => ping.SendAsyncCancel());
-            var reply = await ping.SendPingAsync(record.Target, Convert.ToInt32(ConnectTimeout.TotalMilliseconds));
-            return reply.Status == IPStatus.Success ? record : throw new PingException($"Ping {record.Target} returned {reply.Status}");
-        }
-
-        private class DnsRecordComparer : IEqualityComparer<DnsRecord>
-        {
-            public static readonly DnsRecordComparer Instance = new();
-
-            private DnsRecordComparer()
-            {
-            }
-
-            public bool Equals(DnsRecord x, DnsRecord y)
-            {
-                if (ReferenceEquals(x, y)) return true;
-                if (x is null) return false;
-                if (y is null) return false;
-                if (x.GetType() != y.GetType()) return false;
-                return x.Target == y.Target && x.Port == y.Port;
-            }
-
-            public int GetHashCode(DnsRecord obj)
-            {
-                unchecked
-                {
-                    return ((obj.Target != null ? obj.Target.GetHashCode() : 0) * 397) ^ obj.Port;
-                }
-            }
+            return results.FirstOrDefault() ?? throw new KerberosTransportException($"Cannot locate SRV record for {domain}");
         }
     }
 }

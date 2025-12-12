@@ -346,5 +346,12 @@ namespace Kerberos.NET.Configuration
         [DefaultValue(PrincipalNameType.NT_ENTERPRISE)]
         [DisplayName("default_name_type")]
         public PrincipalNameType DefaultNameType { get; set; }
+
+        /// <summary>
+        /// Indicates whether the client should try to find and sort KDCs by how long it takes for them to respond by ping.
+        /// </summary>
+        [DefaultValue(true)]
+        [DisplayName("prioritize_by_response_time")]
+        public bool PrioritizeKdcByPing { get; set; }
     }
 }

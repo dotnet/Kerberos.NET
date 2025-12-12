@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Threading;
 using System.Threading.Tasks;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Dns;
@@ -13,6 +15,8 @@ namespace Kerberos.NET.Transport
 {
     public class ClientDomainService
     {
+        private static readonly Random Random = new();
+
         public ClientDomainService(ILoggerFactory logger)
         {
             this.logger = logger.CreateLoggerSafe<ClientDomainService>();
@@ -47,6 +51,13 @@ namespace Kerberos.NET.Transport
 
         public Krb5Config Configuration { get; set; }
 
+        public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(2);
+
+        public TimeSpan SendTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+        public TimeSpan ReceiveTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+
         public void ResetConnections()
         {
             DomainCache.Clear();
@@ -59,7 +70,37 @@ namespace Kerberos.NET.Transport
         {
             var results = await this.Query(domain, servicePrefix, DefaultKerberosPort);
 
-            return ParseQuerySrvReply(results);
+            results = ParseQuerySrvReply(results);
+
+            return await WeightResults(results);
+        }
+
+        private async Task<IEnumerable<DnsRecord>> WeightResults(IEnumerable<DnsRecord> results)
+        {
+            SortedList<int, DnsRecord> fastest = new();
+
+            if (this.Configuration.Defaults.PrioritizeKdcByPing)
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(this.ConnectTimeout);
+
+                    fastest = await results.GetFastestAsync(PingAsync, cts.Token);
+                }
+                catch (Exception ex)
+                {
+                    this.logger.LogWarning(ex, "Ping failed for all found services");
+                }
+            }
+
+            foreach (var r in results)
+            {
+                var speed = fastest.FirstOrDefault(f => string.Equals(f.Value.Target, r.Target, StringComparison.OrdinalIgnoreCase));
+
+                r.PingResponseTime = speed.Value != null ? speed.Key : Random.Next(fastest.Count, int.MaxValue);
+            }
+
+            return results;
         }
 
         public virtual async Task<IEnumerable<DnsRecord>> LocateKpasswd(string domain, string servicePrefix)
@@ -151,6 +192,43 @@ namespace Kerberos.NET.Transport
             }
 
             return records;
+        }
+
+        protected virtual async Task<DnsRecord> PingAsync(DnsRecord record, CancellationToken cancellationToken)
+        {
+            using var ping = new Ping();
+
+            cancellationToken.Register(() => ping.SendAsyncCancel());
+
+            var reply = await ping.SendPingAsync(record.Target, Convert.ToInt32(this.ConnectTimeout.TotalMilliseconds));
+
+            return reply.Status == IPStatus.Success ? record : throw new PingException($"Ping {record.Target} returned {reply.Status}");
+        }
+
+        private class DnsRecordComparer : IEqualityComparer<DnsRecord>
+        {
+            public static readonly DnsRecordComparer Instance = new();
+
+            private DnsRecordComparer()
+            {
+            }
+
+            public bool Equals(DnsRecord x, DnsRecord y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null) return false;
+                if (y is null) return false;
+                if (x.GetType() != y.GetType()) return false;
+                return x.Target == y.Target && x.Port == y.Port;
+            }
+
+            public int GetHashCode(DnsRecord obj)
+            {
+                unchecked
+                {
+                    return ((obj.Target != null ? obj.Target.GetHashCode() : 0) * 397) ^ obj.Port;
+                }
+            }
         }
 
         private async Task QueryDns(string domain, string servicePrefix, List<DnsRecord> records)

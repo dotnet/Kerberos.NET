@@ -19,8 +19,6 @@ namespace Kerberos.NET.Transport
 {
     public class HttpsKerberosTransport : KerberosTransportBase
     {
-        private static readonly Random Random = new Random();
-
         private readonly ILogger logger;
 
         public HttpsKerberosTransport(ILoggerFactory logger = null)
