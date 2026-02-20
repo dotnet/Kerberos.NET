@@ -495,5 +495,179 @@ namespace Tests.Kerberos.NET
                 Assert.AreEqual(credCert.Thumbprint, clientCert.Thumbprint);
             }
         }
+
+        // -- TGS-REQ Channel Binding Tests --
+
+        private static readonly byte[] TgsTestChannelBinding = new byte[]
+        {
+            0x74, 0x6C, 0x73, 0x2D, 0x73, 0x65, 0x72, 0x76,
+            0x65, 0x72, 0x2D, 0x65, 0x6E, 0x64, 0x2D, 0x70,
+            0x6F, 0x69, 0x6E, 0x74, 0x3A, 0xAA, 0xBB, 0xCC,
+            0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x22, 0x33, 0x44
+        };
+
+        [TestMethod]
+        public void KdcTgsReq_ChannelBinding_MatchingBindings_Succeeds()
+        {
+            // Channel bindings used by client in TGS-REQ
+            // The same channel bindings are expected by the server
+            // thus should result in a successful TGS-REQ processing
+            var bindings = new GssChannelBindings { ApplicationData = TgsTestChannelBinding };
+
+            KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out KrbEncryptionKey tgtKey);
+
+            var tgsReq = KrbTgsReq.CreateTgsReq(
+                new RequestServiceTicket
+                {
+                    Realm = Realm,
+                    ServicePrincipalName = "host/foo." + Realm,
+                    ChannelBindings = bindings
+                },
+                tgtKey, asRep, out _);
+
+            var handler = new KdcTgsReqMessageHandler(tgsReq.EncodeApplication(), new KdcServerOptions
+            {
+                DefaultRealm = Realm,
+                IsDebug = true,
+                RealmLocator = realm => new FakeRealmService(realm)
+            });
+
+
+            handler.ExpectedChannelBindings = bindings;
+
+            var results = handler.Execute();
+
+            var tgsRep = KrbTgsRep.DecodeApplication(results);
+            Assert.IsNotNull(tgsRep);
+        }
+
+        [TestMethod]
+        public void KdcTgsReq_ChannelBinding_Mismatch_ReturnsError()
+        {
+            // Channel bindings used by client in TGS-REQ
+            // Different channel bindings are expected by the server
+            // thus should result in an error
+            var clientBindings = new GssChannelBindings { ApplicationData = TgsTestChannelBinding };
+            var serverBindings = new GssChannelBindings { ApplicationData = new byte[] { 0xFF, 0xFE, 0xFD } };
+
+            KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out KrbEncryptionKey tgtKey);
+
+            var tgsReq = KrbTgsReq.CreateTgsReq(
+                new RequestServiceTicket
+                {
+                    Realm = Realm,
+                    ServicePrincipalName = "host/foo." + Realm,
+                    ChannelBindings = clientBindings
+                },
+                tgtKey, asRep, out _);
+
+            var handler = new KdcTgsReqMessageHandler(tgsReq.EncodeApplication(), new KdcServerOptions
+            {
+                DefaultRealm = Realm,
+                IsDebug = true,
+                RealmLocator = realm => new FakeRealmService(realm)
+            });
+
+            handler.ExpectedChannelBindings = serverBindings;
+
+            var results = handler.Execute();
+
+            var error = KrbError.DecodeApplication(results);
+            Assert.AreEqual(KerberosErrorCode.KRB_ERR_GENERIC, error.ErrorCode);
+        }
+
+        [TestMethod]
+        public void KdcTgsReq_ChannelBinding_ServerExpectsNone_Succeeds()
+        {
+            // Channel bindings used by client in TGS-REQ
+            var clientBindings = new GssChannelBindings { ApplicationData = TgsTestChannelBinding };
+
+            KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out KrbEncryptionKey tgtKey);
+
+            var tgsReq = KrbTgsReq.CreateTgsReq(
+                new RequestServiceTicket
+                {
+                    Realm = Realm,
+                    ServicePrincipalName = "host/foo." + Realm,
+                    ChannelBindings = clientBindings
+                },
+                tgtKey, asRep, out _);
+
+            // Server does not expect channel bindings
+            var handler = new KdcTgsReqMessageHandler(tgsReq.EncodeApplication(), new KdcServerOptions
+            {
+                DefaultRealm = Realm,
+                IsDebug = true,
+                RealmLocator = realm => new FakeRealmService(realm)
+                // ExpectedChannelBindings = null
+            });
+
+            var results = handler.Execute();
+
+            // Should succeed even though client included channel bindings as the server does not require them
+            var tgsRep = KrbTgsRep.DecodeApplication(results);
+            Assert.IsNotNull(tgsRep);
+        }
+
+        [TestMethod]
+        public void KdcTgsReq_ChannelBinding_ServerExpects_ClientOmits_ReturnsError()
+        {
+            // Server expects channel bindings but client omits them in TGS-REQ
+            var serverBindings = new GssChannelBindings { ApplicationData = TgsTestChannelBinding };
+
+            KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out KrbEncryptionKey tgtKey);
+
+            var tgsReq = KrbTgsReq.CreateTgsReq(
+                new RequestServiceTicket
+                {
+                    Realm = Realm,
+                    ServicePrincipalName = "host/foo." + Realm
+                },
+                tgtKey, asRep, out _);
+
+            // Server expects channel bindings
+            var handler = new KdcTgsReqMessageHandler(tgsReq.EncodeApplication(), new KdcServerOptions
+            {
+                DefaultRealm = Realm,
+                IsDebug = true,
+                RealmLocator = realm => new FakeRealmService(realm)
+            });
+
+            handler.ExpectedChannelBindings = serverBindings;
+
+            var results = handler.Execute();
+
+            // Expect an error due to missing channel bindings in client
+            var error = KrbError.DecodeApplication(results);
+            Assert.AreEqual(KerberosErrorCode.KRB_ERR_GENERIC, error.ErrorCode);
+        }
+
+        [TestMethod]
+        public void KdcTgsReq_NoChannelBindings_Succeeds()
+        {
+            // Neither client nor server uses channel bindings
+            // should succeed without error
+            KrbAsRep asRep = RequestTgt(cname: Upn, crealm: Realm, srealm: Realm, out KrbEncryptionKey tgtKey);
+
+            var tgsReq = KrbTgsReq.CreateTgsReq(
+                new RequestServiceTicket
+                {
+                    Realm = Realm,
+                    ServicePrincipalName = "host/foo." + Realm
+                },
+                tgtKey, asRep, out _);
+
+            var handler = new KdcTgsReqMessageHandler(tgsReq.EncodeApplication(), new KdcServerOptions
+            {
+                DefaultRealm = Realm,
+                IsDebug = true,
+                RealmLocator = realm => new FakeRealmService(realm)
+            });
+
+            var results = handler.Execute();
+
+            var tgsRep = KrbTgsRep.DecodeApplication(results);
+            Assert.IsNotNull(tgsRep);
+        }
     }
 }

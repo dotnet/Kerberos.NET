@@ -25,6 +25,20 @@ namespace Kerberos.NET.Server
 
         protected KdcServerOptions Options { get; }
 
+        /// <summary>
+        /// Expected channel bindings for this request's TGS-REQ validation.
+        /// </summary>
+        public GssChannelBindings ExpectedChannelBindings { get; set; }
+
+        /// <summary>
+        /// Accepts a raw SEC_CHANNEL_BINDINGS buffer
+        /// and converts it to <see cref="ExpectedChannelBindings"/>.
+        /// </summary>
+        public ReadOnlyMemory<byte> ExpectedRawChannelBindings
+        {
+            set { this.ExpectedChannelBindings = GssChannelBindings.FromSecChannelBindings(value); }
+        }
+
         protected IRealmService RealmService { get; private set; }
 
         public IDictionary<PaDataType, PreAuthHandlerConstructor> PreAuthHandlers => this.preAuthHandlers;
@@ -103,7 +117,10 @@ namespace Kerberos.NET.Server
         {
             try
             {
-                var context = new PreAuthenticationContext();
+                var context = new PreAuthenticationContext
+                {
+                    ExpectedChannelBindings = this.ExpectedChannelBindings
+                };
 
                 this.DecodeMessage(context);
 
@@ -127,7 +144,10 @@ namespace Kerberos.NET.Server
         {
             try
             {
-                var context = new PreAuthenticationContext();
+                var context = new PreAuthenticationContext
+                {
+                    ExpectedChannelBindings = this.ExpectedChannelBindings
+                };
 
                 this.DecodeMessage(context);
 

@@ -71,7 +71,6 @@ namespace Kerberos.NET.Entities
         /// <summary>
         /// Parses a raw SEC_CHANNEL_BINDINGS flat buffer (as returned by Windows SSPI) into a <see cref="GssChannelBindings"/>.
         /// </summary>
-        [SupportedOSPlatform("windows")]
         public static GssChannelBindings FromSecChannelBindings(ReadOnlyMemory<byte> rawBuffer)
         {
             if (rawBuffer.Length < SecChannelBindingsHeaderSize)

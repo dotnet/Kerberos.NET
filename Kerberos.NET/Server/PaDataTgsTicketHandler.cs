@@ -39,7 +39,7 @@ namespace Kerberos.NET.Server
 
             var state = preauth.GetState<TgsState>(PaDataType.PA_TGS_REQ);
 
-            state.DecryptedApReq = this.DecryptApReq(state.ApReq, preauth.EvidenceTicketKey);
+            state.DecryptedApReq = this.DecryptApReq(state.ApReq, preauth.EvidenceTicketKey, preauth.ExpectedChannelBindings);
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Kerberos.NET.Server
 
             var state = context.GetState<TgsState>(PaDataType.PA_TGS_REQ);
 
-            state.DecryptedApReq ??= this.DecryptApReq(state.ApReq, context.EvidenceTicketKey);
+            state.DecryptedApReq ??= this.DecryptApReq(state.ApReq, context.EvidenceTicketKey, context.ExpectedChannelBindings);
 
             context.EncryptedPartKey = state.DecryptedApReq.SessionKey;
             context.Ticket = state.DecryptedApReq.Ticket;
@@ -135,11 +135,13 @@ namespace Kerberos.NET.Server
             return state.ApReq;
         }
 
-        private DecryptedKrbApReq DecryptApReq(KrbApReq apReq, KerberosKey krbtgtKey)
+        private DecryptedKrbApReq DecryptApReq(KrbApReq apReq, KerberosKey krbtgtKey, GssChannelBindings expectedChannelBindings)
         {
             var apReqDecrypted = new DecryptedKrbApReq(apReq, MessageType.KRB_TGS_REQ);
 
             apReqDecrypted.Decrypt(krbtgtKey);
+
+            apReqDecrypted.ExpectedChannelBindings = expectedChannelBindings;
 
             apReqDecrypted.Validate(this.Validation);
 

@@ -91,6 +91,11 @@ namespace Kerberos.NET.Server
         public bool? IncludePac { get; set; }
 
         /// <summary>
+        /// Expected channel bindings for AP-REQ validation during TGS-REQ processing.
+        /// </summary>
+        public GssChannelBindings ExpectedChannelBindings { get; set; }
+
+        /// <summary>
         /// Retrieve the current pre-authentication state for a particular PA-Data type.
         /// If the initial state is not present it will be created.
         /// </summary>

@@ -113,7 +113,7 @@ namespace Kerberos.NET.Entities
                 KeyUsage.PaTgsReqChecksum
             );
 
-            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey, bodyChecksum, out sessionKey);
+            var tgtApReq = CreateApReq(kdcRep, tgtSessionKey, bodyChecksum, rst.ChannelBindings, out sessionKey);
 
             var pacOptions = new KrbPaPacOptions
             {
@@ -200,7 +200,7 @@ namespace Kerberos.NET.Entities
             return paX509.Encode();
         }
 
-        private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey, KrbChecksum checksum, out KrbEncryptionKey sessionKey)
+        private static KrbApReq CreateApReq(KrbKdcRep kdcRep, KrbEncryptionKey tgtSessionKey, KrbChecksum checksum, GssChannelBindings channelBindings, out KrbEncryptionKey sessionKey)
         {
             var tgt = kdcRep.Ticket;
 
@@ -211,6 +211,13 @@ namespace Kerberos.NET.Entities
                 SequenceNumber = GetNonce(),
                 Checksum = checksum
             };
+
+            if (channelBindings != null)
+            {
+                var delegInfo = new DelegationInfo();
+                delegInfo.ChannelBinding = channelBindings.ComputeBindingHash();
+                authenticator.Checksum = KrbChecksum.EncodeDelegationChecksum(delegInfo);
+            }
 
             sessionKey = KrbEncryptionKey.Generate(tgtSessionKey.EType);
 
