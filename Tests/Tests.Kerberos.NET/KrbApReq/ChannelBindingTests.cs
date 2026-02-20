@@ -163,6 +163,138 @@ namespace Tests.Kerberos.NET
             Assert.AreEqual((ChecksumType)0x8003, authenticator.Checksum.Type);
         }
 
+        // -- SEC_CHANNEL_BINDINGS parsing tests --
+
+        [TestMethod]
+        public void FromSecChannelBindings_ApplicationDataOnly()
+        {
+            // Build a SEC_CHANNEL_BINDINGS buffer with only ApplicationData populated
+            var appData = SampleTlsBinding;
+            var buffer = BuildSecChannelBindings(0, ReadOnlyMemory<byte>.Empty, 0, ReadOnlyMemory<byte>.Empty, appData);
+
+            var bindings = GssChannelBindings.FromSecChannelBindings(buffer);
+
+            Assert.AreEqual(0, bindings.InitiatorAddrType);
+            Assert.AreEqual(0, bindings.InitiatorAddress.Length);
+            Assert.AreEqual(0, bindings.AcceptorAddrType);
+            Assert.AreEqual(0, bindings.AcceptorAddress.Length);
+            Assert.IsTrue(bindings.ApplicationData.Span.SequenceEqual(appData));
+        }
+
+        [TestMethod]
+        public void FromSecChannelBindings_AllFieldsPopulated()
+        {
+            var initiator = new byte[] { 127, 0, 0, 1 };
+            var acceptor = new byte[] { 10, 0, 0, 1 };
+            var appData = SampleTlsBinding;
+
+            var buffer = BuildSecChannelBindings(2, initiator, 2, acceptor, appData);
+            var bindings = GssChannelBindings.FromSecChannelBindings(buffer);
+
+            Assert.AreEqual(2, bindings.InitiatorAddrType);
+            Assert.IsTrue(bindings.InitiatorAddress.Span.SequenceEqual(initiator));
+            Assert.AreEqual(2, bindings.AcceptorAddrType);
+            Assert.IsTrue(bindings.AcceptorAddress.Span.SequenceEqual(acceptor));
+            Assert.IsTrue(bindings.ApplicationData.Span.SequenceEqual(appData));
+        }
+
+        [TestMethod]
+        public void FromSecChannelBindings_HashMatchesManualConstruction()
+        {
+            var appData = SampleTlsBinding;
+            var buffer = BuildSecChannelBindings(0, ReadOnlyMemory<byte>.Empty, 0, ReadOnlyMemory<byte>.Empty, appData);
+
+            var fromRaw = GssChannelBindings.FromSecChannelBindings(buffer);
+            var manual = new GssChannelBindings { ApplicationData = appData };
+
+            Assert.IsTrue(fromRaw.ComputeBindingHash().Span.SequenceEqual(manual.ComputeBindingHash().Span));
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void FromSecChannelBindings_BufferTooSmall_Throws()
+        {
+            GssChannelBindings.FromSecChannelBindings(new byte[16]);
+        }
+
+        [TestMethod]
+        public void ExpectedRawChannelBindings_ValidatesCorrectly()
+        {
+            var appData = SampleTlsBinding;
+            var rawBuffer = BuildSecChannelBindings(0, ReadOnlyMemory<byte>.Empty, 0, ReadOnlyMemory<byte>.Empty, appData);
+
+            var bindings = new GssChannelBindings { ApplicationData = appData };
+
+            var rst = new RequestServiceTicket
+            {
+                GssContextFlags = GssContextEstablishmentFlag.GSS_C_MUTUAL_FLAG,
+                ChannelBindings = bindings
+            };
+
+            var apReq = GenerateApReqAndDecrypt(rst, out DecryptedKrbApReq decrypted);
+
+            // Use the raw buffer convenience property
+            decrypted.ExpectedRawChannelBindings = rawBuffer;
+
+            // Should not throw — hash matches
+            decrypted.Validate(ValidationActions.ChannelBinding);
+        }
+
+        /// <summary>
+        /// Builds a SEC_CHANNEL_BINDINGS flat buffer in the Windows SSPI layout.
+        /// </summary>
+        private static byte[] BuildSecChannelBindings(
+            int initiatorAddrType, ReadOnlyMemory<byte> initiatorAddress,
+            int acceptorAddrType, ReadOnlyMemory<byte> acceptorAddress,
+            ReadOnlyMemory<byte> applicationData)
+        {
+            const int headerSize = 32;
+            int offset = headerSize;
+
+            int initiatorOffset = initiatorAddress.Length > 0 ? offset : 0;
+            offset += initiatorAddress.Length;
+
+            int acceptorOffset = acceptorAddress.Length > 0 ? offset : 0;
+            offset += acceptorAddress.Length;
+
+            int appDataOffset = applicationData.Length > 0 ? offset : 0;
+            offset += applicationData.Length;
+
+            var buffer = new byte[offset];
+
+            using (var ms = new System.IO.MemoryStream(buffer))
+            using (var writer = new System.IO.BinaryWriter(ms))
+            {
+                writer.Write(initiatorAddrType);
+                writer.Write(initiatorAddress.Length);
+                writer.Write(initiatorOffset);
+
+                writer.Write(acceptorAddrType);
+                writer.Write(acceptorAddress.Length);
+                writer.Write(acceptorOffset);
+
+                writer.Write(applicationData.Length);
+                writer.Write(appDataOffset);
+
+                if (initiatorAddress.Length > 0)
+                {
+                    writer.Write(initiatorAddress.ToArray());
+                }
+
+                if (acceptorAddress.Length > 0)
+                {
+                    writer.Write(acceptorAddress.ToArray());
+                }
+
+                if (applicationData.Length > 0)
+                {
+                    writer.Write(applicationData.ToArray());
+                }
+            }
+
+            return buffer;
+        }
+
         // -- Validation integration tests --
 
         [TestMethod]
@@ -270,7 +402,7 @@ namespace Tests.Kerberos.NET
                 ApplicationData = new byte[] { 0xFF, 0xFE, 0xFD, 0xFC }
             };
 
-            // Should NOT throw — ChannelBinding validation is not requested
+            // Should NOT throw, ChannelBinding validation is not requested
             decrypted.Validate(ValidationActions.ClientPrincipalIdentifier | ValidationActions.Realm);
         }
 
@@ -289,7 +421,7 @@ namespace Tests.Kerberos.NET
 
             decrypted.ExpectedChannelBindings = new GssChannelBindings { ApplicationData = SampleTlsBinding };
 
-            // Validate with DefaultActions (which includes ChannelBinding via All)
+            // Validate with DefaultActions, which includes ChannelBinding
             decrypted.Validate(DefaultActions);
         }
 

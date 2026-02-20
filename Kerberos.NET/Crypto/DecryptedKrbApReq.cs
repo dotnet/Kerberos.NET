@@ -49,6 +49,15 @@ namespace Kerberos.NET.Crypto
         /// </summary>
         public GssChannelBindings ExpectedChannelBindings { get; set; }
 
+        /// <summary>
+        /// Convenience property that accepts a raw SEC_CHANNEL_BINDINGS buffer (as returned by Windows SSPI)
+        /// and converts it to <see cref="ExpectedChannelBindings"/>.
+        /// </summary>
+        public ReadOnlyMemory<byte> ExpectedRawChannelBindings
+        {
+            set { this.ExpectedChannelBindings = GssChannelBindings.FromSecChannelBindings(value); }
+        }
+
         public KerberosKey SessionKey { get; private set; }
 
         private readonly KrbApReq token;

@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Runtime.Versioning;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,6 +51,16 @@ namespace Kerberos.NET
         /// Expected channel bindings to validate during decryption.
         /// </summary>
         public GssChannelBindings ExpectedChannelBindings { get; set; }
+
+        /// <summary>
+        /// Property that accepts a raw SEC_CHANNEL_BINDINGS buffer (as returned by Windows SSPI)
+        /// and converts it to <see cref="ExpectedChannelBindings"/>.
+        /// </summary>
+        [SupportedOSPlatform("windows")]
+        public ReadOnlyMemory<byte> ExpectedRawChannelBindings
+        {
+            set { this.ExpectedChannelBindings = GssChannelBindings.FromSecChannelBindings(value); }
+        }
 
         private Func<DateTimeOffset> nowFunc;
 
