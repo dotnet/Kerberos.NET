@@ -42,6 +42,11 @@ namespace Kerberos.NET.Entities
         public DelegationInfo(RequestServiceTicket rst)
         {
             this.Flags = rst.GssContextFlags;
+
+            if (rst.ChannelBindings != null)
+            {
+                this.ChannelBinding = rst.ChannelBindings.ComputeBindingHash();
+            }
         }
 
         public ReadOnlyMemory<byte> Encode()

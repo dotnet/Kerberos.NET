@@ -66,6 +66,11 @@ namespace Kerberos.NET
         public GssContextEstablishmentFlag GssContextFlags { get; set; }
 
         /// <summary>
+        /// Optional GSS channel bindings to include in the authenticator checksum.
+        /// </summary>
+        public GssChannelBindings ChannelBindings { get; set; }
+
+        /// <summary>
         /// Includes additional configuration details for the request.
         /// </summary>
         public Krb5Config Configuration { get; set; }

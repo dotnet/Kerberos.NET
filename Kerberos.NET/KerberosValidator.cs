@@ -46,6 +46,11 @@ namespace Kerberos.NET
 
         public ValidationActions ValidateAfterDecrypt { get; set; }
 
+        /// <summary>
+        /// Expected channel bindings to validate during decryption.
+        /// </summary>
+        public GssChannelBindings ExpectedChannelBindings { get; set; }
+
         private Func<DateTimeOffset> nowFunc;
 
         public Func<DateTimeOffset> Now
@@ -83,6 +88,7 @@ namespace Kerberos.NET
             this.logger.LogTrace("Kerberos request decrypted {SName}", decryptedToken.SName.FullyQualifiedName);
 
             decryptedToken.Now = this.Now;
+            decryptedToken.ExpectedChannelBindings = this.ExpectedChannelBindings;
 
             if (this.ValidateAfterDecrypt > 0)
             {
