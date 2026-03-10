@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -233,8 +233,8 @@ namespace Tests.Kerberos.NET
 
             var apReq = GenerateApReqAndDecrypt(rst, out DecryptedKrbApReq decrypted);
 
-            // Use the raw buffer convenience property
-            decrypted.ExpectedRawChannelBindings = rawBuffer;
+            // Use the raw buffer convenience method
+            decrypted.SetExpectedChannelBindingsFromSecChannelBindings(rawBuffer);
 
             // Should not throw — hash matches
             decrypted.Validate(ValidationActions.ChannelBinding);

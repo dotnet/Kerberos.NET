@@ -34,9 +34,9 @@ namespace Kerberos.NET.Server
         /// Accepts a raw SEC_CHANNEL_BINDINGS buffer
         /// and converts it to <see cref="ExpectedChannelBindings"/>.
         /// </summary>
-        public ReadOnlyMemory<byte> ExpectedRawChannelBindings
+        public void SetExpectedChannelBindingsFromSecChannelBindings(ReadOnlyMemory<byte> buffer)
         {
-            set { this.ExpectedChannelBindings = GssChannelBindings.FromSecChannelBindings(value); }
+            this.ExpectedChannelBindings = GssChannelBindings.FromSecChannelBindings(buffer);
         }
 
         protected IRealmService RealmService { get; private set; }

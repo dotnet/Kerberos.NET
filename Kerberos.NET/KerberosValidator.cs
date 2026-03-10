@@ -53,12 +53,12 @@ namespace Kerberos.NET
         public GssChannelBindings ExpectedChannelBindings { get; set; }
 
         /// <summary>
-        /// Property that accepts a raw SEC_CHANNEL_BINDINGS buffer (as returned by Windows SSPI)
+        /// Accepts a raw SEC_CHANNEL_BINDINGS buffer (as returned by Windows SSPI)
         /// and converts it to <see cref="ExpectedChannelBindings"/>.
         /// </summary>
-        public ReadOnlyMemory<byte> ExpectedRawChannelBindings
+        public void SetExpectedChannelBindingsFromSecChannelBindings(ReadOnlyMemory<byte> buffer)
         {
-            set { this.ExpectedChannelBindings = GssChannelBindings.FromSecChannelBindings(value); }
+            this.ExpectedChannelBindings = GssChannelBindings.FromSecChannelBindings(buffer);
         }
 
         private Func<DateTimeOffset> nowFunc;
