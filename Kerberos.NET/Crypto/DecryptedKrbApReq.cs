@@ -183,7 +183,10 @@ namespace Kerberos.NET.Crypto
 
             var delegationInfo = checksum.DecodeDelegation();
 
-            this.ChannelBindingHash = delegationInfo.ChannelBinding;
+            if (delegationInfo != null)
+            {
+                this.ChannelBindingHash = delegationInfo.ChannelBindingHash;
+            }
 
             var delegation = delegationInfo?.DelegationTicket;
 
