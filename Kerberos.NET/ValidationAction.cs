@@ -78,6 +78,6 @@ namespace Kerberos.NET
         /// <summary>
         /// Indicates all validation actions must be invoked.
         /// </summary>
-        All = ClientPrincipalIdentifier | Realm | TokenWindow | StartTime | EndTime | Replay | Pac | RenewTill | ChannelBinding
+        All = ClientPrincipalIdentifier | Realm | TokenWindow | StartTime | EndTime | Replay | Pac | RenewTill
     }
 }
