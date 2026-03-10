@@ -36,6 +36,28 @@ namespace Kerberos.NET.Crypto
 
         public KrbEncKrbCredPart DelegationTicket { get; private set; }
 
+        /// <summary>
+        /// The channel binding hash (Bnd field) extracted from the authenticator checksum,
+        /// as described in RFC 4121 section 4.1.1.2. This is a 16-byte MD5 hash of the
+        /// <see cref="GssChannelBindings"/> structure. Will be null or empty if no channel
+        /// bindings were supplied by the initiator.
+        /// </summary>
+        public ReadOnlyMemory<byte> ChannelBindingHash { get; private set; }
+
+        /// <summary>
+        /// Expected channel bindings to validate against when <see cref="ValidationActions.ChannelBinding"/> is enabled.
+        /// </summary>
+        public GssChannelBindings ExpectedChannelBindings { get; set; }
+
+        /// <summary>
+        /// Accepts a raw SEC_CHANNEL_BINDINGS buffer (as returned by Windows SSPI)
+        /// and converts it to <see cref="ExpectedChannelBindings"/>.
+        /// </summary>
+        public void SetExpectedChannelBindingsFromSecChannelBindings(ReadOnlyMemory<byte> buffer)
+        {
+            this.ExpectedChannelBindings = GssChannelBindings.FromSecChannelBindings(buffer);
+        }
+
         public KerberosKey SessionKey { get; private set; }
 
         private readonly KrbApReq token;
@@ -161,6 +183,11 @@ namespace Kerberos.NET.Crypto
 
             var delegationInfo = checksum.DecodeDelegation();
 
+            if (delegationInfo != null)
+            {
+                this.ChannelBindingHash = delegationInfo.ChannelBindingHash;
+            }
+
             var delegation = delegationInfo?.DelegationTicket;
 
             if (delegation == null)
@@ -211,6 +238,35 @@ namespace Kerberos.NET.Crypto
             if (validation.HasFlag(ValidationActions.RenewTill) && this.Ticket.Flags.HasFlag(TicketFlags.Renewable))
             {
                 this.ValidateTicketRenewal(this.Ticket.RenewTill, now, this.Skew);
+            }
+
+            if (validation.HasFlag(ValidationActions.ChannelBinding))
+            {
+                this.ValidateChannelBinding();
+            }
+        }
+
+        protected virtual void ValidateChannelBinding()
+        {
+            if (this.ExpectedChannelBindings == null)
+            {
+                return;
+            }
+
+            var expectedHash = this.ExpectedChannelBindings.ComputeBindingHash();
+
+            if (this.ChannelBindingHash.Length == 0)
+            {
+                throw new KerberosValidationException(
+                    "Channel Bindings are required by the acceptor but were not supplied by the initiator."
+                );
+            }
+
+            if (!KerberosCryptoTransformer.AreEqualSlow(expectedHash.Span, this.ChannelBindingHash.Span))
+            {
+                throw new KerberosValidationException(
+                    "The Channel Bindings hash from the initiator does not match the expected channel bindings."
+                );
             }
         }
 

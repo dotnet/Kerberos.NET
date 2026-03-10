@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Runtime.Versioning;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,6 +47,20 @@ namespace Kerberos.NET
 
         public ValidationActions ValidateAfterDecrypt { get; set; }
 
+        /// <summary>
+        /// Expected channel bindings to validate during decryption.
+        /// </summary>
+        public GssChannelBindings ExpectedChannelBindings { get; set; }
+
+        /// <summary>
+        /// Accepts a raw SEC_CHANNEL_BINDINGS buffer (as returned by Windows SSPI)
+        /// and converts it to <see cref="ExpectedChannelBindings"/>.
+        /// </summary>
+        public void SetExpectedChannelBindingsFromSecChannelBindings(ReadOnlyMemory<byte> buffer)
+        {
+            this.ExpectedChannelBindings = GssChannelBindings.FromSecChannelBindings(buffer);
+        }
+
         private Func<DateTimeOffset> nowFunc;
 
         public Func<DateTimeOffset> Now
@@ -83,6 +98,7 @@ namespace Kerberos.NET
             this.logger.LogTrace("Kerberos request decrypted {SName}", decryptedToken.SName.FullyQualifiedName);
 
             decryptedToken.Now = this.Now;
+            decryptedToken.ExpectedChannelBindings = this.ExpectedChannelBindings;
 
             if (this.ValidateAfterDecrypt > 0)
             {

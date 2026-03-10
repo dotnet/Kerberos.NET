@@ -42,6 +42,11 @@ namespace Kerberos.NET.Entities
         public DelegationInfo(RequestServiceTicket rst)
         {
             this.Flags = rst.GssContextFlags;
+
+            if (rst.ChannelBindings != null)
+            {
+                this.ChannelBindingHash = rst.ChannelBindings.ComputeBindingHash();
+            }
         }
 
         public ReadOnlyMemory<byte> Encode()
@@ -49,13 +54,13 @@ namespace Kerberos.NET.Entities
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
-                if (this.ChannelBinding.Length == 0)
+                if (this.ChannelBindingHash.Length == 0)
                 {
-                    this.ChannelBinding = new byte[ChannelBindingLength];
+                    this.ChannelBindingHash = new byte[ChannelBindingLength];
                 }
 
-                writer.Write(this.ChannelBinding.Length);
-                writer.Write(this.ChannelBinding.ToArray());
+                writer.Write(this.ChannelBindingHash.Length);
+                writer.Write(this.ChannelBindingHash.ToArray());
 
                 if (this.DelegationTicket != null)
                 {
@@ -85,7 +90,7 @@ namespace Kerberos.NET.Entities
             {
                 this.Length = reader.ReadInt32();
 
-                this.ChannelBinding = reader.ReadBytes(this.Length);
+                this.ChannelBindingHash = reader.ReadBytes(this.Length);
 
                 this.Flags = (GssContextEstablishmentFlag)reader.ReadBytes(4).AsLong(littleEndian: true);
 
@@ -124,7 +129,7 @@ namespace Kerberos.NET.Entities
 
         public int Length { get; set; }
 
-        public ReadOnlyMemory<byte> ChannelBinding { get; set; }
+        public ReadOnlyMemory<byte> ChannelBindingHash { get; set; }
 
         public GssContextEstablishmentFlag Flags { get; set; }
 

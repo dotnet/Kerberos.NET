@@ -17,7 +17,7 @@ namespace Kerberos.NET.Server
         {
         }
 
-        public ValidationActions Validation { get; set; } = ValidationActions.All & ~ValidationActions.Replay;
+        public ValidationActions Validation { get; set; } = ValidationActions.All & ~ValidationActions.Replay & ~ValidationActions.ChannelBinding;
 
         /// <summary>
         /// Executes before the validation stage and can be used for initial decoding of the message.

@@ -71,6 +71,11 @@ namespace Kerberos.NET
         SequenceNumberGreaterThan = 1 << 9,
 
         /// <summary>
+        /// Validates channel bindings in the authenticator checksum.
+        /// </summary>
+        ChannelBinding = 1 << 10,
+
+        /// <summary>
         /// Indicates all validation actions must be invoked.
         /// </summary>
         All = ClientPrincipalIdentifier | Realm | TokenWindow | StartTime | EndTime | Replay | Pac | RenewTill
