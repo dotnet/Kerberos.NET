@@ -112,13 +112,13 @@ namespace Tests.Kerberos.NET
 
             var delegInfo = new DelegationInfo(rst);
 
-            Assert.AreEqual(16, delegInfo.ChannelBinding.Length);
-            Assert.IsTrue(expectedHash.Span.SequenceEqual(delegInfo.ChannelBinding.Span));
+            Assert.AreEqual(16, delegInfo.ChannelBindingHash.Length);
+            Assert.IsTrue(expectedHash.Span.SequenceEqual(delegInfo.ChannelBindingHash.Span));
 
             var encoded = delegInfo.Encode();
             var decoded = new DelegationInfo().Decode(encoded);
 
-            Assert.IsTrue(expectedHash.Span.SequenceEqual(decoded.ChannelBinding.Span));
+            Assert.IsTrue(expectedHash.Span.SequenceEqual(decoded.ChannelBindingHash.Span));
         }
 
         [TestMethod]
@@ -132,14 +132,14 @@ namespace Tests.Kerberos.NET
             var delegInfo = new DelegationInfo(rst);
 
             // Should be zero-length before encoding
-            Assert.AreEqual(0, delegInfo.ChannelBinding.Length);
+            Assert.AreEqual(0, delegInfo.ChannelBindingHash.Length);
 
             // After encoding/decoding it becomes 16 zero-bytes
             var encoded = delegInfo.Encode();
             var decoded = new DelegationInfo().Decode(encoded);
 
-            Assert.AreEqual(16, decoded.ChannelBinding.Length);
-            Assert.IsTrue(decoded.ChannelBinding.Span.SequenceEqual(new byte[16]));
+            Assert.AreEqual(16, decoded.ChannelBindingHash.Length);
+            Assert.IsTrue(decoded.ChannelBindingHash.Span.SequenceEqual(new byte[16]));
         }
 
         // -- Authenticator checksum encoding with channel bindings --

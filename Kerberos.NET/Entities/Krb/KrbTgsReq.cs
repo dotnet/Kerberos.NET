@@ -215,7 +215,7 @@ namespace Kerberos.NET.Entities
             if (channelBindings != null)
             {
                 var delegInfo = new DelegationInfo();
-                delegInfo.ChannelBinding = channelBindings.ComputeBindingHash();
+                delegInfo.ChannelBindingHash = channelBindings.ComputeBindingHash();
                 authenticator.Checksum = KrbChecksum.EncodeDelegationChecksum(delegInfo);
             }
 
