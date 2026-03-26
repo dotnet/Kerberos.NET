@@ -99,6 +99,14 @@ namespace Kerberos.NET.Configuration
         public bool RegisterDefaultPkInitPreAuthHandler { get; set; }
 
         /// <summary>
+        /// Indicates whether the KDC will automatically register the FAST (RFC 6113)
+        /// and Encrypted Challenge pre-auth handlers.
+        /// </summary>
+        [DefaultValue(true)]
+        [DisplayName("kdc_register_fast")]
+        public bool RegisterDefaultFastHandler { get; set; }
+
+        /// <summary>
         /// The amount of time the KDC should wait receiving a request before timing out.
         /// </summary>
         [DefaultValue("30s")]

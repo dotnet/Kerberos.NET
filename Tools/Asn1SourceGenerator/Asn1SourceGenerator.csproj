@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <RootNamespace>Kerberos.NET.Asn1CodeGen</RootNamespace>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SignAssembly>false</SignAssembly>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <NoWarn>RS1035</NoWarn>
+    <IsRoslynComponent>true</IsRoslynComponent>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Share core files from Asn1CodeGen tool -->
+  <ItemGroup>
+    <Compile Include="..\Asn1CodeGen\Asn1Token.cs" Link="Shared\Asn1Token.cs" />
+    <Compile Include="..\Asn1CodeGen\Asn1Lexer.cs" Link="Shared\Asn1Lexer.cs" />
+    <Compile Include="..\Asn1CodeGen\Asn1Ast.cs" Link="Shared\Asn1Ast.cs" />
+    <Compile Include="..\Asn1CodeGen\Asn1Parser.cs" Link="Shared\Asn1Parser.cs" />
+    <Compile Include="..\Asn1CodeGen\CSharpCodeEmitter.cs" Link="Shared\CSharpCodeEmitter.cs" />
+  </ItemGroup>
+
+</Project>

@@ -1,6 +1,10 @@
-﻿// This is a generated file.
-// This file is licensed as per the LICENSE file.
-// The generation template has been modified from .NET Foundation implementation
+﻿// -----------------------------------------------------------------------
+// Licensed to The .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// -----------------------------------------------------------------------
+
+// This is a generated file.
+// The generation template has been modified from .NET Runtime implementation
 
 using System;
 using System.Security.Cryptography;
@@ -12,9 +16,20 @@ namespace Kerberos.NET.Entities
 {
     public partial class KrbPaSvrReferralData
     {
-        public KrbPrincipalName ReferredName;
-        public string ReferredRealm;
-      
+        /*
+          PA-SVR-REFERRAL-INFO       20
+          
+          PA-SVR-REFERRAL-DATA ::= SEQUENCE {
+                  referred-name   [1] PrincipalName OPTIONAL,
+                  referred-realm  [0] Realm
+          }
+         */
+    
+        public KrbPrincipalName ReferredName { get; set; }
+  
+        public string ReferredRealm { get; set; }
+  
+        // Encoding methods
         public ReadOnlyMemory<byte> Encode()
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -23,7 +38,7 @@ namespace Kerberos.NET.Entities
 
             return writer.EncodeAsMemory();
         }
-        
+ 
         internal void Encode(AsnWriter writer)
         {
             Encode(writer, Asn1Tag.Sequence);
@@ -40,7 +55,6 @@ namespace Kerberos.NET.Entities
                 ReferredName?.Encode(writer);
                 writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
             }
-
             writer.PushSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             writer.WriteCharacterString(UniversalTagNumber.GeneralString, ReferredRealm);
             writer.PopSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
@@ -100,7 +114,9 @@ namespace Kerberos.NET.Entities
           where T: KrbPaSvrReferralData, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
             
             Decode(reader, Asn1Tag.Sequence, out decoded);
         }
@@ -109,28 +125,28 @@ namespace Kerberos.NET.Entities
           where T: KrbPaSvrReferralData, new()
         {
             if (reader == null)
+            {
                 throw new ArgumentNullException(nameof(reader));
+            }
 
             decoded = new T();
+            
             AsnReader sequenceReader = reader.ReadSequence(expectedTag);
             AsnReader explicitReader;
             
-
             if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, 1)))
             {
-                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));
-                KrbPrincipalName tmpReferredName;
-                KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out tmpReferredName);
+                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 1));                
+            
+                KrbPrincipalName.Decode<KrbPrincipalName>(explicitReader, out KrbPrincipalName tmpReferredName);
                 decoded.ReferredName = tmpReferredName;
-
                 explicitReader.ThrowIfNotEmpty();
             }
 
-
             explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, 0));
             decoded.ReferredRealm = explicitReader.ReadCharacterString(UniversalTagNumber.GeneralString);
-            explicitReader.ThrowIfNotEmpty();
 
+            explicitReader.ThrowIfNotEmpty();
 
             sequenceReader.ThrowIfNotEmpty();
         }
