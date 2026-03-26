@@ -119,6 +119,21 @@ namespace Kerberos.NET.Asn1CodeGen
             json = Regex.Replace(json, @"//[^\n]*", "");
             json = json.Trim();
 
+            // Parse "Defaults" section if present
+            int defaultsStart = json.IndexOf("\"Defaults\"");
+            if (defaultsStart >= 0)
+            {
+                int defaultsObjStart = json.IndexOf('{', defaultsStart + 10);
+                if (defaultsObjStart >= 0)
+                {
+                    string defaultsContent = ExtractBalancedBraces(json, defaultsObjStart);
+                    if (defaultsContent != null)
+                    {
+                        ParseDefaultsConfig(defaultsContent, config.Defaults);
+                    }
+                }
+            }
+
             // Find "Types" object
             int typesStart = json.IndexOf("\"Types\"");
             if (typesStart < 0) return;
@@ -154,18 +169,54 @@ namespace Kerberos.NET.Asn1CodeGen
             }
         }
 
+        private static void ParseDefaultsConfig(string json, DefaultsConfig defaults)
+        {
+            string typePrefix = ExtractStringValue(json, "TypePrefix");
+            if (typePrefix != null) defaults.TypePrefix = typePrefix;
+
+            string ns = ExtractStringValue(json, "Namespace");
+            if (ns != null) defaults.Namespace = ns;
+
+            // Parse ExcludePrefix array: "ExcludePrefix": ["Name1", "Name2"]
+            int excludeStart = json.IndexOf("\"ExcludePrefix\"");
+            if (excludeStart >= 0)
+            {
+                int arrStart = json.IndexOf('[', excludeStart);
+                if (arrStart >= 0)
+                {
+                    int arrEnd = json.IndexOf(']', arrStart);
+                    if (arrEnd >= 0)
+                    {
+                        string arrContent = json.Substring(arrStart + 1, arrEnd - arrStart - 1);
+                        var matches = Regex.Matches(arrContent, "\"([^\"]+)\"");
+                        foreach (Match m in matches)
+                        {
+                            defaults.ExcludePrefix.Add(m.Groups[1].Value);
+                        }
+                    }
+                }
+            }
+        }
+
         private static TypeConfig ParseTypeConfig(string json)
         {
             var tc = new TypeConfig();
 
-            tc.CSharpName = ExtractStringValue(json, "CSharpName");
-            tc.InheritsFrom = ExtractStringValue(json, "InheritsFrom");
+            // Extract top-level properties only (before "Fields" section to avoid
+            // picking up field-level CSharpName/EnumType values)
+            int fieldsStart = json.IndexOf("\"Fields\"");
+            string topLevel = fieldsStart >= 0 ? json.Substring(0, fieldsStart) : json;
 
-            string ns = ExtractStringValue(json, "Namespace");
+            tc.CSharpName = ExtractStringValue(topLevel, "CSharpName");
+            tc.InheritsFrom = ExtractStringValue(topLevel, "InheritsFrom");
+            tc.EmitWrapper = ExtractBoolValue(topLevel, "EmitWrapper");
+            tc.WrapperProperty = ExtractStringValue(topLevel, "WrapperProperty");
+            tc.WrapperClassName = ExtractStringValue(topLevel, "WrapperClassName");
+
+            string ns = ExtractStringValue(topLevel, "Namespace");
             if (ns != null) tc.Namespace = ns;
 
             // Parse Fields object
-            int fieldsStart = json.IndexOf("\"Fields\"");
             if (fieldsStart >= 0)
             {
                 int fieldsObjStart = json.IndexOf('{', fieldsStart + 8);

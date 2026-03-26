@@ -14,9 +14,29 @@ namespace Kerberos.NET.Asn1CodeGen
     public class TypeConfig
     {
         public string CSharpName { get; set; }
-        public string Namespace { get; set; } = "Kerberos.NET.Entities";
+        public string Namespace { get; set; }
         public int? ApplicationTag { get; set; }
         public string InheritsFrom { get; set; }
+
+        /// <summary>
+        /// When true, emits a wrapper class for a SEQUENCE OF alias type.
+        /// The wrapper class has a single array property with Encode/Decode methods.
+        /// e.g. METHOD-DATA ::= SEQUENCE OF PA-DATA → class KrbMethodData { KrbPaData[] MethodData; }
+        /// </summary>
+        public bool EmitWrapper { get; set; }
+
+        /// <summary>
+        /// Name of the wrapper property for SEQUENCE OF wrapper types.
+        /// If not set, defaults to the C# class name.
+        /// </summary>
+        public string WrapperProperty { get; set; }
+
+        /// <summary>
+        /// Class name for the wrapper when the base type is a SEQUENCE OF inline SEQUENCE.
+        /// Only used for TypeAssignment wrappers where the inner class has a different name.
+        /// </summary>
+        public string WrapperClassName { get; set; }
+
         public Dictionary<string, FieldConfig> Fields { get; set; } = new();
     }
 
@@ -28,8 +48,29 @@ namespace Kerberos.NET.Asn1CodeGen
         public bool TreatAsEnum { get; set; }
     }
 
+    public class DefaultsConfig
+    {
+        /// <summary>
+        /// Prefix to prepend to PascalCased ASN.1 type names (e.g. "Krb" → "KrbTicket").
+        /// Only applied when no explicit CSharpName is specified in Types config.
+        /// </summary>
+        public string TypePrefix { get; set; }
+
+        /// <summary>
+        /// Default namespace for generated types.
+        /// </summary>
+        public string Namespace { get; set; } = "Kerberos.NET.Entities";
+
+        /// <summary>
+        /// ASN.1 type names that should NOT get the TypePrefix applied.
+        /// Useful for types like NegotiationToken that don't follow the common prefix convention.
+        /// </summary>
+        public List<string> ExcludePrefix { get; set; } = new();
+    }
+
     public class EmitterConfig
     {
+        public DefaultsConfig Defaults { get; set; } = new DefaultsConfig();
         public Dictionary<string, TypeConfig> Types { get; set; } = new();
     }
 
@@ -100,7 +141,7 @@ namespace Kerberos.NET.Asn1CodeGen
                 foreach (var assignment in module.TypeAssignments)
                 {
                     var tc = this.GetTypeConfig(assignment.Name);
-                    var className = tc.CSharpName ?? ToPascalCase(assignment.Name);
+                    var className = tc.CSharpName ?? this.ApplyTypeNameConvention(assignment.Name);
 
                     // Handle SEQUENCE OF with inline SEQUENCE:
                     // e.g. AuthorizationData ::= SEQUENCE OF SEQUENCE { ... }
@@ -118,10 +159,53 @@ namespace Kerberos.NET.Asn1CodeGen
 
                         var code = this.EmitTypeAssignment(innerAssignment, module);
                         files[className + ".generated.cs"] = code;
+
+                        // Also emit a wrapper class if configured
+                        if (tc.EmitWrapper && tc.WrapperClassName != null)
+                        {
+                            var wrapperClassName = tc.WrapperClassName;
+                            var wrapperPropName = tc.WrapperProperty ?? ToPascalCase(assignment.Name);
+
+                            // Create a synthetic SEQUENCE OF with the resolved element reference
+                            var wrapperSeqOf = new Asn1SequenceOfType
+                            {
+                                ElementType = new Asn1ReferencedType { ReferenceName = assignment.Name }
+                            };
+
+                            var wrapperTc = new TypeConfig
+                            {
+                                CSharpName = wrapperClassName,
+                                Namespace = tc.Namespace,
+                                EmitWrapper = true,
+                                WrapperProperty = wrapperPropName,
+                            };
+
+                            var wrapperCode = this.EmitSequenceOfWrapper(
+                                assignment.Name, wrapperSeqOf, wrapperTc, wrapperClassName, module);
+                            files[wrapperClassName + ".generated.cs"] = wrapperCode;
+                        }
                     }
                     else
                     {
                         var code = this.EmitTypeAssignment(assignment, module);
+                        files[className + ".generated.cs"] = code;
+                    }
+                }
+
+                // Emit wrapper classes for SEQUENCE OF aliases that have EmitWrapper=true
+                foreach (var kvp in module.TypeAliases)
+                {
+                    var tc = this.GetTypeConfig(kvp.Key);
+
+                    if (!tc.EmitWrapper)
+                    {
+                        continue;
+                    }
+
+                    if (kvp.Value is Asn1SequenceOfType seqOfAlias)
+                    {
+                        var className = tc.CSharpName ?? this.ApplyTypeNameConvention(kvp.Key);
+                        var code = this.EmitSequenceOfWrapper(kvp.Key, seqOfAlias, tc, className, module);
                         files[className + ".generated.cs"] = code;
                     }
                 }
@@ -1034,23 +1118,35 @@ namespace Kerberos.NET.Asn1CodeGen
 
             if (field.Optional)
             {
-                sb.AppendLine($"            if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, {tagNum})))");
-                sb.AppendLine("            {");
-
-                if (hasTag && isImplicit && this.IsPrimitiveType(resolved))
+                if (hasTag)
                 {
-                    this.EmitImplicitPrimitiveDecode(sb, resolved, propName, fc, tagNum, "                ");
-                }
-                else if (hasTag)
-                {
-                    sb.AppendLine($"                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, {tagNum}));                ");
-                    sb.AppendLine("            ");
-                    this.EmitFieldDecodeValue(sb, resolved, propName, fc, "                ", true);
-                    sb.AppendLine("                explicitReader.ThrowIfNotEmpty();");
-                }
+                    sb.AppendLine($"            if (sequenceReader.HasData && sequenceReader.PeekTag().HasSameClassAndValue(new Asn1Tag(TagClass.ContextSpecific, {tagNum})))");
+                    sb.AppendLine("            {");
 
-                sb.AppendLine("            }");
-                sb.AppendLine();
+                    if (isImplicit && this.IsPrimitiveType(resolved))
+                    {
+                        this.EmitImplicitPrimitiveDecode(sb, resolved, propName, fc, tagNum, "                ");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"                explicitReader = sequenceReader.ReadSequence(new Asn1Tag(TagClass.ContextSpecific, {tagNum}));                ");
+                        sb.AppendLine("            ");
+                        this.EmitFieldDecodeValue(sb, resolved, propName, fc, "                ", true);
+                        sb.AppendLine("                explicitReader.ThrowIfNotEmpty();");
+                    }
+
+                    sb.AppendLine("            }");
+                    sb.AppendLine();
+                }
+                else
+                {
+                    // Optional untagged field - check if there's data remaining
+                    sb.AppendLine("            if (sequenceReader.HasData)");
+                    sb.AppendLine("            {");
+                    this.EmitFieldDecodeValue(sb, resolved, propName, fc, "                ", true, "sequenceReader");
+                    sb.AppendLine("            }");
+                    sb.AppendLine();
+                }
             }
             else
             {
@@ -1142,14 +1238,14 @@ namespace Kerberos.NET.Asn1CodeGen
 
             if (type is Asn1IntegerType)
             {
-                string csharpType = (fc.TreatAsEnum && !string.IsNullOrEmpty(fc.EnumType))
-                    ? fc.EnumType : "int";
+                bool isEnum = fc.TreatAsEnum && !string.IsNullOrEmpty(fc.EnumType);
+                string castPrefix = isEnum ? $"({fc.EnumType})" : "";
 
                 if (optional)
                 {
-                    sb.AppendLine($"{indent}if ({reader}.TryReadInt32(out {csharpType} tmp{propName}))");
+                    sb.AppendLine($"{indent}if ({reader}.TryReadInt32(out int tmp{propName}))");
                     sb.AppendLine($"{indent}{{");
-                    sb.AppendLine($"{indent}    decoded.{propName} = tmp{propName};");
+                    sb.AppendLine($"{indent}    decoded.{propName} = {castPrefix}tmp{propName};");
                     sb.AppendLine($"{indent}}}");
                     sb.AppendLine($"{indent}else");
                     sb.AppendLine($"{indent}{{");
@@ -1158,12 +1254,12 @@ namespace Kerberos.NET.Asn1CodeGen
                 }
                 else
                 {
-                    sb.AppendLine($"{indent}if (!{reader}.TryReadInt32(out {csharpType} tmp{propName}))");
+                    sb.AppendLine($"{indent}if (!{reader}.TryReadInt32(out int tmp{propName}))");
                     sb.AppendLine($"{indent}{{");
                     sb.AppendLine($"{indent}    {reader}.ThrowIfNotEmpty();");
                     sb.AppendLine($"{indent}}}");
                     sb.AppendLine($"{indent}");
-                    sb.AppendLine($"{indent}decoded.{propName} = tmp{propName};");
+                    sb.AppendLine($"{indent}decoded.{propName} = {castPrefix}tmp{propName};");
                 }
             }
             else if (type is Asn1OctetStringType)
@@ -1333,16 +1429,322 @@ namespace Kerberos.NET.Asn1CodeGen
 
         #endregion
 
+        #region SEQUENCE OF Wrapper
+
+        /// <summary>
+        /// Emits a wrapper class for a SEQUENCE OF alias type.
+        /// e.g. METHOD-DATA ::= SEQUENCE OF PA-DATA generates:
+        /// class KrbMethodData { KrbPaData[] MethodData { get; set; } ... }
+        /// </summary>
+        private string EmitSequenceOfWrapper(
+            string asnName,
+            Asn1SequenceOfType seqOfType,
+            TypeConfig tc,
+            string className,
+            Asn1Module module)
+        {
+            var ns = tc.Namespace;
+            var elemType = seqOfType.ElementType;
+            var resolvedElem = this.ResolveFieldType(elemType);
+            string elemTypeName;
+
+            // Determine the element's C# type name based on resolved type
+            if (resolvedElem is Asn1IntegerType)
+            {
+                var fc = tc.Fields.Count > 0 ? tc.Fields.Values.First() : new FieldConfig();
+
+                if (fc.TreatAsEnum && !string.IsNullOrEmpty(fc.EnumType))
+                {
+                    elemTypeName = fc.EnumType;
+                }
+                else
+                {
+                    elemTypeName = "int";
+                }
+            }
+            else if (resolvedElem is Asn1OctetStringType)
+            {
+                elemTypeName = "ReadOnlyMemory<byte>";
+            }
+            else if (elemType is Asn1ReferencedType refType && this.IsGeneratableReference(refType.ReferenceName))
+            {
+                elemTypeName = this.ResolveCSharpTypeName(refType.ReferenceName);
+            }
+            else
+            {
+                elemTypeName = "ReadOnlyMemory<byte>";
+            }
+
+            // Property name: use WrapperProperty config or fall back to class name
+            string propName = tc.WrapperProperty ?? className;
+
+            var usings = new HashSet<string>
+            {
+                "System",
+                "System.Collections.Generic",
+                "System.Runtime.InteropServices",
+                "System.Security.Cryptography",
+                "System.Security.Cryptography.Asn1",
+                "Kerberos.NET.Crypto",
+                "Kerberos.NET.Asn1",
+            };
+
+            var sb = new StringBuilder();
+            this.EmitHeader(sb);
+
+            foreach (var u in usings.OrderBy(x => x))
+            {
+                sb.AppendLine($"using {u};");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine($"namespace {ns}");
+            sb.AppendLine("{");
+            sb.AppendLine($"    public partial class {className}");
+            sb.AppendLine("    {");
+            sb.AppendLine("        /*");
+            sb.AppendLine($"          {asnName} ::= SEQUENCE OF {this.GetAsnTypeName(elemType)}");
+            sb.AppendLine("         */");
+            sb.AppendLine("    ");
+            sb.AppendLine($"        public {elemTypeName}[] {propName} {{ get; set; }}");
+            sb.AppendLine("  ");
+
+            // DEBUG tag validation
+            sb.AppendLine("#if DEBUG");
+            sb.AppendLine($"        static {className}()");
+            sb.AppendLine("        {");
+            sb.AppendLine("            var usedTags = new System.Collections.Generic.Dictionary<Asn1Tag, string>();");
+            sb.AppendLine("            Action<Asn1Tag, string> ensureUniqueTag = (tag, fieldName) =>");
+            sb.AppendLine("            {");
+            sb.AppendLine("                if (usedTags.TryGetValue(tag, out string existing))");
+            sb.AppendLine("                {");
+            sb.AppendLine("                    throw new InvalidOperationException($\"Tag '{tag}' is in use by both '{existing}' and '{fieldName}'\");");
+            sb.AppendLine("                }");
+            sb.AppendLine();
+            sb.AppendLine("                usedTags.Add(tag, fieldName);");
+            sb.AppendLine("            };");
+            sb.AppendLine("            ");
+            sb.AppendLine($"            ensureUniqueTag(Asn1Tag.Sequence, \"{propName}\");");
+            sb.AppendLine("        }");
+            sb.AppendLine("#endif");
+
+            // Encode
+            sb.AppendLine("        // Encoding methods");
+            sb.AppendLine("        public ReadOnlyMemory<byte> Encode()");
+            sb.AppendLine("        {");
+            sb.AppendLine("            var writer = new AsnWriter(AsnEncodingRules.DER);");
+            sb.AppendLine();
+            sb.AppendLine("            Encode(writer);");
+            sb.AppendLine();
+            sb.AppendLine("            return writer.EncodeAsMemory();");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        internal void Encode(AsnWriter writer)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            bool wroteValue = false; ");
+            sb.AppendLine("            ");
+            sb.AppendLine($"            if ({propName} != null)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                if (wroteValue)");
+            sb.AppendLine("                {");
+            sb.AppendLine("                    throw new CryptographicException();");
+            sb.AppendLine("                }");
+            sb.AppendLine("                ");
+            sb.AppendLine("                writer.PushSequence();");
+            sb.AppendLine("            ");
+            sb.AppendLine($"                for (int i = 0; i < {propName}.Length; i++)");
+            sb.AppendLine("                {");
+            this.EmitSequenceOfWrapperElementEncode(sb, resolvedElem, propName, tc);
+            sb.AppendLine("                }");
+            sb.AppendLine();
+            sb.AppendLine("                writer.PopSequence();");
+            sb.AppendLine();
+            sb.AppendLine("                wroteValue = true;");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+            sb.AppendLine("            if (!wroteValue)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                throw new CryptographicException();");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+
+            // EncodeApplication
+            sb.AppendLine("                ");
+            sb.AppendLine("        internal ReadOnlyMemory<byte> EncodeApplication(Asn1Tag tag)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            using (var writer = new AsnWriter(AsnEncodingRules.DER))");
+            sb.AppendLine("            {");
+            sb.AppendLine("                writer.PushSequence(tag);");
+            sb.AppendLine("                ");
+            sb.AppendLine("                this.Encode(writer);");
+            sb.AppendLine();
+            sb.AppendLine("                writer.PopSequence(tag);");
+            sb.AppendLine();
+            sb.AppendLine("                return writer.EncodeAsMemory();");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+            sb.AppendLine("        ");
+
+            // Decode
+            sb.AppendLine($"        public static {className} Decode(ReadOnlyMemory<byte> data)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            return Decode(data, AsnEncodingRules.DER);");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine($"        internal static {className} Decode(ReadOnlyMemory<byte> encoded, AsnEncodingRules ruleSet)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            AsnReader reader = new AsnReader(encoded, ruleSet);");
+            sb.AppendLine("            ");
+            sb.AppendLine($"            Decode(reader, out {className} decoded);");
+            sb.AppendLine("            reader.ThrowIfNotEmpty();");
+            sb.AppendLine("            return decoded;");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine($"        internal static void Decode<T>(AsnReader reader, out T decoded)");
+            sb.AppendLine($"          where T: {className}, new()");
+            sb.AppendLine("        {");
+            sb.AppendLine("            if (reader == null)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                throw new ArgumentNullException(nameof(reader));");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+            sb.AppendLine("            decoded = new T();");
+            sb.AppendLine("            ");
+            sb.AppendLine("            Asn1Tag tag = reader.PeekTag();");
+            sb.AppendLine("            AsnReader collectionReader;");
+            sb.AppendLine("            ");
+            sb.AppendLine("            if (tag.HasSameClassAndValue(Asn1Tag.Sequence))");
+            sb.AppendLine("            {");
+            sb.AppendLine("                // Decode SEQUENCE OF for " + propName);
+            sb.AppendLine("                {");
+            sb.AppendLine("                    collectionReader = reader.ReadSequence();");
+
+            this.EmitSequenceOfWrapperElementDecode(sb, resolvedElem, propName, elemTypeName, tc);
+
+            sb.AppendLine("                }");
+            sb.AppendLine("            }");
+            sb.AppendLine("            else");
+            sb.AppendLine("            {");
+            sb.AppendLine("                throw new CryptographicException();");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+            return sb.ToString();
+        }
+
+        private void EmitSequenceOfWrapperElementEncode(StringBuilder sb, Asn1Type resolvedElem, string propName, TypeConfig tc)
+        {
+            if (resolvedElem is Asn1IntegerType)
+            {
+                var fc = tc.Fields.Count > 0 ? tc.Fields.Values.First() : new FieldConfig();
+
+                if (fc.TreatAsEnum && !string.IsNullOrEmpty(fc.EnumType))
+                {
+                    sb.AppendLine($"                    writer.WriteInteger((long){propName}[i]); ");
+                }
+                else
+                {
+                    sb.AppendLine($"                    writer.WriteInteger({propName}[i]); ");
+                }
+            }
+            else
+            {
+                sb.AppendLine($"                    {propName}[i]?.Encode(writer); ");
+            }
+        }
+
+        private void EmitSequenceOfWrapperElementDecode(StringBuilder sb, Asn1Type resolvedElem, string propName, string elemTypeName, TypeConfig tc)
+        {
+            if (resolvedElem is Asn1IntegerType)
+            {
+                var fc = tc.Fields.Count > 0 ? tc.Fields.Values.First() : new FieldConfig();
+
+                if (fc.TreatAsEnum && !string.IsNullOrEmpty(fc.EnumType))
+                {
+                    sb.AppendLine($"                    var tmpList = new List<{fc.EnumType}>();");
+                    sb.AppendLine();
+                    sb.AppendLine("                    while (collectionReader.HasData)");
+                    sb.AppendLine("                    {");
+                    sb.AppendLine($"                        if (!collectionReader.TryReadInt32<{fc.EnumType}>(out {fc.EnumType} tmp))");
+                    sb.AppendLine("                        {");
+                    sb.AppendLine("                            break;");
+                    sb.AppendLine("                        }");
+                    sb.AppendLine();
+                    sb.AppendLine("                        tmpList.Add(tmp);");
+                    sb.AppendLine("                    }");
+                }
+                else
+                {
+                    sb.AppendLine("                    var tmpList = new List<int>();");
+                    sb.AppendLine();
+                    sb.AppendLine("                    while (collectionReader.HasData)");
+                    sb.AppendLine("                    {");
+                    sb.AppendLine("                        if (!collectionReader.TryReadInt32(out int tmp))");
+                    sb.AppendLine("                        {");
+                    sb.AppendLine("                            break;");
+                    sb.AppendLine("                        }");
+                    sb.AppendLine();
+                    sb.AppendLine("                        tmpList.Add(tmp);");
+                    sb.AppendLine("                    }");
+                }
+            }
+            else
+            {
+                sb.AppendLine($"                    var tmpList = new List<{elemTypeName}>();");
+                sb.AppendLine($"                    {elemTypeName} tmpItem;");
+                sb.AppendLine();
+                sb.AppendLine("                    while (collectionReader.HasData)");
+                sb.AppendLine("                    {");
+                sb.AppendLine($"                        {elemTypeName}.Decode<{elemTypeName}>(collectionReader, out {elemTypeName} tmp);");
+                sb.AppendLine($"                        tmpItem = tmp; ");
+                sb.AppendLine("                        tmpList.Add(tmpItem);");
+                sb.AppendLine("                    }");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine($"                    decoded.{propName} = tmpList.ToArray();");
+        }
+
+        private string GetAsnTypeName(Asn1Type type)
+        {
+            if (type is Asn1ReferencedType refType) return refType.ReferenceName;
+            if (type is Asn1IntegerType) return "INTEGER";
+            if (type is Asn1OctetStringType) return "OCTET STRING";
+            if (type is Asn1BitStringType) return "BIT STRING";
+            if (type is Asn1BooleanType) return "BOOLEAN";
+            if (type is Asn1ObjectIdentifierType) return "OBJECT IDENTIFIER";
+            return "ANY";
+        }
+
+        #endregion
+
         #region Helpers
 
         private TypeConfig GetTypeConfig(string name)
         {
+            string defaultNs = this.config.Defaults.Namespace ?? "Kerberos.NET.Entities";
+
             if (this.config.Types.TryGetValue(name, out var tc))
             {
+                if (tc.Namespace == null)
+                {
+                    tc.Namespace = defaultNs;
+                }
+
+                if (tc.CSharpName == null)
+                {
+                    tc.CSharpName = this.ApplyTypeNameConvention(name);
+                }
+
                 return tc;
             }
 
-            return new TypeConfig { CSharpName = ToPascalCase(name) };
+            return new TypeConfig
+            {
+                CSharpName = this.ApplyTypeNameConvention(name),
+                Namespace = defaultNs
+            };
         }
 
         private FieldConfig GetFieldConfig(TypeConfig tc, string fieldName)
@@ -1355,6 +1757,22 @@ namespace Kerberos.NET.Asn1CodeGen
             return new FieldConfig();
         }
 
+        private string ApplyTypeNameConvention(string asnName)
+        {
+            string pascal = ToPascalCase(asnName);
+
+            var defaults = this.config.Defaults;
+
+            if (!string.IsNullOrEmpty(defaults.TypePrefix)
+                && !defaults.ExcludePrefix.Contains(asnName)
+                && !pascal.StartsWith(defaults.TypePrefix, StringComparison.Ordinal))
+            {
+                return defaults.TypePrefix + pascal;
+            }
+
+            return pascal;
+        }
+
         private string ResolveCSharpTypeName(string asnName)
         {
             if (this.config.Types.TryGetValue(asnName, out var tc) && tc.CSharpName != null)
@@ -1362,7 +1780,7 @@ namespace Kerberos.NET.Asn1CodeGen
                 return tc.CSharpName;
             }
 
-            return ToPascalCase(asnName);
+            return this.ApplyTypeNameConvention(asnName);
         }
 
         private string GetChoiceFieldCSharpType(Asn1Field field, FieldConfig fc)
@@ -1625,8 +2043,18 @@ namespace Kerberos.NET.Asn1CodeGen
             {
                 if (part.Length > 0)
                 {
-                    sb.Append(char.ToUpperInvariant(part[0]));
-                    sb.Append(part.Substring(1));
+                    // If the entire part is uppercase (like "AS", "REQ", "KDC"),
+                    // convert to title case (As, Req, Kdc) for C# conventions
+                    if (part.Length > 1 && part == part.ToUpperInvariant())
+                    {
+                        sb.Append(char.ToUpperInvariant(part[0]));
+                        sb.Append(part.Substring(1).ToLowerInvariant());
+                    }
+                    else
+                    {
+                        sb.Append(char.ToUpperInvariant(part[0]));
+                        sb.Append(part.Substring(1));
+                    }
                 }
             }
 

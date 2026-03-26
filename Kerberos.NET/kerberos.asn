@@ -697,3 +697,195 @@ TD-DH-PARAMETERS ::= SEQUENCE OF AlgorithmIdentifier
 		   -- Diffie-Hellman domain parameters [IEEE1363].
 		   -- This list is in decreasing preference order.
 END
+
+-- PKIX types needed by PKINIT (from RFC 3280 / RFC 5280)
+PKIX1Explicit88 {
+   iso (1) identified-organization (3) dod (6) internet (1)
+   security (5) mechanisms (5) pkix (7) id-mod (0)
+   id-pkix1-explicit (18)
+} DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+AlgorithmIdentifier ::= SEQUENCE {
+   algorithm               OBJECT IDENTIFIER,
+   parameters              ANY OPTIONAL
+}
+
+SubjectPublicKeyInfo ::= SEQUENCE {
+   algorithm               AlgorithmIdentifier,
+   subjectPublicKey        BIT STRING
+}
+
+DomainParameters ::= SEQUENCE {
+   p                       ANY,
+   g                       ANY,
+   q                       ANY,
+   j                       ANY OPTIONAL,
+   validationParms         ValidationParms OPTIONAL
+}
+
+ValidationParms ::= SEQUENCE {
+   seed                    BIT STRING,
+   pgenCounter             INTEGER
+}
+
+END
+
+-- Kerberos Extensions (S4U, PAC, IAKERB, password change, KKDCP, etc.)
+KerberosExtensions DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+IMPORTS
+   PrincipalName, Realm, KerberosString, Checksum, EncryptedData, EncryptionKey,
+   Int32, UInt32, Microseconds, KerberosTime, PA-DATA, KerberosFlags,
+   KDC-REQ-BODY, AuthorizationData
+      FROM KerberosV5Spec2 { iso(1) identified-organization(3)
+         dod(6) internet(1) security(5) kerberosV5(2)
+         modules(4) krb5spec2(2) };
+
+-- RFC 3244 - Password Change
+ChangePasswdData ::= SEQUENCE {
+   newpasswd       [0] OCTET STRING,
+   targname        [1] PrincipalName OPTIONAL,
+   targrealm       [2] Realm OPTIONAL
+}
+
+-- MS-KKDCP
+KDC-PROXY-MESSAGE ::= SEQUENCE {
+   kerb-message    [0] OCTET STRING,
+   target-domain   [1] Realm OPTIONAL,
+   dclocator-hint  [2] Int32 OPTIONAL
+}
+
+-- RFC 6803
+EtypeList ::= SEQUENCE OF Int32
+
+-- KERB-ERROR-DATA
+KERB-ERROR-DATA ::= SEQUENCE {
+   data-type       [1] Int32,
+   data-value      [2] OCTET STRING
+}
+
+-- MS-SFU PA-FOR-USER
+PA-FOR-USER ::= SEQUENCE {
+   userName        [0] PrincipalName,
+   userRealm       [1] Realm,
+   cksum           [2] Checksum,
+   auth-package    [3] KerberosString
+}
+
+-- MS-KILE PA-PAC-OPTIONS
+PA-PAC-OPTIONS ::= SEQUENCE {
+   flags           [0] KerberosFlags
+}
+
+-- MS-KILE KERB-PA-PAC-REQUEST
+KERB-PA-PAC-REQUEST ::= SEQUENCE {
+   include-pac     [0] BOOLEAN
+}
+
+-- MS-SFU PA-S4U-X509-USER
+PA-S4U-X509-USER ::= SEQUENCE {
+   user-id         [0] S4UUserID,
+   checksum        [1] Checksum
+}
+
+S4UUserID ::= SEQUENCE {
+   nonce                   [0] UInt32,
+   cname                   [1] PrincipalName OPTIONAL,
+   crealm                  [2] Realm,
+   subject-certificate     [3] OCTET STRING OPTIONAL,
+   options                 [4] KerberosFlags OPTIONAL,
+   ...
+}
+
+-- MS-KILE PA-SVR-REFERRAL-DATA
+PA-SVR-REFERRAL-DATA ::= SEQUENCE {
+   referred-name   [1] PrincipalName OPTIONAL,
+   referred-realm  [0] Realm
+}
+
+-- RFC 6784 IAKERB
+IAKERB-HEADER ::= SEQUENCE {
+   target-realm    [1] UTF8String,
+   cookie          [2] OCTET STRING OPTIONAL,
+   header-flags    [3] BIT STRING OPTIONAL,
+   ...
+}
+
+END
+
+-- RFC 6113 FAST (Flexible Authentication Secure Tunneling)
+KerberosV5-FAST {
+   iso(1) identified-organization(3) dod(6) internet(1)
+   security(5) kerberosV5(2) modules(4) fast(7)
+} DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+IMPORTS
+   PrincipalName, Realm, Checksum, EncryptedData, EncryptionKey,
+   Int32, UInt32, Microseconds, KerberosTime, PA-DATA,
+   KerberosFlags, KDC-REQ-BODY
+      FROM KerberosV5Spec2 { iso(1) identified-organization(3)
+         dod(6) internet(1) security(5) kerberosV5(2)
+         modules(4) krb5spec2(2) };
+
+KrbFastArmor ::= SEQUENCE {
+   armor-type      [0] Int32,
+   armor-value     [1] OCTET STRING OPTIONAL,
+   ...
+}
+
+KrbFastArmoredReq ::= SEQUENCE {
+   armor           [0] KrbFastArmor OPTIONAL,
+   req-checksum    [1] Checksum,
+   enc-fast-req    [2] EncryptedData,
+   ...
+}
+
+KrbFastArmoredRep ::= SEQUENCE {
+   enc-fast-rep    [0] EncryptedData,
+   ...
+}
+
+KrbFastReq ::= SEQUENCE {
+   fast-options    [0] KerberosFlags,
+   padata          [1] SEQUENCE OF PA-DATA,
+   req-body        [2] KDC-REQ-BODY,
+   ...
+}
+
+KrbFastResponse ::= SEQUENCE {
+   padata          [0] SEQUENCE OF PA-DATA,
+   strengthen-key  [1] EncryptionKey OPTIONAL,
+   finished        [2] KrbFastFinished OPTIONAL,
+   nonce           [3] UInt32,
+   ...
+}
+
+KrbFastFinished ::= SEQUENCE {
+   timestamp       [0] KerberosTime,
+   usec            [1] Microseconds,
+   crealm          [2] Realm,
+   cname           [3] PrincipalName,
+   ticket-checksum [4] Checksum,
+   ...
+}
+
+PA-AUTHENTICATION-SET ::= SEQUENCE OF PA-AUTHENTICATION-SET-ELEM
+
+PA-AUTHENTICATION-SET-ELEM ::= SEQUENCE {
+   pa-type         [0] Int32,
+   pa-hint         [1] OCTET STRING OPTIONAL,
+   pa-value        [2] OCTET STRING OPTIONAL,
+   ...
+}
+
+PA-FX-FAST-REQUEST ::= CHOICE {
+   armored-data    [0] KrbFastArmoredReq,
+   ...
+}
+
+PA-FX-FAST-REPLY ::= CHOICE {
+   armored-data    [0] KrbFastArmoredRep,
+   ...
+}
+
+END
