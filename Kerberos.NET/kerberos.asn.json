@@ -1,0 +1,550 @@
+{
+  "Defaults": {
+    "TypePrefix": "Krb",
+    "Namespace": "Kerberos.NET.Entities",
+    "ExcludePrefix": ["NegotiationToken", "NegTokenInit", "NegTokenResp"]
+  },
+  "Types": {
+    // --- SPNEGO ---
+    "NegotiationToken": {
+      "Fields": {
+        "negTokenInit": { "CSharpName": "InitialToken" },
+        "negTokenResp": { "CSharpName": "ResponseToken" }
+      }
+    },
+    "NegTokenInit": {
+      "Fields": {
+        "mechTypes": { "CSharpName": "MechTypes", "BackingType": "Oid[]" },
+        "reqFlags": { "CSharpName": "RequestFlags" },
+        "mechToken": { "CSharpName": "MechToken" },
+        "mechListMIC": { "CSharpName": "MechListMic" }
+      }
+    },
+    "NegTokenResp": {
+      "Fields": {
+        "negState": { "CSharpName": "State", "EnumType": "NegotiateState", "TreatAsEnum": true },
+        "supportedMech": { "CSharpName": "SupportedMech", "BackingType": "Oid" },
+        "responseToken": { "CSharpName": "ResponseToken" },
+        "mechListMIC": { "CSharpName": "MechListMic" }
+      }
+    },
+
+    // --- Kerberos V5 core (RFC 4120) ---
+    "PrincipalName": {
+      "Fields": {
+        "name-type": { "CSharpName": "Type", "EnumType": "PrincipalNameType", "TreatAsEnum": true },
+        "name-string": { "CSharpName": "Name", "BackingType": "string[]" }
+      }
+    },
+    "HostAddress": {
+      "Fields": {
+        "addr-type": { "CSharpName": "AddressType", "EnumType": "AddressType", "TreatAsEnum": true },
+        "address": { "CSharpName": "Address" }
+      }
+    },
+    "AuthorizationData": {
+      "EmitWrapper": true,
+      "WrapperClassName": "KrbAuthorizationDataSequence",
+      "WrapperProperty": "AuthorizationData",
+      "Fields": {
+        "ad-type": { "CSharpName": "Type", "EnumType": "AuthorizationDataType", "TreatAsEnum": true },
+        "ad-data": { "CSharpName": "Data" }
+      }
+    },
+    "PA-DATA": {
+      "Fields": {
+        "padata-type": { "CSharpName": "Type", "EnumType": "PaDataType", "TreatAsEnum": true },
+        "padata-value": { "CSharpName": "Value" }
+      }
+    },
+    "EncryptedData": {
+      "Fields": {
+        "etype": { "CSharpName": "EType", "EnumType": "EncryptionType", "TreatAsEnum": true },
+        "kvno": { "CSharpName": "KeyVersionNumber" },
+        "cipher": { "CSharpName": "Cipher" }
+      }
+    },
+    "EncryptionKey": {
+      "Fields": {
+        "keytype": { "CSharpName": "EType", "EnumType": "EncryptionType", "TreatAsEnum": true },
+        "keyvalue": { "CSharpName": "KeyValue" }
+      }
+    },
+    "Checksum": {
+      "Fields": {
+        "cksumtype": { "CSharpName": "Type", "EnumType": "ChecksumType", "TreatAsEnum": true },
+        "checksum": { "CSharpName": "Checksum" }
+      }
+    },
+    "TransitedEncoding": {
+      "Fields": {
+        "tr-type": { "CSharpName": "Type", "EnumType": "TransitedEncodingType", "TreatAsEnum": true },
+        "contents": { "CSharpName": "Contents" }
+      }
+    },
+    "Ticket": {
+      "Fields": {
+        "tkt-vno": { "CSharpName": "TicketNumber" },
+        "sname": { "CSharpName": "SName" },
+        "enc-part": { "CSharpName": "EncryptedPart" }
+      }
+    },
+    "EncTicketPart": {
+      "Fields": {
+        "flags": { "CSharpName": "Flags", "EnumType": "TicketFlags", "TreatAsEnum": true },
+        "crealm": { "CSharpName": "CRealm" },
+        "cname": { "CSharpName": "CName" },
+        "authtime": { "CSharpName": "AuthTime" },
+        "starttime": { "CSharpName": "StartTime" },
+        "endtime": { "CSharpName": "EndTime" },
+        "renew-till": { "CSharpName": "RenewTill" },
+        "caddr": { "CSharpName": "CAddr" },
+        "authorization-data": { "CSharpName": "AuthorizationData" }
+      }
+    },
+    "KDC-REQ": {
+      "Fields": {
+        "pvno": { "CSharpName": "ProtocolVersionNumber" },
+        "msg-type": { "CSharpName": "MessageType", "EnumType": "MessageType", "TreatAsEnum": true },
+        "padata": { "CSharpName": "PaData" },
+        "req-body": { "CSharpName": "Body" }
+      }
+    },
+    "KDC-REQ-BODY": {
+      "Fields": {
+        "kdc-options": { "CSharpName": "KdcOptions", "EnumType": "KdcOptions", "TreatAsEnum": true },
+        "cname": { "CSharpName": "CName" },
+        "sname": { "CSharpName": "SName" },
+        "rtime": { "CSharpName": "RTime" },
+        "etype": { "CSharpName": "EType", "EnumType": "EncryptionType", "TreatAsEnum": true },
+        "enc-authorization-data": { "CSharpName": "EncAuthorizationData" },
+        "additional-tickets": { "CSharpName": "AdditionalTickets" }
+      }
+    },
+    "AS-REQ": { "InheritsFrom": "KrbKdcReq" },
+    "TGS-REQ": { "InheritsFrom": "KrbKdcReq" },
+    "KDC-REP": {
+      "Fields": {
+        "pvno": { "CSharpName": "ProtocolVersionNumber" },
+        "msg-type": { "CSharpName": "MessageType", "EnumType": "MessageType", "TreatAsEnum": true },
+        "padata": { "CSharpName": "PaData" },
+        "crealm": { "CSharpName": "CRealm" },
+        "cname": { "CSharpName": "CName" },
+        "enc-part": { "CSharpName": "EncPart" }
+      }
+    },
+    "AS-REP": { "InheritsFrom": "KrbKdcRep" },
+    "TGS-REP": { "InheritsFrom": "KrbKdcRep" },
+    "EncASRepPart": {
+      "CSharpName": "KrbEncAsRepPart",
+      "InheritsFrom": "KrbEncKdcRepPart"
+    },
+    "EncTGSRepPart": {
+      "CSharpName": "KrbEncTgsRepPart",
+      "InheritsFrom": "KrbEncKdcRepPart"
+    },
+    "EncKDCRepPart": {
+      "CSharpName": "KrbEncKdcRepPart",
+      "Fields": {
+        "last-req": { "CSharpName": "LastReq" },
+        "key-expiration": { "CSharpName": "KeyExpiration" },
+        "flags": { "CSharpName": "Flags", "EnumType": "TicketFlags", "TreatAsEnum": true },
+        "authtime": { "CSharpName": "AuthTime" },
+        "starttime": { "CSharpName": "StartTime" },
+        "endtime": { "CSharpName": "EndTime" },
+        "renew-till": { "CSharpName": "RenewTill" },
+        "srealm": { "CSharpName": "Realm" },
+        "sname": { "CSharpName": "SName" },
+        "caddr": { "CSharpName": "CAddr" },
+        "encrypted-pa-data": { "CSharpName": "EncryptedPaData", "BackingType": "KrbMethodData" }
+      }
+    },
+    "LastReq": {
+      "Fields": {
+        "lr-type": { "CSharpName": "Type" },
+        "lr-value": { "CSharpName": "Value" }
+      }
+    },
+    "AP-REQ": {
+      "Fields": {
+        "pvno": { "CSharpName": "ProtocolVersionNumber" },
+        "msg-type": { "CSharpName": "MessageType", "EnumType": "MessageType", "TreatAsEnum": true },
+        "ap-options": { "CSharpName": "ApOptions", "EnumType": "ApOptions", "TreatAsEnum": true }
+      }
+    },
+    "Authenticator": {
+      "Fields": {
+        "authenticator-vno": { "CSharpName": "AuthenticatorVersionNumber" },
+        "crealm": { "CSharpName": "CRealm" },
+        "cname": { "CSharpName": "CName" },
+        "cksum": { "CSharpName": "Checksum" },
+        "cusec": { "CSharpName": "CuSec" },
+        "ctime": { "CSharpName": "CTime" },
+        "seq-number": { "CSharpName": "SequenceNumber" },
+        "authorization-data": { "CSharpName": "AuthorizationData" }
+      }
+    },
+    "AP-REP": {
+      "Fields": {
+        "pvno": { "CSharpName": "ProtocolVersionNumber" },
+        "msg-type": { "CSharpName": "MessageType", "EnumType": "MessageType", "TreatAsEnum": true },
+        "enc-part": { "CSharpName": "EncryptedPart" }
+      }
+    },
+    "EncAPRepPart": {
+      "CSharpName": "KrbEncApRepPart",
+      "Fields": {
+        "ctime": { "CSharpName": "CTime" },
+        "cusec": { "CSharpName": "CuSec" },
+        "subkey": { "CSharpName": "SubSessionKey" },
+        "seq-number": { "CSharpName": "SequenceNumber" }
+      }
+    },
+    "KRB-SAFE": {
+      "Fields": {
+        "pvno": { "CSharpName": "ProtocolVersionNumber" },
+        "msg-type": { "CSharpName": "MessageType", "EnumType": "MessageType", "TreatAsEnum": true },
+        "safe-body": { "CSharpName": "SafeBody" },
+        "cksum": { "CSharpName": "Checksum" }
+      }
+    },
+    "KRB-SAFE-BODY": {
+      "Fields": {
+        "user-data": { "CSharpName": "UserData" },
+        "seq-number": { "CSharpName": "SeqNumber" },
+        "s-address": { "CSharpName": "SAddress" },
+        "r-address": { "CSharpName": "RAddress" }
+      }
+    },
+    "KRB-PRIV": {
+      "Fields": {
+        "pvno": { "CSharpName": "ProtocolVersionNumber" },
+        "msg-type": { "CSharpName": "MessageType", "EnumType": "MessageType", "TreatAsEnum": true },
+        "enc-part": { "CSharpName": "EncPart" }
+      }
+    },
+    "EncKrbPrivPart": {
+      "Fields": {
+        "user-data": { "CSharpName": "UserData" },
+        "seq-number": { "CSharpName": "SeqNumber" },
+        "s-address": { "CSharpName": "SAddress" },
+        "r-address": { "CSharpName": "RAddress" }
+      }
+    },
+    "KRB-CRED": {
+      "Fields": {
+        "pvno": { "CSharpName": "ProtocolVersionNumber" },
+        "msg-type": { "CSharpName": "MessageType", "EnumType": "MessageType", "TreatAsEnum": true },
+        "enc-part": { "CSharpName": "EncryptedPart" }
+      }
+    },
+    "EncKrbCredPart": {
+      "Fields": {
+        "ticket-info": { "CSharpName": "TicketInfo" },
+        "usec": { "CSharpName": "USec" },
+        "s-address": { "CSharpName": "SAddress" },
+        "r-address": { "CSharpName": "RAddress" }
+      }
+    },
+    "KrbCredInfo": {
+      "Fields": {
+        "prealm": { "CSharpName": "Realm" },
+        "pname": { "CSharpName": "PName" },
+        "flags": { "CSharpName": "Flags", "EnumType": "TicketFlags", "TreatAsEnum": true },
+        "authtime": { "CSharpName": "AuthTime" },
+        "starttime": { "CSharpName": "StartTime" },
+        "endtime": { "CSharpName": "EndTime" },
+        "renew-till": { "CSharpName": "RenewTill" },
+        "srealm": { "CSharpName": "SRealm" },
+        "sname": { "CSharpName": "SName" },
+        "caddr": { "CSharpName": "AuthorizationData", "BackingType": "KrbAuthorizationData[]" }
+      }
+    },
+    "KRB-ERROR": {
+      "CSharpName": "KrbError",
+      "Fields": {
+        "pvno": { "CSharpName": "ProtocolVersionNumber" },
+        "msg-type": { "CSharpName": "MessageType", "EnumType": "MessageType", "TreatAsEnum": true },
+        "ctime": { "CSharpName": "CTime" },
+        "stime": { "CSharpName": "STime" },
+        "susec": { "CSharpName": "Susc" },
+        "error-code": { "CSharpName": "ErrorCode", "EnumType": "KerberosErrorCode", "TreatAsEnum": true },
+        "crealm": { "CSharpName": "CRealm" },
+        "cname": { "CSharpName": "CName" },
+        "sname": { "CSharpName": "SName" },
+        "e-text": { "CSharpName": "EText" },
+        "e-data": { "CSharpName": "EData" }
+      }
+    },
+    "TYPED-DATA": {
+      "Fields": {
+        "data-type": { "CSharpName": "Type" },
+        "data-value": { "CSharpName": "Value" }
+      }
+    },
+    "PA-ENC-TS-ENC": {
+      "Fields": {
+        "patimestamp": { "CSharpName": "PaTimestamp" },
+        "pausec": { "CSharpName": "PaUSec" }
+      }
+    },
+    "ETYPE-INFO-ENTRY": {
+      "CSharpName": "KrbETypeInfoEntry",
+      "Fields": {
+        "etype": { "CSharpName": "EType", "EnumType": "EncryptionType", "TreatAsEnum": true }
+      }
+    },
+    "ETYPE-INFO2-ENTRY": {
+      "CSharpName": "KrbETypeInfo2Entry",
+      "Fields": {
+        "etype": { "CSharpName": "EType", "EnumType": "EncryptionType", "TreatAsEnum": true },
+        "s2kparams": { "CSharpName": "S2kParams" }
+      }
+    },
+    "AD-KDCIssued": {
+      "Fields": {
+        "ad-checksum": { "CSharpName": "Checksum" }
+      }
+    },
+    "AD-AND-OR": {
+      "Fields": {
+        "condition-count": { "CSharpName": "ConditionCount" }
+      }
+    },
+
+    // --- PKINIT (RFC 4556) ---
+    "PA-PK-AS-REQ": {
+      "Fields": {
+        "signedAuthPack": { "CSharpName": "SignedAuthPack" },
+        "trustedCertifiers": { "CSharpName": "TrustedCertifiers" },
+        "kdcPkId": { "CSharpName": "KdcPkId" }
+      }
+    },
+    "ExternalPrincipalIdentifier": {},
+    "AuthPack": {
+      "Fields": {
+        "pkAuthenticator": { "CSharpName": "PKAuthenticator" },
+        "clientPublicValue": { "CSharpName": "ClientPublicValue" },
+        "supportedCMSTypes": { "CSharpName": "SupportedCMSTypes" },
+        "clientDHNonce": { "CSharpName": "ClientDHNonce" }
+      }
+    },
+    "PKAuthenticator": {
+      "Fields": {
+        "cusec": { "CSharpName": "CuSec" },
+        "ctime": { "CSharpName": "CTime" }
+      }
+    },
+    "KRB5PrincipalName": {
+      "CSharpName": "KrbPrincipal5Name"
+    },
+    "PA-PK-AS-REP": {
+      "Fields": {
+        "dhInfo": { "CSharpName": "DHInfo" },
+        "encKeyPack": { "CSharpName": "EncKeyPack" }
+      }
+    },
+    "DHRepInfo": {
+      "CSharpName": "KrbDHReplyInfo",
+      "Fields": {
+        "dhSignedData": { "CSharpName": "DHSignedData" },
+        "serverDHNonce": { "CSharpName": "ServerDHNonce" }
+      }
+    },
+    "KDCDHKeyInfo": {
+      "CSharpName": "KrbKdcDHKeyInfo",
+      "Fields": {
+        "dhKeyExpiration": { "CSharpName": "DHKeyExpiration" }
+      }
+    },
+    "ReplyKeyPack": {},
+
+    // --- PKIX types ---
+    "SubjectPublicKeyInfo": {},
+    "AlgorithmIdentifier": {},
+    "DomainParameters": {
+      "CSharpName": "KrbDiffieHellmanDomainParameters",
+      "Fields": {
+        "validationParms": { "CSharpName": "ValidationParameters" }
+      }
+    },
+    "ValidationParms": {
+      "CSharpName": "KrbDiffieHellmanValidationParameters",
+      "Fields": {
+        "pgenCounter": { "CSharpName": "PGenOutput" }
+      }
+    },
+
+    // --- Kerberos Extensions ---
+    "ChangePasswdData": {
+      "Fields": {
+        "newpasswd": { "CSharpName": "NewPasswd" },
+        "targname": { "CSharpName": "TargName" },
+        "targrealm": { "CSharpName": "TargRealm" }
+      }
+    },
+    "KDC-PROXY-MESSAGE": {
+      "CSharpName": "KdcProxyMessage",
+      "Fields": {
+        "kerb-message": { "CSharpName": "KerbMessage" },
+        "target-domain": { "CSharpName": "TargetDomain" },
+        "dclocator-hint": { "CSharpName": "DcLocatorHint", "EnumType": "DcLocatorHint", "TreatAsEnum": true }
+      }
+    },
+    "EtypeList": {
+      "CSharpName": "KrbETypeList",
+      "EmitWrapper": true,
+      "WrapperProperty": "List",
+      "Fields": {
+        "_element": { "EnumType": "EncryptionType", "TreatAsEnum": true }
+      }
+    },
+    "KERB-ERROR-DATA": {
+      "CSharpName": "KrbErrorData",
+      "Fields": {
+        "data-type": { "CSharpName": "Type", "EnumType": "KrbErrorDataType", "TreatAsEnum": true },
+        "data-value": { "CSharpName": "Value" }
+      }
+    },
+    "METHOD-DATA": {
+      "CSharpName": "KrbMethodData",
+      "EmitWrapper": true,
+      "WrapperProperty": "MethodData"
+    },
+    "ETYPE-INFO2": {
+      "CSharpName": "KrbETypeInfo2",
+      "EmitWrapper": true,
+      "WrapperProperty": "ETypeInfo"
+    },
+    "PA-FOR-USER": {
+      "Fields": {
+        "userName": { "CSharpName": "UserName" },
+        "userRealm": { "CSharpName": "UserRealm" },
+        "cksum": { "CSharpName": "Checksum" },
+        "auth-package": { "CSharpName": "AuthPackage" }
+      }
+    },
+    "PA-PAC-OPTIONS": {
+      "Fields": {
+        "flags": { "CSharpName": "Flags", "EnumType": "PacOptions", "TreatAsEnum": true }
+      }
+    },
+    "KERB-PA-PAC-REQUEST": {
+      "CSharpName": "KrbPaPacRequest",
+      "Fields": {
+        "include-pac": { "CSharpName": "IncludePac" }
+      }
+    },
+    "PA-S4U-X509-USER": {
+      "Fields": {
+        "user-id": { "CSharpName": "UserId" },
+        "checksum": { "CSharpName": "Checksum" }
+      }
+    },
+    "S4UUserID": {
+      "CSharpName": "KrbS4uUserId",
+      "Fields": {
+        "cname": { "CSharpName": "CName" },
+        "crealm": { "CSharpName": "Realm" },
+        "subject-certificate": { "CSharpName": "SubjectCertificate" },
+        "options": { "CSharpName": "Options", "EnumType": "S4uOptions", "TreatAsEnum": true }
+      }
+    },
+    "PA-SVR-REFERRAL-DATA": {
+      "Fields": {
+        "referred-name": { "CSharpName": "ReferredName" },
+        "referred-realm": { "CSharpName": "ReferredRealm" }
+      }
+    },
+    "IAKERB-HEADER": {
+      "CSharpName": "IAKerbHeader",
+      "Fields": {
+        "target-realm": { "CSharpName": "TargetRealm" },
+        "header-flags": { "CSharpName": "HeaderFlags" }
+      }
+    },
+
+    // --- FAST (RFC 6113) ---
+    "KrbFastArmor": {
+      "Fields": {
+        "armor-type": { "CSharpName": "Type", "EnumType": "KrbArmorType", "TreatAsEnum": true },
+        "armor-value": { "CSharpName": "Value" }
+      }
+    },
+    "KrbFastArmoredReq": {
+      "Fields": {
+        "req-checksum": { "CSharpName": "RequestChecksum" },
+        "enc-fast-req": { "CSharpName": "EncryptedFastRequest" }
+      }
+    },
+    "KrbFastArmoredRep": {
+      "Fields": {
+        "enc-fast-rep": { "CSharpName": "EncFastRep" }
+      }
+    },
+    "KrbFastReq": {
+      "Fields": {
+        "fast-options": { "CSharpName": "FastOptions", "EnumType": "FastOptions", "TreatAsEnum": true },
+        "padata": { "CSharpName": "PaData" },
+        "req-body": { "CSharpName": "ReqBody" }
+      }
+    },
+    "KrbFastResponse": {
+      "Fields": {
+        "padata": { "CSharpName": "PaData" },
+        "strengthen-key": { "CSharpName": "StrengthenKey" }
+      }
+    },
+    "KrbFastFinished": {
+      "Fields": {
+        "usec": { "CSharpName": "USec" },
+        "crealm": { "CSharpName": "CRealm" },
+        "cname": { "CSharpName": "CName" },
+        "ticket-checksum": { "CSharpName": "TicketChecksum" }
+      }
+    },
+    "PA-AUTHENTICATION-SET": {
+      "CSharpName": "KrbPaAuthenticationSet",
+      "EmitWrapper": true,
+      "WrapperProperty": "PaAuthenticationSet"
+    },
+    "PA-AUTHENTICATION-SET-ELEM": {
+      "CSharpName": "KrbPaAuthenticationSetElement",
+      "Fields": {
+        "pa-type": { "CSharpName": "Type", "EnumType": "PaDataType", "TreatAsEnum": true },
+        "pa-hint": { "CSharpName": "Hint" },
+        "pa-value": { "CSharpName": "Value" }
+      }
+    },
+    "PA-FX-FAST-REQUEST": {
+      "Fields": {
+        "armored-data": { "CSharpName": "ArmoredData" }
+      }
+    },
+    "PA-FX-FAST-REPLY": {
+      "Fields": {
+        "armored-data": { "CSharpName": "ArmoredData" }
+      }
+    },
+
+    // --- CAMMAC (RFC 7751) ---
+    "Verifier-MAC": {
+      "CSharpName": "KrbVerifierMac",
+      "Fields": {
+        "identifier": { "CSharpName": "Identifier" },
+        "kvno": { "CSharpName": "KeyVersionNumber" },
+        "enctype": { "CSharpName": "EncryptionType", "EnumType": "EncryptionType", "TreatAsEnum": true },
+        "mac": { "CSharpName": "Mac" }
+      }
+    },
+    "AD-CAMMAC": {
+      "CSharpName": "KrbAdCammac",
+      "Fields": {
+        "elements": { "CSharpName": "Elements" },
+        "kdc-verifier": { "CSharpName": "KdcVerifier" },
+        "svc-verifier": { "CSharpName": "ServiceVerifier" },
+        "other-verifiers": { "CSharpName": "OtherVerifiers" }
+      }
+    }
+  }
+}

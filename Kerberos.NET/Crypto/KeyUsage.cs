@@ -44,6 +44,7 @@ namespace Kerberos.NET.Crypto
         SamEncNonceSad = 27,
         PaPkInitEx = 44,
         AsReq = 56,
+        CammacChecksum = 64,
         FastReqChecksum = 50,
         FastEnc = 51,
         FastRep = 52,

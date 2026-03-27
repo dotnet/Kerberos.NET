@@ -209,6 +209,21 @@ namespace Kerberos.NET.Client
         public bool CacheServiceTickets { get; set; } = true;
 
         /// <summary>
+        /// Indicates whether the client should use FAST (RFC 6113) armor
+        /// when performing AS-REQ authentication. When enabled and an armor
+        /// ticket is available, the client will wrap requests in a FAST tunnel.
+        /// </summary>
+        public bool UseFast { get; set; }
+
+        /// <summary>
+        /// The FAST armor context used for the current authentication session.
+        /// Set automatically when FAST is enabled and an armor TGT is available,
+        /// or set explicitly to provide a specific armor ticket.
+        /// </summary>
+        [KerberosIgnore]
+        public FastArmorContext FastArmor { get; set; }
+
+        /// <summary>
         /// Indicates that the cache should override configuration and always store in memory only.
         /// Defaults to true for backwards compatibility.
         /// </summary>
@@ -639,11 +654,24 @@ namespace Kerberos.NET.Client
             // the usual case is KDC requires pre-auth and it's provided hints to what it's
             // willing to accept for this. Usually it's ETypes and Salt information for pwd
 
-            credential.IncludePreAuthenticationHints(pex?.Error?.DecodePreAuthentication());
+            var preAuthHints = pex?.Error?.DecodePreAuthentication();
+
+            credential.IncludePreAuthenticationHints(preAuthHints);
 
             foreach (var salt in credential.Salts)
             {
                 this.logger.LogDebug("AS-REP PA-Data: EType = {Etype}; Salt = {Salt};", salt.Key, salt.Value);
+            }
+
+            // Detect if KDC advertises FAST support (PA_FX_FAST in pre-auth hints)
+            if (this.UseFast && preAuthHints != null)
+            {
+                var fastHint = preAuthHints.FirstOrDefault(p => p.Type == PaDataType.PA_FX_FAST);
+
+                if (fastHint != null)
+                {
+                    this.logger.LogDebug("KDC advertises FAST support");
+                }
             }
 
             // now we try pre-auth
@@ -1348,19 +1376,50 @@ namespace Kerberos.NET.Client
                 string.Join("/", asReqMessage.Body.SName.Name)
             );
 
+            // Wrap the request in FAST armor if enabled and an armor context is available
+            if (this.UseFast && this.FastArmor != null)
+            {
+                asReqMessage = this.FastArmor.WrapRequest(asReqMessage);
+            }
+
             var asRep = await this.transport.SendMessage<KrbAsReq, KrbAsRep>(credential.Domain, asReqMessage).ConfigureAwait(false);
 
-            var decrypted = credential.DecryptKdcRep(
-                asRep,
-                KeyUsage.EncAsRepPart,
-                d => this.DecodeEncKdcRepPart<KrbEncAsRepPart>(d)
-            );
+            // Unwrap FAST response and strengthen the reply key if FAST was used
+            KerberosKey replyKey = null;
+
+            if (this.UseFast && this.FastArmor?.ArmorKey != null)
+            {
+                replyKey = credential.CreateKey();
+                var fastResponse = this.FastArmor.UnwrapResponse(asRep, ref replyKey);
+
+                if (fastResponse != null)
+                {
+                    this.logger.LogTrace("FAST response unwrapped successfully");
+                }
+            }
+
+            var decrypted = replyKey != null
+                ? DecryptKdcRepWithKey(asRep, replyKey)
+                : credential.DecryptKdcRep(
+                    asRep,
+                    KeyUsage.EncAsRepPart,
+                    d => this.DecodeEncKdcRepPart<KrbEncAsRepPart>(d)
+                );
 
             VerifyNonces(asReqMessage.Body.Nonce, decrypted.Nonce);
 
             this.DefaultDomain = credential.Domain;
 
             this.CacheTgt(asRep, decrypted);
+        }
+
+        private KrbEncKdcRepPart DecryptKdcRepWithKey(KrbAsRep asRep, KerberosKey key)
+        {
+            return asRep.EncPart.Decrypt(
+                key,
+                KeyUsage.EncAsRepPart,
+                d => this.DecodeEncKdcRepPart<KrbEncAsRepPart>(d)
+            );
         }
 
         private KrbEncKdcRepPart DecodeEncKdcRepPart<T>(ReadOnlyMemory<byte> decrypted)

@@ -241,9 +241,39 @@ namespace Kerberos.NET.Server
             return expectedPVal.Span.SequenceEqual(actualPVal.Span);
         }
 
-        private IKeyAgreement FromEllipticCurveDomainParameters(KrbSubjectPublicKeyInfo _)
+        private IKeyAgreement FromEllipticCurveDomainParameters(KrbSubjectPublicKeyInfo clientPublicValue)
         {
-            throw new NotImplementedException();
+            // The algorithm parameters contain the curve OID
+            var curveOid = ExtractCurveOid(clientPublicValue.Algorithm.Parameters.Value);
+
+            var algorithm = EcdhKeyAgreement.FromCurveOid(curveOid);
+
+            if (!this.SupportedKeyAgreementAlgorithms.Contains(algorithm))
+            {
+                throw new InvalidOperationException($"Unsupported EC curve: {curveOid}");
+            }
+
+            IKeyAgreement agreement = algorithm switch
+            {
+                KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256 => CryptoPal.Platform.DiffieHellmanP256(),
+                KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP384 => CryptoPal.Platform.DiffieHellmanP384(),
+                KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP521 => CryptoPal.Platform.DiffieHellmanP521(),
+                _ => throw new InvalidOperationException($"Unsupported ECDH algorithm: {algorithm}")
+            };
+
+            var publicKey = EcdhKey.ParsePublicKey(clientPublicValue.SubjectPublicKey, algorithm);
+
+            agreement.ImportPartnerKey(publicKey);
+
+            return agreement;
+        }
+
+        private static string ExtractCurveOid(ReadOnlyMemory<byte> parameters)
+        {
+            // The parameters field contains the curve OID encoded as an ASN.1 OBJECT IDENTIFIER
+            var reader = new System.Security.Cryptography.Asn1.AsnReader(parameters, System.Security.Cryptography.Asn1.AsnEncodingRules.DER);
+            var oid = reader.ReadObjectIdentifierAsString();
+            return oid;
         }
 
         private void ValidateAuthenticator(KrbPKAuthenticator authenticator, KrbKdcReqBody body)

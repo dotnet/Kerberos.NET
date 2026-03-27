@@ -19,6 +19,8 @@ namespace Kerberos.NET.Server
         private static readonly PaDataType[] PreAuthAscendingPriority = new PaDataType[]
         {
             PaDataType.PA_PK_AS_REQ,
+            PaDataType.PA_SPAKE,
+            PaDataType.PA_ENCRYPTED_CHALLENGE,
             PaDataType.PA_ENC_TIMESTAMP,
         };
 
@@ -36,7 +38,13 @@ namespace Kerberos.NET.Server
 
             this.PostProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);
 
+            this.PreAuthHandlers[PaDataType.PA_SPAKE] = service => new PaDataSpakeHandler(service);
+
             this.RegisterPreAuthHandlers(this.PostProcessAuthHandlers);
+
+            // Register freshness after RegisterPreAuthHandlers so it only runs
+            // during post-processing and doesn't add state during pre-auth
+            this.PostProcessAuthHandlers[PaDataType.PA_AS_FRESHNESS] = service => new PaDataFreshnessHandler(service);
         }
 
         protected override MessageType MessageType => MessageType.KRB_AS_REQ;
@@ -165,6 +173,9 @@ namespace Kerberos.NET.Server
             // 5. encrypt against krbtgt
             // 6. done
 
+            // If FAST is in use, strengthen the reply key before generating the TGT
+            var fastState = GetFastState(context);
+
             var rst = new ServiceTicketRequest
             {
                 ClientRealmName = asReq.Body.Realm,
@@ -217,7 +228,15 @@ namespace Kerberos.NET.Server
                     rst.SamAccountName = asReq.Body.CName.FullyQualifiedName;
                     #pragma warning restore CS0618 // Type or member is obsolete
                 }
-                
+
+            }
+
+            if (asReq.Body.KdcOptions.HasFlag(KdcOptions.RequestAnonymous))
+            {
+                rst.Flags |= TicketFlags.Anonymous;
+                rst.Flags &= ~(TicketFlags.Forwardable | TicketFlags.Proxiable | TicketFlags.Renewable);
+                rst.ClientName = KrbPrincipalName.WellKnown.Anonymous();
+                rst.ClientRealmName = KerberosConstants.AnonymousRealm;
             }
 
             if (rst.EncryptedPartKey == null)
@@ -237,11 +256,41 @@ namespace Kerberos.NET.Server
 
             rst.ClampLifetime();
 
+            // FAST reply wrapping: strengthen the reply key before generating the TGT
+            // so the enc-part is encrypted with the strengthened key
+            var fastPaData = PaDataFastHandler.WrapFastResponse(
+                fastState,
+                context.PaData?.ToArray(),
+                null,
+                context
+            );
+
+            // Now EncryptedPartKey has been strengthened if FAST is active
+            rst.EncryptedPartKey = context.EncryptedPartKey;
+
             var asRep = KrbAsRep.GenerateTgt(rst, this.RealmService);
 
             if (context.PaData != null)
             {
-                asRep.PaData = context.PaData.ToArray();
+                var paDataList = context.PaData.ToList();
+
+                // Now generate the full FAST response with the ticket checksum
+                if (fastState?.ArmorKey != null)
+                {
+                    var fullFastPaData = PaDataFastHandler.WrapFastResponse(
+                        fastState,
+                        context.PaData?.ToArray(),
+                        asRep,
+                        context
+                    );
+
+                    if (fullFastPaData != null)
+                    {
+                        paDataList.Add(fullFastPaData);
+                    }
+                }
+
+                asRep.PaData = paDataList.ToArray();
             }
 
             return asRep.EncodeApplication();
@@ -259,12 +308,38 @@ namespace Kerberos.NET.Server
 
             err.StampServerTime();
 
+            // If FAST is active, wrap the error in a FAST response
+            var fastState = GetFastState(context);
+            var fastError = PaDataFastHandler.WrapFastError(fastState, err);
+
+            if (fastError != null)
+            {
+                err.EData = new KrbMethodData
+                {
+                    MethodData = new[] { fastError }
+                }.Encode();
+            }
+
             return err.EncodeApplication();
         }
 
         private ReadOnlyMemory<byte> RequirePreAuth(PreAuthenticationContext context)
         {
             this.logger.LogTrace("AS-REQ requires pre-auth for user {User}", context.Principal.PrincipalName);
+
+            var methodData = context.PaData.ToList();
+
+            // If FAST is active, include FAST-wrapped hints
+            var fastState = GetFastState(context);
+
+            if (fastState?.ArmorKey != null)
+            {
+                // Add PA_ENCRYPTED_CHALLENGE hint when FAST is active
+                if (!methodData.Any(p => p.Type == PaDataType.PA_ENCRYPTED_CHALLENGE))
+                {
+                    methodData.Add(new KrbPaData { Type = PaDataType.PA_ENCRYPTED_CHALLENGE });
+                }
+            }
 
             var err = new KrbError
             {
@@ -274,13 +349,24 @@ namespace Kerberos.NET.Server
                 SName = KrbPrincipalName.FromPrincipal(context.Principal),
                 EData = new KrbMethodData
                 {
-                    MethodData = context.PaData.ToArray()
+                    MethodData = methodData.ToArray()
                 }.Encode()
             };
 
             err.StampServerTime();
 
             return err.EncodeApplication();
+        }
+
+        private static FastState GetFastState(PreAuthenticationContext context)
+        {
+            if (context.PreAuthenticationState.TryGetValue(PaDataType.PA_FX_FAST, out PaDataState state)
+                && state is FastState fastState)
+            {
+                return fastState;
+            }
+
+            return null;
         }
     }
 }

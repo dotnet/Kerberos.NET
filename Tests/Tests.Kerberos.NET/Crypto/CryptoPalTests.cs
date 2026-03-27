@@ -87,24 +87,33 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        [ExpectedException(typeof(PlatformNotSupportedException))]
         public void PalSupportsECDHP256()
         {
-            CryptoPal.Platform.DiffieHellmanP256();
+            using (var ecdh = CryptoPal.Platform.DiffieHellmanP256())
+            {
+                Assert.IsNotNull(ecdh);
+                Assert.IsNotNull(ecdh.PublicKey);
+            }
         }
 
         [TestMethod]
-        [ExpectedException(typeof(PlatformNotSupportedException))]
         public void PalSupportsECDHP384()
         {
-            CryptoPal.Platform.DiffieHellmanP384();
+            using (var ecdh = CryptoPal.Platform.DiffieHellmanP384())
+            {
+                Assert.IsNotNull(ecdh);
+                Assert.IsNotNull(ecdh.PublicKey);
+            }
         }
 
         [TestMethod]
-        [ExpectedException(typeof(PlatformNotSupportedException))]
         public void PalSupportsECDHP521()
         {
-            CryptoPal.Platform.DiffieHellmanP521();
+            using (var ecdh = CryptoPal.Platform.DiffieHellmanP521())
+            {
+                Assert.IsNotNull(ecdh);
+                Assert.IsNotNull(ecdh.PublicKey);
+            }
         }
 
         [TestMethod]

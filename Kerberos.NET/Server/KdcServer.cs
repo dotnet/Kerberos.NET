@@ -42,6 +42,12 @@ namespace Kerberos.NET.Server
                 {
                     this.RegisterPreAuthHandler(PaDataType.PA_PK_AS_REQ, (service) => new PaDataPkAsReqHandler(service));
                 }
+
+                if (options.Configuration.KdcDefaults.RegisterDefaultFastHandler)
+                {
+                    this.RegisterPreAuthHandler(PaDataType.PA_FX_FAST, (service) => new PaDataFastHandler(service));
+                    this.RegisterPreAuthHandler(PaDataType.PA_ENCRYPTED_CHALLENGE, (service) => new PaDataEncryptedChallengeHandler(service));
+                }
             }
 
             if (options.Configuration.KdcDefaults.RegisterDefaultTgsReqHandler)

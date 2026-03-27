@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Licensed to The .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // -----------------------------------------------------------------------
@@ -39,6 +39,12 @@ namespace Kerberos.NET.CommandLine
 
         [CommandLineParameter("claims", Description = "Claims")]
         public bool Claims { get; set; }
+
+        [CommandLineParameter("delegation", Description = "Delegation")]
+        public bool Delegation { get; set; }
+
+        [CommandLineParameter("signatures", Description = "Signatures")]
+        public bool Signatures { get; set; }
 
         public override async Task<bool> Execute()
         {
@@ -122,15 +128,28 @@ namespace Kerberos.NET.CommandLine
                 (SR.Resource("CommandLine_WhoAmI_UserName"), $"{identity.Name}"),
             };
 
+            if (pac != null)
+            {
+                properties.Add(("PAC Version", pac.Version));
+
+                if (pac.DecodingErrors?.Any() == true)
+                {
+                    foreach (var err in pac.DecodingErrors)
+                    {
+                        properties.Add(("Decoding Error", $"{err.Type}: {err.Exception?.Message}"));
+                    }
+                }
+            }
+
             if (this.All || this.Logon)
             {
                 var objects = new object[]
                 {
-                    pac.LogonInfo,
-                    pac.ClientInformation,
-                    pac.DelegationInformation,
-                    pac.UpnDomainInformation,
-                    pac.CredentialType
+                    pac?.LogonInfo,
+                    pac?.ClientInformation,
+                    pac?.DelegationInformation,
+                    pac?.UpnDomainInformation,
+                    pac?.CredentialType
                 };
 
                 GetObjectProperties(objects, properties);
@@ -162,31 +181,74 @@ namespace Kerberos.NET.CommandLine
 
             this.WriteProperties(properties);
 
+            if (this.All || this.Delegation)
+            {
+                if (pac?.DelegationInformation != null)
+                {
+                    this.WriteLine();
+                    this.WriteHeader("Delegation");
+
+                    var delProps = new List<(string, object)>();
+                    GetObjectProperties(new object[] { pac.DelegationInformation }, delProps);
+                    this.WriteProperties(delProps);
+                }
+            }
+
+            if (this.All || this.Signatures)
+            {
+                if (pac != null)
+                {
+                    this.WriteLine();
+                    this.WriteHeader("Signatures");
+
+                    if (pac.ServerSignature != null)
+                    {
+                        this.WriteLine(1, "  Server Signature Type: {Type}", pac.ServerSignature.Type);
+                    }
+
+                    if (pac.KdcSignature != null)
+                    {
+                        this.WriteLine(1, "     KDC Signature Type: {Type}", pac.KdcSignature.Type);
+                    }
+                }
+            }
+
             if (this.All || this.Groups)
             {
                 this.WriteLine();
                 this.WriteHeader(SR.Resource("CommandLine_WhoAmI_Groups"));
                 this.WriteLine();
 
-                var certSids = new List<SecurityIdentifier>();
-
-                if (pac.CredentialType != null)
+                if (pac?.LogonInfo != null)
                 {
-                    certSids.Add(SecurityIdentifier.WellKnown.ThisOrganizationCertificate);
-                }
+                    var certSids = new List<SecurityIdentifier>();
 
-                var sids = certSids.Union(pac.LogonInfo.ExtraSids).Union(pac.LogonInfo.GroupSids).Union(pac.LogonInfo.ResourceGroups).Select(s => new
-                {
-                    Sid = s,
-                    Name = SecurityIdentifierNames.GetFriendlyName(s.Value, pac.LogonInfo.DomainSid.Value)
-                });
+                    if (pac.CredentialType != null)
+                    {
+                        certSids.Add(SecurityIdentifier.WellKnown.ThisOrganizationCertificate);
+                    }
 
-                var max = sids.Max(s => s.Sid.Value.Length);
-                var maxName = sids.Max(s => s.Name?.Length ?? 0);
+                    var sids = certSids
+                        .Union(pac.LogonInfo.ExtraSids ?? Enumerable.Empty<SecurityIdentifier>())
+                        .Union(pac.LogonInfo.GroupSids ?? Enumerable.Empty<SecurityIdentifier>())
+                        .Union(pac.LogonInfo.ResourceGroups ?? Enumerable.Empty<SecurityIdentifier>())
+                        .Select(s => new
+                        {
+                            Sid = s,
+                            Name = SecurityIdentifierNames.GetFriendlyName(s.Value, pac.LogonInfo.DomainSid?.Value)
+                        })
+                        .ToList();
 
-                foreach (var group in sids.OrderBy(c => c.Sid.Value))
-                {
-                    this.WriteLine(1, string.Format("{0} {1} {{Attr}}", (group.Name ?? "").PadRight(maxName), group.Sid.Value.PadRight(max)), group.Sid.Attributes);
+                    if (sids.Any())
+                    {
+                        var max = sids.Max(s => s.Sid.Value.Length);
+                        var maxName = sids.Max(s => s.Name?.Length ?? 0);
+
+                        foreach (var group in sids.OrderBy(c => c.Sid.Value))
+                        {
+                            this.WriteLine(1, string.Format("{0} {1} {{Attr}}", (group.Name ?? "").PadRight(maxName), group.Sid.Value.PadRight(max)), group.Sid.Attributes);
+                        }
+                    }
                 }
             }
         }

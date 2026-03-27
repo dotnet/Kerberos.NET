@@ -23,6 +23,12 @@ namespace Kerberos.NET.Entities
         KerbAuthDataTokenRestrictions = 141,
         KerbLocal = 142,
         KerbApOptions = 143,
-        KerbServiceTarget = 144
+        KerbServiceTarget = 144,
+
+        /// <summary>
+        /// Container Authenticated by Multiple MACs (CAMMAC) per RFC 7751.
+        /// Wraps authorization data with KDC and service verifier MACs.
+        /// </summary>
+        AdCammac = 96
     }
 }

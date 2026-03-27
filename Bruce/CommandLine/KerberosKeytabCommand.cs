@@ -72,6 +72,18 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("verify", Description = "Verify")]
         public bool Verify { get; set; }
 
+        [CommandLineParameter("merge", Description = "Merge")]
+        public string MergeFrom { get; set; }
+
+        [CommandLineParameter("remove", Description = "Remove")]
+        public string RemovePrincipal { get; set; }
+
+        [CommandLineParameter("remove-etype", Description = "RemoveEType")]
+        public EncryptionType? RemoveEncryptionType { get; set; }
+
+        [CommandLineParameter("o|output", Description = "Output")]
+        public string OutputFile { get; set; }
+
         public override async Task<bool> Execute()
         {
             if (await base.Execute())
@@ -88,6 +100,10 @@ namespace Kerberos.NET.CommandLine
             else if (this.AddKey)
             {
                 await this.AppendKeyToFile();
+            }
+            else if (!string.IsNullOrWhiteSpace(this.MergeFrom) || !string.IsNullOrWhiteSpace(this.RemovePrincipal))
+            {
+                await this.MergeOrRemoveEntries();
             }
             else
             {
@@ -431,6 +447,85 @@ namespace Kerberos.NET.CommandLine
             }
 
             return null;
+        }
+
+        private async Task MergeOrRemoveEntries()
+        {
+            string file = this.GetKeytabFile();
+
+            if (!File.Exists(file))
+            {
+                this.WriteLineError(SR.Resource("CommandLine_KerberosKeytab_UnknownFile", file));
+                return;
+            }
+
+            var bytes = await File.ReadAllBytesAsync(file);
+            var keytab = new KeyTable(bytes);
+
+            if (!string.IsNullOrWhiteSpace(this.MergeFrom))
+            {
+                var mergePath = Environment.ExpandEnvironmentVariables(this.MergeFrom);
+
+                if (!File.Exists(mergePath))
+                {
+                    this.WriteLineError("Merge source keytab not found: {File}", mergePath);
+                    return;
+                }
+
+                var source = new KeyTable(File.ReadAllBytes(mergePath));
+                var added = 0;
+
+                foreach (var entry in source.Entries)
+                {
+                    if (!keytab.Entries.Any(e => e.Equals(entry)))
+                    {
+                        keytab.Entries.Add(entry);
+                        added++;
+                    }
+                }
+
+                this.WriteLine("Merged {Count} entries from {File}", added, mergePath);
+                this.WriteLine();
+            }
+
+            if (!string.IsNullOrWhiteSpace(this.RemovePrincipal))
+            {
+                var toRemove = keytab.Entries.Where(e =>
+                {
+                    var principalMatch = e.Principal?.FullyQualifiedName?.IndexOf(
+                        this.RemovePrincipal, StringComparison.OrdinalIgnoreCase) >= 0;
+
+                    if (principalMatch && this.RemoveEncryptionType.HasValue)
+                    {
+                        return e.EncryptionType == this.RemoveEncryptionType.Value;
+                    }
+
+                    return principalMatch;
+                }).ToList();
+
+                foreach (var entry in toRemove)
+                {
+                    keytab.Entries.Remove(entry);
+                }
+
+                this.WriteLine("Removed {Count} entries matching '{Principal}'", toRemove.Count, this.RemovePrincipal);
+                this.WriteLine();
+            }
+
+            var outputPath = this.OutputFile ?? file;
+            outputPath = Environment.ExpandEnvironmentVariables(outputPath);
+
+            using (var fs = new FileStream(outputPath, FileMode.Create))
+            using (var writer = new BinaryWriter(fs))
+            {
+                keytab.Write(writer);
+                writer.Flush();
+            }
+
+            this.WriteLine("Keytab written to {File} ({Count} entries)", outputPath, keytab.Entries.Count);
+            this.WriteLine();
+
+            await this.DumpKeytab(outputPath);
         }
 
         private async Task DumpKeytab(string file)

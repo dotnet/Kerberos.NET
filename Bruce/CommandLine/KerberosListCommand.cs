@@ -57,6 +57,9 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("renew", Description = "RenewTicket")]
         public bool RenewTgt { get; set; }
 
+        [CommandLineParameter("transport", Description = "Transport")]
+        public string Transport { get; set; }
+
         public override async Task<bool> Execute()
         {
             if (await base.Execute())
@@ -67,6 +70,8 @@ namespace Kerberos.NET.CommandLine
             this.WriteLine();
 
             var client = this.CreateClient(verbose: this.Verbose);
+
+            KerberosInitCommand.ConfigureTransport(client, this.Transport);
 
             if (!string.IsNullOrWhiteSpace(this.Cache))
             {

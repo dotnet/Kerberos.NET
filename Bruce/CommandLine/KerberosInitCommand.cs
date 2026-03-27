@@ -14,6 +14,7 @@ using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using Kerberos.NET.Crypto;
+using Kerberos.NET.Transport;
 
 namespace Kerberos.NET.CommandLine
 {
@@ -121,6 +122,9 @@ namespace Kerberos.NET.CommandLine
         [CommandLineParameter("password", Description = "Password")]
         public string Password { get; set; }
 
+        [CommandLineParameter("transport", Description = "Transport")]
+        public string Transport { get; set; }
+
         public override async Task<bool> Execute()
         {
             if (await base.Execute())
@@ -146,6 +150,8 @@ namespace Kerberos.NET.CommandLine
 
                 client.Configuration.Defaults.DefaultCCacheName = this.Cache;
             }
+
+            ConfigureTransport(client, this.Transport);
 
             this.SetClientProperties(client);
 
@@ -212,6 +218,27 @@ namespace Kerberos.NET.CommandLine
             await klist.Execute();
 
             return true;
+        }
+
+        public static void ConfigureTransport(KerberosClient client, string transport)
+        {
+            if (string.IsNullOrWhiteSpace(transport))
+            {
+                return;
+            }
+
+            var selected = transport.ToLowerInvariant();
+
+            foreach (var t in client.Transports)
+            {
+                t.Enabled = selected switch
+                {
+                    "tcp" => t is TcpKerberosTransport,
+                    "udp" => t is UdpKerberosTransport,
+                    "https" or "proxy" => t is HttpsKerberosTransport,
+                    _ => t.Enabled,
+                };
+            }
         }
 
         private void SetClientProperties(KerberosClient client)

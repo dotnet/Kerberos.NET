@@ -47,7 +47,7 @@ namespace Kerberos.NET.Entities
             var proxyMessage = new KdcProxyMessage()
             {
                 TargetDomain = domain,
-                DcLocatorHint = hint
+                DcLocatorHint = hint ?? default
             };
 
             if (mode == KdcProxyMessageMode.NoPrefix)

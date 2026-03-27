@@ -15,6 +15,8 @@ namespace Kerberos.NET.Entities
 {
     internal static class KerberosConstants
     {
+        public const string AnonymousRealm = "WELLKNOWN:ANONYMOUS";
+
         private const int TickUSec = 1000000;
 
         private static readonly RandomNumberGenerator Rng = RandomNumberGenerator.Create();

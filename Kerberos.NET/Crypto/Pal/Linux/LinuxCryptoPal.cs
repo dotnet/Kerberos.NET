@@ -42,18 +42,34 @@ namespace Kerberos.NET.Crypto
 
         public override ISymmetricAlgorithm Aes() => new AesAlgorithm();
 
-        public override IKeyAgreement DiffieHellmanP256() => throw PlatformNotSupported("ECDH-P256");
+        public override IKeyAgreement DiffieHellmanP256() => new EcdhKeyAgreement(KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP256);
 
-        public override IKeyAgreement DiffieHellmanP384() => throw PlatformNotSupported("ECDH-P384");
+        public override IKeyAgreement DiffieHellmanP384() => new EcdhKeyAgreement(KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP384);
 
-        public override IKeyAgreement DiffieHellmanP521() => throw PlatformNotSupported("ECDH-P521");
+        public override IKeyAgreement DiffieHellmanP521() => new EcdhKeyAgreement(KeyAgreementAlgorithm.EllipticCurveDiffieHellmanP521);
 
-        public override IKeyAgreement DiffieHellmanModp2() => throw PlatformNotSupported("DH-MODP-2");
+        public override IKeyAgreement DiffieHellmanModp2() => new ManagedDiffieHellmanOakleyGroup2();
 
-        public override IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey) => throw PlatformNotSupported("DH-MODP-2");
+        public override IKeyAgreement DiffieHellmanModp2(IExchangeKey privateKey)
+        {
+            if (privateKey is DiffieHellmanKey dhKey)
+            {
+                return new ManagedDiffieHellmanOakleyGroup2(dhKey);
+            }
 
-        public override IKeyAgreement DiffieHellmanModp14() => throw PlatformNotSupported("DH-MODP-14");
+            return this.DiffieHellmanModp2();
+        }
 
-        public override IKeyAgreement DiffieHellmanModp14(IExchangeKey privateKey) => throw PlatformNotSupported("DH-MODP-14");
+        public override IKeyAgreement DiffieHellmanModp14() => new ManagedDiffieHellmanOakleyGroup14();
+
+        public override IKeyAgreement DiffieHellmanModp14(IExchangeKey privateKey)
+        {
+            if (privateKey is DiffieHellmanKey dhKey)
+            {
+                return new ManagedDiffieHellmanOakleyGroup14(dhKey);
+            }
+
+            return this.DiffieHellmanModp14();
+        }
     }
 }

@@ -202,8 +202,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ManagedAgreesWithManagedGroup14()
         {
-            using (var alice = new ManagedDiffieHellmanOakley14())
-            using (var bob = new ManagedDiffieHellmanOakley14())
+            using (var alice = new ManagedDiffieHellmanOakleyGroup14())
+            using (var bob = new ManagedDiffieHellmanOakleyGroup14())
             {
                 alice.ImportPartnerKey(bob.PublicKey);
                 bob.ImportPartnerKey(alice.PublicKey);
@@ -216,7 +216,7 @@ namespace Tests.Kerberos.NET
         public void ManagedAgreesWithNativeGroup14()
         {
             using (var alice = new BCryptDiffieHellmanOakleyGroup14())
-            using (var bob = new ManagedDiffieHellmanOakley14())
+            using (var bob = new ManagedDiffieHellmanOakleyGroup14())
             {
                 alice.ImportPartnerKey(bob.PublicKey);
                 bob.ImportPartnerKey(alice.PublicKey);
@@ -228,8 +228,8 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ManagedAgreesWithManagedGroup2()
         {
-            using (var alice = new ManagedDiffieHellmanOakley2())
-            using (var bob = new ManagedDiffieHellmanOakley2())
+            using (var alice = new ManagedDiffieHellmanOakleyGroup2())
+            using (var bob = new ManagedDiffieHellmanOakleyGroup2())
             {
                 alice.ImportPartnerKey(bob.PublicKey);
                 bob.ImportPartnerKey(alice.PublicKey);
@@ -242,7 +242,7 @@ namespace Tests.Kerberos.NET
         public void ManagedAgreesWithNativeGroup2()
         {
             using (var alice = new BCryptDiffieHellmanOakleyGroup2())
-            using (var bob = new ManagedDiffieHellmanOakley2())
+            using (var bob = new ManagedDiffieHellmanOakleyGroup2())
             {
                 alice.ImportPartnerKey(bob.PublicKey);
                 bob.ImportPartnerKey(alice.PublicKey);
@@ -256,8 +256,8 @@ namespace Tests.Kerberos.NET
         {
             DiffieHellmanKey managedExport;
 
-            using (var alice = new ManagedDiffieHellmanOakley2())
-            using (var bob = new ManagedDiffieHellmanOakley2())
+            using (var alice = new ManagedDiffieHellmanOakleyGroup2())
+            using (var bob = new ManagedDiffieHellmanOakleyGroup2())
             {
                 managedExport = alice.PrivateKey as DiffieHellmanKey;
 
@@ -282,7 +282,7 @@ namespace Tests.Kerberos.NET
         [TestMethod]
         public void ManagedExportMatchesNativeImport()
         {
-            using (var alice = new ManagedDiffieHellmanOakley2())
+            using (var alice = new ManagedDiffieHellmanOakleyGroup2())
             {
                 var managedExportPrivate = alice.PrivateKey as DiffieHellmanKey;
                 var managedExportPublic = alice.PublicKey as DiffieHellmanKey;

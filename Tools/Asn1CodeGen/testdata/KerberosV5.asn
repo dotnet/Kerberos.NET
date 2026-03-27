@@ -1,0 +1,28 @@
+KerberosV5 DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+-- Checksum type
+Checksum ::= SEQUENCE {
+    cksumtype   [0] INTEGER,
+    checksum    [1] OCTET STRING
+}
+
+-- Authenticator
+Authenticator ::= [APPLICATION 2] SEQUENCE {
+    authenticator-vno   [0] INTEGER,
+    crealm              [1] GeneralString,
+    cname               [2] PrincipalName,
+    cksum               [3] Checksum OPTIONAL,
+    cusec               [4] INTEGER,
+    ctime               [5] GeneralizedTime,
+    subkey              [6] EncryptionKey OPTIONAL,
+    seq-number          [7] INTEGER OPTIONAL,
+    authorization-data  [8] SEQUENCE OF AuthorizationData OPTIONAL
+}
+
+-- Simple choice
+NegotiationToken ::= CHOICE {
+    negTokenInit    [0] NegTokenInit,
+    negTokenResp    [1] NegTokenResp
+}
+
+END

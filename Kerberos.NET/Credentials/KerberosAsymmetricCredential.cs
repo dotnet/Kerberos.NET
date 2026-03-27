@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Asn1;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
+using Kerberos.NET.Asn1;
 using Kerberos.NET.Crypto;
 using Kerberos.NET.Entities;
 using static Kerberos.NET.Entities.KerberosConstants;
@@ -23,6 +24,7 @@ namespace Kerberos.NET.Credentials
     {
         private static readonly Oid IdPkInitAuthData = new Oid("1.3.6.1.5.2.3.1");
         private static readonly Oid DiffieHellman = new Oid("1.2.840.10046.2.1");
+        private static readonly Oid EllipticCurveDiffieHellman = new Oid("1.2.840.10045.2.1");
 
         private ReadOnlyMemory<byte> clientDHNonce;
         private IKeyAgreement agreement;
@@ -257,9 +259,43 @@ namespace Kerberos.NET.Credentials
 
         private static Exception OnlyKeyAgreementSupportedException() => throw new NotSupportedException("Only key agreement is supported for PKINIT authentication");
 
-        private KrbAuthPack CreateEllipticCurveDiffieHellmanAuthPack(KrbKdcReqBody _)
+        private KrbAuthPack CreateEllipticCurveDiffieHellmanAuthPack(KrbKdcReqBody body)
         {
-            throw new NotImplementedException();
+            using (var sha1 = CryptoPal.Platform.Sha1())
+            {
+                var encoded = body.Encode();
+                var paChecksum = sha1.ComputeHash(encoded.Span);
+
+                // Encode the curve OID as the algorithm parameters
+                var curveOid = EcdhKeyAgreement.GetCurveOid(this.KeyAgreement);
+
+                ReadOnlyMemory<byte> curveOidEncoded;
+                using (var writer = new AsnWriter(AsnEncodingRules.DER))
+                {
+                    writer.WriteObjectIdentifier(curveOid.Value);
+                    curveOidEncoded = writer.EncodeAsMemory();
+                }
+
+                var authPack = new KrbAuthPack
+                {
+                    PKAuthenticator = new KrbPKAuthenticator
+                    {
+                        Nonce = body.Nonce,
+                        PaChecksum = paChecksum
+                    },
+                    ClientPublicValue = new KrbSubjectPublicKeyInfo
+                    {
+                        Algorithm = new KrbAlgorithmIdentifier
+                        {
+                            Algorithm = EllipticCurveDiffieHellman,
+                            Parameters = curveOidEncoded
+                        },
+                        SubjectPublicKey = this.agreement.PublicKey.EncodePublicKey()
+                    }
+                };
+
+                return authPack;
+            }
         }
 
         private KrbAuthPack CreateDiffieHellmanAuthPack(KrbKdcReqBody body)
@@ -351,7 +387,18 @@ namespace Kerberos.NET.Credentials
         {
             var dhKeyInfo = this.ValidateDHReply(pkRep);
 
-            var kdcPublicKey = DiffieHellmanKey.ParsePublicKey(dhKeyInfo.SubjectPublicKey, this.agreement.PublicKey.KeyLength);
+            IExchangeKey kdcPublicKey;
+
+            if (this.SupportsEllipticCurveDiffieHellman && this.agreement.PublicKey is EcdhKey)
+            {
+                // ECDH: SubjectPublicKey is an uncompressed EC point (04 || x || y)
+                kdcPublicKey = EcdhKey.ParsePublicKey(dhKeyInfo.SubjectPublicKey, this.agreement.PublicKey.Algorithm);
+            }
+            else
+            {
+                // DH: SubjectPublicKey is an ASN.1 DER-encoded INTEGER
+                kdcPublicKey = DiffieHellmanKey.ParsePublicKey(dhKeyInfo.SubjectPublicKey, this.agreement.PublicKey.KeyLength);
+            }
 
             this.agreement.ImportPartnerKey(kdcPublicKey);
 
