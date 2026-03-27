@@ -525,6 +525,26 @@
       "Fields": {
         "armored-data": { "CSharpName": "ArmoredData" }
       }
+    },
+
+    // --- CAMMAC (RFC 7751) ---
+    "Verifier-MAC": {
+      "CSharpName": "KrbVerifierMac",
+      "Fields": {
+        "identifier": { "CSharpName": "Identifier" },
+        "kvno": { "CSharpName": "KeyVersionNumber" },
+        "enctype": { "CSharpName": "EncryptionType", "EnumType": "EncryptionType", "TreatAsEnum": true },
+        "mac": { "CSharpName": "Mac" }
+      }
+    },
+    "AD-CAMMAC": {
+      "CSharpName": "KrbAdCammac",
+      "Fields": {
+        "elements": { "CSharpName": "Elements" },
+        "kdc-verifier": { "CSharpName": "KdcVerifier" },
+        "svc-verifier": { "CSharpName": "ServiceVerifier" },
+        "other-verifiers": { "CSharpName": "OtherVerifiers" }
+      }
     }
   }
 }

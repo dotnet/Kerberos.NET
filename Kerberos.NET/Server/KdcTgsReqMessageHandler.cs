@@ -229,6 +229,26 @@ namespace Kerberos.NET.Server
 
             this.EvaluateSecurityPolicy(context.Principal, context.ServicePrincipal);
 
+            // Check for S4U2Proxy with Resource-Based Constrained Delegation
+            bool isRbcdRequest = false;
+
+            if (tgsReq.Body.KdcOptions.HasFlag(KdcOptions.ConstrainedDelegation) ||
+                tgsReq.Body.KdcOptions.HasFlag(KdcOptions.CNameInAdditionalTicket))
+            {
+                var pacOptionsData = tgsReq.PaData?.FirstOrDefault(p => p.Type == PaDataType.PA_PAC_OPTIONS);
+
+                if (pacOptionsData != null)
+                {
+                    var pacOptions = KrbPaPacOptions.Decode(pacOptionsData.Value);
+
+                    if (pacOptions.Flags.HasFlag(PacOptions.ResourceBasedConstrainedDelegation))
+                    {
+                        isRbcdRequest = true;
+                        this.ValidateRbcdRequest(tgsReq, context);
+                    }
+                }
+            }
+
             KerberosKey serviceKey;
 
             if (tgsReq.Body.KdcOptions.HasFlag(KdcOptions.EncTktInSkey))
@@ -252,6 +272,12 @@ namespace Kerberos.NET.Server
             if (context.Ticket.Flags.HasFlag(TicketFlags.PreAuthenticated))
             {
                 flags |= TicketFlags.PreAuthenticated;
+            }
+
+            if (isRbcdRequest)
+            {
+                // RBCD allows delegation even if the evidence ticket is not forwardable
+                flags |= TicketFlags.Forwardable;
             }
 
             if (context.IncludePac == null)
@@ -388,6 +414,47 @@ namespace Kerberos.NET.Server
             this.logger.LogDebug("Default policy evaluated for {User} to {Service}", principal.PrincipalName, servicePrincipal.PrincipalName);
 
             // good place to check whether the incoming principal is allowed to access the service principal
+        }
+
+        /// <summary>
+        /// Validates a Resource-Based Constrained Delegation (RBCD) request.
+        /// Verifies that the additional ticket (evidence ticket) is present as required
+        /// for S4U2Proxy with RBCD. Subclasses can override this method to implement
+        /// actual RBCD policy checks (e.g., checking msDS-AllowedToActOnBehalfOfOtherIdentity).
+        /// </summary>
+        /// <param name="tgsReq">The TGS request being processed.</param>
+        /// <param name="context">The pre-authentication context containing principal information.</param>
+        protected virtual void ValidateRbcdRequest(KrbTgsReq tgsReq, PreAuthenticationContext context)
+        {
+            if (tgsReq == null)
+            {
+                throw new ArgumentNullException(nameof(tgsReq));
+            }
+
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            // Verify the additional ticket (evidence ticket) is present
+            if (tgsReq.Body.AdditionalTickets == null || tgsReq.Body.AdditionalTickets.Length == 0)
+            {
+                throw new KerberosProtocolException(
+                    KerberosErrorCode.KDC_ERR_BADOPTION,
+                    "RBCD requires an additional ticket (evidence ticket)"
+                );
+            }
+
+            // The requesting service must be allowed to delegate to the target service.
+            // This is determined by the target service principal's policy.
+            // Subclasses should override this method to implement actual RBCD policy checks
+            // (e.g., checking msDS-AllowedToActOnBehalfOfOtherIdentity on the target service).
+
+            this.logger.LogInformation(
+                "RBCD request from {Service} to {Target}",
+                context.Principal?.PrincipalName,
+                context.ServicePrincipal?.PrincipalName
+            );
         }
     }
 }

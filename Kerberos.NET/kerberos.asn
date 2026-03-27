@@ -442,6 +442,22 @@ AD-AND-OR               ::= SEQUENCE {
 
 AD-MANDATORY-FOR-KDC    ::= AuthorizationData
 
+-- RFC 7751 CAMMAC
+
+Verifier-MAC ::= SEQUENCE {
+        identifier      [0] PrincipalName OPTIONAL,
+        kvno            [1] UInt32 OPTIONAL,
+        enctype         [2] Int32 OPTIONAL,
+        mac             [3] Checksum
+}
+
+AD-CAMMAC ::= SEQUENCE {
+        elements        [0] AuthorizationData,
+        kdc-verifier    [1] Verifier-MAC OPTIONAL,
+        svc-verifier    [2] Verifier-MAC OPTIONAL,
+        other-verifiers [3] SEQUENCE OF Verifier-MAC OPTIONAL
+}
+
 END
 
 KerberosV5-PK-INIT-SPEC {

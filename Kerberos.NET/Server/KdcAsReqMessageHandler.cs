@@ -19,6 +19,7 @@ namespace Kerberos.NET.Server
         private static readonly PaDataType[] PreAuthAscendingPriority = new PaDataType[]
         {
             PaDataType.PA_PK_AS_REQ,
+            PaDataType.PA_SPAKE,
             PaDataType.PA_ENCRYPTED_CHALLENGE,
             PaDataType.PA_ENC_TIMESTAMP,
         };
@@ -37,7 +38,13 @@ namespace Kerberos.NET.Server
 
             this.PostProcessAuthHandlers[PaDataType.PA_ETYPE_INFO2] = service => new PaDataETypeInfo2Handler(service);
 
+            this.PreAuthHandlers[PaDataType.PA_SPAKE] = service => new PaDataSpakeHandler(service);
+
             this.RegisterPreAuthHandlers(this.PostProcessAuthHandlers);
+
+            // Register freshness after RegisterPreAuthHandlers so it only runs
+            // during post-processing and doesn't add state during pre-auth
+            this.PostProcessAuthHandlers[PaDataType.PA_AS_FRESHNESS] = service => new PaDataFreshnessHandler(service);
         }
 
         protected override MessageType MessageType => MessageType.KRB_AS_REQ;
@@ -222,6 +229,14 @@ namespace Kerberos.NET.Server
                     #pragma warning restore CS0618 // Type or member is obsolete
                 }
 
+            }
+
+            if (asReq.Body.KdcOptions.HasFlag(KdcOptions.RequestAnonymous))
+            {
+                rst.Flags |= TicketFlags.Anonymous;
+                rst.Flags &= ~(TicketFlags.Forwardable | TicketFlags.Proxiable | TicketFlags.Renewable);
+                rst.ClientName = KrbPrincipalName.WellKnown.Anonymous();
+                rst.ClientRealmName = KerberosConstants.AnonymousRealm;
             }
 
             if (rst.EncryptedPartKey == null)

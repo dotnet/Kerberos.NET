@@ -118,8 +118,13 @@ namespace Kerberos.NET.Entities
             { PacType.UPN_DOMAIN_INFO, typeof(UpnDomainInfo) },
             { PacType.CLIENT_CLAIMS, typeof(ClaimsSetMetadata) },
 
-            // { PacType.DEVICE_INFO, typeof(PacLogonInfo) },
+            { PacType.DEVICE_INFO, typeof(PacDeviceInfo) },
             { PacType.DEVICE_CLAIMS, typeof(ClaimsSetMetadata) },
+
+            { PacType.TICKET_CHECKSUM, typeof(PacSignature) },
+            { PacType.ATTRIBUTES_INFO, typeof(PacAttributesInfo) },
+            { PacType.REQUESTOR, typeof(PacRequestor) },
+            { PacType.FULL_CHECKSUM, typeof(PacSignature) },
         };
 
         private readonly Dictionary<PacType, PacObject> attributes = new Dictionary<PacType, PacObject>();
@@ -279,6 +284,51 @@ namespace Kerberos.NET.Entities
         }
 
         /// <summary>
+        /// Contains the KERB_VALIDATION_INFO for the device, using the same structure as LOGON_INFO.
+        /// </summary>
+        public PacDeviceInfo DeviceInfo
+        {
+            get => this.GetAttribute<PacDeviceInfo>(PacType.DEVICE_INFO);
+            set => this.Attributes[PacType.DEVICE_INFO] = value;
+        }
+
+        /// <summary>
+        /// Contains the signature of the ticket encrypted part, signed using the KDC key.
+        /// </summary>
+        public PacSignature TicketSignature
+        {
+            get => this.GetAttribute<PacSignature>(PacType.TICKET_CHECKSUM);
+            set => this.Attributes[PacType.TICKET_CHECKSUM] = value;
+        }
+
+        /// <summary>
+        /// Contains attributes of the PAC such as whether it was requested or given implicitly.
+        /// </summary>
+        public PacAttributesInfo AttributesInfo
+        {
+            get => this.GetAttribute<PacAttributesInfo>(PacType.ATTRIBUTES_INFO);
+            set => this.Attributes[PacType.ATTRIBUTES_INFO] = value;
+        }
+
+        /// <summary>
+        /// Contains the SID of the principal that requested the ticket.
+        /// </summary>
+        public PacRequestor Requestor
+        {
+            get => this.GetAttribute<PacRequestor>(PacType.REQUESTOR);
+            set => this.Attributes[PacType.REQUESTOR] = value;
+        }
+
+        /// <summary>
+        /// Contains the full PAC checksum signed using the KDC key.
+        /// </summary>
+        public PacSignature FullKdcSignature
+        {
+            get => this.GetAttribute<PacSignature>(PacType.FULL_CHECKSUM);
+            set => this.Attributes[PacType.FULL_CHECKSUM] = value;
+        }
+
+        /// <summary>
         /// Indicates whether this PAC contains enough of the required fields to be included in the ticket.
         /// </summary>
         public bool HasRequiredFields => this.ServerSignature != null && this.KdcSignature != null;
@@ -356,6 +406,20 @@ namespace Kerberos.NET.Entities
                 if (element.PacType == PacType.PRIVILEGE_SERVER_CHECKSUM)
                 {
                     element.Sign(serverSignature.Signature, kdcKey);
+                }
+
+                if (element.PacType == PacType.TICKET_CHECKSUM)
+                {
+                    // Ticket checksum signs the ticket itself, not the PAC.
+                    // Since we don't have the ticket at PAC generation time,
+                    // sign over the PAC data using the KDC key.
+                    element.Sign(pacUnsigned, kdcKey);
+                }
+
+                if (element.PacType == PacType.FULL_CHECKSUM)
+                {
+                    // Full checksum signs the entire PAC using the KDC key.
+                    element.Sign(pacUnsigned, kdcKey);
                 }
             }
         }
@@ -440,6 +504,8 @@ namespace Kerberos.NET.Entities
 
             this.ServerSignature = new PacSignature(PacType.SERVER_CHECKSUM, serverKey.EncryptionType);
             this.KdcSignature = new PacSignature(PacType.PRIVILEGE_SERVER_CHECKSUM, kdcKey.EncryptionType);
+            this.TicketSignature = new PacSignature(PacType.TICKET_CHECKSUM, kdcKey.EncryptionType);
+            this.FullKdcSignature = new PacSignature(PacType.FULL_CHECKSUM, kdcKey.EncryptionType);
 
             foreach (var kv in this.Attributes)
             {

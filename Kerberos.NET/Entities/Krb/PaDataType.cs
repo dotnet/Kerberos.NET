@@ -317,6 +317,17 @@ namespace Kerberos.NET.Entities
         PA_REQ_ENC_PA_REP = 149,
 
         /// <summary>
+        /// The PA-Data contains a freshness token for PKINIT, preventing pre-play attacks.
+        /// </summary>
+        PA_AS_FRESHNESS = 150,
+
+        /// <summary>
+        /// The PA-Data contains SPAKE pre-authentication data for
+        /// password-authenticated key exchange.
+        /// </summary>
+        PA_SPAKE = 151,
+
+        /// <summary>
         /// The PA-Data contains a PA-SUPPORTED-ENCTYPES structure
         /// which specifies the encryption  types supported and contains
         /// a bit field of the supported encryption types bit flags.

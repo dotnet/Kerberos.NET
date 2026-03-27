@@ -31,6 +31,11 @@
     <AdditionalFiles Include="kerberos.asn.json" />
   </ItemGroup>
 
+  <!-- Exclude standalone-tool generated files; the source generator produces these now -->
+  <ItemGroup>
+    <Compile Remove="*.generated.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Tools\Asn1SourceGenerator\Asn1SourceGenerator.csproj"
                       OutputItemType="Analyzer"

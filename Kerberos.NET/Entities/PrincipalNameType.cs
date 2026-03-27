@@ -59,5 +59,10 @@ namespace Kerberos.NET.Entities
         /// Represents a name that is considered well-known or special meaning other than identifying a particular instance.
         /// </summary>
         NT_WELLKNOWN = 11,
+
+        /// <summary>
+        /// Represents the well-known anonymous principal used for anonymous PKINIT.
+        /// </summary>
+        NT_ANONYMOUS = 14,
     }
 }

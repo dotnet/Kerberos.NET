@@ -93,7 +93,10 @@ namespace Kerberos.NET.Entities
             "@", // 8
             "@", // 9
             "@", // NT_ENTERPRISE = 10,
-            "/"  // NT_WELLKNOWN = 11
+            "/", // NT_WELLKNOWN = 11
+            "@", // 12
+            "@", // 13
+            "@"  // NT_ANONYMOUS = 14
         };
 
         internal PrincipalName ToKeyPrincipal()
@@ -379,6 +382,12 @@ namespace Kerberos.NET.Entities
         {
             public static KrbPrincipalName Krbtgt(string realm = null) =>
                 FromString(KrbtgtService, PrincipalNameType.NT_SRV_INST, realm);
+
+            public static KrbPrincipalName Anonymous() => new KrbPrincipalName
+            {
+                Type = PrincipalNameType.NT_WELLKNOWN,
+                Name = new[] { "WELLKNOWN", "ANONYMOUS" }
+            };
         }
     }
 }
