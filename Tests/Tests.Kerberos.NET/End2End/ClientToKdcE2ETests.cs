@@ -133,8 +133,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        [ExpectedException(typeof(PlatformNotSupportedException))]
-        public async Task PKINIT_Unsupported_KeyAgreement_EC()
+        public async Task E2E_PKINIT_KeyAgreement_EC()
         {
             var port = NextPort();
 
@@ -153,8 +152,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        [ExpectedException(typeof(PlatformNotSupportedException))]
-        public async Task PKINIT_Unsupported_KeyAgreement_P256()
+        public async Task E2E_PKINIT_KeyAgreement_P256()
         {
             var port = NextPort();
 
@@ -173,8 +171,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        [ExpectedException(typeof(PlatformNotSupportedException))]
-        public async Task PKINIT_Unsupported_KeyAgreement_P384()
+        public async Task E2E_PKINIT_KeyAgreement_P384()
         {
             var port = NextPort();
 
@@ -193,8 +190,7 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        [ExpectedException(typeof(PlatformNotSupportedException))]
-        public async Task PKINIT_Unsupported_KeyAgreement_P521()
+        public async Task E2E_PKINIT_KeyAgreement_P521()
         {
             var port = NextPort();
 
