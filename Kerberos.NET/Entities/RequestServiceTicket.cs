@@ -92,6 +92,13 @@ namespace Kerberos.NET
         public KrbChecksum AuthenticatorChecksum { get; set; }
 
         /// <summary>
+        /// Optional callback invoked during AP-REQ creation after the subkey is generated.
+        /// Used by IAKerb to inject GSS_EXTS_FINISHED extension data into the delegation info.
+        /// The callback receives the generated subkey and the DelegationInfo to modify.
+        /// </summary>
+        public Action<DelegationInfo, KrbEncryptionKey> DelegationInfoModifier { get; set; }
+
+        /// <summary>
         /// Indicates whether the client should attempt to use tickets that are already expired.
         /// </summary>
         public bool CanRetrieveExpiredTickets { get; set; }

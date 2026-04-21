@@ -51,6 +51,87 @@ namespace Kerberos.NET.Entities
         private static readonly ReadOnlyDictionary<short, MessageType> TokenMessageTypes
             = new(MessageTokenTypes.ToDictionary(t => t.Value, t => t.Key));
 
+        private static readonly Oid IAKerbOid = new(MechType.IAKerb);
+
+        public static ReadOnlyMemory<byte> EncodeIAKerbProxy(IAKerbHeader header, ReadOnlyMemory<byte> kerbMessage)
+        {
+            if (header == null)
+            {
+                throw new ArgumentNullException(nameof(header));
+            }
+
+            // Encode the OID using an AsnWriter
+            byte[] oidEncoded;
+
+            using (var oidWriter = new AsnWriter(AsnEncodingRules.DER))
+            {
+                oidWriter.WriteObjectIdentifier(IAKerbOid);
+                oidEncoded = oidWriter.Encode();
+            }
+
+            // TOK_ID for IAKERB_PROXY: 05 01
+            var tokenTypeBytes = new byte[] { 0x05, 0x01 };
+            var headerEncoded = header.Encode();
+
+            // Calculate total inner content length
+            int innerLength = oidEncoded.Length + tokenTypeBytes.Length + headerEncoded.Length + kerbMessage.Length;
+
+            // Build the APPLICATION 0 IMPLICIT SEQUENCE manually
+            // Tag = 0x60, then DER length, then content
+            using (var stream = new System.IO.MemoryStream())
+            {
+                stream.WriteByte(0x60); // APPLICATION 0 CONSTRUCTED
+                WriteDerLength(stream, innerLength);
+                stream.Write(oidEncoded, 0, oidEncoded.Length);
+                stream.Write(tokenTypeBytes, 0, tokenTypeBytes.Length);
+
+                var headerBytes = headerEncoded.ToArray();
+                stream.Write(headerBytes, 0, headerBytes.Length);
+
+                if (kerbMessage.Length > 0)
+                {
+                    var msgBytes = kerbMessage.ToArray();
+                    stream.Write(msgBytes, 0, msgBytes.Length);
+                }
+
+                return stream.ToArray();
+            }
+        }
+
+        private static void WriteDerLength(System.IO.MemoryStream stream, int length)
+        {
+            if (length < 0x80)
+            {
+                stream.WriteByte((byte)length);
+            }
+            else if (length <= 0xFF)
+            {
+                stream.WriteByte(0x81);
+                stream.WriteByte((byte)length);
+            }
+            else if (length <= 0xFFFF)
+            {
+                stream.WriteByte(0x82);
+                stream.WriteByte((byte)(length >> 8));
+                stream.WriteByte((byte)length);
+            }
+            else if (length <= 0xFFFFFF)
+            {
+                stream.WriteByte(0x83);
+                stream.WriteByte((byte)(length >> 16));
+                stream.WriteByte((byte)(length >> 8));
+                stream.WriteByte((byte)length);
+            }
+            else
+            {
+                stream.WriteByte(0x84);
+                stream.WriteByte((byte)(length >> 24));
+                stream.WriteByte((byte)(length >> 16));
+                stream.WriteByte((byte)(length >> 8));
+                stream.WriteByte((byte)length);
+            }
+        }
+
         public static ReadOnlyMemory<byte> Encode(Oid oid, NegotiationToken token)
         {
             if (token == null)

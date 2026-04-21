@@ -388,6 +388,16 @@ namespace Kerberos.NET.Entities
         KRB_AP_ERR_PRINCIPAL_RESERVED = 84,
 
         /// <summary>
+        /// The IAKERB proxy could not find a KDC.
+        /// </summary>
+        KRB_AP_ERR_IAKERB_KDC_NOT_FOUND = 85,
+
+        /// <summary>
+        /// The KDC did not respond to the IAKERB proxy.
+        /// </summary>
+        KRB_AP_ERR_IAKERB_KDC_NO_RESPONSE = 86,
+
+        /// <summary>
         /// The provided pre-auth data has expired.
         /// </summary>
         KDC_ERR_PREAUTH_EXPIRED = 90,

@@ -80,6 +80,11 @@ namespace Kerberos.NET.Entities
                     writer.Write(deleg.ToArray());
                 }
 
+                if (this.Extensions.Length > 0)
+                {
+                    writer.Write(this.Extensions.ToArray());
+                }
+
                 return stream.ToArray();
             }
         }
@@ -94,28 +99,31 @@ namespace Kerberos.NET.Entities
 
                 this.Flags = (GssContextEstablishmentFlag)reader.ReadBytes(4).AsLong(littleEndian: true);
 
-                if (reader.BytesAvailable() > 0)
+                if (this.Flags.HasFlag(GssContextEstablishmentFlag.GSS_C_DELEG_FLAG))
                 {
-                    this.DelegationOption = reader.ReadInt16();
-                }
+                    if (reader.BytesAvailable() > 0)
+                    {
+                        this.DelegationOption = reader.ReadInt16();
+                    }
 
-                int delegationLength = 0;
+                    int delegationLength = 0;
 
-                if (reader.BytesAvailable() > 0)
-                {
-                    delegationLength = reader.ReadInt16();
-                }
+                    if (reader.BytesAvailable() > 0)
+                    {
+                        delegationLength = reader.ReadInt16();
+                    }
 
-                byte[] delegationTicket = null;
+                    byte[] delegationTicket = null;
 
-                if (reader.BytesAvailable() > 0)
-                {
-                    delegationTicket = reader.ReadBytes(delegationLength);
-                }
+                    if (reader.BytesAvailable() > 0)
+                    {
+                        delegationTicket = reader.ReadBytes(delegationLength);
+                    }
 
-                if (delegationTicket != null && delegationTicket.Length > 0)
-                {
-                    this.DelegationTicket = KrbCred.DecodeApplication(delegationTicket);
+                    if (delegationTicket != null && delegationTicket.Length > 0)
+                    {
+                        this.DelegationTicket = KrbCred.DecodeApplication(delegationTicket);
+                    }
                 }
 
                 if (reader.BytesAvailable() > 0)

@@ -42,6 +42,8 @@ namespace Kerberos.NET.Crypto
         SamEncTrackId = 26,
         PaServerReferral = 26,
         SamEncNonceSad = 27,
+        Finished = 41,
+        IAKerbFinished = 42,
         PaPkInitEx = 44,
         AsReq = 56,
         FastReqChecksum = 50,
