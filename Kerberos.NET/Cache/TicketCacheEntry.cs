@@ -42,7 +42,7 @@ namespace Kerberos.NET
             {
                 AuthTime = ticketInfo.AuthTime ?? DateTimeOffset.UtcNow,
                 EndTime = ticketInfo.EndTime ?? DateTimeOffset.MaxValue,
-                Flags = ticketInfo.Flags,
+                Flags = ticketInfo.Flags ?? default,
                 Key = sessionKey,
                 Nonce = credPart.Nonce ?? 0,
                 Realm = ticketInfo.Realm,

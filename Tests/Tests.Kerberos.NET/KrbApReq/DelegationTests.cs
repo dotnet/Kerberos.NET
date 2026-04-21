@@ -109,14 +109,6 @@ namespace Tests.Kerberos.NET
                 {
                     new KrbCredInfo
                     {
-                        AuthorizationData = new KrbAuthorizationData[]
-                        {
-                            new KrbAuthorizationData
-                            {
-                                Data = Array.Empty<byte>(),
-                                Type = AuthorizationDataType.AdAndOr
-                            }
-                        },
                         AuthTime = DateTimeOffset.UtcNow,
                         EndTime = DateTimeOffset.UtcNow,
                         RenewTill = DateTimeOffset.UtcNow,
