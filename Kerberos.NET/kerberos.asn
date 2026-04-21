@@ -19,38 +19,43 @@ SPNEGOASNOneSpec {
   security(5) mechanism(5) snego (2) modules(4) spec2(2)
 } DEFINITIONS EXPLICIT TAGS ::= BEGIN
 
+-- @cs-namespace: Kerberos.NET.Entities
+
 MechType ::= OBJECT IDENTIFIER
    -- OID represents each security mechanism as suggested by
    -- [RFC2743]
 
 MechTypeList ::= SEQUENCE OF MechType
 
+-- @cs-class: NegotiationToken
 NegotiationToken ::= CHOICE {
-   negTokenInit    [0] NegTokenInit,
-   negTokenResp    [1] NegTokenResp
+   negTokenInit    [0] NegTokenInit,    -- @cs-name: InitialToken
+   negTokenResp    [1] NegTokenResp     -- @cs-name: ResponseToken
 }
 
+-- @cs-class: NegTokenInit
 NegTokenInit ::= SEQUENCE {
    mechTypes       [0] MechTypeList,
-   reqFlags        [1] ContextFlags  OPTIONAL,
+   reqFlags        [1] ContextFlags  OPTIONAL,   -- @cs-name: RequestFlags
 	 -- inherited from RFC 2478 for backward compatibility,
 	 -- RECOMMENDED to be left out
    mechToken       [2] OCTET STRING  OPTIONAL,
-   mechListMIC     [3] OCTET STRING  OPTIONAL,
+   mechListMIC     [3] OCTET STRING  OPTIONAL,   -- @cs-name: MechListMic
    ...
 }
+-- @cs-class: NegTokenResp
 NegTokenResp ::= SEQUENCE {
    negState       [0] ENUMERATED {
 	   accept-completed    (0),
 	   accept-incomplete   (1),
 	   reject              (2),
 	   request-mic         (3)
-   }                                 OPTIONAL,
+   }                                 OPTIONAL,    -- @cs-name: State @cs-enum: NegotiateState
 	 -- REQUIRED in the first reply from the target
-   supportedMech   [1] MechType      OPTIONAL,
+   supportedMech   [1] MechType      OPTIONAL,    -- @cs-name: SupportedMech
 	 -- present only in the first reply from the target
    responseToken   [2] OCTET STRING  OPTIONAL,
-   mechListMIC     [3] OCTET STRING  OPTIONAL,
+   mechListMIC     [3] OCTET STRING  OPTIONAL,    -- @cs-name: MechListMic
    ...
 }
 
@@ -70,6 +75,9 @@ KerberosV5Spec2 {
         iso(1) identified-organization(3) dod(6) internet(1)
         security(5) kerberosV5(2) modules(4) krb5spec2(2)
 } DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+-- @cs-namespace: Kerberos.NET.Entities
+-- @cs-prefix: Krb
 
 -- OID arc for KerberosV5
 --
@@ -97,16 +105,18 @@ KerberosString  ::= GeneralString (IA5String)
 
 Realm           ::= KerberosString
 
+-- @cs-class: KrbPrincipalName
 PrincipalName   ::= SEQUENCE {
-        name-type       [0] Int32,
-        name-string     [1] SEQUENCE OF KerberosString
+        name-type       [0] Int32,                       -- @cs-name: Type @cs-enum: PrincipalNameType
+        name-string     [1] SEQUENCE OF KerberosString   -- @cs-name: Name
 }
 
 KerberosTime    ::= GeneralizedTime -- with no fractional seconds
 
+-- @cs-class: KrbHostAddress
 HostAddress     ::= SEQUENCE  {
-        addr-type       [0] Int32,
-        address         [1] OCTET STRING
+        addr-type       [0] Int32,          -- @cs-name: AddressType @cs-type: int @cs-enum: AddressType
+        address         [1] OCTET STRING    -- @cs-name: Address
 }
 
 -- NOTE: HostAddresses is always used as an OPTIONAL field and
@@ -117,63 +127,78 @@ HostAddresses   -- NOTE: subtly different from rfc1510,
 
 -- NOTE: AuthorizationData is always used as an OPTIONAL field and
 -- should not be empty.
-AuthorizationData       ::= SEQUENCE OF SEQUENCE {
-        ad-type         [0] Int32,
-        ad-data         [1] OCTET STRING
+-- @cs-class: KrbAuthorizationData
+AuthorizationDataElement ::= SEQUENCE {
+        ad-type         [0] Int32,          -- @cs-name: Type @cs-type: int @cs-enum: AuthorizationDataType
+        ad-data         [1] OCTET STRING    -- @cs-name: Data
 }
 
+AuthorizationData       ::= SEQUENCE OF AuthorizationDataElement
+
+-- @cs-class: KrbAuthorizationDataSequence @cs-name: AuthorizationData
+AuthorizationDataSequence ::= SEQUENCE OF AuthorizationDataElement
+
+-- @cs-class: KrbPaData
 PA-DATA         ::= SEQUENCE {
         -- NOTE: first tag is [1], not [0]
-        padata-type     [1] Int32,
-        padata-value    [2] OCTET STRING -- might be encoded AP-REQ
+        padata-type     [1] Int32,          -- @cs-name: Type @cs-type: int @cs-enum: PaDataType
+        padata-value    [2] OCTET STRING    -- @cs-name: Value
+        -- might be encoded AP-REQ
 }
 
 KerberosFlags   ::= BIT STRING (SIZE (32..MAX))
                     -- minimum number of bits shall be sent,
                     -- but no fewer than 32
 
+-- @cs-class: KrbEncryptedData
 EncryptedData   ::= SEQUENCE {
-        etype   [0] Int32 -- EncryptionType --,
-        kvno    [1] UInt32 OPTIONAL,
-        cipher  [2] OCTET STRING -- ciphertext
+        etype   [0] Int32 -- EncryptionType --,    -- @cs-name: EType @cs-enum: EncryptionType
+        kvno    [1] UInt32 OPTIONAL,               -- @cs-name: KeyVersionNumber @cs-type: int
+        cipher  [2] OCTET STRING              -- @cs-name: Cipher
 }
 
+-- @cs-class: KrbEncryptionKey
 EncryptionKey   ::= SEQUENCE {
-        keytype         [0] Int32 -- actually encryption type --,
-        keyvalue        [1] OCTET STRING
+        keytype         [0] Int32 -- actually encryption type --,    -- @cs-name: EType @cs-enum: EncryptionType
+        keyvalue        [1] OCTET STRING    -- @cs-name: KeyValue
 }
 
+-- @cs-class: KrbChecksum
 Checksum        ::= SEQUENCE {
-        cksumtype       [0] Int32,
-        checksum        [1] OCTET STRING
+        cksumtype       [0] Int32,          -- @cs-name: Type @cs-enum: ChecksumType
+        checksum        [1] OCTET STRING    -- @cs-name: Checksum
 }
 
+-- @cs-class: KrbTicket
 Ticket          ::= [APPLICATION 1] SEQUENCE {
-        tkt-vno         [0] INTEGER (5),
-        realm           [1] Realm,
-        sname           [2] PrincipalName,
-        enc-part        [3] EncryptedData -- EncTicketPart
+        tkt-vno         [0] INTEGER (5),         -- @cs-name: TicketNumber @cs-type: int
+        realm           [1] Realm,               -- @cs-name: Realm
+        sname           [2] PrincipalName,       -- @cs-name: SName
+        enc-part        [3] EncryptedData        -- @cs-name: EncryptedPart
+        -- EncTicketPart
 }
 
 -- Encrypted part of ticket
+-- @cs-class: KrbEncTicketPart
 EncTicketPart   ::= [APPLICATION 3] SEQUENCE {
-        flags                   [0] TicketFlags,
-        key                     [1] EncryptionKey,
-        crealm                  [2] Realm,
-        cname                   [3] PrincipalName,
-        transited               [4] TransitedEncoding,
-        authtime                [5] KerberosTime,
-        starttime               [6] KerberosTime OPTIONAL,
-        endtime                 [7] KerberosTime,
-        renew-till              [8] KerberosTime OPTIONAL,
-        caddr                   [9] HostAddresses OPTIONAL,
-        authorization-data      [10] AuthorizationData OPTIONAL
+        flags                   [0] TicketFlags,                     -- @cs-name: Flags @cs-flags-enum: TicketFlags
+        key                     [1] EncryptionKey,                   -- @cs-name: Key
+        crealm                  [2] Realm,                           -- @cs-name: CRealm
+        cname                   [3] PrincipalName,                   -- @cs-name: CName
+        transited               [4] TransitedEncoding,               -- @cs-name: Transited
+        authtime                [5] KerberosTime,                    -- @cs-name: AuthTime
+        starttime               [6] KerberosTime OPTIONAL,           -- @cs-name: StartTime
+        endtime                 [7] KerberosTime,                    -- @cs-name: EndTime
+        renew-till              [8] KerberosTime OPTIONAL,           -- @cs-name: RenewTill
+        caddr                   [9] HostAddresses OPTIONAL,          -- @cs-name: CAddr
+        authorization-data      [10] AuthorizationData OPTIONAL      -- @cs-name: AuthorizationData
 }
 
 -- encoded Transited field
+-- @cs-class: KrbTransitedEncoding
 TransitedEncoding       ::= SEQUENCE {
-        tr-type         [0] Int32 -- must be registered --,
-        contents        [1] OCTET STRING
+        tr-type         [0] Int32 -- must be registered --,    -- @cs-name: Type @cs-enum: TransitedEncodingType
+        contents        [1] OCTET STRING    -- @cs-name: Contents
 }
 
 TicketFlags     ::= KerberosFlags
@@ -193,37 +218,40 @@ TicketFlags     ::= KerberosFlags
         -- transited-policy-checked(12),
         -- ok-as-delegate(13)
 
+-- @cs-class: KrbAsReq
 AS-REQ          ::= [APPLICATION 10] KDC-REQ
 
+-- @cs-class: KrbTgsReq
 TGS-REQ         ::= [APPLICATION 12] KDC-REQ
 
+-- @cs-class: KrbKdcReq
 KDC-REQ         ::= SEQUENCE {
         -- NOTE: first tag is [1], not [0]
-        pvno            [1] INTEGER (5) ,
-        msg-type        [2] INTEGER (10 -- AS -- | 12 -- TGS --),
-        padata          [3] SEQUENCE OF PA-DATA OPTIONAL
+        pvno            [1] INTEGER (5) ,                        -- @cs-name: ProtocolVersionNumber @cs-type: int
+        msg-type        [2] INTEGER (10 -- AS -- | 12 -- TGS --),    -- @cs-name: MessageType @cs-enum: MessageType
+        padata          [3] SEQUENCE OF PA-DATA OPTIONAL         -- @cs-name: PaData
                             -- NOTE: not empty --,
-        req-body        [4] KDC-REQ-BODY
+        req-body        [4] KDC-REQ-BODY    -- @cs-name: Body
 }
 
+-- @cs-class: KrbKdcReqBody
 KDC-REQ-BODY    ::= SEQUENCE {
-        kdc-options             [0] KDCOptions,
-        cname                   [1] PrincipalName OPTIONAL
+        kdc-options             [0] KDCOptions,                      -- @cs-name: KdcOptions @cs-flags-enum: KdcOptions
+        cname                   [1] PrincipalName OPTIONAL           -- @cs-name: CName
                                     -- Used only in AS-REQ --,
-        realm                   [2] Realm
+        realm                   [2] Realm                            -- @cs-name: Realm
                                     -- Server's realm
                                     -- Also client's in AS-REQ --,
-        sname                   [3] PrincipalName OPTIONAL,
-        from                    [4] KerberosTime OPTIONAL,
-        till                    [5] KerberosTime,
-        rtime                   [6] KerberosTime OPTIONAL,
-        nonce                   [7] UInt32,
-        etype                   [8] SEQUENCE OF Int32 -- EncryptionType
-                                    -- in preference order --,
-        addresses               [9] HostAddresses OPTIONAL,
-        enc-authorization-data  [10] EncryptedData OPTIONAL
+        sname                   [3] PrincipalName OPTIONAL,          -- @cs-name: SName
+        from                    [4] KerberosTime OPTIONAL,           -- @cs-name: From
+        till                    [5] KerberosTime,                    -- @cs-name: Till
+        rtime                   [6] KerberosTime OPTIONAL,           -- @cs-name: RTime
+        nonce                   [7] UInt32,                          -- @cs-name: Nonce @cs-type: int
+        etype                   [8] SEQUENCE OF Int32,            -- @cs-name: EType @cs-enum: EncryptionType
+        addresses               [9] HostAddresses OPTIONAL,          -- @cs-name: Addresses
+        enc-authorization-data  [10] EncryptedData OPTIONAL          -- @cs-name: EncAuthorizationData
                                     -- AuthorizationData --,
-        additional-tickets      [11] SEQUENCE OF Ticket OPTIONAL
+        additional-tickets      [11] SEQUENCE OF Ticket OPTIONAL     -- @cs-name: AdditionalTickets
                                         -- NOTE: not empty
 }
 
@@ -252,53 +280,64 @@ KDCOptions      ::= KerberosFlags
         -- renew(30),
         -- validate(31)
 
+-- @cs-class: KrbAsRep
 AS-REP          ::= [APPLICATION 11] KDC-REP
 
+-- @cs-class: KrbTgsRep
 TGS-REP         ::= [APPLICATION 13] KDC-REP
 
+-- @cs-class: KrbKdcRep
 KDC-REP         ::= SEQUENCE {
-        pvno            [0] INTEGER (5),
-        msg-type        [1] INTEGER (11 -- AS -- | 13 -- TGS --),
-        padata          [2] SEQUENCE OF PA-DATA OPTIONAL
+        pvno            [0] INTEGER (5),                             -- @cs-name: ProtocolVersionNumber @cs-type: int
+        msg-type        [1] INTEGER (11 -- AS -- | 13 -- TGS --),   -- @cs-name: MessageType @cs-enum: MessageType
+        padata          [2] SEQUENCE OF PA-DATA OPTIONAL             -- @cs-name: PaData
                                 -- NOTE: not empty --,
-        crealm          [3] Realm,
-        cname           [4] PrincipalName,
-        ticket          [5] Ticket,
-        enc-part        [6] EncryptedData
+        crealm          [3] Realm,               -- @cs-name: CRealm
+        cname           [4] PrincipalName,       -- @cs-name: CName
+        ticket          [5] Ticket,              -- @cs-name: Ticket
+        enc-part        [6] EncryptedData        -- @cs-name: EncryptedPart
                                 -- EncASRepPart or EncTGSRepPart,
                                 -- as appropriate
 }
 
+-- @cs-class: KrbEncAsRepPart
 EncASRepPart    ::= [APPLICATION 25] EncKDCRepPart
 
+-- @cs-class: KrbEncTgsRepPart
 EncTGSRepPart   ::= [APPLICATION 26] EncKDCRepPart
 
+-- @cs-class: KrbEncKdcRepPart
 EncKDCRepPart   ::= SEQUENCE {
-        key             [0] EncryptionKey,
-        last-req        [1] LastReq,
-        nonce           [2] UInt32,
-        key-expiration  [3] KerberosTime OPTIONAL,
-        flags           [4] TicketFlags,
-        authtime        [5] KerberosTime,
-        starttime       [6] KerberosTime OPTIONAL,
-        endtime         [7] KerberosTime,
-        renew-till      [8] KerberosTime OPTIONAL,
-        srealm          [9] Realm,
-        sname           [10] PrincipalName,
-        caddr           [11] HostAddresses OPTIONAL
+        key             [0] EncryptionKey,               -- @cs-name: Key
+        last-req        [1] LastReq,                     -- @cs-name: LastReq
+        nonce           [2] UInt32,                      -- @cs-name: Nonce @cs-type: int
+        key-expiration  [3] KerberosTime OPTIONAL,       -- @cs-name: KeyExpiration
+        flags           [4] TicketFlags,                 -- @cs-name: Flags @cs-flags-enum: TicketFlags
+        authtime        [5] KerberosTime,                -- @cs-name: AuthTime
+        starttime       [6] KerberosTime OPTIONAL,       -- @cs-name: StartTime
+        endtime         [7] KerberosTime,                -- @cs-name: EndTime
+        renew-till      [8] KerberosTime OPTIONAL,       -- @cs-name: RenewTill
+        srealm          [9] Realm,                       -- @cs-name: Realm
+        sname           [10] PrincipalName,              -- @cs-name: SName
+        caddr           [11] HostAddresses OPTIONAL,     -- @cs-name: CAddr
+        encrypted-pa-data [12] METHOD-DATA OPTIONAL      -- @cs-name: EncryptedPaData
 }
 
-LastReq         ::=     SEQUENCE OF SEQUENCE {
-        lr-type         [0] Int32,
-        lr-value        [1] KerberosTime
+-- @cs-class: KrbLastReq
+LastReqEntry    ::= SEQUENCE {
+        lr-type         [0] Int32,            -- @cs-name: Type @cs-type: int
+        lr-value        [1] KerberosTime      -- @cs-name: Value
 }
 
+LastReq         ::= SEQUENCE OF LastReqEntry
+
+-- @cs-class: KrbApReq
 AP-REQ          ::= [APPLICATION 14] SEQUENCE {
-        pvno            [0] INTEGER (5),
-        msg-type        [1] INTEGER (14),
-        ap-options      [2] APOptions,
-        ticket          [3] Ticket,
-        authenticator   [4] EncryptedData -- Authenticator
+        pvno            [0] INTEGER (5),             -- @cs-name: ProtocolVersionNumber @cs-type: int
+        msg-type        [1] INTEGER (14),            -- @cs-name: MessageType @cs-enum: MessageType
+        ap-options      [2] APOptions,               -- @cs-name: ApOptions @cs-flags-enum: ApOptions
+        ticket          [3] Ticket,                  -- @cs-name: Ticket
+        authenticator   [4] EncryptedData              -- @cs-name: Authenticator
 }
 
 APOptions       ::= KerberosFlags
@@ -307,29 +346,32 @@ APOptions       ::= KerberosFlags
         -- mutual-required(2)
 
 -- Unencrypted authenticator
+-- @cs-class: KrbAuthenticator
 Authenticator   ::= [APPLICATION 2] SEQUENCE  {
-        authenticator-vno       [0] INTEGER (5),
-        crealm                  [1] Realm,
-        cname                   [2] PrincipalName,
-        cksum                   [3] Checksum OPTIONAL,
-        cusec                   [4] Microseconds,
-        ctime                   [5] KerberosTime,
-        subkey                  [6] EncryptionKey OPTIONAL,
-        seq-number              [7] UInt32 OPTIONAL,
-        authorization-data      [8] AuthorizationData OPTIONAL
+        authenticator-vno       [0] INTEGER (5),                 -- @cs-name: AuthenticatorVersionNumber @cs-type: int
+        crealm                  [1] Realm,                       -- @cs-name: CRealm
+        cname                   [2] PrincipalName,               -- @cs-name: CName
+        cksum                   [3] Checksum OPTIONAL,           -- @cs-name: Checksum
+        cusec                   [4] Microseconds,                -- @cs-name: CuSec @cs-type: int
+        ctime                   [5] KerberosTime,                -- @cs-name: CTime
+        subkey                  [6] EncryptionKey OPTIONAL,      -- @cs-name: Subkey
+        seq-number              [7] UInt32 OPTIONAL,             -- @cs-name: SequenceNumber @cs-type: int
+        authorization-data      [8] AuthorizationData OPTIONAL   -- @cs-name: AuthorizationData
 }
 
+-- @cs-class: KrbApRep
 AP-REP          ::= [APPLICATION 15] SEQUENCE {
-        pvno            [0] INTEGER (5),
-        msg-type        [1] INTEGER (15),
-        enc-part        [2] EncryptedData -- EncAPRepPart
+        pvno            [0] INTEGER (5),             -- @cs-name: ProtocolVersionNumber @cs-type: int
+        msg-type        [1] INTEGER (15),            -- @cs-name: MessageType @cs-enum: MessageType
+        enc-part        [2] EncryptedData              -- @cs-name: EncryptedPart
 }
 
+-- @cs-class: KrbEncApRepPart
 EncAPRepPart    ::= [APPLICATION 27] SEQUENCE {
-        ctime           [0] KerberosTime,
-        cusec           [1] Microseconds,
-        subkey          [2] EncryptionKey OPTIONAL,
-        seq-number      [3] UInt32 OPTIONAL
+        ctime           [0] KerberosTime,                -- @cs-name: CTime
+        cusec           [1] Microseconds,                -- @cs-name: CuSec @cs-type: int
+        subkey          [2] EncryptionKey OPTIONAL,      -- @cs-name: SubSessionKey
+        seq-number      [3] UInt32 OPTIONAL              -- @cs-name: SequenceNumber @cs-type: int
 }
 
 KRB-SAFE        ::= [APPLICATION 20] SEQUENCE {
@@ -348,82 +390,92 @@ KRB-SAFE-BODY   ::= SEQUENCE {
         r-address       [5] HostAddress OPTIONAL
 }
 
+-- @cs-class: KrbPriv
 KRB-PRIV        ::= [APPLICATION 21] SEQUENCE {
-        pvno            [0] INTEGER (5),
-        msg-type        [1] INTEGER (21),
+        pvno            [0] INTEGER (5),             -- @cs-name: ProtocolVersionNumber @cs-type: int
+        msg-type        [1] INTEGER (21),            -- @cs-name: MessageType @cs-enum: MessageType
                         -- NOTE: there is no [2] tag
-        enc-part        [3] EncryptedData -- EncKrbPrivPart
+        enc-part        [3] EncryptedData              -- @cs-name: EncryptedPart
 }
 
+-- @cs-class: KrbEncKrbPrivPart
 EncKrbPrivPart  ::= [APPLICATION 28] SEQUENCE {
-        user-data       [0] OCTET STRING,
-        timestamp       [1] KerberosTime OPTIONAL,
-        usec            [2] Microseconds OPTIONAL,
-        seq-number      [3] UInt32 OPTIONAL,
-        s-address       [4] HostAddress -- sender's addr --,
-        r-address       [5] HostAddress OPTIONAL -- recip's addr
+        user-data       [0] OCTET STRING,                    -- @cs-name: UserData
+        timestamp       [1] KerberosTime OPTIONAL,           -- @cs-name: Timestamp
+        usec            [2] Microseconds OPTIONAL,           -- @cs-name: Usec @cs-type: int
+        seq-number      [3] UInt32 OPTIONAL,                 -- @cs-name: SequenceNumber @cs-type: int
+        s-address       [4] HostAddress -- sender's addr --, -- @cs-name: SAddress
+        r-address       [5] HostAddress OPTIONAL,        -- @cs-name: RAddress
 }
 
+-- @cs-class: KrbCred
 KRB-CRED        ::= [APPLICATION 22] SEQUENCE {
-        pvno            [0] INTEGER (5),
-        msg-type        [1] INTEGER (22),
-        tickets         [2] SEQUENCE OF Ticket,
-        enc-part        [3] EncryptedData -- EncKrbCredPart
+        pvno            [0] INTEGER (5),             -- @cs-name: ProtocolVersionNumber @cs-type: int
+        msg-type        [1] INTEGER (22),            -- @cs-name: MessageType @cs-enum: MessageType
+        tickets         [2] SEQUENCE OF Ticket,      -- @cs-name: Tickets
+        enc-part        [3] EncryptedData              -- @cs-name: EncryptedPart
 }
 
+-- @cs-class: KrbEncKrbCredPart
 EncKrbCredPart  ::= [APPLICATION 29] SEQUENCE {
-        ticket-info     [0] SEQUENCE OF KrbCredInfo,
-        nonce           [1] UInt32 OPTIONAL,
-        timestamp       [2] KerberosTime OPTIONAL,
-        usec            [3] Microseconds OPTIONAL,
-        s-address       [4] HostAddress OPTIONAL,
-        r-address       [5] HostAddress OPTIONAL
+        ticket-info     [0] SEQUENCE OF KrbCredInfo,         -- @cs-name: TicketInfo
+        nonce           [1] UInt32 OPTIONAL,                 -- @cs-name: Nonce @cs-type: int
+        timestamp       [2] KerberosTime OPTIONAL,           -- @cs-name: Timestamp
+        usec            [3] Microseconds OPTIONAL,           -- @cs-name: USec @cs-type: int
+        s-address       [4] HostAddress OPTIONAL,            -- @cs-name: SAddress
+        r-address       [5] HostAddress OPTIONAL             -- @cs-name: RAddress
 }
 
+-- @cs-class: KrbCredInfo
 KrbCredInfo     ::= SEQUENCE {
-        key             [0] EncryptionKey,
-        prealm          [1] Realm OPTIONAL,
-        pname           [2] PrincipalName OPTIONAL,
-        flags           [3] TicketFlags OPTIONAL,
-        authtime        [4] KerberosTime OPTIONAL,
-        starttime       [5] KerberosTime OPTIONAL,
-        endtime         [6] KerberosTime OPTIONAL,
-        renew-till      [7] KerberosTime OPTIONAL,
-        srealm          [8] Realm OPTIONAL,
-        sname           [9] PrincipalName OPTIONAL,
-        caddr           [10] HostAddresses OPTIONAL
+        key             [0] EncryptionKey,               -- @cs-name: Key
+        prealm          [1] Realm OPTIONAL,              -- @cs-name: Realm
+        pname           [2] PrincipalName OPTIONAL,      -- @cs-name: PName
+        flags           [3] TicketFlags OPTIONAL,        -- @cs-name: Flags @cs-flags-enum: TicketFlags
+        authtime        [4] KerberosTime OPTIONAL,       -- @cs-name: AuthTime
+        starttime       [5] KerberosTime OPTIONAL,       -- @cs-name: StartTime
+        endtime         [6] KerberosTime OPTIONAL,       -- @cs-name: EndTime
+        renew-till      [7] KerberosTime OPTIONAL,       -- @cs-name: RenewTill
+        srealm          [8] Realm OPTIONAL,              -- @cs-name: SRealm
+        sname           [9] PrincipalName OPTIONAL,      -- @cs-name: SName
+        authorization-data [10] AuthorizationData OPTIONAL -- @cs-name: AuthorizationData
 }
 
+-- @cs-class: KrbError
 KRB-ERROR       ::= [APPLICATION 30] SEQUENCE {
-        pvno            [0] INTEGER (5),
-        msg-type        [1] INTEGER (30),
-        ctime           [2] KerberosTime OPTIONAL,
-        cusec           [3] Microseconds OPTIONAL,
-        stime           [4] KerberosTime,
-        susec           [5] Microseconds,
-        error-code      [6] Int32,
-        crealm          [7] Realm OPTIONAL,
-        cname           [8] PrincipalName OPTIONAL,
-        realm           [9] Realm -- service realm --,
-        sname           [10] PrincipalName -- service name --,
-        e-text          [11] KerberosString OPTIONAL,
-        e-data          [12] OCTET STRING OPTIONAL
+        pvno            [0] INTEGER (5),                     -- @cs-name: ProtocolVersionNumber @cs-type: int
+        msg-type        [1] INTEGER (30),                    -- @cs-name: MessageType @cs-enum: MessageType
+        ctime           [2] KerberosTime OPTIONAL,           -- @cs-name: CTime
+        cusec           [3] Microseconds OPTIONAL,           -- @cs-name: Cusec @cs-type: int
+        stime           [4] KerberosTime,                    -- @cs-name: STime
+        susec           [5] Microseconds,                    -- @cs-name: Susc @cs-type: int
+        error-code      [6] Int32,                           -- @cs-name: ErrorCode @cs-enum: KerberosErrorCode
+        crealm          [7] Realm OPTIONAL,                  -- @cs-name: CRealm
+        cname           [8] PrincipalName OPTIONAL,          -- @cs-name: CName
+        realm           [9] Realm -- service realm --,       -- @cs-name: Realm
+        sname           [10] PrincipalName -- service name --,    -- @cs-name: SName
+        e-text          [11] KerberosString OPTIONAL,        -- @cs-name: EText
+        e-data          [12] OCTET STRING OPTIONAL           -- @cs-name: EData
 }
 
+-- @cs-class: KrbMethodData @cs-name: MethodData
 METHOD-DATA     ::= SEQUENCE OF PA-DATA
 
-TYPED-DATA      ::= SEQUENCE SIZE (1..MAX) OF SEQUENCE {
+TypedDataElement ::= SEQUENCE {
         data-type       [0] Int32,
         data-value      [1] OCTET STRING OPTIONAL
 }
+
+TYPED-DATA      ::= SEQUENCE OF TypedDataElement
 
 -- preauth stuff follows
 
 PA-ENC-TIMESTAMP        ::= EncryptedData -- PA-ENC-TS-ENC
 
+-- @cs-class: KrbPaEncTsEnc
 PA-ENC-TS-ENC           ::= SEQUENCE {
-        patimestamp     [0] KerberosTime -- client's time --,
-        pausec          [1] Microseconds OPTIONAL
+        patimestamp     [0] KerberosTime -- client's time --,    -- @cs-name: PaTimestamp
+        pausec          [1] Microseconds OPTIONAL    -- @cs-name: PaUSec @cs-type: int
 }
 
 ETYPE-INFO-ENTRY        ::= SEQUENCE {
@@ -433,12 +485,14 @@ ETYPE-INFO-ENTRY        ::= SEQUENCE {
 
 ETYPE-INFO              ::= SEQUENCE OF ETYPE-INFO-ENTRY
 
+-- @cs-class: KrbETypeInfo2Entry
 ETYPE-INFO2-ENTRY       ::= SEQUENCE {
-        etype           [0] Int32,
-        salt            [1] KerberosString OPTIONAL,
-        s2kparams       [2] OCTET STRING OPTIONAL
+        etype           [0] Int32,                       -- @cs-name: EType @cs-enum: EncryptionType
+        salt            [1] KerberosString OPTIONAL,     -- @cs-name: Salt
+        s2kparams       [2] OCTET STRING OPTIONAL        -- @cs-name: S2kParams
 }
 
+-- @cs-class: KrbETypeInfo2 @cs-name: ETypeInfo
 ETYPE-INFO2             ::= SEQUENCE SIZE (1..MAX) OF ETYPE-INFO2-ENTRY
 
 AD-IF-RELEVANT          ::= AuthorizationData
@@ -463,6 +517,9 @@ KerberosV5-PK-INIT-SPEC {
 	   iso(1) identified-organization(3) dod(6) internet(1)
 	   security(5) kerberosV5(2) modules(4) pkinit(5)
 } DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+-- @cs-namespace: Kerberos.NET.Entities
+-- @cs-prefix: Krb
 
 IMPORTS
 
@@ -502,8 +559,9 @@ td-trusted-certifiers INTEGER ::=        104
 td-invalid-certificates INTEGER ::=      105
 td-dh-parameters INTEGER ::=             109
 
+-- @cs-class: KrbPaPkAsReq
 PA-PK-AS-REQ ::= SEQUENCE {
-  signedAuthPack          [0] IMPLICIT OCTET STRING,
+  signedAuthPack          [0] IMPLICIT OCTET STRING,    -- @cs-name: SignedAuthPack
 		   -- Contains a CMS type ContentInfo encoded
 		   -- according to [RFC3852].
 		   -- The contentType field of the type ContentInfo
@@ -515,7 +573,7 @@ PA-PK-AS-REQ ::= SEQUENCE {
 		   -- type AuthPack.
 		   -- AuthPack is defined below.
   trustedCertifiers       [1] SEQUENCE OF
-			  ExternalPrincipalIdentifier OPTIONAL,
+			  ExternalPrincipalIdentifier OPTIONAL,    -- @cs-name: TrustedCertifiers
 		   -- Contains a list of CAs, trusted by the client,
 		   -- that can be used to certify the KDC.
 		   -- Each ExternalPrincipalIdentifier identifies a CA
@@ -525,7 +583,7 @@ PA-PK-AS-REQ ::= SEQUENCE {
 		   -- hints to guide its selection of an appropriate
 		   -- certificate chain to return to the client.
   kdcPkId                 [2] IMPLICIT OCTET STRING
-							  OPTIONAL,
+							  OPTIONAL,    -- @cs-name: KdcPkId
 		   -- Contains a CMS type SignerIdentifier encoded
 		   -- according to [RFC3852].
 		   -- Identifies, if present, a particular KDC
@@ -535,21 +593,22 @@ PA-PK-AS-REQ ::= SEQUENCE {
 
 DHNonce ::= OCTET STRING
 
+-- @cs-class: KrbExternalPrincipalIdentifier
 ExternalPrincipalIdentifier ::= SEQUENCE {
-  subjectName            [0] IMPLICIT OCTET STRING OPTIONAL,
+  subjectName            [0] IMPLICIT OCTET STRING OPTIONAL,    -- @cs-name: SubjectName
 		   -- Contains a PKIX type Name encoded according to
 		   -- [RFC3280].
 		   -- Identifies the certificate subject by the
 		   -- distinguished subject name.
 		   -- REQUIRED when there is a distinguished subject
 		   -- name present in the certificate.
- issuerAndSerialNumber   [1] IMPLICIT OCTET STRING OPTIONAL,
+ issuerAndSerialNumber   [1] IMPLICIT OCTET STRING OPTIONAL,    -- @cs-name: IssuerAndSerialNumber
 		   -- Contains a CMS type IssuerAndSerialNumber encoded
 		   -- according to [RFC3852].
 		   -- Identifies a certificate of the subject.
 		   -- REQUIRED for TD-INVALID-CERTIFICATES and
 		   -- TD-TRUSTED-CERTIFIERS.
- subjectKeyIdentifier    [2] IMPLICIT OCTET STRING OPTIONAL,
+ subjectKeyIdentifier    [2] IMPLICIT OCTET STRING OPTIONAL,    -- @cs-name: SubjectKeyIdentifier
 		   -- Identifies the subject's public key by a key
 		   -- identifier.  When an X.509 certificate is
 		   -- referenced, this key identifier matches the X.509
@@ -563,9 +622,10 @@ ExternalPrincipalIdentifier ::= SEQUENCE {
   ...
 }
 
+-- @cs-class: KrbAuthPack
 AuthPack ::= SEQUENCE {
-  pkAuthenticator         [0] PKAuthenticator,
-  clientPublicValue       [1] SubjectPublicKeyInfo OPTIONAL,
+  pkAuthenticator         [0] PKAuthenticator,    -- @cs-name: PKAuthenticator
+  clientPublicValue       [1] SubjectPublicKeyInfo OPTIONAL,    -- @cs-name: ClientPublicValue
 		   -- Type SubjectPublicKeyInfo is defined in
 		   -- [RFC3280].
 		   -- Specifies Diffie-Hellman domain parameters
@@ -575,7 +635,7 @@ AuthPack ::= SEQUENCE {
 		   -- This field is present only if the client wishes
 		   -- to use the Diffie-Hellman key agreement method.
   supportedCMSTypes       [2] SEQUENCE OF AlgorithmIdentifier
-							  OPTIONAL,
+							  OPTIONAL,    -- @cs-name: SupportedCMSTypes
 		   -- Type AlgorithmIdentifier is defined in
 		   -- [RFC3280].
 		   -- List of CMS algorithm [RFC3370] identifiers
@@ -583,22 +643,23 @@ AuthPack ::= SEQUENCE {
 		   -- content encryption algorithms, or signature
 		   -- algorithms supported by the client in order of
 		   -- (decreasing) preference.
-  clientDHNonce           [3] DHNonce OPTIONAL,
+  clientDHNonce           [3] DHNonce OPTIONAL,    -- @cs-name: ClientDHNonce
 		   -- Present only if the client indicates that it
 		   -- wishes to reuse DH keys or to allow the KDC to
 		   -- do so.
   ...
 }
 
+-- @cs-class: KrbPKAuthenticator
 PKAuthenticator ::= SEQUENCE {
-  cusec                   [0] INTEGER (0..999999),
-  ctime                   [1] KerberosTime,
+  cusec                   [0] INTEGER (0..999999),    -- @cs-name: CuSec @cs-type: int
+  ctime                   [1] KerberosTime,    -- @cs-name: CTime
 		   -- cusec and ctime are used as in [RFC4120], for
 		   -- replay prevention.
-  nonce                   [2] INTEGER (0..4294967295),
+  nonce                   [2] INTEGER (0..4294967295),    -- @cs-name: Nonce @cs-type: int
 		   -- Chosen randomly; this nonce does not need to
 		   -- match with the nonce in the KDC-REQ-BODY.
-  paChecksum              [3] OCTET STRING OPTIONAL,
+  paChecksum              [3] OCTET STRING OPTIONAL,    -- @cs-name: PaChecksum
 		   -- MUST be present.
 		   -- Contains the SHA1 checksum, performed over
 		   -- KDC-REQ-BODY.
@@ -629,11 +690,12 @@ AD-INITIAL-VERIFIED-CAS ::= SEQUENCE OF
 		   -- Each ExternalPrincipalIdentifier identifies a CA
 		   -- or a CA certificate (thereby its public key).
 
+-- @cs-class: KrbPaPkAsRep
 PA-PK-AS-REP ::= CHOICE {
-  dhInfo                  [0] DHRepInfo,
+  dhInfo                  [0] DHRepInfo,    -- @cs-name: DHInfo
 		   -- Selected when Diffie-Hellman key exchange is
 		   -- used.
-  encKeyPack              [1] IMPLICIT OCTET STRING,
+  encKeyPack              [1] IMPLICIT OCTET STRING,    -- @cs-name: EncKeyPack
 		   -- Selected when public key encryption is used.
 		   -- Contains a CMS type ContentInfo encoded
 		   -- according to [RFC3852].
@@ -651,8 +713,9 @@ PA-PK-AS-REP ::= CHOICE {
   ...
 }
 
+-- @cs-class: KrbDHReplyInfo
 DHRepInfo ::= SEQUENCE {
-  dhSignedData            [0] IMPLICIT OCTET STRING,
+  dhSignedData            [0] IMPLICIT OCTET STRING,    -- @cs-name: DHSignedData
 		   -- Contains a CMS type ContentInfo encoded according
 		   -- to [RFC3852].
 		   -- The contentType field of the type ContentInfo is
@@ -663,22 +726,23 @@ DHRepInfo ::= SEQUENCE {
 		   -- eContent field contains the DER encoding of the
 		   -- type KDCDHKeyInfo.
 		   -- KDCDHKeyInfo is defined below.
-  serverDHNonce           [1] DHNonce OPTIONAL,
+  serverDHNonce           [1] DHNonce OPTIONAL,    -- @cs-name: ServerDHNonce
 		   -- Present if and only if dhKeyExpiration is
 		   -- present.
   ...
 }
 
+-- @cs-class: KrbKdcDHKeyInfo
 KDCDHKeyInfo ::= SEQUENCE {
-  subjectPublicKey        [0] BIT STRING,
+  subjectPublicKey        [0] BIT STRING,    -- @cs-name: SubjectPublicKey
 		   -- The KDC's DH public key.
 		   -- The DH public key value is encoded as a BIT
 		   -- STRING according to [RFC3279].
-  nonce                   [1] INTEGER (0..4294967295),
+  nonce                   [1] INTEGER (0..4294967295),    -- @cs-name: Nonce @cs-type: int
 		   -- Contains the nonce in the pkAuthenticator field
 		   -- in the request if the DH keys are NOT reused,
 		   -- 0 otherwise.
-  dhKeyExpiration         [2] KerberosTime OPTIONAL,
+  dhKeyExpiration         [2] KerberosTime OPTIONAL,    -- @cs-name: DHKeyExpiration
 		   -- Expiration time for KDC's key pair,
 		   -- present if and only if the DH keys are reused.
 		   -- If present, the KDC's DH public key MUST not be
