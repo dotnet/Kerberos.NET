@@ -487,7 +487,7 @@ namespace Tests.Kerberos.NET
             // Extract the session key from the encrypted part
             // this is the key the KDC generated inside the ticket
             // that the service will use to decrypt the authenticator
-            var encKdcRepPart = tgsRep.EncPart.Decrypt(
+            var encKdcRepPart = tgsRep.EncryptedPart.Decrypt(
                 key,
                 KeyUsage.EncTgsRepPartSessionKey,
                 d => KrbEncTgsRepPart.DecodeApplication(d)

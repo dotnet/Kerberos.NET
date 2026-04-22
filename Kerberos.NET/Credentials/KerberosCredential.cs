@@ -128,7 +128,7 @@ namespace Kerberos.NET.Credentials
                 throw new ArgumentNullException(nameof(kdcRep));
             }
 
-            return kdcRep.EncPart.Decrypt(
+            return kdcRep.EncryptedPart.Decrypt(
                 this.CreateKey(),
                 keyUsage,
                 func

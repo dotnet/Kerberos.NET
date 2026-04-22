@@ -89,7 +89,7 @@ namespace Kerberos.NET.Entities.ChangePassword
 
         public void Decrypt(KerberosKey key)
         {           
-            encKrbPriv = KrbPriv.EncPart.Decrypt(
+            encKrbPriv = KrbPriv.EncryptedPart.Decrypt(
                 key,
                 KeyUsage.EncKrbPrivPart,
                 d => KrbEncKrbPrivPart.DecodeApplication(d)

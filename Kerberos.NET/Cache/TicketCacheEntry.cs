@@ -71,7 +71,7 @@ namespace Kerberos.NET
                         Ticket = ticket,
                         CName = ticketInfo.PName,
                         CRealm = ticketInfo.Realm,
-                        EncPart = KrbEncryptedData.Encrypt(kdcRepData.EncodeApplication(), sessionKey.AsKey(), usage)
+                        EncryptedPart = KrbEncryptedData.Encrypt(kdcRepData.EncodeApplication(), sessionKey.AsKey(), usage)
                     }
                 }
             };

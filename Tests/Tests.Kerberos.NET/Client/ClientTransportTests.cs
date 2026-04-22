@@ -130,7 +130,7 @@ namespace Tests.Kerberos.NET
                             Cipher = new byte[] { 0x0, 0x0 }
                         },
                     },
-                    EncPart = new KrbEncryptedData
+                    EncryptedPart = new KrbEncryptedData
                     {
                         Cipher = new byte[] { 0x0, 0x0 }
                     }

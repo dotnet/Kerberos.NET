@@ -47,7 +47,7 @@ namespace Tests.Kerberos.NET
 
             var asRep = new KrbAsRep().DecodeAsApplication(krbAsRepBytes);
 
-            var encPart = asRep.EncPart.Decrypt(longUserTermKey, KeyUsage.EncAsRepPart, b => KrbEncAsRepPart.DecodeApplication(b));
+            var encPart = asRep.EncryptedPart.Decrypt(longUserTermKey, KeyUsage.EncAsRepPart, b => KrbEncAsRepPart.DecodeApplication(b));
 
             Assert.IsNotNull(encPart);
 
@@ -93,7 +93,7 @@ namespace Tests.Kerberos.NET
 
             Assert.IsNotNull(asRep);
 
-            var encPart = asRep.EncPart.Decrypt(
+            var encPart = asRep.EncryptedPart.Decrypt(
                 clientKey,
                 KeyUsage.EncAsRepPart,
                 b => KrbEncAsRepPart.DecodeApplication(b)
@@ -176,7 +176,7 @@ namespace Tests.Kerberos.NET
             Assert.AreNotEqual(UserUpn, asRep.CName.FullyQualifiedName);
             Assert.AreEqual(TestSamAccountName, asRep.CName.FullyQualifiedName);
 
-            var encPart = asRep.EncPart.Decrypt(
+            var encPart = asRep.EncryptedPart.Decrypt(
                 clientKey,
                 KeyUsage.EncAsRepPart,
                 b => KrbEncAsRepPart.DecodeApplication(b)

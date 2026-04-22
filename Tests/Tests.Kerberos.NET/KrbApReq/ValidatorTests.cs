@@ -276,7 +276,7 @@ namespace Tests.Kerberos.NET
                 Flags = TicketFlags.Renewable
             });
 
-            var encKdcRepPart = tgsRep.EncPart.Decrypt(
+            var encKdcRepPart = tgsRep.EncryptedPart.Decrypt(
                 key,
                 KeyUsage.EncTgsRepPartSessionKey,
                 d => KrbEncTgsRepPart.DecodeApplication(d)

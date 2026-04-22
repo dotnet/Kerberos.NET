@@ -240,7 +240,7 @@ namespace Kerberos.NET.Client
                     Ticket = KrbTicket.DecodeApplication(cred.Ticket),
                     CName = KrbPrincipalName.FromString(cred.Client.FullyQualifiedName, cred.Client.Type),
                     CRealm = cred.Client.Realm,
-                    EncPart = new KrbEncryptedData { }
+                    EncryptedPart = new KrbEncryptedData { }
                 },
                 SessionKey = new KrbEncryptionKey
                 {
