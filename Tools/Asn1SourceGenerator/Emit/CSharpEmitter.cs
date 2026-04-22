@@ -497,7 +497,13 @@ namespace Kerberos.NET.Asn1SourceGenerator.Emit
             w.WriteLine("decoded = new T();");
             w.WriteLine();
             w.WriteLine("AsnReader sequenceReader = reader.ReadSequence(expectedTag);");
-            w.WriteLine("AsnReader explicitReader;");
+
+            bool hasExplicitTags = type.Fields.Any(f => f.Encoding.TagNumber.HasValue && !f.Encoding.IsImplicit);
+
+            if (hasExplicitTags)
+            {
+                w.WriteLine("AsnReader explicitReader;");
+            }
 
             if (hasCollections)
             {
