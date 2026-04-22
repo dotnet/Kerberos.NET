@@ -800,7 +800,7 @@ namespace Kerberos.NET.Asn1SourceGenerator.Emit
             }
         }
 
-        internal static string ToPascalCase(string asnName)
+        public static string ToPascalCase(string asnName)
         {
             if (string.IsNullOrEmpty(asnName))
             {
