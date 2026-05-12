@@ -364,9 +364,9 @@ namespace Kerberos.NET.Credentials
                 serverDHNonce = pkRep.DHInfo.ServerDHNonce.Value.Span;
             }
 
-            var transform = CryptoService.CreateTransform(kdcRep.EncPart.EType);
+            var transform = CryptoService.CreateTransform(kdcRep.EncryptedPart.EType);
 
-            etype = kdcRep.EncPart.EType;
+            etype = kdcRep.EncryptedPart.EType;
 
             return PKInitString2Key.String2Key(derivedKey.Span, transform.KeySize, this.clientDHNonce.Span, serverDHNonce);
         }

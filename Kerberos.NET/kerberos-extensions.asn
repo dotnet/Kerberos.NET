@@ -1,0 +1,254 @@
+-- Extensions to Kerberos ASN.1 definitions
+-- Types from RFC 6113 (FAST), MS-SFU (S4U), MS-KILE (PAC),
+-- RFC 6251 (KKDCP), draft-ietf-kitten-iakerb (IAKerb), and other extensions.
+
+KerberosExtensions DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+-- @cs-namespace: Kerberos.NET.Entities
+-- @cs-prefix: Krb
+
+IMPORTS
+    KerberosTime, PrincipalName, Realm, EncryptionKey, Checksum,
+    EncryptedData, PA-DATA, KDC-REQ-BODY, KerberosFlags, Int32, UInt32,
+    Microseconds, KerberosString
+        FROM KerberosV5Spec2 { iso(1) identified-organization(3) dod(6) internet(1)
+            security(5) kerberosV5(2) modules(4) krb5spec2(2) };
+
+-- ============================================================
+-- RFC 6113: FAST (Flexible Authentication Secure Tunneling)
+-- ============================================================
+
+-- @cs-class: KrbFastArmor
+KrbFastArmor ::= SEQUENCE {
+    armor-type   [0] Int32,           -- @cs-name: Type @cs-enum: KrbArmorType
+    armor-value  [1] OCTET STRING OPTIONAL,
+                                      -- @cs-name: Value
+    ...
+}
+
+-- @cs-class: KrbFastArmoredReq
+KrbFastArmoredReq ::= SEQUENCE {
+    armor        [0] KrbFastArmor OPTIONAL,
+                                      -- @cs-name: Armor
+    req-checksum [1] Checksum,        -- @cs-name: RequestChecksum
+    enc-fast-req [2] EncryptedData,   -- @cs-name: EncryptedFastRequest
+                                      -- KrbFastReq --
+    ...
+}
+
+-- @cs-class: KrbFastArmoredRep
+KrbFastArmoredRep ::= SEQUENCE {
+    enc-fast-rep [0] EncryptedData,   -- @cs-name: EncFastRep
+                                      -- KrbFastResponse --
+    ...
+}
+
+-- @cs-class: KrbFastReq
+KrbFastReq ::= SEQUENCE {
+    fast-options [0] KerberosFlags,   -- @cs-name: FastOptions @cs-flags-enum: FastOptions
+    padata       [1] SEQUENCE OF PA-DATA,
+                                      -- @cs-name: PaData
+    req-body     [2] KDC-REQ-BODY,    -- @cs-name: ReqBody
+    ...
+}
+
+-- @cs-class: KrbFastResponse
+KrbFastResponse ::= SEQUENCE {
+    padata         [0] SEQUENCE OF PA-DATA,
+                                      -- @cs-name: PaData
+    strengthen-key [1] EncryptionKey OPTIONAL,
+                                      -- @cs-name: StrengthenKey
+    finished       [2] KrbFastFinished OPTIONAL,
+                                      -- @cs-name: Finished
+    nonce          [3] UInt32,        -- @cs-name: Nonce @cs-type: int
+    ...
+}
+
+-- @cs-class: KrbFastFinished
+KrbFastFinished ::= SEQUENCE {
+    timestamp       [0] KerberosTime, -- @cs-name: Timestamp
+    usec            [1] Microseconds, -- @cs-name: USec @cs-type: int
+    crealm          [2] Realm,        -- @cs-name: CRealm
+    cname           [3] PrincipalName,
+                                      -- @cs-name: CName
+    ticket-checksum [4] Checksum,     -- @cs-name: TicketChecksum
+    ...
+}
+
+-- @cs-class: KrbPaFxFastRequest
+PA-FX-FAST-REQUEST ::= CHOICE {
+    armored-data [0] KrbFastArmoredReq,
+                                      -- @cs-name: ArmoredData
+    ...
+}
+
+-- @cs-class: KrbPaFxFastReply
+PA-FX-FAST-REPLY ::= CHOICE {
+    armored-data [0] KrbFastArmoredRep,
+                                      -- @cs-name: ArmoredData
+    ...
+}
+
+-- @cs-class: KrbPaAuthenticationSet
+-- @cs-class: KrbPaAuthenticationSet @cs-name: AuthenticationSet
+PA-AUTHENTICATION-SET ::= SEQUENCE OF PA-AUTHENTICATION-SET-ELEM
+
+-- @cs-class: KrbPaAuthenticationSetElement
+PA-AUTHENTICATION-SET-ELEM ::= SEQUENCE {
+    pa-type      [0] Int32,           -- @cs-name: Type @cs-enum: PaDataType
+    pa-hint      [1] OCTET STRING OPTIONAL,
+                                      -- @cs-name: Hint
+    pa-value     [2] OCTET STRING OPTIONAL,
+                                      -- @cs-name: Value
+    ...
+}
+
+-- ============================================================
+-- MS-SFU: S4U2Self / S4U2Proxy Extensions
+-- ============================================================
+
+-- @cs-class: KrbPaForUser
+PA-FOR-USER ::= SEQUENCE {
+    userName     [0] PrincipalName,   -- @cs-name: UserName
+    userRealm    [1] Realm,           -- @cs-name: UserRealm
+    cksum        [2] Checksum,        -- @cs-name: Checksum
+    auth-package [3] KerberosString,  -- @cs-name: AuthPackage
+}
+
+-- @cs-class: KrbPaS4uX509User
+PA-S4U-X509-USER ::= SEQUENCE {
+    user-id      [0] S4UUserID,       -- @cs-name: UserId
+    checksum     [1] Checksum,        -- @cs-name: Checksum
+}
+
+-- @cs-class: KrbS4uUserId
+S4UUserID ::= SEQUENCE {
+    nonce               [0] UInt32,   -- @cs-name: Nonce @cs-type: int
+    cname               [1] PrincipalName OPTIONAL,
+                                      -- @cs-name: CName
+    crealm              [2] Realm,    -- @cs-name: Realm
+    subject-certificate [3] OCTET STRING OPTIONAL,
+                                      -- @cs-name: SubjectCertificate
+    options             [4] BIT STRING OPTIONAL,
+                                      -- @cs-name: Options @cs-flags-enum: S4uOptions
+    ...
+}
+
+-- ============================================================
+-- MS-KILE: PAC Extensions
+-- ============================================================
+
+-- @cs-class: KrbPaPacRequest
+KERB-PA-PAC-REQUEST ::= SEQUENCE {
+    include-pac  [0] BOOLEAN,         -- @cs-name: IncludePac
+}
+
+-- @cs-class: KrbPaPacOptions
+PA-PAC-OPTIONS ::= SEQUENCE {
+    flags        [0] KerberosFlags,   -- @cs-name: Flags @cs-flags-enum: PacOptions
+}
+
+-- ============================================================
+-- RFC 6806: EType Negotiation
+-- ============================================================
+
+-- @cs-class: KrbETypeList
+-- @cs-class: KrbETypeList @cs-name: List @cs-enum: EncryptionType
+EtypeList ::= SEQUENCE OF Int32
+
+-- ============================================================
+-- MS-KILE: Error Data
+-- ============================================================
+
+-- @cs-class: KrbErrorData
+KERB-ERROR-DATA ::= SEQUENCE {
+    data-type    [1] INTEGER,         -- @cs-name: Type @cs-enum: KrbErrorDataType
+    data-value   [2] OCTET STRING,    -- @cs-name: Value
+}
+
+-- ============================================================
+-- MS-SFU: Server Referral Data
+-- ============================================================
+
+-- @cs-class: KrbPaSvrReferralData
+PA-SVR-REFERRAL-DATA ::= SEQUENCE {
+    referred-name  [1] PrincipalName OPTIONAL,
+                                      -- @cs-name: ReferredName
+    referred-realm [0] Realm,         -- @cs-name: ReferredRealm
+}
+
+-- ============================================================
+-- RFC 6251: KDC Proxy (KKDCP)
+-- ============================================================
+
+-- @cs-class: KdcProxyMessage
+KDC-PROXY-MESSAGE ::= SEQUENCE {
+    kerb-message   [0] OCTET STRING,  -- @cs-name: KerbMessage
+    target-domain  [1] Realm OPTIONAL,
+                                      -- @cs-name: TargetDomain
+    dclocator-hint [2] INTEGER OPTIONAL,
+                                      -- @cs-name: DcLocatorHint @cs-enum: DcLocatorHint
+}
+
+-- ============================================================
+-- draft-ietf-kitten-iakerb: IAKerb
+-- ============================================================
+
+-- @cs-class: IAKerbHeader
+IAKERB-HEADER ::= SEQUENCE {
+    target-realm  [1] UTF8String,     -- @cs-name: TargetRealm
+    cookie        [2] OCTET STRING OPTIONAL,
+                                      -- @cs-name: Cookie
+    header-flags  [3] BIT STRING OPTIONAL,
+                                      -- @cs-name: HeaderFlags @cs-flags-enum: int
+    ...
+}
+
+-- ============================================================
+-- RFC 3244: Change Password
+-- ============================================================
+
+-- @cs-class: KrbChangePasswdData
+ChangePasswdData ::= SEQUENCE {
+    newpasswd    [0] OCTET STRING,    -- @cs-name: NewPasswd
+    targname     [1] PrincipalName OPTIONAL,
+                                      -- @cs-name: TargName
+    targrealm    [2] Realm OPTIONAL,  -- @cs-name: TargRealm
+}
+
+-- ============================================================
+-- X.509 / PKIX: Algorithm and Key Types (used by PKINIT)
+-- ============================================================
+
+-- @cs-class: KrbAlgorithmIdentifier
+AlgorithmIdentifier ::= SEQUENCE {
+    algorithm    OBJECT IDENTIFIER,   -- @cs-name: Algorithm
+    parameters   ANY DEFINED BY algorithm OPTIONAL,
+                                      -- @cs-name: Parameters
+}
+
+-- @cs-class: KrbSubjectPublicKeyInfo
+SubjectPublicKeyInfo ::= SEQUENCE {
+    algorithm        AlgorithmIdentifier,
+                                      -- @cs-name: Algorithm
+    subjectPublicKey BIT STRING,      -- @cs-name: SubjectPublicKey
+}
+
+-- @cs-class: KrbDiffieHellmanDomainParameters
+DomainParameters ::= SEQUENCE {
+    p                ANY,             -- @cs-name: P
+    g                ANY,             -- @cs-name: G
+    q                ANY,             -- @cs-name: Q
+    j                ANY OPTIONAL,
+                                      -- @cs-name: J
+    validationParms  ValidationParms OPTIONAL,
+                                      -- @cs-name: ValidationParameters
+}
+
+-- @cs-class: KrbDiffieHellmanValidationParameters
+ValidationParms ::= SEQUENCE {
+    seed             BIT STRING,      -- @cs-name: Seed
+    pgenCounter      INTEGER,         -- @cs-name: PGenOutput @cs-type: bigint
+}
+
+END
