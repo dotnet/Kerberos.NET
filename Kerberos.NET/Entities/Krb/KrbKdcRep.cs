@@ -70,7 +70,7 @@ namespace Kerberos.NET.Entities
                 CRealm = encTicketPart.CRealm,
                 MessageType = messageType,
                 Ticket = ticket,
-                EncPart = KrbEncryptedData.Encrypt(
+                EncryptedPart = KrbEncryptedData.Encrypt(
                     encKdcRepPart.EncodeApplication(),
                     request.EncryptedPartKey,
                     request.EncryptedPartEType,

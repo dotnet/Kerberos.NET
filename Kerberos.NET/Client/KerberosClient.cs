@@ -583,7 +583,7 @@ namespace Kerberos.NET.Client
             var krbPrivEncPartDecrypted = new KrbEncKrbPrivPart
             {
                 UserData = changeUserPassword.Encode(),
-                SeqNumber = authenticator.SequenceNumber,
+                SequenceNumber = authenticator.SequenceNumber,
                 Usec = authenticator.CuSec,
                 SAddress = new KrbHostAddress()
             };
@@ -937,7 +937,7 @@ namespace Kerberos.NET.Client
         {
             var serviceTicketCacheEntry = await this.RequestTgs(rst, tgtEntry, cancellation).ConfigureAwait(false);
 
-            var encKdcRepPart = serviceTicketCacheEntry.KdcResponse.EncPart.Decrypt(
+            var encKdcRepPart = serviceTicketCacheEntry.KdcResponse.EncryptedPart.Decrypt(
                serviceTicketCacheEntry.SessionKey.AsKey(),
                serviceTicketCacheEntry.SessionKey.Usage,
                d => KrbEncTgsRepPart.DecodeApplication(d)
@@ -1301,7 +1301,7 @@ namespace Kerberos.NET.Client
                 tgs
             ).ConfigureAwait(false);
 
-            var encKdcRepPart = tgsRep.EncPart.Decrypt(
+            var encKdcRepPart = tgsRep.EncryptedPart.Decrypt(
                 subkey.AsKey(),
                 KeyUsage.EncTgsRepPartSubSessionKey,
                 d => KrbEncTgsRepPart.DecodeApplication(d)

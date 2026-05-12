@@ -59,6 +59,16 @@ namespace Kerberos.NET.Entities
                 CRealm = tgsRep.CRealm
             };
 
+            if (rst.IncludeSequenceNumber ?? true)
+            {
+                authenticator.SequenceNumber = GetNonce();
+            }
+
+            if (rst.ApOptions.HasFlag(ApOptions.MutualRequired))
+            {
+                authenticator.Subkey = KrbEncryptionKey.Generate(authenticatorKey.EncryptionType);
+            }
+
             if (rst.AuthenticatorChecksum != null)
             {
                 authenticator.Checksum = rst.AuthenticatorChecksum;
@@ -73,17 +83,11 @@ namespace Kerberos.NET.Entities
             }
             else if (rst.GssContextFlags != GssContextEstablishmentFlag.GSS_C_NONE)
             {
-                authenticator.Checksum = KrbChecksum.EncodeDelegationChecksum(new DelegationInfo(rst));
-            }
+                var delegationInfo = new DelegationInfo(rst);
 
-            if (rst.IncludeSequenceNumber ?? true)
-            {
-                authenticator.SequenceNumber = GetNonce();
-            }
+                rst.DelegationInfoModifier?.Invoke(delegationInfo, authenticator.Subkey);
 
-            if (rst.ApOptions.HasFlag(ApOptions.MutualRequired))
-            {
-                authenticator.Subkey = KrbEncryptionKey.Generate(authenticatorKey.EncryptionType);
+                authenticator.Checksum = KrbChecksum.EncodeDelegationChecksum(delegationInfo);
             }
 
             Now(out DateTimeOffset ctime, out int usec);

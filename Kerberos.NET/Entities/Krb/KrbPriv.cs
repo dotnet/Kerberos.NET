@@ -10,7 +10,7 @@ namespace Kerberos.NET.Entities
             {
                 ProtocolVersionNumber = 5,
                 MessageType = MessageType.KRB_PRIV,
-                EncPart = KrbEncryptedData.Encrypt(
+                EncryptedPart = KrbEncryptedData.Encrypt(
                             data: krbPrivEncPartUnencrypted.EncodeApplication(),
                             key: key,
                             usage: KeyUsage.EncKrbPrivPart)

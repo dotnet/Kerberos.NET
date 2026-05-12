@@ -226,7 +226,7 @@ namespace Tests.Kerberos.NET
         {
             Assert.IsNotNull(tgsRep);
 
-            var encKdcRepPart = tgsRep.EncPart.Decrypt(
+            var encKdcRepPart = tgsRep.EncryptedPart.Decrypt(
                 subSessionKey,
                 KeyUsage.EncTgsRepPartSubSessionKey,
                 d => KrbEncTgsRepPart.DecodeApplication(d)
@@ -384,7 +384,7 @@ namespace Tests.Kerberos.NET
                 },
                 MessageType = MessageType.KRB_AS_REP,
                 Ticket = ticket,
-                EncPart = KrbEncryptedData.Encrypt(
+                EncryptedPart = KrbEncryptedData.Encrypt(
                     encAsRepPart.EncodeApplication(),
                     asRepKey,
                     asRepKey.EncryptionType,

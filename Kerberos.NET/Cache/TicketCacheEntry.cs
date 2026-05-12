@@ -42,7 +42,7 @@ namespace Kerberos.NET
             {
                 AuthTime = ticketInfo.AuthTime ?? DateTimeOffset.UtcNow,
                 EndTime = ticketInfo.EndTime ?? DateTimeOffset.MaxValue,
-                Flags = ticketInfo.Flags,
+                Flags = ticketInfo.Flags ?? default,
                 Key = sessionKey,
                 Nonce = credPart.Nonce ?? 0,
                 Realm = ticketInfo.Realm,
@@ -71,7 +71,7 @@ namespace Kerberos.NET
                         Ticket = ticket,
                         CName = ticketInfo.PName,
                         CRealm = ticketInfo.Realm,
-                        EncPart = KrbEncryptedData.Encrypt(kdcRepData.EncodeApplication(), sessionKey.AsKey(), usage)
+                        EncryptedPart = KrbEncryptedData.Encrypt(kdcRepData.EncodeApplication(), sessionKey.AsKey(), usage)
                     }
                 }
             };
