@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections.Generic;
@@ -324,6 +324,34 @@ WithArray ::= SEQUENCE {
     items [0] SEQUENCE OF INTEGER   -- @cs-type: int
 }");
             Assert.IsTrue(code.Contains("int[]"), "Inline SEQUENCE OF INTEGER should produce int[]");
+        }
+
+        // ─── Enumerated field ────────────────────────────────
+        [TestMethod]
+        public void Emit_EnumeratedDecode_UsesEnumReaderOrIntFallback()
+        {
+            var code = EmitSingle(@"
+-- @cs-class: KrbEnumDecode
+EnumDecode ::= SEQUENCE {
+    typed-state [0] ENUMERATED { a(0), b(1) }, -- @cs-name: TypedState @cs-enum: MyState
+    raw-state   [1] ENUMERATED { c(0), d(1) }  -- @cs-name: RawState
+}");
+
+            // Branch: EnumType is set
+            Assert.IsTrue(
+                code.Contains("ReadEnumeratedValue<MyState>()"),
+                "ENUMERATED with @cs-enum should use ReadEnumeratedValue<TEnum>().");
+
+            // Branch: EnumType is not set
+            Assert.IsTrue(
+                code.Contains("TryReadInt32(out int tmpRawState)"),
+                "ENUMERATED without @cs-enum should use TryReadInt32 fallback.");
+            Assert.IsTrue(
+                code.Contains("ThrowIfNotEmpty();"),
+                "TryReadInt32 fallback should include ThrowIfNotEmpty guard.");
+            Assert.IsTrue(
+                code.Contains("decoded.RawState = tmpRawState;"),
+                "TryReadInt32 fallback should assign temp value to decoded property.");
         }
 
         // ─── Full pipeline smoke test with real schema snippet ──────
