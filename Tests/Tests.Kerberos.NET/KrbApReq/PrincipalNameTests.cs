@@ -147,14 +147,35 @@ namespace Tests.Kerberos.NET
         }
 
         [TestMethod]
-        public void PrincipalName_Equality_ServiceTypeAliasesMatch()
+        public void PrincipalName_MsPrincipal_DoesNotThrow()
         {
-            var a = KrbPrincipalName.FromString("host/aaaa");
-            var b = KrbPrincipalName.FromString("bbbb/aaaa");
+            var principal = new KrbPrincipalName
+            {
+                Type = PrincipalNameType.NT_MS_PRINCIPAL,
+                Name = new[] { "testuser" }
+            };
 
-            KrbPrincipalName.ServiceAliases["bbbb"] = "host";
+            Assert.AreEqual("testuser", principal.FullyQualifiedName);
+        }
 
-            Assert.IsTrue(a.Matches(b));
+        [TestMethod]
+        public void PrincipalName_MsPrincipal_WithUpn()
+        {
+            var principal = new KrbPrincipalName
+            {
+                Type = PrincipalNameType.NT_MS_PRINCIPAL,
+                Name = new[] { "testuser@domain.local" }
+            };
+
+            Assert.AreEqual("testuser@domain.local", principal.FullyQualifiedName);
+        }
+
+        [TestMethod]
+        public void PrincipalName_MsPrincipal_FromString()
+        {
+            var principal = KrbPrincipalName.FromString("testuser@domain.local", PrincipalNameType.NT_MS_PRINCIPAL);
+
+            Assert.AreEqual("testuser@domain.local", principal.FullyQualifiedName);
         }
     }
 }

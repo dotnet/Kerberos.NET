@@ -80,20 +80,20 @@ namespace Kerberos.NET.Entities
             { "msdtc", HostServiceName }
         });
 
-        private static readonly ReadOnlyMemory<string> NameTypeSeperator = new[]
+        private static readonly ReadOnlyMemory<char> NameTypeSeperator = new[]
         {
-            "@", // NT_UNKNOWN = 0,
-            "@", // NT_PRINCIPAL = 1,
-            "/", // NT_SRV_INST = 2,
-            "/", // NT_SRV_HST = 3,
-            "/", // NT_SRV_XHST = 4,
-            "@", // NT_UID = 5,
-            ",", // NT_X500_PRINCIPAL = 6,
-            "@", // NT_SMTP_NAME = 7,
-            "@", // 8
-            "@", // 9
-            "@", // NT_ENTERPRISE = 10,
-            "/"  // NT_WELLKNOWN = 11
+            '@', // NT_UNKNOWN = 0,
+            '@', // NT_PRINCIPAL = 1,
+            '/', // NT_SRV_INST = 2,
+            '/', // NT_SRV_HST = 3,
+            '/', // NT_SRV_XHST = 4,
+            '@', // NT_UID = 5,
+            ',', // NT_X500_PRINCIPAL = 6,
+            '@', // NT_SMTP_NAME = 7,
+            '@', // 8
+            '@', // 9
+            '@', // NT_ENTERPRISE = 10,
+            '/'  // NT_WELLKNOWN = 11
         };
 
         internal PrincipalName ToKeyPrincipal()
@@ -125,9 +125,24 @@ namespace Kerberos.NET.Entities
             this.Name[1] = $"{this.Name[1]}.{qualifyShortname}";
         }
 
+        private static char GetSeperator(PrincipalNameType type)
+        {
+            var index = (int)type;
+
+            if (index < 0 || index >= NameTypeSeperator.Length)
+            {
+                // Name types outside the standard range (e.g. the Microsoft-specific
+                // KRB5_NT_MS_PRINCIPAL = -128 returned by Windows KDCs during S4U2Self)
+                // are treated like NT_PRINCIPAL and joined with '@'.
+                return '@';
+            }
+
+            return NameTypeSeperator.Span[index];
+        }
+
         private static string MakeFullName(IEnumerable<string> names, PrincipalNameType type, bool normalizeAlias = false)
         {
-            var seperator = NameTypeSeperator.Span[(int)type];
+            var seperator = GetSeperator(type);
 
             using (var enumerator = names.GetEnumerator())
             {
@@ -140,7 +155,7 @@ namespace Kerberos.NET.Entities
 
                 string firstPortion = enumerator.Current;
 
-                if (seperator == "/" && normalizeAlias)
+                if (seperator == '/' && normalizeAlias)
                 {
                     if (ServiceAliases.TryGetValue(firstPortion.ToLowerInvariant(), out string alias))
                     {
@@ -161,9 +176,9 @@ namespace Kerberos.NET.Entities
                 {
                     if (enumerator.Current != null)
                     {
-                        if (seperator != ",")
+                        if (seperator != ',')
                         {
-                            sb.Append("@");
+                            sb.Append('@');
                         }
                         else
                         {
@@ -242,7 +257,7 @@ namespace Kerberos.NET.Entities
 
             var actualType = type ?? TryDetectType(principal);
 
-            var splitOn = NameTypeSeperator.Span[(int)actualType][0];
+            var splitOn = GetSeperator(actualType);
 
             if (splitOn == '@')
             {
