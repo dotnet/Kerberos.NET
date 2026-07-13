@@ -11,6 +11,24 @@ namespace Kerberos.NET.Entities
     public enum PrincipalNameType
     {
         /// <summary>
+        /// A Microsoft-specific principal name (KRB5_NT_MS_PRINCIPAL). Windows KDCs may return this
+        /// name type (for example in an S4U2Self reply). It is treated like <see cref="NT_PRINCIPAL" />.
+        /// </summary>
+        NT_MS_PRINCIPAL = -128,
+
+        /// <summary>
+        /// A Microsoft-specific principal name with a SID (KRB5_NT_MS_PRINCIPAL_AND_ID).
+        /// It is treated like <see cref="NT_PRINCIPAL" />.
+        /// </summary>
+        NT_MS_PRINCIPAL_AND_ID = -129,
+
+        /// <summary>
+        /// A Microsoft-specific enterprise principal name with a SID (KRB5_NT_ENT_PRINCIPAL_AND_ID).
+        /// It is treated like <see cref="NT_PRINCIPAL" />.
+        /// </summary>
+        NT_ENT_PRINCIPAL_AND_ID = -130,
+
+        /// <summary>
         /// The principal name format is unknown and will be treated like <see cref="NT_PRINCIPAL" />
         /// </summary>
         NT_UNKNOWN = 0,
