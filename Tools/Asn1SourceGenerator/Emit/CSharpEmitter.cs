@@ -1,4 +1,4 @@
-// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
@@ -1138,17 +1138,17 @@ namespace Kerberos.NET.Asn1SourceGenerator.Emit
 
                 case FieldKind.Enumerated:
                     w.WriteLine();
-                    w.WriteLine($"if (!{readerVar}.TryReadInt32(out int tmp{field.PropertyName}))");
-                    w.OpenBrace();
-                    w.WriteLine($"{readerVar}.ThrowIfNotEmpty();");
-                    w.CloseBrace();
-                    w.WriteLine();
+                    
                     if (!string.IsNullOrEmpty(field.Encoding.EnumType))
                     {
-                        w.WriteLine($"decoded.{field.PropertyName} = ({field.Encoding.EnumType})tmp{field.PropertyName};");
+                        w.WriteLine($"decoded.{field.PropertyName} = {readerVar}.ReadEnumeratedValue<{field.Encoding.EnumType}>();");
                     }
                     else
                     {
+                        w.WriteLine($"if (!{readerVar}.TryReadInt32(out int tmp{field.PropertyName}))");
+                        w.OpenBrace();
+                        w.WriteLine($"{readerVar}.ThrowIfNotEmpty();");
+                        w.CloseBrace();
                         w.WriteLine($"decoded.{field.PropertyName} = tmp{field.PropertyName};");
                     }
                     break;
