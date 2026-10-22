@@ -883,7 +883,14 @@ namespace Kerberos.NET.Asn1SourceGenerator.Emit
                 case FieldKind.Enumerated:
                 {
                     string val = isNullable ? $"{field.PropertyName}.Value" : field.PropertyName;
-                    w.WriteLine($"writer.WriteInteger((long){val});");
+                    if (field.Encoding.EnumType == null)
+                    {
+                         w.WriteLine($"writer.WriteInteger((long){val});");
+                    }
+                    else
+                    {
+                         w.WriteLine($"writer.WriteEnumeratedValue({val});");
+                    }
                     break;
                 }
 
