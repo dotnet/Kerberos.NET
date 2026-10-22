@@ -71,7 +71,10 @@ namespace Kerberos.NET.Transport
             var results = await this.Query(domain, servicePrefix, DefaultKerberosPort);
 
             results = ParseQuerySrvReply(results);
-
+            if (this.Configuration.Defaults.PrioritizeKdcByConfigurationOrder)
+            {
+                return results;
+            }
             return await WeightResults(results);
         }
 
@@ -266,7 +269,7 @@ namespace Kerberos.NET.Transport
             }
         }
 
-        private static DnsRecord ParseKdcEntryAsSrvRecord(string kdc, string realm, string servicePrefix, int defaultPort)
+        private DnsRecord ParseKdcEntryAsSrvRecord(string kdc, string realm, string servicePrefix, int defaultPort)
         {
             if (IsUri(kdc))
             {
@@ -274,7 +277,8 @@ namespace Kerberos.NET.Transport
                 {
                     Target = kdc,
                     Type = DnsRecordType.SRV,
-                    Name = realm
+                    Name = realm,
+                    TimeToLive = this.Configuration.Defaults.ConfiguredKdcTimeToLive
                 };
             }
 
@@ -284,7 +288,8 @@ namespace Kerberos.NET.Transport
             {
                 Target = split[0],
                 Type = DnsRecordType.SRV,
-                Name = $"{servicePrefix}.{realm}"
+                Name = $"{servicePrefix}.{realm}",
+                TimeToLive = this.Configuration.Defaults.ConfiguredKdcTimeToLive
             };
 
             if (split.Length > 1)

@@ -353,5 +353,19 @@ namespace Kerberos.NET.Configuration
         [DefaultValue(true)]
         [DisplayName("prioritize_by_response_time")]
         public bool PrioritizeKdcByPing { get; set; }
+
+        /// <summary>
+        /// Indicates whether the client should try to utilze the order of KDCs as they are listed in the configuration when attempting to contact them, rather than trying to ping them first.
+        /// </summary>
+        [DefaultValue(false)]
+        [DisplayName("prioritize_by_configuration_order")]
+        public bool PrioritizeKdcByConfigurationOrder { get; set; }
+
+        /// <summary>
+        /// When attempting various KDCs this is how long a given KDC can be listed in the negative cache in seconds.
+        /// </summary>
+        [DefaultValue(0)]
+        [DisplayName("configured_kdc_time_to_live")]
+        public int ConfiguredKdcTimeToLive { get; set; }
     }
 }
